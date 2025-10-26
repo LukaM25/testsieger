@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { --brand: #b8860b; }
+.btn { @apply inline-flex items-center gap-2 rounded-xl px-4 py-2 shadow-sm; }
+.btn-primary { @apply bg-[color:var(--brand)] text-white hover:opacity-90; }
+.card { @apply rounded-2xl border p-6 shadow-sm bg-white; }
+
+/* Subtle page background */
+body { background-image: radial-gradient(40rem 20rem at 120% -10%, rgba(184,134,11,0.06), transparent 60%); }
