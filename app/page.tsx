@@ -1,20 +1,17 @@
 
-import Hero from "@/components/Hero";
+import HeroSection from "@/components/HeroSection";
 
-export default function Page() {
+export default function HomePage() {
   return (
-    <div className="space-y-10">
-      <Hero />
-      <div id="ablauf" className="card">
-        <p className="font-semibold">Ablauf</p>
-        <ol className="list-decimal pl-6 space-y-2">
-          <li>Pre‑Check ausfüllen (0 €)</li>
-          <li>Paket wählen & bezahlen</li>
-          <li>Produkt einsenden</li>
-          <li>Prüfbericht & Zertifikat erhalten</li>
-          <li>Öffentliche Verifikation via QR</li>
-        </ol>
-      </div>
+    <div>
+      <HeroSection />
+      <section className="max-w-5xl mx-auto px-6 py-16 text-gray-700 leading-relaxed">
+        <h2 className="text-2xl font-semibold text-[#2e4053] mb-4">Über uns</h2>
+        <p>
+          Das Prüfsiegel Zentrum UG steht für objektive Bewertungen, transparente Verfahren und messbare Qualität.
+          Unser Leitgedanke <span className="font-medium">„Vertrauen durch Prüfung“</span> ist mehr als ein Slogan – es ist unser Versprechen.
+        </p>
+      </section>
     </div>
   );
 }

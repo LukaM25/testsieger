@@ -1,40 +1,30 @@
-
-'use client';
-import { useState } from 'react';
-
 export default function PrecheckPage() {
-  const [loading, setLoading] = useState(false);
-  async function submit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    setLoading(true);
-    const res = await fetch('/api/precheck', { method: 'POST', body: form });
-    const data = await res.json();
-    setLoading(false);
-    if (!res.ok) return alert(data.error || 'Fehler');
-    window.location.href = '/packages';
-  }
   return (
-    <form onSubmit={submit} className="grid md:grid-cols-2 gap-4">
-      <div className="card space-y-3">
-        <h2 className="text-xl font-semibold">Persönliche Daten</h2>
-        <input name="name" placeholder="Name" className="border p-2 rounded w-full" required />
-        <input name="company" placeholder="Firma" className="border p-2 rounded w-full" />
-        <input type="email" name="email" placeholder="E‑Mail" className="border p-2 rounded w-full" required />
-        <input name="address" placeholder="Adresse" className="border p-2 rounded w-full" />
-        <input type="password" name="password" placeholder="Passwort" className="border p-2 rounded w-full" required />
-      </div>
-      <div className="card space-y-3">
-        <h2 className="text-xl font-semibold">Produktdaten</h2>
-        <input name="productName" placeholder="Produktname" className="border p-2 rounded w-full" required />
-        <input name="brand" placeholder="Markenname" className="border p-2 rounded w-full" required />
-        <input name="code" placeholder="Hersteller/Artikelnummer" className="border p-2 rounded w-full" />
-        <input name="specs" placeholder="Spezifikationen" className="border p-2 rounded w-full" />
-        <input name="size" placeholder="Verpackungsgröße/Maße" className="border p-2 rounded w-full" />
-        <input name="madeIn" placeholder="Fertigungsland" className="border p-2 rounded w-full" />
-        <input name="material" placeholder="Hauptmaterial" className="border p-2 rounded w-full" />
-        <button className="btn btn-primary w-full" disabled={loading}>{loading ? 'Wird gesendet…' : 'Jetzt starten'}</button>
-      </div>
-    </form>
+    <div className="max-w-3xl mx-auto px-6 pt-20 pb-16">
+      <h1 className="text-3xl font-semibold text-[#2e4053]">Pre-Check</h1>
+      <p className="text-gray-600 mt-2">Bitte füllen Sie die Daten vollständig aus.</p>
+
+      <form method="post" action="/api/form/submit" className="mt-6 grid gap-3 bg-white border rounded-2xl p-6">
+        <div className="grid md:grid-cols-2 gap-3">
+          <input name="name" className="border rounded px-3 py-2" placeholder="Vollständiger Name" required />
+          <input name="company" className="border rounded px-3 py-2" placeholder="Firma" required />
+        </div>
+        <div className="grid md:grid-cols-2 gap-3">
+          <input name="email" type="email" className="border rounded px-3 py-2" placeholder="E-Mail" required />
+          <input name="address" className="border rounded px-3 py-2" placeholder="Adresse" required />
+        </div>
+        <div className="grid md:grid-cols-2 gap-3">
+          <input name="productName" className="border rounded px-3 py-2" placeholder="Produktname" required />
+          <input name="brandName" className="border rounded px-3 py-2" placeholder="Marke" required />
+        </div>
+        <div className="grid md:grid-cols-2 gap-3">
+          <input name="sku" className="border rounded px-3 py-2" placeholder="Hersteller-Code / SKU" />
+          <input name="dimensions" className="border rounded px-3 py-2" placeholder="Verpackungsmaße" />
+        </div>
+        <textarea name="specs" className="border rounded px-3 py-2" rows={4} placeholder="Spezifikationen (z. B. wasserdicht, flammhemmend, energiesparend)"></textarea>
+
+        <button className="rounded-2xl bg-amber-500 text-white px-4 py-2">Pre-Check absenden</button>
+      </form>
+    </div>
   );
 }
