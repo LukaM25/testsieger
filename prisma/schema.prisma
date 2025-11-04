@@ -8,31 +8,33 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
+  id           String     @id @default(cuid())
   name         String
-  email        String    @unique
+  email        String     @unique
   passwordHash String
   address      String?
-  createdAt    DateTime  @default(now())
+  createdAt    DateTime   @default(now())
+
   products     Product[]
   orders       Order[]
 }
 
 model Product {
-  id          String        @id @default(cuid())
-  user        User          @relation(fields: [userId], references: [id])
-  userId      String
-  name        String
-  brand       String
-  code        String?
-  specs       String?
-  size        String?
-  madeIn      String?
-  material    String?
-  status      ProductStatus @default(PRECHECK)
-  createdAt   DateTime      @default(now())
-  certificate Certificate?
-  orders      Order[]
+  id           String         @id @default(cuid())
+  user         User           @relation(fields: [userId], references: [id])
+  userId       String
+  name         String
+  brand        String
+  code         String?
+  specs        String?
+  size         String?
+  madeIn       String?
+  material     String?
+  status       ProductStatus  @default(PRECHECK)
+  createdAt    DateTime       @default(now())
+
+  certificate  Certificate?
+  orders       Order[]
 }
 
 enum ProductStatus {
@@ -63,10 +65,12 @@ enum Plan {
 }
 
 model Certificate {
-  id        String   @id @default(cuid())
-  product   Product  @relation(fields: [productId], references: [id])
-  productId String   @unique
-  pdfUrl    String
-  qrUrl     String
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  product    Product  @relation(fields: [productId], references: [id])
+  productId  String   @unique
+  pdfUrl     String
+  qrUrl      String
+  seal_number String @unique
+  pdfmonkeyDocumentId  String?  @unique
+  createdAt  DateTime @default(now())
 }

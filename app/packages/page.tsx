@@ -1,5 +1,7 @@
 
 'use client';
+
+
 import { PackageCard } from '@/components/PackageCard';
 
 export default function Packages() {

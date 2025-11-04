@@ -1,42 +1,43 @@
-import 'server-only';
-import { SignJWT, jwtVerify } from "jose";
-import { cookies } from "next/headers";
-import { COOKIE_OPTIONS, SESSION_COOKIE } from "./cookies";
+import { SignJWT, jwtVerify } from 'jose';
+import bcrypt from 'bcryptjs';
+import { prisma } from './prisma';
+import { setSession, getSession, clearSession } from './cookies';
 
-const SECRET = new TextEncoder().encode(process.env.AUTH_SECRET!);
+const SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
+const TOKEN_EXPIRY = '7d';
 
-export type Session = { userId: string; email: string; name: string };
+export async function loginUser(email: string, password: string) {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) throw new Error('USER_NOT_FOUND');
 
-// WRITE: must be a server action (or call from a route handler)
-export async function setSession(session: Session) {
-  'use server';
+  const valid = await bcrypt.compare(password, user.passwordHash);
+  if (!valid) throw new Error('INVALID_PASSWORD');
 
-  const token = await new SignJWT(session)
-    .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime("7d")
-    .sign(SECRET);
-
-  const store = await cookies();           // 👈 async in Next 14.2+/15
-  store.set(SESSION_COOKIE, token, COOKIE_OPTIONS); // 👈 write is allowed here
+  await setSession({ userId: user.id, email: user.email });
+  return user;
 }
 
-// READ: safe anywhere on the server (SSR/server component/server action/route)
-export async function getSession(): Promise<Session | null> {
-  const store = await cookies();
-  const token = store.get(SESSION_COOKIE)?.value;
-  if (!token) return null;
+export async function registerUser(data: { name: string; email: string; password: string }) {
+  const existing = await prisma.user.findUnique({ where: { email: data.email } });
+  if (existing) throw new Error('EMAIL_TAKEN');
 
-  try {
-    const { payload } = await jwtVerify(token, SECRET);
-    return payload as Session;
-  } catch {
-    return null;
-  }
+  const passwordHash = await bcrypt.hash(data.password, 10);
+  const user = await prisma.user.create({
+    data: { name: data.name, email: data.email, passwordHash },
+  });
+
+  await setSession({ userId: user.id, email: user.email });
+  return user;
 }
 
-// DELETE: also needs a write-capable context
-export async function clearSession() {
-  'use server';
-  const store = await cookies();
-  store.delete(SESSION_COOKIE);
+export async function logoutUser() {
+  await clearSession();
 }
+
+export async function getCurrentUser() {
+  const session = await getSession();
+  if (!session) return null;
+  return prisma.user.findUnique({ where: { id: session.userId } });
+}
+export { getSession };
+

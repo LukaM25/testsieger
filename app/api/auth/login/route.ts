@@ -1,17 +1,33 @@
-
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
-import { setSession } from "@/lib/auth";
+import { NextResponse } from 'next/server';
+import { loginUser } from '@/lib/auth';
 
 export async function POST(req: Request) {
-  const form = await req.formData();
-  const email = String(form.get('email'));
-  const password = String(form.get('password'));
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) return NextResponse.json({ error: 'Ungültig' }, { status: 401 });
-  const ok = await bcrypt.compare(password, user.passwordHash);
-  if (!ok) return NextResponse.json({ error: 'Ungültig' }, { status: 401 });
-  await setSession({ userId: user.id, email: user.email, name: user.name });
-  return NextResponse.json({ ok: true });
+  // Accept either FormData or JSON
+  let email = '';
+  let password = '';
+
+  const contentType = req.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    const body = await req.json();
+    email = String(body.email || '');
+    password = String(body.password || '');
+  } else {
+    const form = await req.formData();
+    email = String(form.get('email') || '');
+    password = String(form.get('password') || '');
+  }
+
+  if (!email || !password) {
+    return NextResponse.json({ error: 'MISSING_CREDENTIALS' }, { status: 400 });
+  }
+
+  try {
+    await loginUser(email, password); // sets the cookie via setSession()
+    return NextResponse.json({ ok: true, redirect: '/dashboard' });
+  } catch (e: any) {
+    const code = e?.message || 'LOGIN_FAILED';
+    const status =
+      code === 'USER_NOT_FOUND' || code === 'INVALID_PASSWORD' ? 401 : 500;
+    return NextResponse.json({ error: code }, { status });
+  }
 }

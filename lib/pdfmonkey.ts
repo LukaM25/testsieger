@@ -1,30 +1,47 @@
+export async function generateCertificate({
+  product_name,
+  brand_name,
+  sku,
+  seal_number,
+  valid_to,
+  report_url,
+  qr_url
+}: {
+  product_name: string;
+  brand_name: string;
+  sku: string;
+  seal_number: string;
+  valid_to: string;
+  report_url: string;
+  qr_url: string;
+}) {
+  const apiKey = process.env.PDFMONKEY_API_KEY!;
+  const templateId = process.env.PDFMONKEY_TEMPLATE_ID!;
 
-export const PDFMONKEY_API = "https://api.pdfmonkey.io/api/v1";
-export async function createPdfDocument(payload: any, filename: string) {
-  const res = await fetch(`${PDFMONKEY_API}/documents`, {
+  const res = await fetch("https://api.pdfmonkey.io/api/v1/documents", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${process.env.PDFMONKEY_API_KEY}`,
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       document: {
-        document_template_id: process.env.PDFMONKEY_TEMPLATE_ID,
         status: "pending",
-        payload,
-        meta: { _filename: filename }
-      }
-    })
+        template_id: templateId,
+        payload: {
+          product_name,
+          brand_name,
+          sku,
+          seal_number,
+          valid_to,
+          report_url,
+          qr_url,
+        },
+      },
+    }),
   });
-  if (!res.ok) throw new Error(await res.text());
-  const { document } = await res.json();
-  return document as { id: string };
-}
 
-export async function getDocumentCard(id: string) {
-  const res = await fetch(`${PDFMONKEY_API}/document_cards/${id}`, {
-    headers: { Authorization: `Bearer ${process.env.PDFMONKEY_API_KEY}` }
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  const data = await res.json();
+  if (!res.ok) throw new Error(`PDFMonkey error: ${data.error || res.statusText}`);
+  return data;
 }
