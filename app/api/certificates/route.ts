@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import  { prisma } from "@/lib/prisma";
-import { generateCertificate } from "@/lib/pdfmonkey";
-import { sendCertificateEmail } from "@/lib/email";
+import { createPdfDocument, getDocumentCard } from "@/lib/pdfmonkey";
+import { sendPrecheckConfirmation } from "@/lib/email";
 import QRCode from "qrcode";
 
 export async function POST(req: Request) {
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     const valid_to = new Date();
     valid_to.setFullYear(valid_to.getFullYear() + 3);
 
-    const pdf = await generateCertificate({
+    const pdf = await createPdfDocument({
       product_name: product.name,
       brand_name: product.brand,
       sku: product.code || "-",
@@ -42,12 +42,10 @@ export async function POST(req: Request) {
       },
     });
 
-    await sendCertificateEmail({
+    await sendPrecheckConfirmation({
       to: product.user.email,
       name: product.user.name,
-      product: product.name,
-      certificateUrl: pdf.data.document.download_url,
-      reportUrl: qr_target,
+      productName: product.name,
     });
 
     return NextResponse.json({ success: true });

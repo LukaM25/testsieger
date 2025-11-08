@@ -2,6 +2,7 @@
 // Minimal PDFMonkey client for server-side use in Next.js (App Router)
 
 type PdfMonkeyDoc = {
+  data: any;
   id: string;
   status: 'queued' | 'processing' | 'success' | 'failure';
   downloadUrl?: string | null;
@@ -28,10 +29,12 @@ function unwrapDoc(json: any): PdfMonkeyDoc {
   const data = json?.data;
   const attrs = data?.attributes ?? {};
   return {
-    id: data?.id,
-    status: (attrs.status || 'queued') as PdfMonkeyDoc['status'],
-    downloadUrl: attrs.download_url ?? attrs.downloadUrl ?? null,
-  };
+  id: data?.id,
+  status: (attrs.status || 'queued') as PdfMonkeyDoc['status'],
+  downloadUrl: attrs.download_url ?? attrs.downloadUrl ?? null,
+  data: undefined,
+  
+};
 }
 
 /**
