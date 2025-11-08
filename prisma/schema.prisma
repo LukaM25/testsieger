@@ -65,12 +65,13 @@ enum Plan {
 }
 
 model Certificate {
-  id         String   @id @default(cuid())
-  product    Product  @relation(fields: [productId], references: [id])
-  productId  String   @unique
-  pdfUrl     String
-  qrUrl      String
-  seal_number String @unique
-  pdfmonkeyDocumentId  String?  @unique
-  createdAt  DateTime @default(now())
+  id                  String   @id @default(cuid())
+  product             Product  @relation(fields: [productId], references: [id])
+  productId           String   @unique
+  pdfUrl              String
+  qrUrl               String
+  seal_number         String   @unique @default(uuid()) // ← auto-generate
+  pdfmonkeyDocumentId String?  @unique
+  createdAt           DateTime @default(now())
 }
+

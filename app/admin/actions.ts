@@ -29,7 +29,7 @@ export async function complete(formData: FormData) {
   let card: any = null;
   while (Date.now() - start < 20000) {
     const c = await getDocumentCard(doc.id);
-    if (c.status === 'success' && c.download_url) { card = c; break; }
+    if (c.status === 'success' && c.downloadUrl) { card = c; break; }
     await new Promise(r => setTimeout(r, 1000));
   }
   if (!card) return;
