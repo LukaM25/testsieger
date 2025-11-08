@@ -1,86 +1,130 @@
-// app/dashboard/page.tsx
-export const dynamic = "force-dynamic";
+import { prisma } from '@/lib/prisma';
+import { getSession } from '@/lib/cookies';
+import { redirect } from 'next/navigation';
+import Link from 'next/link';
 
-import { prisma} from "@/lib/prisma";                // use default export (works with both styles)
-import { Protected } from "@/components/Protected";
-import { getSession } from "@/lib/auth";
-
-export default async function Dashboard() {
+export default async function DashboardPage() {
   const session = await getSession();
+  if (!session) redirect('/login');
 
-  // No session → gate with your Protected component
-  if (!session) {
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    include: {
+      products: {
+        include: { certificate: true },
+        orderBy: { createdAt: 'desc' },
+      },
+      orders: { orderBy: { createdAt: 'desc' } },
+    },
+  });
+
+  if (!user) redirect('/login');
+
   return (
-    <Protected>
-      <div className="p-6 text-center text-gray-600">
-        Sie müssen angemeldet sein, um das Dashboard zu sehen.
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="mx-auto max-w-5xl">
+        <h1 className="text-3xl font-bold mb-6">
+          Willkommen, {user.name.split(' ')[0]}
+        </h1>
+
+        <div className="grid gap-10">
+          {/* Products Section */}
+          <section>
+            <h2 className="text-xl font-semibold mb-3">Produkte</h2>
+<form action="/api/auth/logout" method="POST">
+  <button
+    type="submit"
+    className="rounded-md bg-gray-800 px-4 py-2 text-white text-sm hover:bg-black"
+  >
+    Logout
+  </button>
+</form>
+
+
+            {user.products.length === 0 && (
+              <p className="text-gray-600">Noch keine Produkte eingereicht.</p>
+            )}
+            <div className="grid gap-4">
+              {user.products.map((p) => (
+                <div
+                  key={p.id}
+                  className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm flex justify-between items-center"
+                >
+                  <div>
+                    <div className="font-semibold">{p.name}</div>
+                    <div className="text-sm text-gray-600">
+                      Status: {statusLabel(p.status)}
+                    </div>
+                    {p.certificate && (
+                      <div className="text-sm mt-1 space-x-3">
+                        <Link
+                          href={p.certificate.pdfUrl}
+                          className="text-blue-600 hover:underline"
+                        >
+                          Prüfbericht
+                        </Link>
+                        <Link
+                          href={p.certificate.qrUrl}
+                          className="text-blue-600 hover:underline"
+                        >
+                          QR-Code
+                        </Link>
+                        <Link
+                          href={`/verify/${p.certificate.seal_number}`}
+                          className="text-blue-600 hover:underline"
+                        >
+                          Verifikation
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {new Date(p.createdAt).toLocaleDateString('de-DE')}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Orders Section */}
+          <section>
+            <h2 className="text-xl font-semibold mb-3">Bestellungen</h2>
+            {user.orders.length === 0 && (
+              <p className="text-gray-600">Noch keine Bestellungen vorhanden.</p>
+            )}
+            <div className="grid gap-3">
+              {user.orders.map((o) => (
+                <div
+                  key={o.id}
+                  className="rounded-lg border border-gray-200 bg-white p-4 flex justify-between"
+                >
+                  <div>
+                    <div className="font-medium">{o.plan}</div>
+                    <div className="text-sm text-gray-600">
+                      Produkt-ID: {o.productId.slice(0, 8)}…
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {o.paidAt
+                      ? 'Bezahlt'
+                      : 'Offen'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
       </div>
-    </Protected>
+    </div>
   );
 }
 
-
-  // Load user's products (stable and safe)
-  let products: Array<{
-    id: string;
-    name: string;
-    brand: string;
-    status: string;
-    certificate: { pdfUrl: string } | null;
-  }> = [];
-
-  try {
-    products = await prisma.product.findMany({
-      where: { userId: session.userId },
-      include: { certificate: true },
-      orderBy: { createdAt: "desc" },
-    });
-  } catch (e) {
-    // Show a friendly error inside the page instead of bombing to a 404
-    return (
-      <Protected>
-        <div className="mt-6 rounded-xl border bg-red-50 text-red-700 px-4 py-3 text-sm">
-          Datenbankfehler beim Laden der Produkte.
-        </div>
-      </Protected>
-    );
+function statusLabel(status: string) {
+  switch (status) {
+    case 'PRECHECK': return 'Pre-Check eingereicht';
+    case 'PAID': return 'Zahlung erhalten';
+    case 'IN_REVIEW': return 'Prüfung läuft';
+    case 'COMPLETED': return 'Abgeschlossen';
+    default: return status;
   }
-
-  return (
-    <Protected>
-      <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
-
-      {products.length === 0 ? (
-        <p className="text-sm text-neutral-600">Noch keine Produkte vorhanden.</p>
-      ) : (
-        <div className="space-y-6">
-          {products.map((p) => (
-            <div key={p.id} className="card">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold">
-                    {p.name} – {p.brand}
-                  </h3>
-                  <p className="text-sm text-neutral-600">Status: {p.status}</p>
-                </div>
-
-                {p.certificate ? (
-                  <a
-                    className="btn btn-primary"
-                    href={p.certificate.pdfUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Zertifikat
-                  </a>
-                ) : (
-                  <span className="text-sm text-neutral-400">Kein Zertifikat</span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </Protected>
-  );
 }

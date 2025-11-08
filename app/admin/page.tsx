@@ -6,7 +6,6 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [password, setPassword] = useState('');
   const [productId, setProductId] = useState('');
-  const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -21,19 +20,20 @@ export default function AdminPage() {
     else setMsg('Falsches Admin-Passwort');
   };
 
-  const upload = async () => {
-    if (!file || !productId) { setMsg('Produkt-ID und PDF wählen'); return; }
+  const call = async (path: string) => {
+    if (!productId) { setMsg('Produkt-ID eingeben'); return; }
     setBusy(true); setMsg(null);
-    const fd = new FormData();
-    fd.append('productId', productId);
-    fd.append('report', file);
-    const res = await fetch('/api/admin/upload', { method: 'POST', body: fd });
-    const data = await res.json();
+    const res = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId }),
+    });
+    const data = await res.json().catch(() => ({}));
     setBusy(false);
-    if (res.ok && data?.verifyUrl) {
-      setMsg(`OK: ${data.verifyUrl}`);
+    if (res.ok) {
+      setMsg(data.message || JSON.stringify(data));
     } else {
-      setMsg('Fehler beim Upload');
+      setMsg(`Fehler: ${data?.error || res.status}`);
     }
   };
 
@@ -58,26 +58,32 @@ export default function AdminPage() {
 
   return (
     <div className="mx-auto max-w-xl px-4 py-10">
-      <h1 className="mb-6 text-2xl font-semibold">Report hochladen & Zertifikat erzeugen</h1>
+      <h1 className="mb-6 text-2xl font-semibold">Prüfung verwalten</h1>
 
       <label className="block text-sm font-medium">Produkt-ID</label>
       <input
         value={productId}
         onChange={e=>setProductId(e.target.value)}
         placeholder="cuid..."
-        className="mb-4 w-full rounded-lg border px-3 py-2"
+        className="mb-6 w-full rounded-lg border px-3 py-2"
       />
 
-      <label className="block text-sm font-medium">Prüfbericht (PDF)</label>
-      <input type="file" accept="application/pdf" onChange={e=>setFile(e.target.files?.[0] ?? null)} />
-
-      <button
-        onClick={upload}
-        disabled={busy}
-        className="mt-6 rounded-lg bg-black px-4 py-2 text-white disabled:opacity-60"
-      >
-        {busy ? 'Wird verarbeitet…' : 'Hochladen & Zertifikat erzeugen'}
-      </button>
+      <div className="flex gap-3">
+        <button
+          onClick={() => call('/api/admin/receive')}
+          disabled={busy}
+          className="rounded-lg border px-4 py-2 disabled:opacity-60"
+        >
+          {busy ? 'Bitte warten…' : 'Eingang bestätigen (IN_REVIEW)'}
+        </button>
+        <button
+          onClick={() => call('/api/admin/complete')}
+          disabled={busy}
+          className="rounded-lg bg-black px-4 py-2 text-white disabled:opacity-60"
+        >
+          {busy ? 'Generiere PDF…' : 'Abschließen & Zertifikat erzeugen'}
+        </button>
+      </div>
 
       {msg && <p className="mt-4 text-sm">{msg}</p>}
     </div>

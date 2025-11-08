@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   const start = Date.now();
   while (Date.now() - start < 20000) {
     const c = await getDocumentCard(doc.id);
-    if (c.status === 'success' && c.download_url) return NextResponse.json({ url: c.download_url });
+    if (c.status === 'success' && c.downloadUrl) return NextResponse.json({ url: c.downloadUrl });
     await new Promise(r => setTimeout(r, 1000));
   }
   return NextResponse.json({ error: 'timeout' }, { status: 504 });

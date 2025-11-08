@@ -1,0 +1,28 @@
+import { NextResponse } from 'next/server';
+import { isAdminAuthed } from '@/lib/admin';
+import { prisma } from '@/lib/prisma';
+
+export const runtime = 'nodejs';
+
+export async function POST(req: Request) {
+  const authed = await isAdminAuthed();
+  if (!authed) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+
+  const { productId } = await req.json();
+  if (!productId) return NextResponse.json({ error: 'MISSING_PRODUCT_ID' }, { status: 400 });
+
+  const product = await prisma.product.findUnique({ where: { id: productId } });
+  if (!product) return NextResponse.json({ error: 'PRODUCT_NOT_FOUND' }, { status: 404 });
+
+  // Optional: only allow if already paid
+  if (product.status !== 'PAID' && product.status !== 'IN_REVIEW') {
+    return NextResponse.json({ error: 'INVALID_STATUS' }, { status: 400 });
+  }
+
+  await prisma.product.update({
+    where: { id: product.id },
+    data: { status: 'IN_REVIEW' },
+  });
+
+  return NextResponse.json({ ok: true, message: 'Produktstatus auf IN_REVIEW gesetzt.' });
+}
