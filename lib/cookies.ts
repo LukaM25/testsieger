@@ -21,7 +21,7 @@ export async function setSession(payload: { userId: string; email: string }) {
   });
 }
 
-export async function getSession(): Promise<{ userId: string; email: string } | null> {
+export async function getSession(p0?: { userId: string; email: string; name: string; }): Promise<{ userId: string; email: string } | null> {
   if (!SECRET) throw new Error('Missing JWT_SECRET in env');
 
   const jar = await cookies();
