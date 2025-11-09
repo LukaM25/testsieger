@@ -1,4 +1,5 @@
 
+export { Hero as defaultHero }; // optional alias if you like
 export default function Hero() {
   return (
     <section className="relative overflow-hidden rounded-2xl border bg-white">
@@ -39,4 +40,5 @@ export default function Hero() {
       </div>
     </section>
   );
+  
 }
