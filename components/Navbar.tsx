@@ -8,6 +8,8 @@ const links = [
   { href: "/precheck", label: "Pre-Check" },
   { href: "/pakete", label: "Pakete" },
   { href: "/login", label: "Login" },
+  { label: 'Ausbildung Check', href: '/produkte/ausbildung-check', parent: 'Unsere Produkte' },
+
 ];
 
 export default function Navbar() {
