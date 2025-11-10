@@ -1,17 +1,19 @@
-
-import HeroSection from "@/components/HeroSection";
+import Hero from '@/components/home/Hero';
+import Intro from '@/components/home/Intro';
+import Logos from '@/components/home/Logos';
+import Expertise from '@/components/home/Expertise';
+import Verfahren from '@/components/home/Verfahren';
+import Footer from '@/components/home/Footer';
 
 export default function HomePage() {
   return (
-    <div>
-      <HeroSection />
-      <section className="max-w-5xl mx-auto px-6 py-16 text-gray-700 leading-relaxed">
-        <h2 className="text-2xl font-semibold text-[#2e4053] mb-4">Über uns</h2>
-        <p>
-          Das Prüfsiegel Zentrum UG steht für objektive Bewertungen, transparente Verfahren und messbare Qualität.
-          Unser Leitgedanke <span className="font-medium">„Vertrauen durch Prüfung“</span> ist mehr als ein Slogan – es ist unser Versprechen.
-        </p>
-      </section>
-    </div>
+    <main className="bg-white text-gray-900">
+      <Hero />
+      <Intro />
+      <Logos />
+      <Expertise />
+      <Verfahren />
+      <Footer />
+    </main>
   );
 }

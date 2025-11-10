@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { Hero } from "./DefaultHero";
+import { Hero } from "./Hero";
 
 const meta: Meta<typeof Hero> = { title: "Marketing/Hero", component: Hero };
 export default meta;
