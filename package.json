@@ -16,11 +16,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.926.0",
     "@hookform/resolvers": "^5.2.2",
-    "@plasmicapp/cli": "^0.1.348",
-    "@plasmicapp/host": "^1.0.227",
-    "@plasmicapp/loader-nextjs": "^1.0.443",
     "@plasmicapp/query": "^0.1.81",
-    "@plasmicapp/react-web": "^0.2.406",
     "@prisma/client": "^6.19.0",
     "bcryptjs": "^2.4.3",
     "jose": "^5.9.3",
