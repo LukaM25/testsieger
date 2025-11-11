@@ -23,6 +23,23 @@ export default function Hero() {
           <p className="mt-4 max-w-lg text-base sm:text-lg text-gray-700">
             Objektive Bewertungen, transparente Verfahren, messbare Qualität.
           </p>
+          <div className="mt-8 inline-flex items-center gap-4 rounded-full bg-white/80 px-5 py-3 shadow-lg backdrop-blur">
+            <Image
+              src="/hero-badge.svg"
+              alt="Offizielles Testsieger Qualitätssiegel"
+              width={72}
+              height={72}
+              className="h-16 w-16"
+            />
+            <div className="text-left">
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-900">
+                Zertifiziertes Qualitätssiegel
+              </p>
+              <p className="text-xs text-gray-600">
+                Ihre Prozesse sind durch Testsieger.de unabhängig geprüft.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
