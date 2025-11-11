@@ -1,22 +1,60 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Menu, X } from "lucide-react";
 
-const links = [
-  { href: "/", label: "Start" },
-  { href: "/produkte", label: "Produkte" },
-  { href: "/precheck", label: "Pre-Check" },
-  { href: "/pakete", label: "Pakete" },
-  { href: "/login", label: "Login" },
-  { label: 'Ausbildung Check', href: '/produkte/ausbildung-check', parent: 'Unsere Produkte' },
+type NavItem = {
+  label: string;
+  href: string;
+};
+
+type NavSection = {
+  label: string;
+  items: NavItem[];
+};
+
+const navigation: (NavItem | NavSection)[] = [
+  { label: "Start", href: "/" },
+  {
+    label: "Produkte",
+    items: [
+      { label: "Übersicht", href: "/produkte" },
+      { label: "Ausbildung-Check", href: "/produkte/ausbildung-check" },
+    ],
+  },
+  {
+    label: "Leistungen",
+    items: [
+      { label: "Pre-Check", href: "/precheck" },
+      { label: "Prüfverfahren", href: "/verfahren" },
+      { label: "Testergebnisse", href: "/testergebnisse" },
+    ],
+  },
+  {
+    label: "Service",
+    items: [
+      { label: "Pakete", href: "/pakete" },
+      { label: "Lizenzverwaltung", href: "/lizenzen" },
+      { label: "Kundenportal", href: "/kundenportal" },
+    ],
+  },
+  {
+    label: "Unternehmen",
+    items: [
+      { label: "Kontakt", href: "/kontakt" },
+      { label: "Impressum", href: "/impressum" },
+      { label: "Datenschutz", href: "/datenschutz" },
+      { label: "AGB", href: "/agb" },
+    ],
+  },
+  { label: "Login", href: "/login" },
 ];
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -27,49 +65,76 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  return (
-    <header className="fixed w-full top-0 left-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200">
-      <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
-        {/* Logo */}
-        <a href="/" className="flex items-center gap-2 select-none">
-          <div className="grid place-items-center w-8 h-8 rounded-full bg-[#2e4053] text-white font-semibold">P</div>
-          <span className="font-semibold text-[#2e4053] whitespace-nowrap">Prüfsiegel Zentrum UG</span>
-        </a>
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
 
-        {/* Always-visible hamburger (desktop + mobile) */}
+  return (
+    <header className="fixed top-0 left-0 z-50 w-full border-b border-gray-200 bg-white/90 backdrop-blur-md">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
+        <Link href="/" className="flex items-center gap-2 select-none">
+          <div className="grid h-8 w-8 place-items-center rounded-full bg-[#2e4053] text-white font-semibold">P</div>
+          <span className="whitespace-nowrap font-semibold text-[#2e4053]">Prüfsiegel Zentrum UG</span>
+        </Link>
+
         <div className="relative" ref={menuRef}>
           <button
-            className="p-2 rounded-lg border bg-white shadow-sm hover:bg-gray-50 transition"
-            onClick={() => setOpen(o => !o)}
+            className="rounded-lg border bg-white p-2 shadow-sm transition hover:bg-gray-50"
+            onClick={() => setOpen((value) => !value)}
             aria-label={open ? "Menü schließen" : "Menü öffnen"}
           >
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>
 
-          {/* Desktop: compact dropdown top-right; Mobile: same UI, just narrower screen */}
           {open && (
             <div
-              className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden animate-fade-in"
+              className="absolute right-0 mt-2 w-72 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl"
               style={{ zIndex: 60 }}
             >
-              <nav className="flex flex-col text-sm font-medium text-gray-700">
-                {links.map((l) => (
-                  <a
-                    key={l.href}
-                    href={l.href}
-                    className="px-4 py-3 hover:bg-gray-50 transition-colors"
-                    onClick={() => setOpen(false)}
-                  >
-                    {l.label}
-                  </a>
-                ))}
+              <nav className="max-h-[70vh] overflow-y-auto text-sm text-gray-700">
+                {navigation.map((entry) => {
+                  if ("href" in entry) {
+                    return (
+                      <Link
+                        key={entry.href}
+                        href={entry.href}
+                        className="block px-4 py-3 font-medium transition-colors hover:bg-gray-50"
+                        onClick={() => setOpen(false)}
+                      >
+                        {entry.label}
+                      </Link>
+                    );
+                  }
+
+                  return (
+                    <div key={entry.label} className="border-t border-gray-100 first:border-t-0">
+                      <div className="px-4 pt-4 text-[11px] font-semibold uppercase tracking-[0.28em] text-gray-500">
+                        {entry.label}
+                      </div>
+                      <div className="pb-1">
+                        {entry.items.map((item) => (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            className="block px-4 py-2.5 transition-colors hover:bg-gray-50"
+                            onClick={() => setOpen(false)}
+                          >
+                            {item.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </nav>
             </div>
           )}
         </div>
       </div>
 
-      {/* Backdrop @ 5% — click to close */}
       {open && (
         <button
           aria-hidden
