@@ -16,7 +16,7 @@ export default function Footer() {
           <div>
             <div className="text-sm font-semibold">Service</div>
             <ul className="mt-3 space-y-2 text-sm text-gray-700">
-              <li><Link href="/produkte/produkttest" className="hover:underline">Produktzertifizierung</Link></li>
+              <li><Link href="/produkte" className="hover:underline">Produktzertifizierung</Link></li>
               <li><Link href="/lizenzen" className="hover:underline">Lizenzsuche</Link></li>
               <li><Link href="/kontakt" className="hover:underline">Kontakt</Link></li>
               <li><Link href="/kundenportal" className="hover:underline">Kundenportal</Link></li>
@@ -27,7 +27,7 @@ export default function Footer() {
             <div className="text-sm font-semibold">Das Institut</div>
             <ul className="mt-3 space-y-2 text-sm text-gray-700">
               <li><Link href="/precheck" className="hover:underline">Kostenloser Pre-Check</Link></li>
-              <li><Link href="/produkte/produkttest" className="hover:underline">Produkt testen lassen</Link></li>
+              <li><Link href="/produkte" className="hover:underline">Produkt testen lassen</Link></li>
               <li><Link href="/testergebnisse" className="hover:underline">Testergebnisse</Link></li>
               <li><Link href="/verfahren" className="hover:underline">Prüfverfahren</Link></li>
             </ul>
