@@ -97,7 +97,7 @@ export default function Navbar() {
 
   // NOTE: keep "(" on the SAME line as return
   return (
-    <header className="fixed w-full top-0 left-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200">
+    <header className="w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-200">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
         {/* Logo */}
         <a href="/" className="flex items-center gap-2">

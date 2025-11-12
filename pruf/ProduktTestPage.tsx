@@ -27,7 +27,7 @@ export default function ProduktTestPage() {
           </div>
           <div className="flex justify-center">
             <img
-              src="/pruf/WhatsApp Image 2025-11-11 at 20.55.48.jpeg"
+              src="/siegel.png"
               alt="Testsieger Check Siegel"
               loading="lazy"
               decoding="async"
@@ -50,6 +50,52 @@ export default function ProduktTestPage() {
             <p className="text-sm text-slate-600">
               Unser Siegel steht für unabhängige Prüfung, klare Kriterien und messbare Qualität – perfekt für Verbrauchervertrauen.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Highlights */}
+      <section className="mx-auto max-w-6xl px-4 pb-12">
+        <div className="grid gap-6 rounded-3xl border border-slate-200 bg-slate-950/5 p-6 shadow-sm md:grid-cols-3">
+          {[
+            {
+              label: "120+",
+              title: "geprüfte Produkte",
+              detail: "Marke, Verarbeitung & Handhabung – wir verifizieren jeden Claim.",
+            },
+            {
+              label: "48h",
+              title: "erster Prüfbericht",
+              detail: "Schnelle Priorisierung mit klaren Benchmarks für Ihre Launch-Zeitachse.",
+            },
+            {
+              label: "10 Punkte",
+              title: "Skala",
+              detail: "Halbe Punkte erlauben eine präzise Bewertung und differenzierte Notenvergabe.",
+            },
+          ].map((item) => (
+            <div key={item.label} className="space-y-1 rounded-2xl bg-white/80 p-5 shadow-sm">
+              <p className="text-3xl font-bold text-slate-900">{item.label}</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-500">{item.title}</p>
+              <p className="text-sm text-slate-600">{item.detail}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Prüfschwerpunkte */}
+      <section className="mx-auto max-w-6xl px-4 pb-14">
+        <div className="flex flex-wrap items-center justify-between gap-6 rounded-3xl border border-slate-200 bg-slate-50/80 p-6 shadow-lg shadow-slate-900/10">
+          <div className="max-w-3xl">
+            <h2 className="text-2xl font-semibold">Was wir für Sie dokumentieren</h2>
+            <p className="mt-3 text-sm text-slate-600">
+              Unsere Prüfberichte verbinden qualitative Beobachtungen mit quantitativen Daten. Die Dokumentation
+              enthält Dateiaufnahmen, Notenvergabe für jeden Punkt und nachvollziehbare Empfehlungen für Verbraucher.
+            </p>
+          </div>
+          <div className="grow border border-dashed border-slate-200 px-4 py-4 text-sm text-slate-600">
+            <p className="font-semibold text-slate-900">Transparente Verbreitung</p>
+            <p>Digital signierte PDFs, Einbindung auf Produktseiten und Social Proof über Siegel-Assets.</p>
           </div>
         </div>
       </section>
