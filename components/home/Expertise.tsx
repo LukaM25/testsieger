@@ -17,7 +17,7 @@ export default function Expertise() {
               Qualität, Sicherheit und Alltagstauglichkeit.
             </p>
             <Link
-              href="/produkte/produkttest"
+              href="/produkte/produkt-test"
               className="mt-5 inline-block rounded-md border border-sky-800 px-4 py-2 text-sm font-medium text-sky-900 hover:bg-sky-50"
             >
               MEHR ERFAHREN

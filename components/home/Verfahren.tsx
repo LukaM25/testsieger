@@ -15,7 +15,7 @@ export default function Verfahren() {
               wir Transparenz und helfen Verbrauchern, fundierte Entscheidungen zu treffen.
             </p>
             <Link
-              href="/produkte/produkttest"
+              href="/produkte/produkt-test"
               className="mt-4 inline-block rounded-md border border-sky-800 px-4 py-2 text-sm font-medium text-sky-900 hover:bg-sky-50"
             >
               MEHR ERFAHREN

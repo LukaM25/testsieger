@@ -1,0 +1,122 @@
+{
+  "summary": "Das Prüfverfahren ist einheitlich, objektiv und nachvollziehbar. Bewertet wird mit 1–10 Punkten (halbe Punkte möglich); der Durchschnitt ergibt die Gesamtnote, umgerechnet in die deutsche Schulnotenskala.",
+  "criteria": [
+    {
+      "id": "A",
+      "title": "Produktschutz",
+      "bullets": [
+        "Stabilität der Verpackung",
+        "Schutz vor Kratzern/Beschädigungen",
+        "Sicherer Verschluss",
+        "Schutz gegen Feuchtigkeit/Umwelt",
+        "Nachhaltigkeit der Verpackung",
+        "Packungsinhalt & Umfang",
+        "Gebrauchsanweisung"
+      ]
+    },
+    {
+      "id": "B",
+      "title": "Verarbeitung & Erscheinungsbild",
+      "bullets": [
+        "Optisches Erscheinungsbild",
+        "Verarbeitungsqualität",
+        "Stabilität",
+        "Nachhaltigkeit",
+        "Sonstiges (optional)"
+      ]
+    },
+    {
+      "id": "C",
+      "title": "Praxistest",
+      "bullets": [
+        "Werbeversprechen vs. Realität",
+        "Funktionalität & Bedienkomfort",
+        "Leistung in Alltagsszenarien",
+        "Bewertung einzigartiger Merkmale"
+      ]
+    },
+    {
+      "id": "D",
+      "title": "Preis-/Leistung & Bewertungen",
+      "bullets": [
+        "Preis-Leistungs-Analyse",
+        "Markt-/Segmentvergleich",
+        "Auswertung realer Nutzermeinungen"
+      ]
+    }
+  ],
+  "scoring": {
+    "scale": "Punkte 1–10 (halbe Punkte möglich); Umrechnung in Schulnoten 1,0–5,0 laut Tabelle.",
+    "table": [
+      {
+        "points": "9,0–10,0",
+        "note": "1,0–1,5",
+        "kategorie": "Hervorragend"
+      },
+      {
+        "points": "8,0–8,9",
+        "note": "1,6–2,0",
+        "kategorie": "Sehr gut"
+      },
+      {
+        "points": "7,0–7,9",
+        "note": "2,1–2,5",
+        "kategorie": "Gut"
+      },
+      {
+        "points": "6,0–6,9",
+        "note": "2,6–3,0",
+        "kategorie": "Befriedigend"
+      },
+      {
+        "points": "5,0–5,9",
+        "note": "3,1–3,5",
+        "kategorie": "Ausreichend"
+      },
+      {
+        "points": "4,0–4,9",
+        "note": "3,6–4,0",
+        "kategorie": "Mangelhaft"
+      },
+      {
+        "points": "3,0–3,9",
+        "note": "4,1–4,5",
+        "kategorie": "Schlecht"
+      },
+      {
+        "points": "0–2,9",
+        "note": "4,6–5,0",
+        "kategorie": "Sehr schlecht"
+      }
+    ]
+  },
+  "quality": [
+    "Unabhängige, qualifizierte Prüfer",
+    "Einheitliche, dokumentierte Methodik",
+    "Transparente, nachvollziehbare Ergebnisse",
+    "Regelmäßige Validierung/Audits der Skala",
+    "Rechtliche Schritte bei missbräuchlicher Nutzung"
+  ],
+  "faq": [
+    {
+      "q": "Wie entsteht die Gesamtnote?",
+      "a": "Durchschnitt der Punktbewertungen (1–10) und Umrechnung in die Schulnote laut Tabelle."
+    },
+    {
+      "q": "Wer führt die Prüfungen durch?",
+      "a": "Unabhängige, qualifizierte Prüfer nach einheitlicher Methodik."
+    },
+    {
+      "q": "Welche Kriterien fließen ein?",
+      "a": "Produktschutz, Verarbeitung/Erscheinungsbild, Praxistest sowie Preis-/Leistung und Verbraucherbewertungen."
+    },
+    {
+      "q": "Sind halbe Punkte erlaubt?",
+      "a": "Ja, halbe Punktwerte sind zulässig, um eine präzise Bewertung zu ermöglichen."
+    },
+    {
+      "q": "Sind die Ergebnisse nachvollziehbar?",
+      "a": "Ja. Testergebnisse, Gewichtungen und Einzelbewertungen sind dokumentiert und auf Anfrage prüfbar."
+    }
+  ]
+}

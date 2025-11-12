@@ -9,7 +9,19 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      fontFamily: { sans: ['var(--font-sans)'] },
+      fontFamily: {
+        sans: [
+          "system-ui",
+          "-apple-system",
+          "Segoe UI",
+          "Roboto",
+          "Oxygen",
+          "Ubuntu",
+          "Cantarell",
+          '"Helvetica Neue"',
+          "sans-serif",
+        ],
+      },
     },
   },
   safelist: [{ pattern: /^(bg|text|border)-(gray|sky|blue|black)-(50|100|200|300|400|500|600|700|800|900)$/ }],
