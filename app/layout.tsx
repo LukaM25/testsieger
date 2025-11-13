@@ -1,5 +1,5 @@
-import Navbar from "@/components/Navbar";
-import Footer from "./components/Footer";
+import Navbar from "./components/Navbar";
+import Footer from "@/components/home/Footer";
 
 export const metadata = {
   title: "Prüfsiegel Zentrum UG",
@@ -14,7 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="font-sans antialiased text-gray-900 bg-white">
         <Navbar />
-        <main className="pt-14 min-h-[80vh]">{children}</main>
+        <main className="min-h-[80vh]">{children}</main>
         <Footer />
       </body>
     </html>

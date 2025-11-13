@@ -3,7 +3,6 @@ import Intro from '@/components/home/Intro';
 import Logos from '@/components/home/Logos';
 import Expertise from '@/components/home/Expertise';
 import Verfahren from '@/components/home/Verfahren';
-import Footer from '@/components/home/Footer';
 
 export default function HomePage() {
   return (
@@ -13,7 +12,6 @@ export default function HomePage() {
       <Logos />
       <Expertise />
       <Verfahren />
-      <Footer />
     </main>
   );
 }

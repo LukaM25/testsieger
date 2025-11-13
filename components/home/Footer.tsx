@@ -1,9 +1,21 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Footer() {
   return (
-    <footer className="mt-12 border-t bg-white">
-      <div className="mx-auto max-w-6xl px-6 py-12">
+    <footer className="relative mt-12 border-t border-gray-200 bg-white overflow-hidden">
+      <div className="absolute inset-0">
+        <Image
+          src="/images/footer-band.jpg"
+          alt="Dekoratives Band"
+          fill
+          className="object-cover opacity-75"
+          sizes="100vw"
+          priority
+        />
+        <div className="absolute inset-0 bg-white/70" />
+      </div>
+      <div className="relative z-10 mx-auto max-w-6xl px-6 py-12">
         <div className="grid gap-10 md:grid-cols-4">
           <div className="md:col-span-1">
             <div className="text-xl font-semibold">Deutsches Prüf­siegel Institut</div>
@@ -43,8 +55,6 @@ export default function Footer() {
           </div>
         </div>
       </div>
-      {/* subtle band like in the screenshot */}
-      <div className="h-24 w-full bg-[url('/images/footer-band.jpg')] bg-cover bg-center opacity-80" />
     </footer>
   );
 }
