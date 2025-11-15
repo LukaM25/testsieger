@@ -20,15 +20,7 @@ const sections: NavSection[] = [
     label: "Leistungen",
     items: [
       { label: "Übersicht", href: "/produkte" },
-      {
-        label: "Produkt Test",
-        href: "/produkte/produkt-test",
-        children: [
-          { label: "Pre-Check", href: "/precheck" },
-          { label: "Prüfverfahren", href: "/verfahren" },
-          { label: "Pakete", href: "/pakete" },
-        ],
-      },
+  { label: "PRODUKT TEST", href: "/produkte/produkt-test" },
       { label: "Ausbildungs Check", href: "/produkte/ausbildung-check" },
       { label: "Testergebnisse", href: "/testergebnisse" },
       { label: "Lizenzverwaltung", href: "/lizenzen" },
@@ -106,7 +98,7 @@ export default function Navbar() {
         {/* Logo */}
         <a href="/" className="flex items-center gap-2">
           <div className="grid place-items-center w-8 h-8 rounded-full bg-[#2e4053] text-white font-semibold">P</div>
-          <span className="font-semibold text-[#2e4053]">Prüfsiegel Zentrum UG</span>
+          <span className="font-semibold text-[#2e4053]">Deutsches Prüfsiegel Institut</span>
         </a>
 
         <div className="flex items-center gap-4">

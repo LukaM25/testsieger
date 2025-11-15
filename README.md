@@ -30,3 +30,30 @@ Generates PDF via PDFMonkey, creates QR that links to `/verify/<PRODUCT_ID>`, st
 ## Notes
 - PDFMonkey `download_url` is short-lived; for production, proxy or store a copy.
 - Admin route is protected by `x-admin-secret` (replace with real admin auth later).
+
+## Development — 21st.dev toolbar
+
+This project integrates the 21st.dev (21st-extension) developer toolbar in development to allow selecting UI elements in the browser and sending context to AI agents for code edits.
+
+Quick notes:
+
+- Packages installed (dev): `@21st-extension/toolbar-next` and `@21st-extension/react`. If you need to add them locally, run:
+
+```bash
+npm install --save-dev @21st-extension/toolbar-next @21st-extension/react
+```
+
+- Workspace VS Code extension recommendation is added at `.vscode/extensions.json` and recommends `21st.21st-extension`.
+
+- How to use:
+	1. Start the dev server: `npm run dev`.
+	2. Open the app in your browser (default: `http://localhost:3000`).
+	3. The toolbar is injected into the root layout during development and should appear once on initial page load. It runs client-side only and is not included in production builds.
+
+- Where it's wired:
+	- The toolbar component is injected in `app/layout.tsx` using a client-only dynamic import. If you want to change plugins or config, edit that file.
+
+- Opt-out / customization:
+	- The toolbar is enabled when `process.env.NODE_ENV === 'development'`. To opt out temporarily you can modify that guard in `app/layout.tsx` or set a custom environment flag and check it there.
+
+If you'd like the integration refactored to a separate Next.js client component (ESM-only, lint-friendly) I can make that change next.

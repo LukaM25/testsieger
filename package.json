@@ -32,6 +32,9 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@21st-extension/react": "^0.5.14",
+    "@21st-extension/toolbar": "^0.5.14",
+    "@21st-extension/toolbar-next": "^0.5.14",
     "@chromatic-com/storybook": "^4.1.2",
     "@storybook/addon-a11y": "^10.0.6",
     "@storybook/addon-docs": "^10.0.6",

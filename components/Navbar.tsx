@@ -77,7 +77,7 @@ export default function Navbar() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
         <Link href="/" className="flex items-center gap-2 select-none">
           <div className="grid h-8 w-8 place-items-center rounded-full bg-[#2e4053] text-white font-semibold">P</div>
-          <span className="whitespace-nowrap font-semibold text-[#2e4053]">Prüfsiegel Zentrum UG</span>
+          <span className="whitespace-nowrap font-semibold text-[#2e4053]">Deutsche Prüfsiegel Institut</span>
         </Link>
 
         <div className="relative" ref={menuRef}>

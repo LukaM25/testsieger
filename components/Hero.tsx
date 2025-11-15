@@ -8,7 +8,7 @@ export default function Hero() {
         <div className="space-y-6">
           <span className="inline-flex items-center gap-2 text-xs font-medium rounded-full border px-3 py-1 bg-white/70 backdrop-blur">
             <img src="/hero-badge.svg" className="h-4" alt="Badge" />
-            Testsieger Check · Prüfsiegel Zentrum UG
+            Testsieger Check · Deutsches Prüfsiegel Zentrum UG
           </span>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
             Ihr Produkt verdient <span className="text-[color:var(--brand)]">Vertrauen</span>.

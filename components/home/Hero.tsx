@@ -30,36 +30,9 @@ export default function Hero() {
           <p className="text-base font-semibold text-slate-200">
             Ein Qualitätssiegel, das zeigt, ob Ihr Produkt die Lizenzkriterien erfüllt – transparent, objektiv und nachvollziehbar.
           </p>
-          <div className="flex flex-wrap gap-4">
-            <Link
-              href="/produkte/produkt-test"
-              className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
-            >
-              Produkt testen lassen
-            </Link>
-            <Link
-              href="/precheck"
-              className="inline-flex items-center justify-center rounded-full border border-white/70 px-6 py-3 text-sm font-semibold text-white transition hover:border-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
-            >
-              Kostenlosen Pre-Check starten
-            </Link>
-          </div>
+          {/* Buttons removed as requested */}
         </div>
-        <div className="flex justify-end lg:self-end">
-          <div className="flex flex-col items-center gap-3 rounded-3xl border border-white/30 bg-white/5 p-6 shadow-2xl shadow-slate-900/70 backdrop-blur">
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-200">Zertifiziertes Qualitätssiegel</p>
-            <Image
-              src="/siegel.png"
-              alt="Testsieger Check Siegel"
-              width={180}
-              height={180}
-              className="h-32 w-auto bg-transparent"
-            />
-            <p className="text-sm font-semibold uppercase tracking-wide text-slate-200 text-center">
-              Ausgezeichnet mit dem Testsieger Check Qualitätssiegel
-            </p>
-          </div>
-        </div>
+  {/* Certificate badge removed as requested */}
       </div>
     </section>
   );
