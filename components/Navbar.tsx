@@ -73,7 +73,7 @@ export default function Navbar() {
   }, [open]);
 
   return (
-    <header className="fixed top-0 left-0 z-50 w-full border-b border-gray-200 bg-white/90 backdrop-blur-md">
+    <header data-animate="nav" className="fixed top-0 left-0 z-50 w-full border-b border-gray-200 bg-white/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
         <Link href="/" className="flex items-center gap-2 select-none">
           <div className="grid h-8 w-8 place-items-center rounded-full bg-[#2e4053] text-white font-semibold">P</div>
@@ -101,10 +101,12 @@ export default function Navbar() {
                       <Link
                         key={entry.href}
                         href={entry.href}
-                        className="block px-4 py-3 font-medium transition-colors hover:bg-gray-50"
+                        className="block px-4 py-3 font-medium transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-400"
                         onClick={() => setOpen(false)}
                       >
-                        {entry.label}
+                        <span className="relative after:block after:absolute after:inset-x-0 after:-bottom-0.5 after:h-[1.5px] after:scale-x-0 after:origin-left after:bg-sky-400 motion-safe:after:transition-transform motion-safe:after:duration-260 hover:after:scale-x-100">
+                          {entry.label}
+                        </span>
                       </Link>
                     );
                   }
@@ -119,10 +121,12 @@ export default function Navbar() {
                           <Link
                             key={item.href}
                             href={item.href}
-                            className="block px-4 py-2.5 transition-colors hover:bg-gray-50"
+                            className="block px-4 py-2.5 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-400"
                             onClick={() => setOpen(false)}
                           >
-                            {item.label}
+                            <span className="relative after:block after:absolute after:inset-x-0 after:-bottom-0.5 after:h-[1.5px] after:scale-x-0 after:origin-left after:bg-sky-400 motion-safe:after:transition-transform motion-safe:after:duration-260 hover:after:scale-x-100">
+                              {item.label}
+                            </span>
                           </Link>
                         ))}
                       </div>

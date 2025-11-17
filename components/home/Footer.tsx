@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { stagger } from '@/lib/animation';
 
 export default function Footer() {
   return (
@@ -17,7 +18,11 @@ export default function Footer() {
       </div>
       <div className="relative z-10 mx-auto max-w-6xl px-6 py-12">
         <div className="grid gap-10 md:grid-cols-4">
-          <div className="md:col-span-1">
+          <div
+            data-animate="footer-column"
+            style={stagger(0)}
+            className="md:col-span-1"
+          >
             <div className="text-xl font-semibold">Deutsches Prüf­siegel Institut</div>
             <p className="mt-3 text-sm text-gray-600">
               Unabhängiges, privatwirtschaftliches Prüfinstitut für Verbrauchertests – keine staatliche Institution.
@@ -25,7 +30,10 @@ export default function Footer() {
             <p className="mt-3 text-xs text-gray-500">© {new Date().getFullYear()} Prüfsiegel Zentrum UG.</p>
           </div>
 
-          <div>
+          <div
+            data-animate="footer-column"
+            style={stagger(1)}
+          >
             <div className="text-sm font-semibold">Service</div>
             <ul className="mt-3 space-y-2 text-sm text-gray-700">
               <li><Link href="/produkte" className="hover:underline">Produktzertifizierung</Link></li>
@@ -35,7 +43,10 @@ export default function Footer() {
             </ul>
           </div>
 
-          <div>
+          <div
+            data-animate="footer-column"
+            style={stagger(2)}
+          >
             <div className="text-sm font-semibold">Das Institut</div>
             <ul className="mt-3 space-y-2 text-sm text-gray-700">
               <li><Link href="/precheck" className="hover:underline">Kostenloser Pre-Check</Link></li>
@@ -45,7 +56,10 @@ export default function Footer() {
             </ul>
           </div>
 
-          <div>
+          <div
+            data-animate="footer-column"
+            style={stagger(3)}
+          >
             <div className="text-sm font-semibold">Rechtliches</div>
             <ul className="mt-3 space-y-2 text-sm text-gray-700">
               <li><Link href="/impressum" className="hover:underline">Impressum</Link></li>

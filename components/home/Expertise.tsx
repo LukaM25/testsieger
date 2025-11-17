@@ -1,14 +1,19 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { stagger } from '@/lib/animation';
 
 export default function Expertise() {
   return (
-    <section className="bg-white">
+    <section data-animate="section" className="bg-white">
       <div className="mx-auto max-w-6xl px-6 py-10 sm:py-16">
         <h2 className="text-3xl font-semibold text-sky-700 sm:text-4xl">Unsere Expertise</h2>
 
         {/* Block 1 */}
-        <div className="mt-8 grid items-start gap-8 md:grid-cols-2">
+        <div
+          data-animate="card"
+          style={stagger(0)}
+          className="mt-8 grid items-start gap-8 md:grid-cols-2"
+        >
           <div>
             <h3 className="text-2xl font-semibold">Produkt Tests für Verbraucher</h3>
             <p className="mt-3 text-gray-700 leading-relaxed">
@@ -30,7 +35,11 @@ export default function Expertise() {
         </div>
 
         {/* Block 2 (reversed) */}
-        <div className="mt-12 grid items-start gap-8 md:grid-cols-2">
+        <div
+          data-animate="card"
+          style={stagger(1)}
+          className="mt-12 grid items-start gap-8 md:grid-cols-2"
+        >
           <div className="relative order-2 aspect-[4/3] overflow-hidden rounded-lg md:order-1">
             {/* replace with your own image */}
             <Image src="/images/expertise-training.png" alt="" fill className="object-cover" />

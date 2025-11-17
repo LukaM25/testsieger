@@ -4,7 +4,7 @@ const logos: { src: string; alt: string }[] = [];
 
 export default function Logos() {
   return (
-    <section className="bg-white">
+    <section data-animate="section" className="bg-white">
       <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6 opacity-70">
         {logos.map((l) => (
           <Image

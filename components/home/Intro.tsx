@@ -1,6 +1,6 @@
 export default function Intro() {
   return (
-    <section className="bg-white">
+    <section data-animate="section" className="bg-white">
       <div className="mx-auto max-w-6xl px-6 py-12 sm:py-16">
         <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
           Was macht das <span className="align-baseline">Prüfsiegel&nbsp;Institut</span> aus?

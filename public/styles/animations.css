@@ -1,0 +1,90 @@
+/* small animation utilities used by hero and navbar */
+@media (prefers-reduced-motion: reduce) {
+  .motion-safe\:animate-float,
+  .animate-fade-up,
+  .motion-safe\:animate-float {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@keyframes floatY {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes fadeUp {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.motion-safe\:animate-float {
+  animation: floatY 6s cubic-bezier(.22,.8,.2,1) infinite;
+}
+
+.animate-fade-up {
+  animation: fadeUp 900ms cubic-bezier(.22,.8,.2,1) both;
+}
+
+/* allow fraction modifiers like animate-fade-up/75 used in markup */
+.animate-fade-up\/75 { animation-duration: 900ms; opacity: 0.75; }
+.animate-fade-up\/50 { animation-duration: 900ms; opacity: 0.5; }
+
+/* small utility for underline grow effect used via pseudo-element */
+a > span.relative::after,
+span.relative::after {
+  content: '';
+}
+
+/* Reveal system */
+.no-js [data-animate] {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+.js-animate [data-animate] {
+  opacity: 0;
+  transform: translateY(12px) scale(0.98);
+  transition-property: opacity, transform;
+  transition-duration: 360ms;
+  transition-timing-function: cubic-bezier(0.22, 0.75, 0.34, 1);
+  transition-delay: 0ms;
+  will-change: opacity, transform;
+}
+
+.js-animate [data-animate].is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.js-animate [data-animate="hero-image"] {
+  transform: translateY(8px) scale(1.02);
+  transition-duration: 390ms;
+  transition-delay: 40ms;
+}
+
+.js-animate [data-animate="hero-image"].is-visible {
+  transform: translateY(0) scale(1);
+}
+
+.js-animate [data-animate="nav"] {
+  transform: translateY(-6px);
+  transition-duration: 300ms;
+}
+
+.js-animate [data-animate="card"],
+.js-animate [data-animate="footer-column"] {
+  transition-delay: calc(clamp(0, var(--stagger-index, 0), 6) * 60ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js-animate [data-animate],
+  .js-animate [data-animate].is-visible {
+    transition-duration: 0ms !important;
+    transition-delay: 0ms !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}

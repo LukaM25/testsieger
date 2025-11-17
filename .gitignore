@@ -10,3 +10,5 @@ coverage
 
 *storybook.log
 storybook-static
+.output
+.webm
