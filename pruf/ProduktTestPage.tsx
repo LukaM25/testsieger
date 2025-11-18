@@ -196,8 +196,8 @@ export default function ProduktTestPage() {
             aria-expanded={showPrecheck}
             aria-controls="precheck-content"
           >
-            <span className="text-2xl font-semibold tracking-[0.18em]">Kostenlos Pre-Check</span>
-            <span className="text-sm font-semibold uppercase tracking-[0.28em] text-black/70">(3 min Dauer)</span>
+            <span className="text-2xl font-semibold tracking-[0.18em]">Kostenloser Pre-Check</span>
+            <span className="text-sm font-semibold uppercase tracking-[0.28em] text-black/70">(Dauert nur 3 Minuten)</span>
             <svg
               className={`h-6 w-6 transition-transform duration-200 ${showPrecheck ? 'rotate-180' : 'rotate-0'}`}
               viewBox="0 0 20 20"
