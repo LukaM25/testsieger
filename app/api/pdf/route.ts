@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import { createPdfDocument, getDocumentCard } from "@/lib/pdfmonkey";
 
 export async function POST(req: Request) {
-  const { payload, filename } = await req.json();
-  const doc = await createPdfDocument(payload, filename || 'dokument.pdf');
+  const { payload, templateId } = await req.json();
+  const doc = await createPdfDocument(payload, templateId);
   const start = Date.now();
   while (Date.now() - start < 20000) {
     const c = await getDocumentCard(doc.id);

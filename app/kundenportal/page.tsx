@@ -1,9 +1,13 @@
+import { getSession } from '@/lib/cookies';
+import { prisma } from '@/lib/prisma';
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import ProductPayButton from './ProductPayButton';
 
 export const metadata = {
   title: 'Kundenportal – Prüfsiegel Zentrum UG',
   description:
-    'Placeholder-Seite für das Kundenportal mit Feature-Übersicht, Onboarding-Schritten und Demo-Zugang.',
+    'Portalübersicht mit Übersicht über Produkte, Zahlungsschritte und Fortschritt.',
 };
 
 const features = [
@@ -39,7 +43,23 @@ const steps = [
   },
 ];
 
-export default function KundenportalPage() {
+export default async function KundenportalPage() {
+  const session = await getSession();
+  if (!session) redirect('/login');
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    include: {
+      products: {
+        include: { certificate: true },
+        orderBy: { createdAt: 'desc' },
+      },
+      orders: { orderBy: { createdAt: 'desc' } },
+    },
+  });
+
+  if (!user) redirect('/login');
+
   return (
     <div className="bg-gray-50">
       <section className="bg-white">
@@ -47,14 +67,14 @@ export default function KundenportalPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-500">Portal</p>
           <h1 className="mt-2 text-4xl font-bold text-slate-900 md:text-5xl">Digitales Kundenportal</h1>
           <p className="mt-4 text-lg text-slate-600">
-            Diese Seite simuliert den späteren Portalzugang. Layout und Inhalte orientieren sich bereits an der finalen Informationsarchitektur.
+            Hier sehen Sie Ihre eingereichten Produkte. Solange ein Produkt noch nicht bezahlt ist, können Sie an dieser Stelle direkt in den Stripes Checkout wechseln.
           </p>
           <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
-              href="/login"
+              href="/dashboard"
               className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-black"
             >
-              Zum Login
+              Direkt ins Dashboard
             </Link>
             <Link
               href="/kontakt"
@@ -62,6 +82,43 @@ export default function KundenportalPage() {
             >
               Demo anfragen
             </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-6 py-12">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <header className="flex flex-col gap-2">
+            <h2 className="text-2xl font-semibold text-slate-900">Ihre Produkte</h2>
+            <p className="text-sm text-slate-500">
+              Wählen Sie die Zahlung, sobald der Pre-Check abgeschlossen ist. Das System sendet Ihnen danach automatisch ein Prüfbericht per E-Mail.
+            </p>
+          </header>
+          <div className="mt-6 space-y-6">
+            {user.products.length === 0 ? (
+              <p className="text-sm text-gray-600">Noch keine Produkte eingereicht.</p>
+            ) : (
+              user.products.map((product) => (
+                <div
+                  key={product.id}
+                  className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 md:flex-row md:items-center md:justify-between"
+                >
+                  <div>
+                    <div className="text-lg font-semibold text-slate-900">{product.name}</div>
+                    <p className="text-sm text-slate-600">
+                      {product.brand} • Status: <span className="font-semibold text-slate-700">{statusLabel(product.status)}</span>
+                    </p>
+                    {product.certificate && (
+                      <p className="mt-1 text-xs text-slate-500">Zertifikat wurde bereits erstellt.</p>
+                    )}
+                  </div>
+                  <div className="flex flex-col items-start gap-2 text-sm text-slate-500">
+                    <ProductPayButton productId={product.id} status={product.status} />
+                    <span>Eingereicht am {new Date(product.createdAt).toLocaleDateString('de-DE')}</span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -97,4 +154,19 @@ export default function KundenportalPage() {
       </section>
     </div>
   );
+}
+
+function statusLabel(status: string) {
+  switch (status) {
+    case 'PRECHECK':
+      return 'Pre-Check eingereicht';
+    case 'PAID':
+      return 'Zahlung erhalten';
+    case 'IN_REVIEW':
+      return 'Prüfung läuft';
+    case 'COMPLETED':
+      return 'Abgeschlossen';
+    default:
+      return status;
+  }
 }

@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
+import { completeProduct, CompletionError } from '@/lib/completion';
 
 export const runtime = "nodejs"; // ensure Node runtime for raw body
 
@@ -21,7 +22,25 @@ export async function POST(req: Request) {
     const order = await prisma.order.findFirst({ where: { stripeSessionId: cs.id } });
     if (order) {
       await prisma.order.update({ where: { id: order.id }, data: { paidAt: new Date(), stripeSubId: (cs.subscription as string) || null } });
-      await prisma.product.update({ where: { id: productId }, data: { status: 'PAID' } });
+      await prisma.product.update({
+        where: { id: productId },
+        data: { status: 'PAID', paymentStatus: 'PAID' },
+      });
+      try {
+        await completeProduct(productId);
+      } catch (err: any) {
+        if (err instanceof CompletionError) {
+          if (err.code === 'PDF_NOT_READY_YET') {
+            console.warn('PDF generation pending after webhook:', err.payload ?? {});
+          } else if (err.code === 'CERT_EXISTS') {
+            console.info('Certificate already exists for product', productId);
+          } else {
+            console.error('Webhook completion error', err);
+          }
+        } else {
+          console.error('Webhook completion error', err);
+        }
+      }
     }
   }
 

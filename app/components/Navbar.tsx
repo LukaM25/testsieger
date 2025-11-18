@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect, useRef, type ReactElement } from "react";
+import { useState, useEffect, useRef, useCallback, type ReactNode, type FormEvent } from "react";
 import Fuse from 'fuse.js';
-import { useRouter } from "next/navigation";
-import { Menu, X, Search } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
+import { Menu, X, Search, User } from "lucide-react";
 
 type NavItem = {
   label: string;
@@ -42,6 +42,7 @@ const sections: NavSection[] = [
 
 // We'll load a prebuilt search index from /search-index.json for richer keywords
 type SearchEntry = { label: string; href: string; keywords?: string[]; excerpt?: string };
+type ProfileUser = { id: string; name: string; email: string };
 
 
 export default function Navbar() {
@@ -51,6 +52,7 @@ export default function Navbar() {
   // loaded search index
   const [index, setIndex] = useState<SearchEntry[]>([]);
   const fuseRef = useRef<Fuse<SearchEntry> | null>(null);
+  const pathname = usePathname();
 
   // Search state
   const [query, setQuery] = useState("");
@@ -59,7 +61,155 @@ export default function Navbar() {
   const [active, setActive] = useState(-1);
   const [showResults, setShowResults] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileUser, setProfileUser] = useState<ProfileUser | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [adminAuthed, setAdminAuthed] = useState(false);
+  const [adminLoading, setAdminLoading] = useState(true);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loginLoading, setLoginLoading] = useState(false);
+  const loadProfile = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data?.user ?? null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const checkAdminStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/me', { credentials: 'same-origin' });
+      if (!res.ok) return false;
+      const data = await res.json().catch(() => ({}));
+      return data?.admin === true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    setProfileLoading(true);
+    loadProfile()
+      .then((user) => {
+        if (!active) return;
+        setProfileUser(user);
+      })
+      .finally(() => {
+        if (!active) return;
+        setProfileLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [loadProfile, pathname]);
+
+  useEffect(() => {
+    let active = true;
+    setAdminLoading(true);
+    checkAdminStatus()
+      .then((admin) => {
+        if (!active) return;
+        setAdminAuthed(admin);
+      })
+      .finally(() => {
+        if (!active) return;
+        setAdminLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [checkAdminStatus, pathname]);
+
+  useEffect(() => {
+    function handleProfileClickOutside(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleProfileClickOutside);
+    return () => document.removeEventListener('mousedown', handleProfileClickOutside);
+  }, []);
+
+  const profileLabel = profileLoading || adminLoading ? 'Lade...' : profileUser ? profileUser.name : adminAuthed ? 'Admin' : 'Anmelden';
+
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLoginError(null);
+    setLoginLoading(true);
+    try {
+      if (loginEmail.trim().toLowerCase() === 'admin') {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: loginPassword }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || 'Admin Login fehlgeschlagen');
+        }
+        setAdminAuthed(true);
+        setProfileOpen(false);
+        setLoginPassword('');
+        router.refresh();
+        router.push('/admin');
+        return;
+      }
+
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'Login fehlgeschlagen');
+      }
+      const user = await loadProfile();
+      setProfileUser(user);
+      setProfileOpen(true);
+      setLoginEmail('');
+      setLoginPassword('');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Login fehlgeschlagen';
+      setLoginError(message);
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    if (typeof window !== 'undefined' && !window.confirm('Are you sure you want to log out?')) {
+      return;
+    }
+    setProfileLoading(true);
+    setAdminLoading(true);
+    try {
+      const endpoint = adminAuthed && !profileUser ? '/api/admin/logout' : '/api/auth/logout';
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        credentials: 'same-origin',
+      });
+      if (!res.ok) {
+        throw new Error('Logout fehlgeschlagen');
+      }
+      setProfileUser(null);
+      setAdminAuthed(false);
+      setProfileOpen(false);
+      router.refresh();
+    } catch (error) {
+      console.error('Logout failed', error);
+    } finally {
+      setProfileLoading(false);
+      setAdminLoading(false);
+    }
+  };
 
   useEffect(() => {
     const close = () => setOpen(false);
@@ -146,7 +296,7 @@ export default function Navbar() {
     if (!matches || matches.length === 0) return [text];
     const labelMatch = matches.find((m) => m.key === 'label' && m.indices && m.indices.length > 0);
     if (!labelMatch) return [text];
-    const parts: React.ReactNode[] = [];
+    const parts: ReactNode[] = [];
     let lastIdx = 0;
     for (const [start, end] of labelMatch.indices as [number, number][]) {
       if (start > lastIdx) parts.push(text.slice(lastIdx, start));
@@ -171,7 +321,7 @@ export default function Navbar() {
         const before = excerpt.slice(start, idx);
         const match = excerpt.slice(idx, idx + query.length);
         const after = excerpt.slice(idx + query.length, end);
-        const nodes: React.ReactNode[] = [];
+        const nodes: ReactNode[] = [];
         if (start > 0) nodes.push('... ');
         if (before) nodes.push(before);
         nodes.push(<strong key={`${item.href}-snip-${idx}`}>{match}</strong>);
@@ -194,7 +344,7 @@ export default function Navbar() {
           const before = field.slice(start, s);
           const match = field.slice(s, e + 1);
           const after = field.slice(e + 1, end);
-          const nodes: React.ReactNode[] = [];
+          const nodes: ReactNode[] = [];
           if (start > 0) nodes.push('... ');
           if (before) nodes.push(before);
           nodes.push(<strong key={`${item.href}-snip-${s}`}>{match}</strong>);
@@ -359,6 +509,105 @@ export default function Navbar() {
               </div>
             )}
           </div>
+
+          <div className="relative" ref={profileRef}>
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-400"
+              onClick={() => setProfileOpen((value) => !value)}
+              aria-expanded={profileOpen}
+              aria-label={profileUser ? `Profil öffnen (${profileUser.name})` : 'Kundenkonto öffnen'}
+            >
+              <User size={20} className="text-slate-700" />
+              <span className="whitespace-nowrap text-sm font-semibold">
+                {profileLabel}
+              </span>
+            </button>
+
+            {profileOpen && (
+              <div className="absolute right-0 top-full mt-2 w-72 rounded-2xl border border-gray-200 bg-white p-4 shadow-xl z-50">
+                {profileUser ? (
+                  <div className="space-y-3">
+                    <p className="text-sm font-semibold text-slate-900">{profileUser.name}</p>
+                    <div className="space-y-2">
+                      <Link
+                        href="/kundenportal"
+                        className="block rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 text-left transition hover:bg-slate-50"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        Dashboard
+                      </Link>
+                      <button
+                        type="button"
+                        className="w-full rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+                        onClick={handleLogout}
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                ) : adminAuthed ? (
+                  <div className="space-y-3">
+                    <p className="text-sm font-semibold text-slate-900">Administrator</p>
+                    <div className="space-y-2">
+                      <Link
+                        href="/admin"
+                        className="block rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 text-left transition hover:bg-slate-50"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        Admin Dashboard
+                      </Link>
+                      <button
+                        type="button"
+                        className="w-full rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+                        onClick={handleLogout}
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <form onSubmit={handleLogin} className="space-y-3">
+                    <p className="text-sm font-semibold text-slate-900">Mit Kundenkonto anmelden</p>
+                    <input
+                      type="text"
+                      inputMode="email"
+                      placeholder="E-Mail"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                      autoComplete="username"
+                      required
+                    />
+                    <input
+                      type="password"
+                      placeholder="Passwort"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                      autoComplete="current-password"
+                      required
+                    />
+                    {loginError && <p className="text-xs text-rose-600">{loginError}</p>}
+                    <button
+                      type="submit"
+                      disabled={loginLoading}
+                      className="w-full rounded-full bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
+                    >
+                      {loginLoading ? 'Wird geprüft…' : 'Einloggen'}
+                    </button>
+                    <p className="text-xs text-slate-500">
+                      Zum klassischen <Link href="/login" className="font-semibold text-slate-900 underline">Login</Link>
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      <strong>Admin?</strong> Tragen Sie im E-Mail-Feld „Admin“ ein und nutzen Sie das Admin-Passwort.
+                    </p>
+                  </form>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="relative">
             <button
               className="p-2 rounded-lg border"

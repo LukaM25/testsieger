@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/cookies';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import LogoutButton from '@/components/LogoutButton';
 
 export default async function DashboardPage() {
   const session = await getSession();
@@ -31,15 +32,10 @@ export default async function DashboardPage() {
           {/* Products Section */}
           <section>
             <h2 className="text-xl font-semibold mb-3">Produkte</h2>
-<form action="/api/auth/logout" method="POST">
-  <button
-    type="submit"
-    className="rounded-md bg-gray-800 px-4 py-2 text-white text-sm hover:bg-black"
-  >
-    Logout
-  </button>
-</form>
-
+            <LogoutButton
+              className="rounded-md bg-gray-800 px-4 py-2 text-white text-sm hover:bg-black"
+              label="Logout"
+            />
 
             {user.products.length === 0 && (
               <p className="text-gray-600">Noch keine Produkte eingereicht.</p>

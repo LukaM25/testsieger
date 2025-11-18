@@ -1,7 +1,7 @@
 // lib/pdfmonkey.ts
 // Minimal PDFMonkey client for server-side use in Next.js (App Router)
 
-type PdfMonkeyDoc = {
+export type PdfMonkeyDoc = {
   data: any;
   id: string;
   status: 'queued' | 'processing' | 'success' | 'failure';
@@ -26,15 +26,16 @@ function headers() {
 
 function unwrapDoc(json: any): PdfMonkeyDoc {
   // JSON:API style
-  const data = json?.data;
-  const attrs = data?.attributes ?? {};
+  const data = json?.data ?? json?.document ?? json?.data?.document;
+  const attrs = data?.attributes ?? data?.document ?? {};
+  const derivedId =
+    data?.id ?? attrs?.id ?? json?.data?.document?.id ?? json?.document?.id ?? null;
   return {
-  id: data?.id,
-  status: (attrs.status || 'queued') as PdfMonkeyDoc['status'],
-  downloadUrl: attrs.download_url ?? attrs.downloadUrl ?? null,
-  data: undefined,
-  
-};
+    id: derivedId ?? '',
+    status: (attrs.status || 'queued') as PdfMonkeyDoc['status'],
+    downloadUrl: attrs.download_url ?? attrs.downloadUrl ?? null,
+    data: json,
+  };
 }
 
 /**
@@ -42,14 +43,12 @@ function unwrapDoc(json: any): PdfMonkeyDoc {
  * Returns the new document (usually status=queued). Poll with getDocumentCard.
  */
 export async function createPdfDocument(payload: Record<string, any>, templateId?: string): Promise<PdfMonkeyDoc> {
-  const tpl = templateId ?? process.env.PDFMONKEY_TEMPLATE_ID;
+  const tpl = (templateId ?? process.env.PDFMONKEY_TEMPLATE_ID ?? '').trim();
   if (!tpl) throw new Error('Missing PDFMONKEY_TEMPLATE_ID');
   const body = {
-    document: {
-      template_id: tpl,
-      payload,
-      meta: {}, // optionally pass context
-    },
+    document_template_id: tpl,
+    payload,
+    meta: {}, // optionally pass context
   };
   const res = await fetch(`${BASE}/documents`, {
     method: 'POST',

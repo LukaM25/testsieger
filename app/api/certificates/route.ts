@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import  { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { createPdfDocument, getDocumentCard } from "@/lib/pdfmonkey";
 import { sendPrecheckConfirmation } from "@/lib/email";
 import QRCode from "qrcode";
@@ -31,14 +31,19 @@ export async function POST(req: Request) {
       report_url: qr_target,
       qr_url,
     });
+    if (!pdf.id) {
+      throw new Error("PDFMonkey did not return an id");
+    }
+
+    const card = await waitForDocumentSuccess(pdf.id);
 
     await prisma.certificate.create({
       data: {
         productId: product.id,
         seal_number,
-        pdfUrl: pdf.data.document.download_url || "",
+        pdfUrl: card.downloadUrl ?? "",
         qrUrl: qr_target,
-        pdfmonkeyDocumentId: pdf.data.document.id,
+        pdfmonkeyDocumentId: pdf.id,
       },
     });
 
@@ -53,4 +58,19 @@ export async function POST(req: Request) {
     console.error("Error generating certificate:", e);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
+}
+
+async function waitForDocumentSuccess(id: string, timeoutMs = 20000, intervalMs = 1500) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const card = await getDocumentCard(id);
+    if (card.status === "success" && card.downloadUrl) {
+      return card;
+    }
+    if (card.status === "failure") {
+      throw new Error("PDF generation failed");
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+  throw new Error("PDF generation timed out");
 }

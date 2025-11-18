@@ -15,20 +15,38 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      if (email.trim().toLowerCase() === 'admin') {
+        const adminRes = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password }),
+        });
+        const adminData = await adminRes.json().catch(() => ({}));
+        if (!adminRes.ok) {
+          throw new Error(adminData.error || 'Admin Login fehlgeschlagen');
+        }
+        router.push('/admin');
+        return;
+      }
 
-    const data = await res.json().catch(() => ({}));
-    setLoading(false);
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (res.ok && data.ok) {
-      // ✅ redirect from the JSON response
-      router.push(data.redirect || '/dashboard');
-    } else {
-      setError(data.error || 'Login fehlgeschlagen');
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) {
+        router.push(data.redirect || '/dashboard');
+        return;
+      }
+      throw new Error(data.error || 'Login fehlgeschlagen');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Login fehlgeschlagen';
+      setError(message);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -41,7 +59,8 @@ export default function LoginPage() {
         <h1 className="text-2xl font-semibold mb-6 text-center">Login</h1>
 
         <input
-          type="email"
+          type="text"
+          inputMode="email"
           placeholder="E-Mail"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -55,6 +74,9 @@ export default function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
           className="mb-4 w-full rounded-md border px-3 py-2"
         />
+        <p className="text-xs text-gray-500 mb-3">
+          Admin? Tragen Sie im E-Mail-Feld exakt „Admin“ (Groß-/Kleinschreibung wird ignoriert) und Ihr Admin-Passwort ein.
+        </p>
 
         {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
 

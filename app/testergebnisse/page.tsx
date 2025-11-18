@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { prisma } from '@/lib/prisma';
 
 export const metadata = {
   title: 'Testergebnisse – Prüfsiegel Zentrum UG',
@@ -51,7 +52,27 @@ const badges = [
   },
 ];
 
-export default function TestergebnissePage() {
+type Props = {
+  searchParams: {
+    productId?: string;
+  };
+};
+
+export default async function TestergebnissePage({ searchParams }: Props) {
+  const productId = searchParams.productId;
+  const certificate = productId
+    ? await prisma.certificate.findFirst({
+        where: { productId },
+        include: {
+          product: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      })
+    : null;
+
   return (
     <div className="bg-gray-50">
       <section className="bg-white">
@@ -77,6 +98,45 @@ export default function TestergebnissePage() {
           </div>
         </div>
       </section>
+
+      {productId ? (
+        <section className="mx-auto max-w-6xl px-6 py-10">
+          {certificate ? (
+            <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+              <h2 className="text-xl font-semibold text-slate-900">Verifikation für Produkt-ID {productId}</h2>
+              <p className="text-sm text-slate-600">Siegelnummer: <span className="font-mono">{certificate.seal_number}</span></p>
+              <div className="mt-6 grid gap-6 md:grid-cols-3">
+                <div className="space-y-2 rounded-2xl bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Produkt</p>
+                  <p className="text-lg font-semibold text-slate-900">{certificate.product.name}</p>
+                  <p className="text-sm text-slate-600">{certificate.product.brand}</p>
+                </div>
+                <div className="space-y-2 rounded-2xl bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Kunde</p>
+                  <p className="text-sm text-slate-700">{certificate.product.user?.name}</p>
+                  {certificate.product.user?.company && (
+                    <p className="text-sm text-slate-700">{certificate.product.user.company}</p>
+                  )}
+                  <p className="text-xs text-slate-500">{certificate.product.user?.email}</p>
+                </div>
+                <div className="space-y-2 rounded-2xl bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Aktionen</p>
+                  <Link href={certificate.pdfUrl} className="inline-flex rounded-lg bg-black px-4 py-2 text-xs font-semibold text-white">
+                    Prüfbericht herunterladen
+                  </Link>
+                  <Link href={`/verify/${certificate.seal_number}`} className="inline-flex rounded-lg border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700">
+                    Detail-Verifikation
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-3xl border border-orange-200 bg-orange-50 p-6 text-sm text-orange-900">
+              <p>Keine gültige Prüfung für Produkt-ID {productId} gefunden. Bitte überprüfen Sie die Siegelnummer oder wenden Sie sich an unseren Support.</p>
+            </div>
+          )}
+        </section>
+      ) : null}
 
       <section className="mx-auto max-w-6xl px-6 py-12">
         <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">

@@ -39,6 +39,7 @@ export async function POST(req: Request) {
           email: data.email,
           passwordHash,
           address: data.address,
+          company: data.company ?? undefined,
         },
         select: { id: true, email: true },
       });
@@ -54,6 +55,7 @@ export async function POST(req: Request) {
         data: {
           name: data.name ?? existing.name,
           address: data.address ?? existing.address,
+          company: data.company ?? existing.company ?? undefined,
           passwordHash,
         },
         select: { id: true, email: true },

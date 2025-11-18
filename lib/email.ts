@@ -44,6 +44,86 @@ export async function sendPrecheckConfirmation(opts: {
   }
 }
 
+export async function sendCompletionEmail(opts: {
+  to: string;
+  name: string;
+  productName: string;
+  verifyUrl: string;
+  pdfUrl: string;
+  qrUrl: string;
+  pdfBuffer?: Buffer;
+  documentId?: string;
+}) {
+  const { to, name, productName, verifyUrl, pdfUrl, qrUrl, pdfBuffer, documentId } = opts;
+  const from = process.env.MAIL_FROM ?? 'no-reply@your-domain.tld';
+  const attachments = pdfBuffer
+    ? [
+        {
+          filename: `${productName}-Prüfbericht.pdf`,
+          type: 'application/pdf',
+          data: pdfBuffer.toString('base64'),
+        },
+      ]
+    : undefined;
+
+  const html = `
+    <div style="font-family:system-ui,Arial;line-height:1.6;color:#111">
+      <p>Hallo ${escapeHtml(name)},</p>
+      <p>die Prüfung Ihres Produkts <strong>${escapeHtml(productName)}</strong> ist abgeschlossen.</p>
+      <p style="margin:0.75rem 0;">
+        Die Ergebnisse finden Sie im angehängten Prüfbericht oder über die Verifikationsseite:
+        <br />
+        <a href="${verifyUrl}" style="color:#1d4ed8;font-weight:600;">${verifyUrl}</a>
+      </p>
+      <p>
+        Ihr Prüfbericht: <a href="${pdfUrl}" style="color:#1d4ed8;font-weight:600;">Download</a><br />
+        QR-Code: <a href="${qrUrl}" style="color:#1d4ed8;font-weight:600;">Download</a>
+      </p>
+      ${documentId ? `<p>PDFMonkey-Dokument-ID: <code>${escapeHtml(documentId)}</code></p>` : ''}
+      <p>Danke!<br />Prüfsiegel Zentrum UG</p>
+    </div>
+  `;
+
+  const { error } = await resend.emails.send({
+    from,
+    to,
+    subject: `Prüfung abgeschlossen – ${productName}`,
+    html,
+    attachments,
+  });
+
+  if (error) {
+    console.error('Resend completion email error:', error);
+  }
+}
+
+export async function sendFailureNotification(opts: {
+  to: string;
+  name: string;
+  productName: string;
+  reason: string;
+}) {
+  const { to, name, productName, reason } = opts;
+  const from = process.env.MAIL_FROM ?? 'no-reply@your-domain.tld';
+  const html = `
+    <div style="font-family:system-ui,Arial">
+      <p>Hallo ${escapeHtml(name)},</p>
+      <p>bei der Prüfung Ihres Produkts <strong>${escapeHtml(productName)}</strong> fehlen noch einige Informationen.</p>
+      <p><strong>Grund:</strong> ${escapeHtml(reason)}</p>
+      <p>Bitte senden Sie uns die fehlenden Angaben, damit wir fortfahren können.</p>
+    </div>
+  `;
+  const { error } = await resend.emails.send({
+    from,
+    to,
+    subject: `Statusmeldung zu ${productName}`,
+    html,
+  });
+  if (error) {
+    console.error('Resend failure email error:', error);
+  }
+}
+
 // minimal XSS-safe escaping for interpolated strings in HTML
 function escapeHtml(input: string) {
   return input

@@ -1,0 +1,29 @@
+import { NextResponse } from 'next/server';
+import { isAdminAuthed } from '@/lib/admin';
+import { prisma } from '@/lib/prisma';
+
+export const runtime = 'nodejs';
+
+const VALID_STATUSES = ['UNPAID', 'PAID', 'MANUAL'] as const;
+type ValidPaymentStatus = (typeof VALID_STATUSES)[number];
+
+export async function POST(req: Request) {
+  const authed = await isAdminAuthed();
+  if (!authed) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+
+  const { productId, status } = await req.json();
+  if (!productId || !status) return NextResponse.json({ error: 'MISSING_PARAMS' }, { status: 400 });
+  if (!VALID_STATUSES.includes(status as ValidPaymentStatus)) {
+    return NextResponse.json({ error: 'INVALID_PAYMENT_STATUS' }, { status: 400 });
+  }
+
+  const product = await prisma.product.findUnique({ where: { id: productId } });
+  if (!product) return NextResponse.json({ error: 'PRODUCT_NOT_FOUND' }, { status: 404 });
+
+  await prisma.product.update({
+    where: { id: product.id },
+    data: { paymentStatus: status as ValidPaymentStatus },
+  });
+
+  return NextResponse.json({ ok: true, paymentStatus: status });
+}
