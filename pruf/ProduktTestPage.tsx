@@ -289,6 +289,71 @@ export default function ProduktTestPage() {
           </div>
         </div>
 
+        <div
+          id="pruefverfahren-pdf"
+          className="mt-12 grid gap-8 rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-lg"
+        >
+          <div className="space-y-4">
+            <h3 className="text-2xl font-semibold">
+              VERTRAUEN DURCH PRÜFUNG: Die Testsieger-Check-System Kriterien
+            </h3>
+            <p className="text-sm text-slate-700">
+              Dieses Dokument beschreibt das einheitliche und nachvollziehbare Prüfsystem mit den TCPZ-Prüfkriterien der
+              Prüfsiegel Zentrum UG. Grundlage ist ein standardisiertes Bewertungsverfahren, das sicherstellt, dass alle
+              geprüften Produkte nach denselben objektiven Maßstäben bewertet werden. Die Bewertung erfolgt über ein
+              numerisches System von 1 bis 10 Punkten (Halbpunkte möglich), sodass eine präzise und faire Beurteilung möglich
+              ist. Die Bewertung umfasst folgende Hauptkategorien, um ein ganzheitliches und objektives Ergebnis sicherzustellen:
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <blockquote className="flex h-full flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-slate-900 shadow-sm">
+              <span className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-600">Kriterium A: Produktschutz</span>
+              <p className="text-sm text-slate-700">
+                Hier prüfen wir, inwieweit das Produkt seinen vorgesehenen Zweck erfüllt und Schutz, Sicherheit sowie
+                Funktionalität gemäß Herstellerangaben bietet.
+              </p>
+            </blockquote>
+            <blockquote className="flex h-full flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-slate-900 shadow-sm">
+              <span className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-600">Kriterium B: Verarbeitung und Erscheinungsbild</span>
+              <p className="text-sm text-slate-700">
+                Bewertung der Materialqualität, Präzision der Verarbeitung, Stabilität sowie des gesamten optischen Eindrucks
+                und Erscheinungsbilds des Produkts.
+              </p>
+            </blockquote>
+            <blockquote className="flex h-full flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-slate-900 shadow-sm">
+              <span className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-600">Kriterium C: Praxistest – Hält der Hersteller seine Werbeversprechen?</span>
+              <p className="text-sm text-slate-700">
+                Im praktischen Einsatz überprüfen wir, ob die beworbenen Features, Leistungsversprechen und Produktvorteile
+                tatsächlich eingehalten werden.
+              </p>
+            </blockquote>
+            <blockquote className="flex h-full flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-slate-900 shadow-sm">
+              <span className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-600">Kriterium D: Preis-/Leistungsverhältnis und Verbraucherbewertungen</span>
+              <p className="text-sm text-slate-700">
+                Das Verhältnis von Preis zu tatsächlicher Leistung wird analysiert und um reale Nutzermeinungen ergänzt.
+                Dadurch entsteht ein ausgewogenes Gesamtbild aus objektiven Tests und Praxiserfahrungen.
+              </p>
+            </blockquote>
+          </div>
+
+          <p className="text-sm font-semibold text-slate-800">
+            Alle Kriterien werden mit 1 bis 10 Punkten bewertet. Der Durchschnitt dieser Kriterien ergibt die Gesamtnote und
+            dient als Grundlage für die Auszeichnung im Testsieger-Check.
+          </p>
+
+          <div className="flex justify-start">
+            <a
+              href="https://drive.google.com/open?id=14xhZ55uU5_bGZWxH9jKca0Mp-CEaGbDi"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-lg transition hover:bg-black"
+            >
+              Mehr Details Hier (PDF)
+            </a>
+          </div>
+        </div>
+
         <div className="mt-12 border-t border-slate-200 bg-white pt-8">
           <h3 className="text-2xl font-semibold">Häufige Fragen</h3>
           <div className="mt-6 space-y-6">

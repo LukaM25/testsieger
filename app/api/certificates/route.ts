@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { createPdfDocument, getDocumentCard } from "@/lib/pdfmonkey";
 import { sendPrecheckConfirmation } from "@/lib/email";
 import QRCode from "qrcode";
+import fs from "fs/promises";
+import path from "path";
 
 export async function POST(req: Request) {
   try {
@@ -37,11 +39,28 @@ export async function POST(req: Request) {
 
     const card = await waitForDocumentSuccess(pdf.id);
 
+    if (!card.downloadUrl) {
+      throw new Error("PDF download URL missing");
+    }
+
+    const uploadsDir = path.join(process.cwd(), "public", "uploads");
+    await fs.mkdir(uploadsDir, { recursive: true });
+
+    const pdfResp = await fetch(card.downloadUrl);
+    if (!pdfResp.ok) {
+      throw new Error("PDF download failed");
+    }
+
+    const pdfBuffer = Buffer.from(await pdfResp.arrayBuffer());
+    const pdfRel = `/uploads/REPORT_${seal_number}.pdf`;
+    const pdfAbs = path.join(uploadsDir, `REPORT_${seal_number}.pdf`);
+    await fs.writeFile(pdfAbs, pdfBuffer);
+
     await prisma.certificate.create({
       data: {
         productId: product.id,
         seal_number,
-        pdfUrl: card.downloadUrl ?? "",
+        pdfUrl: pdfRel,
         qrUrl: qr_target,
         pdfmonkeyDocumentId: pdf.id,
       },

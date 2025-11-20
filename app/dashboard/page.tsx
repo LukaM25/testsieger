@@ -55,6 +55,8 @@ export default async function DashboardPage() {
                       <div className="text-sm mt-1 space-x-3">
                         <Link
                           href={p.certificate.pdfUrl}
+                          target="_blank"
+                          rel="noreferrer"
                           className="text-blue-600 hover:underline"
                         >
                           Prüfbericht

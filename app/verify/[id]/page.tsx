@@ -44,7 +44,14 @@ export default async function VerifyPage({ params }: Props) {
           </div>
           <div><span className="font-medium">Prüfstatus:</span> Geprüft nach Prüfsiegel Zentrum UG Standard 2025</div>
           <div className="pt-4 flex gap-3">
-            <Link href={cert.pdfUrl} className="rounded-lg bg-black px-4 py-2 text-white">Prüfbericht (PDF)</Link>
+            <Link
+              href={cert.pdfUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-lg bg-black px-4 py-2 text-white"
+            >
+              Prüfbericht (PDF)
+            </Link>
             <Link href={cert.qrUrl} className="rounded-lg border px-4 py-2">QR-Code</Link>
           </div>
         </div>

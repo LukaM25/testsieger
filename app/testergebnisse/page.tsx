@@ -121,7 +121,12 @@ export default async function TestergebnissePage({ searchParams }: Props) {
                 </div>
                 <div className="space-y-2 rounded-2xl bg-slate-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Aktionen</p>
-                  <Link href={certificate.pdfUrl} className="inline-flex rounded-lg bg-black px-4 py-2 text-xs font-semibold text-white">
+                  <Link
+                    href={certificate.pdfUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex rounded-lg bg-black px-4 py-2 text-xs font-semibold text-white"
+                  >
                     Prüfbericht herunterladen
                   </Link>
                   <Link href={`/verify/${certificate.seal_number}`} className="inline-flex rounded-lg border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700">
