@@ -31,6 +31,7 @@ type PdfMonkeyPayload = {
     id: string;
     name: string;
     brand: string;
+    category?: string | null;
     code?: string | null;
     specs?: string | null;
     size?: string | null;
@@ -73,6 +74,7 @@ export async function completeProduct(productId: string): Promise<CompletionResu
       id: product.id,
       name: product.name,
       brand: product.brand,
+      category: product.category ?? null,
       code: product.code ?? null,
       specs: product.specs ?? null,
       size: product.size ?? null,

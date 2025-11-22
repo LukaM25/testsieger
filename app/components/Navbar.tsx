@@ -6,36 +6,37 @@ import { useState, useEffect, useRef, useCallback, type ReactNode, type FormEven
 import Fuse from 'fuse.js';
 import { useRouter, usePathname } from "next/navigation";
 import { Menu, X, Search, User } from "lucide-react";
+import { useLocale } from "@/components/LocaleProvider";
 
 type NavItem = {
-  label: string;
+  labelKey: string;
   href: string;
   children?: NavItem[];
 };
 
 type NavSection = {
-  label: string;
+  labelKey: string;
   items: NavItem[];
 };
 
 const sections: NavSection[] = [
   {
-    label: "Leistungen",
+    labelKey: "nav.services",
     items: [
-      { label: "Übersicht", href: "/produkte" },
-  { label: "PRODUKT TEST", href: "/produkte/produkt-test" },
-      { label: "Ausbildungs Check", href: "/produkte/ausbildung-check" },
-      { label: "Testergebnisse", href: "/testergebnisse" },
-      { label: "Lizenzverwaltung", href: "/lizenzen" },
+      { labelKey: "nav.overview", href: "/produkte" },
+      { labelKey: "nav.productTest", href: "/produkte/produkt-test" },
+      { labelKey: "nav.trainingCheck", href: "/produkte/ausbildung-check" },
+      { labelKey: "nav.results", href: "/testergebnisse" },
+      { labelKey: "nav.licensing", href: "/lizenzen" },
     ],
   },
   {
-    label: "Unternehmen",
+    labelKey: "nav.company",
     items: [
-      { label: "Karriere", href: "/karriere" },
-      { label: "Kontakt", href: "/kontakt" },
-      { label: "Kundenportal", href: "/kundenportal" },
-      { label: "Login", href: "/login" },
+      { labelKey: "nav.careers", href: "/karriere" },
+      { labelKey: "nav.contact", href: "/kontakt" },
+      { labelKey: "nav.portal", href: "/kundenportal" },
+      { labelKey: "nav.login", href: "/login" },
     ],
   },
 ];
@@ -48,6 +49,7 @@ type ProfileUser = { id: string; name: string; email: string };
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const { locale, setLocale, t } = useLocale();
 
   // loaded search index
   const [index, setIndex] = useState<SearchEntry[]>([]);
@@ -137,7 +139,14 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleProfileClickOutside);
   }, []);
 
-  const profileLabel = profileLoading || adminLoading ? 'Lade...' : profileUser ? profileUser.name : adminAuthed ? 'Admin' : 'Anmelden';
+
+  const profileLabel = profileLoading || adminLoading
+    ? t('profile.loading', 'Lade...')
+    : profileUser
+      ? profileUser.name
+      : adminAuthed
+        ? t('profile.admin', 'Admin')
+        : t('profile.signin', 'Anmelden');
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -372,11 +381,12 @@ export default function Navbar() {
 
   const renderDropdownItems = (items: NavItem[]) =>
     items.map((item) => {
+      const label = t(item.labelKey, item.labelKey);
       if (item.children && item.children.length > 0) {
         return (
-          <details key={item.label} className="group border-b border-gray-100 first:border-t-0" role="list">
+          <details key={item.labelKey} className="group border-b border-gray-100 first:border-t-0" role="list">
             <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-900 outline-none transition hover:text-[#0a74da]">
-              {item.label}
+              {label}
               <span className="text-xs transition-transform duration-200 group-open:rotate-180">▾</span>
             </summary>
             <div className="px-4 pb-2 space-y-2">
@@ -385,7 +395,7 @@ export default function Navbar() {
                 className="block px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-gray-50"
                 onClick={() => setOpen(false)}
               >
-                {item.label}
+                {label}
               </Link>
               {item.children.map((child) => (
                 <Link
@@ -394,7 +404,7 @@ export default function Navbar() {
                   className="block px-4 py-2 text-sm font-medium text-slate-800 transition hover:bg-gray-50"
                   onClick={() => setOpen(false)}
                 >
-                  {child.label}
+                  {t(child.labelKey, child.labelKey)}
                 </Link>
               ))}
             </div>
@@ -409,7 +419,7 @@ export default function Navbar() {
           className="block px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-gray-50"
           onClick={() => setOpen(false)}
         >
-          {item.label}
+          {label}
         </Link>
       );
     });
@@ -460,9 +470,9 @@ export default function Navbar() {
                       setShowResults(false);
                     }
                   }}
-                  placeholder="Suche auf der Seite..."
+                  placeholder={t('search.placeholder', 'Suche auf der Seite...')}
                   className="w-full bg-transparent outline-none text-sm md:text-base"
-                  aria-label="Suche"
+                  aria-label={t('search.aria', 'Suche')}
                 />
                 {query && (
                   <button
@@ -535,44 +545,44 @@ export default function Navbar() {
                         className="block rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 text-left transition hover:bg-slate-50"
                         onClick={() => setProfileOpen(false)}
                       >
-                        Dashboard
+                        {t('profile.dashboard')}
                       </Link>
                       <button
                         type="button"
                         className="w-full rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
                         onClick={handleLogout}
                       >
-                        Logout
+                        {t('profile.logout')}
                       </button>
                     </div>
                   </div>
                 ) : adminAuthed ? (
                   <div className="space-y-3">
-                    <p className="text-sm font-semibold text-slate-900">Administrator</p>
+                    <p className="text-sm font-semibold text-slate-900">{t('profile.adminTitle')}</p>
                     <div className="space-y-2">
                       <Link
                         href="/admin"
                         className="block rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 text-left transition hover:bg-slate-50"
                         onClick={() => setProfileOpen(false)}
                       >
-                        Admin Dashboard
+                        {t('profile.adminDashboard')}
                       </Link>
                       <button
                         type="button"
                         className="w-full rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
                         onClick={handleLogout}
                       >
-                        Logout
+                        {t('profile.logout')}
                       </button>
                     </div>
                   </div>
                 ) : (
                   <form onSubmit={handleLogin} className="space-y-3">
-                    <p className="text-sm font-semibold text-slate-900">Mit Kundenkonto anmelden</p>
+                    <p className="text-sm font-semibold text-slate-900">{t('profile.loginTitle')}</p>
                     <input
                       type="text"
                       inputMode="email"
-                      placeholder="E-Mail"
+                      placeholder={t('profile.email')}
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
@@ -581,7 +591,7 @@ export default function Navbar() {
                     />
                     <input
                       type="password"
-                      placeholder="Passwort"
+                      placeholder={t('profile.password')}
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
@@ -594,13 +604,14 @@ export default function Navbar() {
                       disabled={loginLoading}
                       className="w-full rounded-full bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
                     >
-                      {loginLoading ? 'Wird geprüft…' : 'Einloggen'}
+                      {loginLoading ? t('profile.loginChecking') : t('profile.loginButton')}
                     </button>
                     <p className="text-xs text-slate-500">
-                      Zum klassischen <Link href="/login" className="font-semibold text-slate-900 underline">Login</Link>
+                      {t('profile.classicLogin')}{' '}
+                      <Link href="/login" className="font-semibold text-slate-900 underline">{t('nav.login')}</Link>
                     </p>
                     <p className="text-xs text-slate-500">
-                      <strong>Admin?</strong> Tragen Sie im E-Mail-Feld „Admin“ ein und nutzen Sie das Admin-Passwort.
+                      <strong>Admin?</strong> {t('profile.adminHint')}
                     </p>
                   </form>
                 )}
@@ -612,10 +623,10 @@ export default function Navbar() {
             <button
               className="p-2 rounded-lg border"
               onClick={() => setOpen((o) => !o)}
-              aria-label={open ? "Menü schließen" : "Menü öffnen"}
+              aria-label={open ? t('nav.menu.close') : t('nav.menu.open')}
             >
               <span className="inline-flex items-center">
-                <span className="mr-1">Menü</span>
+                <span className="mr-1">{t('nav.menu')}</span>
                 {open ? <X size={22} /> : <Menu size={22} />}
               </span>
             </button>
@@ -624,18 +635,47 @@ export default function Navbar() {
               <nav className="max-h-[60vh] overflow-y-auto text-sm text-gray-700 font-sans">
                 {sections.map((section) => (
                   <details
-                    key={section.label}
+                    key={section.labelKey}
                     className="group border-b border-gray-100 first:border-t-0"
                     role="list"
                   >
                     <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-[11px] font-bold uppercase tracking-[0.36em] text-slate-900 outline-none transition hover:text-[#0a74da]">
-                      {section.label}
+                      {t(section.labelKey, section.labelKey)}
                       <span className="text-xs transition-transform duration-200 group-open:rotate-180">▾</span>
                     </summary>
                     <div className="px-4 pb-2">{renderDropdownItems(section.items)}</div>
                   </details>
                 ))}
               </nav>
+              <div className="border-t border-gray-100 px-4 py-3">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 mb-2">
+                  {t('lang.label')}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                      locale === 'de'
+                        ? 'border-slate-900 text-slate-900 bg-slate-50'
+                        : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
+                    onClick={() => setLocale('de')}
+                  >
+                    🇩🇪 DE
+                  </button>
+                  <button
+                    type="button"
+                    className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                      locale === 'en'
+                        ? 'border-slate-900 text-slate-900 bg-slate-50'
+                        : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
+                    onClick={() => setLocale('en')}
+                  >
+                    🇬🇧 EN
+                  </button>
+                </div>
+              </div>
             </div>
             )}
           </div>

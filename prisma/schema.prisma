@@ -24,6 +24,7 @@ model Product {
   userId      String
   name        String
   brand       String
+  category    String?
   code        String?
   specs       String?
   size        String?

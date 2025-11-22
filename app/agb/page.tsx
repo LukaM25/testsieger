@@ -1,3 +1,5 @@
+import TranslationNotice from "@/components/TranslationNotice";
+
 export const metadata = {
   title: 'Allgemeine Geschäftsbedingungen – Prüfsiegel Zentrum UG',
   description:
@@ -55,6 +57,7 @@ const sections = [
 export default function AgbPage() {
   return (
     <div className="mx-auto max-w-4xl px-6 pb-16 pt-24 text-slate-700">
+      <TranslationNotice />
       <h1 className="text-4xl font-bold text-slate-900">Allgemeine Geschäftsbedingungen</h1>
       <p className="mt-4 text-sm text-slate-500">Stand: {new Date().getFullYear()}</p>
       <div className="mt-10 space-y-8">

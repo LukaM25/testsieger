@@ -20,6 +20,7 @@ export async function GET() {
     id: product.id,
     name: product.name,
     brand: product.brand,
+    category: product.category,
     code: product.code,
     specs: product.specs,
     size: product.size,

@@ -18,7 +18,7 @@ export async function complete(formData: FormData) {
 
   // Generate PDF via PDFMonkey
   const doc = await createPdfDocument({
-    product: { name: product.name, brand: product.brand },
+    product: { name: product.name, brand: product.brand, category: product.category ?? null },
     user: { name: product.user.name, email: product.user.email },
   });
   if (!doc.id) return;

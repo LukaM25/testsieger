@@ -27,6 +27,7 @@ export async function POST(req: Request) {
     const pdf = await createPdfDocument({
       product_name: product.name,
       brand_name: product.brand,
+      category: product.category || "-",
       sku: product.code || "-",
       seal_number,
       valid_to: valid_to.toISOString().split("T")[0],

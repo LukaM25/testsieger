@@ -24,6 +24,7 @@ type AdminProduct = {
   id: string;
   name: string;
   brand: string;
+  category?: string | null;
   code?: string | null;
   specs?: string | null;
   size?: string | null;
@@ -296,6 +297,7 @@ function AdminProductRow({
   const detailFields = [
     ['Produktname', product.name],
     ['Marke', product.brand],
+    ['Kategorie', product.category],
     ['Hersteller-/Artikelnummer', product.code],
     ['Spezifikationen', product.specs],
     ['Größe / Maße', product.size],

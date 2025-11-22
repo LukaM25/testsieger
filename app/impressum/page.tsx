@@ -1,6 +1,9 @@
+import TranslationNotice from "@/components/TranslationNotice";
+
 export default function ImpressumPage() {
   return (
     <div className="max-w-4xl mx-auto px-6 pt-20 pb-16 text-gray-700 leading-relaxed">
+      <TranslationNotice />
       <h1 className="text-3xl font-semibold text-[#2e4053] mb-4">Impressum</h1>
       <p>Angaben gemäß § 5 TMG:</p>
       <p className="mt-2">

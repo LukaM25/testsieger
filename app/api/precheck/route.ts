@@ -15,6 +15,7 @@ const PrecheckSchema = z.object({
   // product
   productName: z.string().min(2),
   brand: z.string().min(1),
+  category: z.string().optional().nullable(),
   code: z.string().optional().nullable(),
   specs: z.string().optional().nullable(),
   size: z.string().optional().nullable(),
@@ -26,6 +27,7 @@ export async function POST(req: Request) {
   try {
     const json = await req.json();
     const data = PrecheckSchema.parse(json);
+    const category = data.category?.trim() || undefined;
 
     // 1) Ensure user exists (or create)
     const existing = await prisma.user.findUnique({ where: { email: data.email } });
@@ -69,6 +71,7 @@ export async function POST(req: Request) {
         userId,
         name: data.productName,
         brand: data.brand,
+        category,
         code: data.code ?? undefined,
         specs: data.specs ?? undefined,
         size: data.size ?? undefined,
