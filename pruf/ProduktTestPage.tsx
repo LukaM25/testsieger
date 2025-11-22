@@ -199,15 +199,14 @@ export default function ProduktTestPage() {
           >
             {/* back card */}
             <div
-              className="absolute transition-all duration-700 ease-out will-change-transform"
+              className="absolute transition-all duration-[1200ms] ease-in-out will-change-transform"
               style={{
-                width: '280px',
-                height: '280px',
+                width: '260px',
+                height: '260px',
                 opacity: heroAnim ? 0.85 : 0,
                 transform: heroAnim
-                  ? 'translate(-24%, 16%) scale(0.9)'
-                  : 'translate(-40%, 30%) scale(0.9)',
-                transitionDelay: '0ms',
+                  ? 'translate(-20%, 10%) scale(0.9)'
+                  : 'translate(-120%, 10%) scale(0.8)',
               }}
             >
               <Image
@@ -221,15 +220,14 @@ export default function ProduktTestPage() {
             </div>
             {/* front card */}
             <div
-              className="absolute transition-all duration-700 ease-out will-change-transform drop-shadow-2xl"
+              className="absolute transition-all duration-[1200ms] ease-in-out will-change-transform drop-shadow-2xl"
               style={{
                 width: '280px',
                 height: '280px',
                 opacity: heroAnim ? 1 : 0,
                 transform: heroAnim
-                  ? 'translate(0%, -8%) scale(1.05)'
-                  : 'translate(28%, 12%) scale(1.05)',
-                transitionDelay: '140ms',
+                  ? 'translate(20%, 10%) scale(1.05)'
+                  : 'translate(120%, 10%) scale(0.95)',
               }}
             >
               <Image
@@ -297,8 +295,15 @@ export default function ProduktTestPage() {
             <span className="text-2xl font-semibold tracking-[0.18em]">
               {tr('Kostenloser Pre-Check', 'Free pre-check')}
             </span>
-            <span className="text-sm font-semibold uppercase tracking-[0.28em] text-black/70">
+            <span className="text-sm font-semibold uppercase tracking-[0.28em] text-black/70 inline-flex items-center justify-center gap-2">
               {tr('(Dauert nur 3 Minuten)', '(Takes only 3 minutes)')}
+              <Image 
+                src="/images/iconen/stopwatch.png"
+                alt="Stopwatch" 
+                width={28} 
+                height={28} 
+                className="opacity-70 pb-1"
+              />
             </span>
             <svg
               className={`h-6 w-6 transition-transform duration-200 ${showPrecheck ? 'rotate-180' : 'rotate-0'}`}
@@ -404,20 +409,40 @@ export default function ProduktTestPage() {
 
       {/* Pakete section using PackageCard */}
       <section id="pakete" className="mx-auto max-w-6xl px-6 py-16">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">{tr('Lizenz-Pakete', 'License packages')}</h2>
-          <p className="text-sm text-slate-500">{tr('Einfache Preisstruktur on top', 'Simple pricing on top')}</p>
-        </div>
-        <div className="mt-8 grid gap-6 md:grid-cols-3">
-          <div data-animate="card" style={stagger(0)}>
-            <PackageCard title="Basic" price="254€ + 0,99€/Tag" subtitle={tr('DE, 1 Kanal', 'DE, 1 channel')} onSelect={() => choosePackage('BASIC')} />
+        <div className="flex flex-col items-center gap-10 lg:flex-row lg:items-center lg:justify-between">
+          <div className="w-full lg:w-1/2 flex justify-center">
+            <Image
+              src="/lampen.png"
+              alt="Lampe"
+              width={700}
+              height={440}
+              className="rounded-xl object-cover shadow-lg max-w-full"
+              priority
+            />
           </div>
-          <div data-animate="card" style={stagger(1)}>
-            <PackageCard title="Premium" price="254€ + 1,54€/Tag" subtitle={tr('EU, alle Kanäle', 'EU, all channels')} onSelect={() => choosePackage('PREMIUM')} />
-          </div>
-          <div data-animate="card" style={stagger(2)}>
-            <PackageCard title="Lifetime" price="1477€" subtitle={tr('EU, alle Kanäle, LT-Lizenz', 'EU, all channels, LT license')} onSelect={() => choosePackage('LIFETIME')} />
-          </div>
+          <div className="w-full lg:w-1/2 flex justify-center lg:justify-start">
+  {/* WRAPPER DIV ADDED to protect text from flexbox shrinking */}
+  <div className="w-full lg:w-1/2 flex justify-center lg:justify-start">
+  <h2 
+  data-animate="card" // 1. This triggers the scroll animation
+  style={{ 
+    // 2. Fluid Size (~30% smaller than max)
+    fontSize: 'clamp(1.8rem, 3.5vw, 4.5rem)', 
+    
+    // 3. SaaS Typography
+    fontWeight: '800',           
+    letterSpacing: '-0.04em',    
+    lineHeight: '1',             
+    color: '#0f172a',            
+    whiteSpace: 'nowrap',        
+    fontFamily: 'Inter, system-ui, sans-serif' 
+  }} 
+  className="drop-shadow-sm transition-all duration-700" // Optional: ensures smooth motion
+>
+  {tr('Mach dich sichtbar', 'Make yourself visible')}
+</h2>
+</div>
+</div>
         </div>
       </section>
 
