@@ -201,12 +201,12 @@ export default function ProduktTestPage() {
             <div
               className="absolute transition-all duration-700 ease-out will-change-transform"
               style={{
-                width: '260px',
-                height: '260px',
+                width: '280px',
+                height: '280px',
                 opacity: heroAnim ? 0.85 : 0,
                 transform: heroAnim
-                  ? 'translate(-32%, 18%) scale(0.9)'
-                  : 'translate(-50%, 32%) scale(0.9)',
+                  ? 'translate(-24%, 16%) scale(0.9)'
+                  : 'translate(-40%, 30%) scale(0.9)',
                 transitionDelay: '0ms',
               }}
             >
@@ -227,8 +227,8 @@ export default function ProduktTestPage() {
                 height: '280px',
                 opacity: heroAnim ? 1 : 0,
                 transform: heroAnim
-                  ? 'translate(12%, -4%) scale(1.05)'
-                  : 'translate(40%, 16%) scale(1.05)',
+                  ? 'translate(0%, -8%) scale(1.05)'
+                  : 'translate(28%, 12%) scale(1.05)',
                 transitionDelay: '140ms',
               }}
             >
@@ -259,7 +259,7 @@ export default function ProduktTestPage() {
                 <div className="flex justify-center">
                   <Image
                     src={entry.card.src}
-                    alt={entry.card.label}
+                    alt={entry.card.label.en}
                     width={96}
                     height={96}
                     className="h-20 w-20 object-contain"
