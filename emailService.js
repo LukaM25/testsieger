@@ -60,7 +60,7 @@ export async function processAndSendCertificate(certificateId, userEmail) {
     const record = rows[0];
 
     // 2. Generate QR Code Image (Base64)
-    const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/verify/${record.seal_number || record.certificate_id}`;
+const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/lizenzen?q=${record.product_id}`;
     const qrImageData = await QRCode.toDataURL(verificationLink);
 
     // 3. Prepare Context
