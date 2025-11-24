@@ -15,37 +15,35 @@ Handlebars.registerHelper('date', (dateStr) => {
 let browserPromise;
 
 async function getBrowser() {
-  // If we already have a browser instance, verify it's valid and return it
   if (global.browserInstance && global.browserInstance.isConnected()) {
     return global.browserInstance;
   }
 
   console.log('🚀 Launching Browser...');
-
-  // 1. Check if we are in Production (Vercel) or Development (Local)
   const isProduction = process.env.NODE_ENV === 'production';
-
   let launchOptions;
 
   if (isProduction) {
     // --- VERCEL CONFIGURATION ---
-    // Use the compressed chromium binary
-    // Essential: Set graphics mode to false for serverless speed
     chromium.setGraphicsMode = false;
     
+    // SAFETY NET: If local binary is missing, download it.
+    // This fixes the "input directory does not exist" error permanently.
+    const executablePath = await chromium.executablePath(
+      // Pass a remote URL as a fallback if the local file isn't traced correctly
+      "https://github.com/Sparticuz/chromium/releases/download/v121.0.0/chromium-v121.0.0-pack.tar"
+    );
+
     launchOptions = {
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
+      executablePath: executablePath,
       headless: chromium.headless,
       ignoreHTTPSErrors: true,
     };
   } else {
     // --- LOCAL CONFIGURATION ---
-    // We dynamically import the full puppeteer library to find your local Chrome
-    // This prevents the massive binary from being bundled to Vercel
     const { executablePath } = await import('puppeteer');
-    
     launchOptions = {
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
       executablePath: executablePath(),
@@ -63,8 +61,7 @@ export async function generateCertificatePdf(data) {
     const browser = await getBrowser();
     page = await browser.newPage();
 
-    // 1. Read Template
-    // Note: On Vercel, using process.cwd() is reliable for reading files
+    // 1. Read Template (Safe Path Resolution)
     const templatePath = path.join(process.cwd(), 'templates', 'certificate.hbs');
     const templateHtml = fs.readFileSync(templatePath, 'utf8');
     const template = Handlebars.compile(templateHtml);
