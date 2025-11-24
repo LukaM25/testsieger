@@ -70,7 +70,7 @@ export async function POST(req: Request) {
         seal_number,
         pdfUrl: existingCert?.pdfUrl ?? undefined,
         qrUrl: existingCert?.qrUrl ?? undefined,
-        pdfmonkeyDocumentId: existingCert?.pdfmonkeyDocumentId ?? undefined,
+        externalReferenceId: existingCert?.externalReferenceId ?? undefined,
       },
       certificateId: cert.id,
       domain: baseDomain,
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
         pdfUrl: pdfRel,
         qrUrl: qrRel,
         seal_number,
-        pdfmonkeyDocumentId: null,
+        externalReferenceId: null,
       },
     });
 
