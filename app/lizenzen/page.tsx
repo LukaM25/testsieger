@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { prisma } from '@/lib/prisma';
+import LizenzenClient from './LizenzenClient';
 
 export const metadata = {
   title: 'Lizenzverwaltung – Prüfsiegel Zentrum UG',
@@ -42,7 +44,23 @@ const faq = [
   },
 ];
 
-export default function LizenzenPage() {
+// Force dynamic so new certificates appear instantly
+export const dynamic = 'force-dynamic';
+
+export default async function LizenzenPage() {
+  // 1. Fetch Valid Data from DB
+  const products = await prisma.product.findMany({
+    where: {
+      status: { in: ['COMPLETED', 'IN_REVIEW', 'PAID'] }, 
+      certificate: { isNot: null }
+    },
+    include: {
+      certificate: true,
+      user: { select: { company: true } }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
   return (
     <div className="bg-gray-50">
       <section className="bg-white">
@@ -70,27 +88,8 @@ export default function LizenzenPage() {
       </section>
 
       <section className="mx-auto max-w-4xl px-6 py-12">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Lizenzcode prüfen</h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Formularplatzhalter – hier kann später eine API-Anfrage integriert werden. Bis dahin dient die Darstellung als visueller Anker.
-          </p>
-          <form className="mt-6 grid gap-4 md:grid-cols-[2fr,1fr]">
-            <input
-              type="text"
-              placeholder="Lizenzcode oder Produktname"
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-              disabled
-            />
-            <button
-              type="button"
-              disabled
-              className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white opacity-60"
-            >
-              Suche folgt
-            </button>
-          </form>
-        </div>
+        {/* HERE WE INJECT THE FUNCTIONAL CLIENT */}
+        <LizenzenClient products={products} />
       </section>
 
       <section className="border-t border-slate-200 bg-white">
