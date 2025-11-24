@@ -41,7 +41,7 @@ export async function GET() {
           pdfUrl: product.certificate.pdfUrl,
           qrUrl: product.certificate.qrUrl,
           seal_number: product.certificate.seal_number,
-          pdfmonkeyDocumentId: product.certificate.pdfmonkeyDocumentId,
+          externalReferenceId: product.certificate.externalReferenceId,
         }
       : null,
   }));
