@@ -1,37 +1,55 @@
 import { NextResponse } from 'next/server';
-import { isAdminAuthed } from '@/lib/admin';
-import { completeProduct, CompletionError } from '@/lib/completion';
-
-export const runtime = 'nodejs';
+import { prisma } from '@/lib/prisma';
+import { processAndSendCertificate } from '@/emailService';
 
 export async function POST(req: Request) {
   try {
-    const authed = await isAdminAuthed();
-    if (!authed) {
-      return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
-    }
-
     const { productId } = await req.json();
+
     if (!productId) {
-      return NextResponse.json({ error: 'MISSING_PRODUCT_ID' }, { status: 400 });
+      return NextResponse.json({ error: 'ProductId is missing' }, { status: 400 });
     }
 
-    const result = await completeProduct(productId);
-    return NextResponse.json({
-      ok: true,
-      message: `Zertifikat erstellt. Verifikation: ${result.verifyUrl}`,
-      verifyUrl: result.verifyUrl,
-      certId: result.certId,
-      pdfUrl: result.pdfUrl,
-      qrUrl: result.qrUrl,
-      seal: result.seal,
+    // 1. Find the product
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      include: { certificate: true, user: true }
     });
-  } catch (error: any) {
-    if (error instanceof CompletionError) {
-      const body = { error: error.code, ...(error.payload ?? {}) };
-      return NextResponse.json(body, { status: error.status });
+
+    if (!product) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
-    console.error('ADMIN_COMPLETE_ERROR', error);
-    return NextResponse.json({ error: error?.message || 'COMPLETE_FAILED' }, { status: 500 });
+
+    // 2. Ensure a Certificate Record exists
+    let certId = product.certificate?.id;
+
+    if (!certId) {
+       console.log('Creating new certificate record...');
+       const newCert = await prisma.certificate.create({
+         data: {
+           productId: product.id,
+           status: 'PENDING',
+           externalReferenceId: `GEN-${Date.now()}`,
+           // FIX: Provide empty strings for required fields to satisfy Prisma
+           pdfUrl: '', 
+           qrUrl: '',  
+         }
+       });
+       certId = newCert.id;
+    }
+
+    console.log(`🚀 Starting Internal Engine for Cert ID: ${certId}`);
+
+    // 3. Trigger the 100x Engine
+    await processAndSendCertificate(certId, product.user.email);
+
+    return NextResponse.json({ success: true, message: 'Certificate sent via Internal Engine' });
+
+  } catch (error: any) {
+    console.error('❌ API Error:', error);
+    return NextResponse.json(
+      { error: error.message || 'Internal Server Error' },
+      { status: 500 }
+    );
   }
 }

@@ -1,15 +1,26 @@
-
 import { NextResponse } from "next/server";
-import { createPdfDocument, getDocumentCard } from "@/lib/pdfmonkey";
+import { generateCertificatePdf } from "@/pdfGenerator";
+
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  const { payload, templateId } = await req.json();
-  const doc = await createPdfDocument(payload, templateId);
-  const start = Date.now();
-  while (Date.now() - start < 20000) {
-    const c = await getDocumentCard(doc.id);
-    if (c.status === 'success' && c.downloadUrl) return NextResponse.json({ url: c.downloadUrl });
-    await new Promise(r => setTimeout(r, 1000));
+  const { product = {}, user = {}, certificate = {}, certificateId, domain } = await req.json();
+  if (!certificateId) {
+    return NextResponse.json({ error: "MISSING_CERTIFICATE_ID" }, { status: 400 });
   }
-  return NextResponse.json({ error: 'timeout' }, { status: 504 });
+
+  const pdfBuffer = await generateCertificatePdf({
+    product,
+    user,
+    certificate,
+    certificateId,
+    domain,
+  });
+
+ return new NextResponse(pdfBuffer as unknown as BodyInit, {
+  status: 200,
+  headers: {
+    "Content-Type": "application/pdf",
+  },
+});
 }

@@ -1,63 +1,22 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
-import { createPdfDocument, getDocumentCard } from '@/lib/pdfmonkey';
-import type { PdfMonkeyDoc } from '@/lib/pdfmonkey';
-import QRCode from 'qrcode';
 import { revalidatePath } from 'next/cache';
+import { completeProduct, CompletionError } from '@/lib/completion';
 
 export async function complete(formData: FormData) {
   const productId = String(formData.get('productId') || '');
   if (!productId) return;
 
-  const product = await prisma.product.findUnique({
-    where: { id: productId },
-    include: { user: true },
-  });
-  if (!product) return;
-
-  // Generate PDF via PDFMonkey
-  const doc = await createPdfDocument({
-    product: { name: product.name, brand: product.brand, category: product.category ?? null },
-    user: { name: product.user.name, email: product.user.email },
-  });
-  if (!doc.id) return;
-
-  // Poll for the document card (max ~20s)
-  const start = Date.now();
-  let card: PdfMonkeyDoc | null = null;
-  while (Date.now() - start < 20000) {
-    const c = await getDocumentCard(doc.id);
-    if (c.status === 'success' && c.downloadUrl) {
-      card = c;
-      break;
+  try {
+    await completeProduct(productId);
+  } catch (err) {
+    if (err instanceof CompletionError) {
+      console.error('ADMIN_COMPLETE_ERROR', err.code, err.payload);
+      return;
     }
-    if (c.status === 'failure') {
-      break;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    console.error('ADMIN_COMPLETE_ERROR', err);
+    return;
   }
-  if (!card) return;
-
-  // QR for public verify page
-  const verifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/verify/${product.id}`;
-  const qrUrl = await QRCode.toDataURL(verifyUrl);
-
-  // Save certificate + update status
-  await prisma.certificate.upsert({
-    where: { productId: product.id },
-    update: { pdfUrl: card.downloadUrl || '', qrUrl, pdfmonkeyDocumentId: doc.id },
-    create: {
-      productId: product.id,
-      pdfUrl: card.downloadUrl || '',
-      qrUrl,
-      pdfmonkeyDocumentId: doc.id,
-    },
-  });
-  await prisma.product.update({
-    where: { id: product.id },
-    data: { status: 'COMPLETED' },
-  });
 
   // Refresh the admin page
   revalidatePath('/admin');

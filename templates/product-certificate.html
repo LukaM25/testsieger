@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Certificate</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600&display=swap');
+    :root {
+      --bg: #0c1224;
+      --card: rgba(255, 255, 255, 0.05);
+      --panel: rgba(255, 255, 255, 0.08);
+      --text: #e7ecf5;
+      --muted: #9db1d0;
+      --line: rgba(255, 255, 255, 0.12);
+      --accent: #74f0ed;
+      --accent-2: #8b6cff;
+      --pill: #15213a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      background: radial-gradient(140% 140% at 10% 20%, rgba(116, 240, 237, 0.15), transparent 40%),
+                  radial-gradient(120% 120% at 80% 0%, rgba(139, 108, 255, 0.18), transparent 35%),
+                  var(--bg);
+      padding: 40px 32px;
+    }
+    .page {
+      max-width: 960px;
+      margin: 0 auto;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.45);
+    }
+    .page::before, .page::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .page::before {
+      background: radial-gradient(240px at 8% 12%, rgba(116, 240, 237, 0.08), transparent),
+                  radial-gradient(200px at 90% 18%, rgba(139, 108, 255, 0.1), transparent);
+    }
+    .page::after {
+      background: linear-gradient(120deg, rgba(255, 255, 255, 0.12), transparent 40%, rgba(255, 255, 255, 0.08) 70%, transparent);
+      mix-blend-mode: screen;
+      opacity: 0.35;
+    }
+    .frame {
+      position: relative;
+      padding: 40px 44px 48px;
+    }
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .brand {
+      font-family: 'Space Grotesk', 'Manrope', system-ui, sans-serif;
+      letter-spacing: -0.03em;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand .orb {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #74f0ed, #8b6cff);
+      box-shadow: 0 10px 30px rgba(139, 108, 255, 0.35);
+    }
+    .brand .name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .headline {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .headline .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .headline .eyebrow::before {
+      content: '';
+      width: 34px;
+      height: 2px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #74f0ed, #8b6cff);
+    }
+    .headline h1 {
+      margin: 0;
+      font-size: 32px;
+      line-height: 1.1;
+      font-weight: 700;
+      color: #f7fbff;
+      letter-spacing: -0.02em;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--pill);
+      color: var(--muted);
+      border: 1px solid var(--line);
+      font-size: 12px;
+      letter-spacing: 0.01em;
+    }
+    .chip strong { color: #f0f4ff; font-weight: 700; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+    .panel h3 {
+      margin: 0 0 10px;
+      font-family: 'Space Grotesk', 'Manrope', system-ui, sans-serif;
+      font-size: 14px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .stat {
+      padding: 14px;
+      border-radius: 14px;
+      background: var(--card);
+      border: 1px solid var(--line);
+    }
+    .stat .label {
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .stat .value {
+      font-weight: 700;
+      font-size: 14px;
+      color: #f3f7ff;
+      letter-spacing: -0.01em;
+    }
+    .columns {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 18px;
+      margin-top: 4px;
+    }
+    .card {
+      padding: 18px;
+      border-radius: 18px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      position: relative;
+      overflow: hidden;
+    }
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      letter-spacing: -0.01em;
+      font-weight: 700;
+      color: #f7fbff;
+    }
+    .card p {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+    .list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .list .item {
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px dashed var(--line);
+    }
+    .item .k {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .item .v {
+      font-weight: 700;
+      color: #f1f5ff;
+      font-size: 13px;
+      letter-spacing: -0.01em;
+    }
+    .qr-block {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .qr {
+      width: 110px;
+      height: 110px;
+      border-radius: 12px;
+      padding: 8px;
+      background: #0b1830;
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+    }
+    .qr img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .badge-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .badge {
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: rgba(116, 240, 237, 0.08);
+      border: 1px solid rgba(116, 240, 237, 0.3);
+      color: #b4f7f5;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      font-size: 12px;
+    }
+    footer {
+      margin-top: 22px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .pill-link {
+      color: #f2f6ff;
+      text-decoration: none;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: linear-gradient(120deg, rgba(116, 240, 237, 0.14), rgba(139, 108, 255, 0.18));
+      border: 1px solid var(--line);
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="frame">
+      <header>
+        <div class="brand">
+          <div class="orb"></div>
+          <div class="name">Product Certificate</div>
+        </div>
+        <div class="headline">
+          <div class="eyebrow">Verified Product Snapshot</div>
+          <h1>{{ name | default: "Product Name" }}</h1>
+          <div class="chips">
+            <span class="chip"><strong>Brand</strong> {{ brand | default: "—" }}</span>
+            <span class="chip"><strong>Category</strong> {{ category | default: "—" }}</span>
+            <span class="chip"><strong>SKU / Code</strong> {{ code | default: "—" }}</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="panel">
+        <h3>Product Identity</h3>
+        <div class="stat-grid">
+          <div class="stat">
+            <div class="label">Product ID</div>
+            <div class="value">{{ id | default: "—" }}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Size</div>
+            <div class="value">{{ size | default: "—" }}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Material</div>
+            <div class="value">{{ material | default: "—" }}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Made In</div>
+            <div class="value">{{ madeIn | default: "—" }}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Specs</div>
+            <div class="value">{{ specs | default: "—" }}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Created</div>
+            <div class="value">{{ createdAt | date: "%Y-%m-%d" | default: "—" }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="columns">
+        <div class="card">
+          <h2>Status &amp; Certification</h2>
+          <div class="list">
+            <div class="item">
+              <div class="k">Status</div>
+              <div class="v">{{ status | default: "Pending" }}</div>
+            </div>
+            <div class="item">
+              <div class="k">Admin Progress</div>
+              <div class="v">{{ adminProgress | default: "—" }}</div>
+            </div>
+            <div class="item">
+              <div class="k">Payment</div>
+              <div class="v">{{ paymentStatus | default: "—" }}</div>
+            </div>
+            <div class="item">
+              <div class="k">Seal Number</div>
+              <div class="v">
+                {% if certificate and certificate.seal_number %}
+                  {{ certificate.seal_number }}
+                {% elsif seal_number %}
+                  {{ seal_number }}
+                {% else %}
+                  Pending allocation
+                {% endif %}
+              </div>
+            </div>
+            <div class="item">
+              <div class="k">Template Document ID</div>
+              <div class="v">
+                {% if certificate and certificate.pdfmonkeyDocumentId %}
+                  {{ certificate.pdfmonkeyDocumentId }}
+                {% elsif pdfmonkeyDocumentId %}
+                  {{ pdfmonkeyDocumentId }}
+                {% else %}
+                  —
+                {% endif %}
+              </div>
+            </div>
+            <div class="item">
+              <div class="k">Report URL</div>
+              <div class="v">
+                {% assign report_link = verify_url | default: certificate.qrUrl | default: certificate.pdfUrl | default: "" %}
+                {% if report_link != "" %}
+                  {{ report_link }}
+                {% else %}
+                  Not published yet
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="badge-row">
+            <div class="badge">Trusted QA</div>
+            <div class="badge">Automated Audit Trail</div>
+            <div class="badge">Secure QR Verification</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Responsible Owner</h2>
+          <p>{{ user.name | default: "—" }}</p>
+          <div class="list" style="grid-template-columns: 1fr;">
+            <div class="item">
+              <div class="k">Company</div>
+              <div class="v">{{ user.company | default: "—" }}</div>
+            </div>
+            <div class="item">
+              <div class="k">Email</div>
+              <div class="v">{{ user.email | default: "—" }}</div>
+            </div>
+            <div class="item">
+              <div class="k">Address</div>
+              <div class="v">{{ user.address | default: "—" | newline_to_br }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 18px;">
+        <h2>Product Narrative</h2>
+        <p>
+          {{ specs | default: "Technical specifications to be supplied." | newline_to_br }}
+        </p>
+        <div class="qr-block">
+          <div class="qr">
+            {% assign qr_src = qr_data | default: certificate.qrUrl | default: qrUrl | default: "" %}
+            {% if qr_src != "" %}
+              <img src="{{ qr_src }}" alt="QR code" />
+            {% else %}
+              <div style="font-size:11px; color: var(--muted); text-align:center;">QR pending</div>
+            {% endif %}
+          </div>
+          <div>
+            <div class="k" style="margin-bottom:6px;">Verify instantly</div>
+            <div class="v" style="font-size:13px; color:#f2f6ff;">
+              {% if qr_src != "" %}
+                Scan the QR code to open the live verification page.
+              {% else %}
+                A verification QR will be attached once the report is finalized.
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer>
+        <span>Generated {{ date | default: createdAt | date: "%Y-%m-%d" }}</span>
+        {% assign link = verify_url | default: certificate.pdfUrl | default: certificate.qrUrl | default: "" %}
+        {% if link != "" %}
+          <a class="pill-link" href="{{ link }}">Open online report</a>
+        {% else %}
+          <span style="color: var(--muted);">Report link pending</span>
+        {% endif %}
+      </footer>
+    </div>
+  </div>
+</body>
+</html>

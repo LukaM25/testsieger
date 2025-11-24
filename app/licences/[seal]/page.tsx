@@ -1,19 +1,13 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 
-type Props = { params: { id: string } };
+type Props = { params: { seal: string } };
 
-export default async function VerifyPage({ params }: Props) {
-  const identifier = params.id;
+export default async function LicencePage({ params }: Props) {
+  const seal = params.seal;
 
   const cert = await prisma.certificate.findFirst({
-    where: {
-      OR: [
-        { seal_number: identifier },
-        { id: identifier },
-        { productId: identifier },
-      ],
-    },
+    where: { id: seal },
     include: {
       product: {
         include: { user: { select: { name: true } } },
@@ -25,7 +19,7 @@ export default async function VerifyPage({ params }: Props) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-10">
         <h1 className="text-2xl font-semibold">Nicht gefunden</h1>
-        <p className="mt-2 text-gray-600">Kein Zertifikat mit Kennung „{identifier}“.</p>
+        <p className="mt-2 text-gray-600">Kein Zertifikat mit der ID „{seal}“.</p>
       </div>
     );
   }
@@ -35,7 +29,7 @@ export default async function VerifyPage({ params }: Props) {
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <h1 className="mb-2 text-3xl font-semibold">Verifikation</h1>
-      <p className="mb-6 text-gray-600">Siegelnummer: <span className="font-mono">{cert.seal_number}</span></p>
+      <p className="mb-6 text-gray-600">Zertifikat-ID: <span className="font-mono">{cert.id}</span></p>
 
       <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-2 space-y-3">

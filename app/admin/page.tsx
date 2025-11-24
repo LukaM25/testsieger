@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCertificateActions } from '@/hooks/useCertificateActions';
+import { CertificatePreviewModal } from '@/components/CertificatePreviewModal';
 
 const STATUS_OPTIONS = [
   { value: 'PRECHECK', label: 'Pre-Check' },
@@ -41,31 +43,26 @@ type AdminProduct = {
   };
   paymentStatus: string;
   certificate?: {
+    id: string;
     pdfUrl?: string | null;
     qrUrl?: string | null;
     seal_number?: string | null;
-    pdfmonkeyDocumentId?: string | null;
+    externalReferenceId?: string | null;
   } | null;
 };
 
 const statusLabel = (status: string) => {
   switch (status) {
-    case 'PRECHECK':
-      return 'Pre-Check eingereicht';
-    case 'PAID':
-      return 'Zahlung erhalten';
-    case 'IN_REVIEW':
-      return 'Prüfung läuft';
-    case 'COMPLETED':
-      return 'Abgeschlossen';
+    case 'PRECHECK': return 'Pre-Check eingereicht';
+    case 'PAID': return 'Zahlung erhalten';
+    case 'IN_REVIEW': return 'Prüfung läuft';
+    case 'COMPLETED': return 'Abgeschlossen';
     case 'RECEIVED':
     case 'ANALYSIS':
     case 'COMPLETION':
     case 'PASS':
-    case 'FAIL':
-      return status.charAt(0) + status.slice(1).toLowerCase();
-    default:
-      return status;
+    case 'FAIL': return status.charAt(0) + status.slice(1).toLowerCase();
+    default: return status;
   }
 };
 
@@ -76,6 +73,10 @@ export default function AdminPage() {
   const [banner, setBanner] = useState<string | null>(null);
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
+
+  // Hook Initialization
+  const { handlePreview, previewUrl, isLoading: isPreviewLoading } = useCertificateActions();
+  const [activePreviewId, setActivePreviewId] = useState<string | null>(null);
 
   const fetchProducts = useCallback(async () => {
     setLoadingProducts(true);
@@ -126,6 +127,12 @@ export default function AdminPage() {
     else setMessage('Falsches Admin-Passwort');
   };
 
+  // Handler for preview click (Parent side)
+  const onPreviewClick = async (certId: string) => {
+    setActivePreviewId(certId);
+    await handlePreview(certId);
+  };
+
   if (!authed) {
     return (
       <div className="mx-auto max-w-md px-4 py-10">
@@ -151,7 +158,7 @@ export default function AdminPage() {
         <header className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h1 className="text-3xl font-bold text-slate-900">Prüfung verwalten</h1>
           <p className="mt-2 text-sm text-slate-500">
-            Hier sehen Sie alle eingereichten Produkte, aufgeteilt nach Einreichdatum. Öffnen Sie eine Zeile, um die Pre-Check-Daten einzusehen und den Status über den Dropdown-Button zu aktualisieren.
+            Internal Engine Active. Preview certificates before sending.
           </p>
           {banner && <p className="mt-3 text-sm text-rose-600">{banner}</p>}
         </header>
@@ -172,6 +179,9 @@ export default function AdminPage() {
                     fetchProducts();
                     setMessage(`Status für ${product.name} aktualisiert.`);
                   }}
+                  // UPDATED: Pass the flexible ID handler
+                  onPreview={(id) => onPreviewClick(id)}
+                  isPreviewLoading={isPreviewLoading && activePreviewId === (product.certificate?.id || 'temp')}
                 />
               ))}
             </section>
@@ -179,6 +189,14 @@ export default function AdminPage() {
         )}
         {message && <p className="text-sm text-green-700">{message}</p>}
       </div>
+
+      {/* The Modal */}
+      <CertificatePreviewModal 
+        isOpen={!!previewUrl}
+        onClose={() => window.location.reload()} // Reload to clear state/blobs cleanly
+        pdfUrl={previewUrl}
+        productName="Admin Preview"
+      />
     </div>
   );
 }
@@ -186,9 +204,14 @@ export default function AdminPage() {
 function AdminProductRow({
   product,
   onUpdated,
+  onPreview,
+  isPreviewLoading
 }: {
   product: AdminProduct;
   onUpdated: () => void;
+  // UPDATED Type: Now accepts an ID string
+  onPreview: (id: string) => void;
+  isPreviewLoading: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<StatusOption>(
@@ -197,18 +220,55 @@ function AdminProductRow({
   useEffect(() => {
     setSelectedStatus(product.adminProgress || 'PRECHECK');
   }, [product.adminProgress]);
-  useEffect(() => {
-    setPaymentStatusValue((product.paymentStatus as PaymentStatusOption) || 'UNPAID');
-  }, [product.paymentStatus]);
+  
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
   const [sendLoading, setSendLoading] = useState(false);
+  
   const [paymentStatusValue, setPaymentStatusValue] = useState<PaymentStatusOption>(
     (product.paymentStatus as PaymentStatusOption) || 'UNPAID'
   );
+  
+  useEffect(() => {
+    setPaymentStatusValue((product.paymentStatus as PaymentStatusOption) || 'UNPAID');
+  }, [product.paymentStatus]);
+
   const [paymentStatusLoading, setPaymentStatusLoading] = useState(false);
   const [paymentStatusMessage, setPaymentStatusMessage] = useState<string | null>(null);
   const [localMessage, setLocalMessage] = useState<string | null>(null);
+
+  // NEW: Smart Preview Handler (Stops the Reload loop)
+  const handleSmartPreview = async () => {
+    // 1. If cert exists, call parent immediately
+    if (product.certificate?.id) {
+      onPreview(product.certificate.id);
+      return;
+    }
+
+    // 2. If missing, create it first
+    setLocalMessage('Erstelle Vorschau-Entwurf...');
+    try {
+      const res = await fetch('/api/admin/ensure-cert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: product.id })
+      });
+      const data = await res.json();
+
+      if (data.certificateId) {
+        setLocalMessage('Lade Vorschau...');
+        // A. Refresh list in background (so it exists next time)
+        onUpdated();
+        // B. Call parent with NEW ID immediately (No page reload needed)
+        onPreview(data.certificateId);
+      } else {
+        setLocalMessage('Fehler bei Entwurf-Erstellung');
+      }
+    } catch (e) {
+      console.error(e);
+      setLocalMessage('Fehler.');
+    }
+  };
 
   const handleUpdate = async () => {
     setLocalMessage(null);
@@ -238,10 +298,12 @@ function AdminProductRow({
     }
   };
 
-  const canSendCertificate = ['PAID', 'IN_REVIEW'].includes(product.status);
+  // FIX: Allow sending if payment is PAID, regardless of the workflow status
+  const canSendCertificate = product.paymentStatus === 'PAID' || ['PAID', 'IN_REVIEW', 'COMPLETED'].includes(product.status);
+  
   const handleSendCertificate = async () => {
     if (!canSendCertificate) {
-      setLocalMessage('Produkt muss mindestens IN_REVIEW sein, bevor das Zertifikat versendet wird.');
+      setLocalMessage('Produkt muss mindestens IN_REVIEW sein oder BEZAHLT, bevor das Zertifikat versendet wird.');
       return;
     }
     setLocalMessage(null);
@@ -257,7 +319,7 @@ function AdminProductRow({
         setLocalMessage(data.error || 'Zertifikat konnte nicht versendet werden.');
         return;
       }
-      setLocalMessage('Zertifikat versendet.');
+      setLocalMessage('Zertifikat versendet (Internal Engine).');
       onUpdated();
     } catch (err) {
       console.error(err);
@@ -326,77 +388,94 @@ function AdminProductRow({
             <span className="text-xs text-slate-400">{new Date(product.createdAt).toLocaleTimeString('de-DE')}</span>
           </div>
         </button>
-          <div className="flex flex-col gap-2 md:flex-row md:items-center">
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value as StatusOption)}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs uppercase tracking-[0.2em]"
-            >
-              {STATUS_OPTIONS.map((status) => (
-                <option
-                  key={status.value}
-                  value={status.value}
-                  disabled={status.value === 'PRECHECK'}
-                >
-                  {status.label}
-                </option>
-              ))}
-            </select>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={handleUpdate}
-                  className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition disabled:opacity-70"
-                >
-                  {loading ? 'Speichert…' : 'Status aktualisieren'}
-                </button>
-                {selectedStatus === 'PASS' && (
-                  <button
-                    type="button"
-                    disabled={sendLoading || !canSendCertificate}
-                    onClick={handleSendCertificate}
-                    className="rounded-lg border border-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-900 transition disabled:opacity-70"
-                  >
-                    {sendLoading ? 'Sendet Zertifikat…' : canSendCertificate ? 'Send Certificate' : 'Warten auf Zahlung'}
-                  </button>
-                )}
-                {product.certificate?.pdfUrl && (
-                  <a
-                    href={product.certificate.pdfUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-lg border border-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-900 transition hover:bg-slate-50"
-                  >
-                    PDF herunterladen
-                  </a>
-                )}
-              </div>
-            </div>
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-            <span className="font-semibold uppercase tracking-[0.3em] text-slate-500">Payment Status</span>
-            <select
-              value={paymentStatusValue}
-              onChange={(e) => setPaymentStatusValue(e.target.value as PaymentStatusOption)}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold"
-            >
-              {PAYMENT_STATUS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+          
+        <div className="flex flex-col gap-2 md:flex-row md:items-center">
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value as StatusOption)}
+            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs uppercase tracking-[0.2em]"
+          >
+            {STATUS_OPTIONS.map((status) => (
+              <option
+                key={status.value}
+                value={status.value}
+                disabled={status.value === 'PRECHECK'}
+              >
+                {status.label}
+              </option>
+            ))}
+          </select>
+
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              disabled={paymentStatusLoading}
-              onClick={handlePaymentStatusChange}
-              className="rounded-lg border border-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-900 transition disabled:opacity-70"
+              disabled={loading}
+              onClick={handleUpdate}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition disabled:opacity-70"
             >
-              {paymentStatusLoading ? 'Speichert…' : 'Confirm'}
+              {loading ? '...' : 'Update'}
             </button>
+
+            {/* PREVIEW BUTTON */}
+            <button
+              type="button"
+              onClick={handleSmartPreview}
+              disabled={isPreviewLoading}
+              className="rounded-lg border border-blue-600 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-blue-600 transition hover:bg-blue-50 disabled:opacity-50"
+            >
+              {isPreviewLoading ? 'Lade...' : 'Vorschau'}
+            </button>
+
+            {/* SEND BUTTON */}
+            {selectedStatus === 'PASS' && (
+              <button
+                type="button"
+                disabled={sendLoading || !canSendCertificate}
+                onClick={handleSendCertificate}
+                className="rounded-lg border border-emerald-600 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 transition hover:bg-emerald-50 disabled:opacity-70"
+              >
+                {sendLoading ? 'Sendet...' : canSendCertificate ? 'Send Cert' : 'Warten auf Zahlung'}
+              </button>
+            )}
+
+            {product.certificate?.pdfUrl && (
+              <a
+                href={product.certificate.pdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-lg border border-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-900 transition hover:bg-slate-50"
+              >
+                PDF
+              </a>
+            )}
           </div>
-          {paymentStatusMessage && <p className="mt-1 text-xs text-slate-500">{paymentStatusMessage}</p>}
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+          <span className="font-semibold uppercase tracking-[0.3em] text-slate-500">Payment Status</span>
+          <select
+            value={paymentStatusValue}
+            onChange={(e) => setPaymentStatusValue(e.target.value as PaymentStatusOption)}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold"
+          >
+            {PAYMENT_STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            disabled={paymentStatusLoading}
+            onClick={handlePaymentStatusChange}
+            className="rounded-lg border border-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-900 transition disabled:opacity-70"
+          >
+            {paymentStatusLoading ? '...' : 'Confirm'}
+          </button>
+        </div>
+        {paymentStatusMessage && <p className="mt-1 text-xs text-slate-500">{paymentStatusMessage}</p>}
       </div>
+
       {selectedStatus === 'FAIL' && (
         <textarea
           value={note}
@@ -406,6 +485,7 @@ function AdminProductRow({
           rows={2}
         />
       )}
+
       {expanded && (
         <div className="mt-4 grid gap-3 rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
           {detailFields.map(([label, value]) => (

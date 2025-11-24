@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createPdfDocument, getDocumentCard } from "@/lib/pdfmonkey";
 import { sendPrecheckConfirmation } from "@/lib/email";
+import { generateCertificatePdf } from "@/pdfGenerator";
 import QRCode from "qrcode";
 import fs from "fs/promises";
 import path from "path";
+
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
@@ -12,58 +14,83 @@ export async function POST(req: Request) {
 
     const product = await prisma.product.findUnique({
       where: { id: productId },
-      include: { user: true },
+      include: { user: true, certificate: true },
     });
 
     if (!product) return NextResponse.json({ error: "Produkt nicht gefunden" }, { status: 404 });
 
-    const seal_number = `ABC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-    const qr_target = `${process.env.NEXT_PUBLIC_BASE_URL}/reports/${product.id}`;
-    const qr_url = await QRCode.toDataURL(qr_target);
+    const existingCert = product.certificate;
+    const seal_number = existingCert?.seal_number ?? generateSeal();
+    const baseDomain =
+      process.env.NEXT_PUBLIC_BASE_URL || process.env.APP_URL || "http://localhost:3000";
 
-    const valid_to = new Date();
-    valid_to.setFullYear(valid_to.getFullYear() + 3);
+    // Ensure a certificate row exists so we can use its id in the QR/verify URL.
+    const cert =
+      existingCert ??
+      (await prisma.certificate.create({
+        data: {
+          productId: product.id,
+          pdfUrl: "",
+          qrUrl: "",
+          seal_number,
+        },
+      }));
 
-    const pdf = await createPdfDocument({
-      product_name: product.name,
-      brand_name: product.brand,
-      category: product.category || "-",
-      sku: product.code || "-",
-      seal_number,
-      valid_to: valid_to.toISOString().split("T")[0],
-      report_url: qr_target,
-      qr_url,
-    });
-    if (!pdf.id) {
-      throw new Error("PDFMonkey did not return an id");
-    }
-
-    const card = await waitForDocumentSuccess(pdf.id);
-
-    if (!card.downloadUrl) {
-      throw new Error("PDF download URL missing");
-    }
+    const verifyUrl = `${baseDomain.replace(/\/$/, "")}/licences/${cert.id}`;
+    const qrBuffer = await QRCode.toBuffer(verifyUrl, { margin: 1, width: 512 });
 
     const uploadsDir = path.join(process.cwd(), "public", "uploads");
+    const qrDir = path.join(process.cwd(), "public", "qr");
     await fs.mkdir(uploadsDir, { recursive: true });
+    await fs.mkdir(qrDir, { recursive: true });
 
-    const pdfResp = await fetch(card.downloadUrl);
-    if (!pdfResp.ok) {
-      throw new Error("PDF download failed");
-    }
+    const pdfBuffer = await generateCertificatePdf({
+      product: {
+        id: product.id,
+        name: product.name,
+        brand: product.brand,
+        category: product.category ?? null,
+        code: product.code ?? null,
+        specs: product.specs ?? null,
+        size: product.size ?? null,
+        madeIn: product.madeIn ?? null,
+        material: product.material ?? null,
+        status: product.status,
+        adminProgress: product.adminProgress,
+        paymentStatus: product.paymentStatus,
+        createdAt: product.createdAt.toISOString(),
+      },
+      user: {
+        name: product.user.name,
+        company: product.user.company ?? null,
+        email: product.user.email,
+        address: product.user.address ?? null,
+      },
+      certificate: {
+        seal_number,
+        pdfUrl: existingCert?.pdfUrl ?? undefined,
+        qrUrl: existingCert?.qrUrl ?? undefined,
+        pdfmonkeyDocumentId: existingCert?.pdfmonkeyDocumentId ?? undefined,
+      },
+      certificateId: cert.id,
+      domain: baseDomain,
+    });
 
-    const pdfBuffer = Buffer.from(await pdfResp.arrayBuffer());
     const pdfRel = `/uploads/REPORT_${seal_number}.pdf`;
     const pdfAbs = path.join(uploadsDir, `REPORT_${seal_number}.pdf`);
     await fs.writeFile(pdfAbs, pdfBuffer);
 
-    await prisma.certificate.create({
+    const qrRel = `/qr/${seal_number}.png`;
+    const qrAbs = path.join(qrDir, `${seal_number}.png`);
+    await fs.writeFile(qrAbs, qrBuffer);
+
+    await prisma.certificate.update({
+      where: { id: cert.id },
       data: {
-        productId: product.id,
-        seal_number,
         pdfUrl: pdfRel,
-        qrUrl: qr_target,
-        pdfmonkeyDocumentId: pdf.id,
+        qrUrl: qrRel,
+        seal_number,
+        pdfmonkeyDocumentId: null,
       },
     });
 
@@ -73,24 +100,20 @@ export async function POST(req: Request) {
       productName: product.name,
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      certificateId: cert.id,
+      seal: seal_number,
+      pdfUrl: pdfRel,
+      qrUrl: qrRel,
+      verifyUrl,
+    });
   } catch (e: any) {
     console.error("Error generating certificate:", e);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
 
-async function waitForDocumentSuccess(id: string, timeoutMs = 20000, intervalMs = 1500) {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    const card = await getDocumentCard(id);
-    if (card.status === "success" && card.downloadUrl) {
-      return card;
-    }
-    if (card.status === "failure") {
-      throw new Error("PDF generation failed");
-    }
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
-  }
-  throw new Error("PDF generation timed out");
+function generateSeal() {
+  return `ABC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
 }

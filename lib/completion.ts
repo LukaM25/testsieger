@@ -1,9 +1,9 @@
 import path from 'path';
 import { promises as fs } from 'fs';
 import QRCode from 'qrcode';
-import { createPdfDocument, getDocumentCard } from '@/lib/pdfmonkey';
 import { prisma } from '@/lib/prisma';
 import { sendCompletionEmail } from '@/lib/email';
+import { generateCertificatePdf } from '@/pdfGenerator';
 
 const APP_URL = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
 
@@ -26,31 +26,6 @@ export type CompletionResult = {
   seal: string;
 };
 
-type PdfMonkeyPayload = {
-  product: {
-    id: string;
-    name: string;
-    brand: string;
-    category?: string | null;
-    code?: string | null;
-    specs?: string | null;
-    size?: string | null;
-    made_in?: string | null;
-    material?: string | null;
-  };
-  user: {
-    name: string;
-    company?: string | null;
-    email: string;
-    address?: string | null;
-  };
-  standard: string;
-  date: string;
-  seal_number: string;
-  verify_url: string;
-  qr_data: string;
-};
-
 /**
  * Creates the certificate PDF, stores the assets, marks the product completed and emails the customer.
  */
@@ -65,11 +40,16 @@ export async function completeProduct(productId: string): Promise<CompletionResu
   }
 
   const seal = product.certificate?.seal_number ?? (await generateSeal());
-  const verifyUrl = `${APP_URL}/testergebnisse?productId=${product.id}`;
+  const certificateRecord =
+    product.certificate ??
+    (await prisma.certificate.create({
+      data: { productId: product.id, pdfUrl: '', qrUrl: '', seal_number: seal },
+    }));
+  const certificateId = certificateRecord.id;
+  const verifyUrl = `${APP_URL.replace(/\/$/, '')}/licences/${certificateId}`;
   const qrBuffer = await QRCode.toBuffer(verifyUrl, { margin: 1, width: 512 });
-  const qrData = `data:image/png;base64,${qrBuffer.toString('base64')}`;
 
-  const payload: PdfMonkeyPayload = {
+  const pdfBuffer = await generateCertificatePdf({
     product: {
       id: product.id,
       name: product.name,
@@ -78,8 +58,12 @@ export async function completeProduct(productId: string): Promise<CompletionResu
       code: product.code ?? null,
       specs: product.specs ?? null,
       size: product.size ?? null,
-      made_in: product.madeIn ?? null,
+      madeIn: product.madeIn ?? null,
       material: product.material ?? null,
+      status: product.status,
+      adminProgress: product.adminProgress,
+      paymentStatus: product.paymentStatus,
+      createdAt: product.createdAt.toISOString(),
     },
     user: {
       name: product.user.name,
@@ -87,59 +71,24 @@ export async function completeProduct(productId: string): Promise<CompletionResu
       address: product.user.address ?? null,
       company: product.user.company ?? null,
     },
-    standard: 'Prüfsiegel Zentrum UG Standard 2025',
-    date: new Date().toISOString().slice(0, 10),
-    seal_number: seal,
-    verify_url: verifyUrl,
-    qr_data: qrData,
-  };
-
-  const created = await createPdfDocument(payload);
-  let card = created;
-
-  const start = Date.now();
-  while (card.status !== 'success') {
-    if (card.status === 'failure') {
-      throw new CompletionError('PDF_GENERATION_FAILED', 500);
-    }
-    if (Date.now() - start > 20000) break;
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    card = await getDocumentCard(created.id);
-  }
-
-  if (card.status !== 'success' || !card.downloadUrl) {
-    await prisma.certificate.upsert({
-      where: { productId: product.id },
-      update: {
-        pdfUrl: '',
-        qrUrl: '',
-        seal_number: seal,
-        pdfmonkeyDocumentId: created.id,
-      },
-      create: {
-        productId: product.id,
-        pdfUrl: '',
-        qrUrl: '',
-        seal_number: seal,
-        pdfmonkeyDocumentId: created.id,
-      },
-    });
-    throw new CompletionError('PDF_NOT_READY_YET', 202, { document_id: created.id });
-  }
+    certificate: {
+      seal_number: seal,
+      pdfUrl: certificateRecord.pdfUrl ?? undefined,
+      qrUrl: certificateRecord.qrUrl ?? undefined,
+      externalReferenceId: certificateRecord.externalReferenceId ?? undefined,
+    },
+    certificateId,
+    domain: APP_URL,
+  });
 
   const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
   const qrDir = path.join(process.cwd(), 'public', 'qr');
   await fs.mkdir(uploadsDir, { recursive: true });
   await fs.mkdir(qrDir, { recursive: true });
 
-  const pdfResp = await fetch(card.downloadUrl);
-  if (!pdfResp.ok) {
-    throw new CompletionError('PDF_DOWNLOAD_FAILED', 500);
-  }
-  const pdfBuf = Buffer.from(await pdfResp.arrayBuffer());
   const pdfRel = `/uploads/REPORT_${seal}.pdf`;
   const pdfAbs = path.join(uploadsDir, `REPORT_${seal}.pdf`);
-  await fs.writeFile(pdfAbs, pdfBuf);
+  await fs.writeFile(pdfAbs, pdfBuffer);
 
   const qrRel = `/qr/${seal}.png`;
   const qrAbs = path.join(qrDir, `${seal}.png`);
@@ -151,14 +100,14 @@ export async function completeProduct(productId: string): Promise<CompletionResu
       pdfUrl: pdfRel,
       qrUrl: qrRel,
       seal_number: seal,
-      pdfmonkeyDocumentId: created.id,
+      externalReferenceId: null,
     },
     create: {
       productId: product.id,
       pdfUrl: pdfRel,
       qrUrl: qrRel,
       seal_number: seal,
-      pdfmonkeyDocumentId: created.id,
+      externalReferenceId: null,
     },
   });
 
@@ -174,8 +123,8 @@ export async function completeProduct(productId: string): Promise<CompletionResu
     verifyUrl,
     pdfUrl: pdfRel,
     qrUrl: qrRel,
-    pdfBuffer: pdfBuf,
-    documentId: created.id,
+    pdfBuffer,
+    documentId: undefined,
   });
 
   return {

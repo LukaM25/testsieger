@@ -60,8 +60,11 @@ model Certificate {
   qrUrl               String
   createdAt           DateTime @default(now())
   seal_number         String   @unique @default(uuid())
-  pdfmonkeyDocumentId String?  @unique
+  externalReferenceId String?  @unique
   product             Product  @relation(fields: [productId], references: [id])
+  snapshotData        Json?    // Added via SQL
+  lastSentAt          DateTime? // Added via SQL
+  status              String   @default("PENDING") // Added via SQL
 }
 
 enum ProductStatus {
