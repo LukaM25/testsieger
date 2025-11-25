@@ -41,6 +41,12 @@ export async function POST(req: Request) {
           console.error('Webhook completion error', err);
         }
       }
+    } else {
+      // fallback: no order record (pre-check fee). Still mark product as paid.
+      await prisma.product.update({
+        where: { id: productId },
+        data: { status: 'PAID', paymentStatus: 'PAID' },
+      });
     }
   }
 

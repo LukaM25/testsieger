@@ -13,6 +13,21 @@ interface DashboardClientProps {
 export default function DashboardClient({ user }: DashboardClientProps) {
   const { handlePreview, handleSend, previewUrl, isLoading, isSending } = useCertificateActions();
   const [activeCertId, setActiveCertId] = useState<string | null>(null);
+  const [products, setProducts] = useState(user.products || []);
+  const [orders] = useState(user.orders || []);
+  const [showSubmit, setShowSubmit] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    productName: '',
+    brand: '',
+    category: '',
+    code: '',
+    specs: '',
+    size: '',
+    madeIn: '',
+    material: '',
+  });
 
   const onPreviewClick = async (certId: string) => {
     setActiveCertId(certId);
@@ -25,6 +40,42 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     setActiveCertId(null);
   };
 
+  const handleQuickSubmit = async () => {
+    setSubmitMessage(null);
+    if (!newProduct.productName || !newProduct.brand) {
+      setSubmitMessage('Bitte Produktname und Marke ausfüllen.');
+      return;
+    }
+    setSubmitLoading(true);
+    try {
+      const res = await fetch('/api/products/quick-create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newProduct),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.product) {
+        setSubmitMessage(data.error || 'Produkt konnte nicht angelegt werden.');
+        return;
+      }
+      setProducts((prev: any[]) => [{ ...data.product, status: 'PRECHECK', adminProgress: 'PRECHECK', paymentStatus: 'UNPAID' }, ...prev]);
+      setSubmitMessage('Produkt angelegt. Lade Liste neu …');
+      setNewProduct({
+        productName: '',
+        brand: '',
+        category: '',
+        code: '',
+        specs: '',
+        size: '',
+        madeIn: '',
+        material: '',
+      });
+      setTimeout(() => window.location.reload(), 800);
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="mx-auto max-w-5xl">
@@ -34,11 +85,85 @@ export default function DashboardClient({ user }: DashboardClientProps) {
         </div>
 
         <div className="grid gap-10">
+          <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <button
+              type="button"
+              onClick={() => setShowSubmit((s) => !s)}
+              className="w-full flex items-center justify-between text-left font-semibold text-slate-900"
+            >
+              <span>Submit Product</span>
+              <span className="text-sm text-slate-500">{showSubmit ? '−' : '+'}</span>
+            </button>
+            {showSubmit && (
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <input
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  placeholder="Produktname"
+                  value={newProduct.productName}
+                  onChange={(e) => setNewProduct((p) => ({ ...p, productName: e.target.value }))}
+                />
+                <input
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  placeholder="Marke"
+                  value={newProduct.brand}
+                  onChange={(e) => setNewProduct((p) => ({ ...p, brand: e.target.value }))}
+                />
+                <input
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  placeholder="Kategorie (optional)"
+                  value={newProduct.category}
+                  onChange={(e) => setNewProduct((p) => ({ ...p, category: e.target.value }))}
+                />
+                <input
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  placeholder="Artikelnummer (optional)"
+                  value={newProduct.code}
+                  onChange={(e) => setNewProduct((p) => ({ ...p, code: e.target.value }))}
+                />
+                <input
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm md:col-span-2"
+                  placeholder="Spezifikationen (optional)"
+                  value={newProduct.specs}
+                  onChange={(e) => setNewProduct((p) => ({ ...p, specs: e.target.value }))}
+                />
+                <input
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  placeholder="Größe / Maße (optional)"
+                  value={newProduct.size}
+                  onChange={(e) => setNewProduct((p) => ({ ...p, size: e.target.value }))}
+                />
+                <input
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  placeholder="Hergestellt in (optional)"
+                  value={newProduct.madeIn}
+                  onChange={(e) => setNewProduct((p) => ({ ...p, madeIn: e.target.value }))}
+                />
+                <input
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm md:col-span-2"
+                  placeholder="Material (optional)"
+                  value={newProduct.material}
+                  onChange={(e) => setNewProduct((p) => ({ ...p, material: e.target.value }))}
+                />
+                <div className="md:col-span-2 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleQuickSubmit}
+                    disabled={submitLoading}
+                    className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-60"
+                  >
+                    {submitLoading ? 'Wird gesendet…' : 'Produkt senden'}
+                  </button>
+                  {submitMessage && <span className="text-sm text-slate-600">{submitMessage}</span>}
+                </div>
+              </div>
+            )}
+          </section>
+
           <section>
             <h2 className="text-xl font-semibold mb-3">Produkte</h2>
-            {user.products.length === 0 && <p className="text-gray-600">Noch keine Produkte.</p>}
+            {products.length === 0 && <p className="text-gray-600">Noch keine Produkte.</p>}
             <div className="grid gap-4">
-              {user.products.map((p: any) => (
+              {products.map((p: any) => (
                 <div key={p.id} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
                   <div className="font-semibold text-lg">{p.name}</div>
                   <div className="text-sm text-gray-600 mb-2">Status: {p.status}</div>
@@ -73,7 +198,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
 
           <section>
             <h2 className="text-xl font-semibold mb-3">Bestellungen</h2>
-            {user.orders.map((o: any) => (
+            {orders.map((o: any) => (
               <div key={o.id} className="rounded-lg border border-gray-200 bg-white p-4 flex justify-between">
                 <div>{o.plan}</div>
                 <div className={o.paidAt ? 'text-green-600' : 'text-yellow-600'}>{o.paidAt ? 'Bezahlt' : 'Offen'}</div>

@@ -24,6 +24,7 @@ const sections: NavSection[] = [
     labelKey: "nav.services",
     items: [
       { labelKey: "nav.overview", href: "/produkte" },
+      { labelKey: "nav.precheck", href: "/precheck" },
       { labelKey: "nav.productTest", href: "/produkte/produkt-test" },
       { labelKey: "nav.trainingCheck", href: "/produkte/ausbildung-check" },
       { labelKey: "nav.results", href: "/testergebnisse" },
@@ -73,6 +74,10 @@ export default function Navbar() {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+  const [registerData, setRegisterData] = useState({ name: '', email: '', password: '' });
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerError, setRegisterError] = useState<string | null>(null);
   const loadProfile = useCallback(async () => {
     try {
       const res = await fetch('/api/auth/me');
@@ -217,6 +222,33 @@ export default function Navbar() {
     } finally {
       setProfileLoading(false);
       setAdminLoading(false);
+    }
+  };
+
+  const handleRegister = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setRegisterError(null);
+    setRegisterLoading(true);
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(registerData),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'Registrierung fehlgeschlagen');
+      }
+      const user = await loadProfile();
+      setProfileUser(user);
+      setShowRegister(false);
+      setRegisterData({ name: '', email: '', password: '' });
+      setProfileOpen(true);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Registrierung fehlgeschlagen';
+      setRegisterError(message);
+    } finally {
+      setRegisterLoading(false);
     }
   };
 
@@ -576,6 +608,52 @@ export default function Navbar() {
                       </button>
                     </div>
                   </div>
+                ) : showRegister ? (
+                  <form onSubmit={handleRegister} className="space-y-3">
+                    <p className="text-sm font-semibold text-slate-900">{t('profile.register', 'Registrieren')}</p>
+                    <input
+                      type="text"
+                      placeholder={t('profile.name', 'Name')}
+                      value={registerData.name}
+                      onChange={(e) => setRegisterData((s) => ({ ...s, name: e.target.value }))}
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                      autoComplete="name"
+                      required
+                    />
+                    <input
+                      type="email"
+                      placeholder={t('profile.email')}
+                      value={registerData.email}
+                      onChange={(e) => setRegisterData((s) => ({ ...s, email: e.target.value }))}
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                      autoComplete="email"
+                      required
+                    />
+                    <input
+                      type="password"
+                      placeholder={t('profile.password')}
+                      value={registerData.password}
+                      onChange={(e) => setRegisterData((s) => ({ ...s, password: e.target.value }))}
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                      autoComplete="new-password"
+                      required
+                    />
+                    {registerError && <p className="text-xs text-rose-600">{registerError}</p>}
+                    <button
+                      type="submit"
+                      disabled={registerLoading}
+                      className="w-full rounded-full bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
+                    >
+                      {registerLoading ? t('profile.registering', 'Registriere...') : t('profile.register', 'Registrieren')}
+                    </button>
+                    <button
+                      type="button"
+                      className="w-full rounded-full border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+                      onClick={() => setShowRegister(false)}
+                    >
+                      {t('profile.backToLogin', 'Zurück zum Login')}
+                    </button>
+                  </form>
                 ) : (
                   <form onSubmit={handleLogin} className="space-y-3">
                     <p className="text-sm font-semibold text-slate-900">{t('profile.loginTitle')}</p>
@@ -613,6 +691,13 @@ export default function Navbar() {
                     <p className="text-xs text-slate-500">
                       <strong>Admin?</strong> {t('profile.adminHint')}
                     </p>
+                    <button
+                      type="button"
+                      className="w-full rounded-full border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+                      onClick={() => setShowRegister(true)}
+                    >
+                      {t('profile.register', 'Registrieren')}
+                    </button>
                   </form>
                 )}
               </div>

@@ -4,10 +4,7 @@ import { prisma } from '@/lib/prisma';
 import path from 'path';
 import { promises as fs } from 'fs';
 import QRCode from 'qrcode';
-import { Resend } from 'resend';
-
-const resendKey = process.env.RESEND_API_KEY!;
-const resend = new Resend(resendKey);
+import { sendCompletionEmail } from '@/lib/email';
 
 export async function POST(req: Request) {
   try {
@@ -81,7 +78,7 @@ export async function POST(req: Request) {
       verifyUrl,
       pdfUrl: pdfRel,
       qrUrl: qrRel,
-    }).catch(e => console.error('Resend error', e));
+    }).catch(e => console.error('Email error', e));
 
     return NextResponse.json({ ok: true, verifyUrl, certId: cert.id });
   } catch (e: any) {
@@ -100,34 +97,4 @@ async function generateSeal() {
   const seal = `PS-${new Date().getFullYear()}-${part}`;
   // optional: check DB collision
   return seal;
-}
-
-async function sendCompletionEmail(opts: {
-  to: string; name: string; productName: string;
-  verifyUrl: string; pdfUrl: string; qrUrl: string;
-}) {
-  const { to, name, productName, verifyUrl, pdfUrl, qrUrl } = opts;
-  const from = process.env.MAIL_FROM ?? 'no-reply@your-domain.tld';
-
-  await resend.emails.send({
-    from,
-    to,
-    subject: `Prüfung abgeschlossen – ${productName}`,
-    html: `
-      <div style="font-family:system-ui,Arial">
-        <p>Hallo ${escapeHtml(name)},</p>
-        <p>Die Prüfung Ihres Produkts <strong>${escapeHtml(productName)}</strong> ist abgeschlossen.</p>
-        <ul>
-          <li>Öffentliche Verifikation: <a href="${verifyUrl}">${verifyUrl}</a></li>
-          <li>Prüfbericht (PDF): <a href="${pdfUrl}">${pdfUrl}</a></li>
-          <li>QR-Grafik: <a href="${qrUrl}">${qrUrl}</a></li>
-        </ul>
-        <p>Vielen Dank!<br/>Prüfsiegel Zentrum UG</p>
-      </div>
-    `,
-  });
-}
-
-function escapeHtml(s: string) {
-  return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
 }

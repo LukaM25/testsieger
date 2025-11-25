@@ -1,47 +1,79 @@
 // lib/email.ts
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-if (!RESEND_API_KEY) {
-  throw new Error('Missing RESEND_API_KEY in env');
+const SMTP_HOST = process.env.SMTP_HOST;
+const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
+const FROM_EMAIL = process.env.MAIL_FROM ?? 'no-reply@your-domain.tld';
+
+const transporter = SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS
+  ? nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_PORT === 465,
+      auth: { user: SMTP_USER, pass: SMTP_PASS },
+    })
+  : null;
+
+type Attachment = { filename: string; content: Buffer; contentType?: string };
+
+async function sendEmail(opts: { to: string; subject: string; html: string; attachments?: Attachment[] }) {
+  const { to, subject, html, attachments } = opts;
+
+  if (transporter) {
+    await transporter.sendMail({
+      from: FROM_EMAIL,
+      to,
+      subject,
+      html,
+      attachments,
+    });
+    return;
+  }
+
+  console.warn('No email provider configured. Email skipped.');
 }
-const resend = new Resend(RESEND_API_KEY);
 
 export async function sendPrecheckConfirmation(opts: {
   to: string;
   name: string;
   productName: string;
+  invoicePdf?: Buffer;
+  shippingAddress?: string;
 }) {
-  const { to, name, productName } = opts;
-
-  const from = process.env.MAIL_FROM ?? 'no-reply@your-domain.tld';
-  const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
+  const { to, name, productName, invoicePdf, shippingAddress } = opts;
+  const appUrl = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
 
   const html = `
     <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height:1.6; color:#111">
       <p>Hallo ${escapeHtml(name || '')},</p>
       <p>Ihr Pre-Check für <strong>${escapeHtml(productName)}</strong> ist bei uns eingegangen.</p>
-      <p>Wir haben für Sie ein Kundenkonto angelegt. Sie können Abläufe und Dokumente im Dashboard einsehen.</p>
+      <p>Bitte begleichen Sie die Grundgebühr. Nach Zahlung senden wir Versandadresse und Rechnung.</p>
       <p>
-        <a href="${appUrl}/packages" style="display:inline-block;padding:10px 16px;border-radius:8px;background:#111;color:#fff;text-decoration:none;">
-          Pakete anzeigen
+        <a href="${appUrl}/lizenzen" style="display:inline-block;padding:10px 16px;border-radius:8px;background:#111;color:#fff;text-decoration:none;">
+          Lizenzpläne ansehen
         </a>
       </p>
+      ${shippingAddress ? `<p style="font-size:13px;color:#444;">Vorläufige Versandadresse: ${escapeHtml(shippingAddress)}</p>` : ''}
       <p>Danke!<br/>Prüfsiegel Zentrum UG</p>
     </div>
   `;
 
-  const { error } = await resend.emails.send({
-    from,
+  await sendEmail({
     to,
-    subject: 'Pre-Check eingegangen – wir prüfen Ihre Angaben',
+    subject: 'Pre-Check eingegangen – Grundgebühr jetzt bezahlen',
     html,
+    attachments: invoicePdf
+      ? [
+          {
+            filename: `Rechnung-${productName}.pdf`,
+            content: invoicePdf,
+            contentType: 'application/pdf',
+          },
+        ]
+      : undefined,
   });
-
-  if (error) {
-    // Don’t crash the flow — just log so we can inspect later.
-    console.error('Resend email error:', error);
-  }
 }
 
 export async function sendCompletionEmail(opts: {
@@ -55,13 +87,12 @@ export async function sendCompletionEmail(opts: {
   documentId?: string;
 }) {
   const { to, name, productName, verifyUrl, pdfUrl, qrUrl, pdfBuffer, documentId } = opts;
-  const from = process.env.MAIL_FROM ?? 'no-reply@your-domain.tld';
   const attachments = pdfBuffer
     ? [
         {
           filename: `${productName}-Prüfbericht.pdf`,
-          type: 'application/pdf',
-          data: pdfBuffer.toString('base64'),
+          content: pdfBuffer,
+          contentType: 'application/pdf',
         },
       ]
     : undefined;
@@ -84,17 +115,12 @@ export async function sendCompletionEmail(opts: {
     </div>
   `;
 
-  const { error } = await resend.emails.send({
-    from,
+  await sendEmail({
     to,
     subject: `Prüfung abgeschlossen – ${productName}`,
     html,
     attachments,
   });
-
-  if (error) {
-    console.error('Resend completion email error:', error);
-  }
 }
 
 export async function sendFailureNotification(opts: {
@@ -104,7 +130,6 @@ export async function sendFailureNotification(opts: {
   reason: string;
 }) {
   const { to, name, productName, reason } = opts;
-  const from = process.env.MAIL_FROM ?? 'no-reply@your-domain.tld';
   const html = `
     <div style="font-family:system-ui,Arial">
       <p>Hallo ${escapeHtml(name)},</p>
@@ -113,15 +138,11 @@ export async function sendFailureNotification(opts: {
       <p>Bitte senden Sie uns die fehlenden Angaben, damit wir fortfahren können.</p>
     </div>
   `;
-  const { error } = await resend.emails.send({
-    from,
+  await sendEmail({
     to,
     subject: `Statusmeldung zu ${productName}`,
     html,
   });
-  if (error) {
-    console.error('Resend failure email error:', error);
-  }
 }
 
 // minimal XSS-safe escaping for interpolated strings in HTML

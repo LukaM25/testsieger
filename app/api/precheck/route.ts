@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { setSession } from '@/lib/cookies';
 import { sendPrecheckConfirmation } from '@/lib/email';
+import { stripe } from '@/lib/stripe';
+import { generateInvoicePdf } from '@/lib/invoice';
 
 const PrecheckSchema = z.object({
   name: z.string().min(2),
@@ -79,23 +81,62 @@ export async function POST(req: Request) {
         material: data.material ?? undefined,
         status: 'PRECHECK',
       },
-      select: { id: true, name: true },
+      select: { id: true, name: true, brand: true },
     });
 
-    // 3) Send confirmation email (fire and forget)
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.APP_URL || 'http://localhost:3000';
+
+    // 3) Prepare invoice PDF
+    const invoicePdf = await generateInvoicePdf({
+      customerName: data.name,
+      customerEmail: data.email,
+      address: data.address,
+      productName: product.name,
+      amountCents: 25400,
+      invoiceNumber: `PC-${product.id.slice(0, 8)}`,
+    });
+
+    // 4) Send confirmation email (fire and forget)
     sendPrecheckConfirmation({
       to: data.email,
       name: data.name,
       productName: product.name,
+      invoicePdf,
+      shippingAddress: data.address,
     }).catch(() => { /* avoid blocking */ });
 
-    // 4) Set session & respond with next URL
+    // 5) Create checkout session for Grundgebühr
+    const checkout = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      customer_email: data.email,
+      client_reference_id: `${userId}:${product.id}:PRECHECK_FEE`,
+      line_items: [
+        {
+          price_data: {
+            currency: 'eur',
+            unit_amount: 25400,
+            product_data: {
+              name: `Pre-Check: ${product.name}`,
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: `${baseUrl}/precheck?productId=${product.id}&product=${encodeURIComponent(product.name)}`,
+      cancel_url: `${baseUrl}/precheck?productId=${product.id}&product=${encodeURIComponent(product.name)}`,
+    });
+
+    // 6) Set session & respond with checkout URL
     await setSession({ userId, email: data.email });
 
     const params = new URLSearchParams();
     params.set('product', product.name);
 
-    return NextResponse.json({ ok: true, redirect: `/precheck/success?${params.toString()}` });
+    return NextResponse.json({
+      ok: true,
+      productId: product.id,
+      redirect: checkout.url ?? `/precheck?productId=${product.id}&${params.toString()}`,
+    });
   } catch (err: any) {
     console.error(err);
     if (err?.issues) {

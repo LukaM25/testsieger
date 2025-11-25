@@ -11,16 +11,23 @@ const PLANS = [
 type Props = {
   productId: string;
   status: string;
+  paymentStatus?: string;
+  forceEnabled?: boolean;
 };
 
-export default function ProductPayButton({ productId, status }: Props) {
+export default function ProductPayButton({ productId, status, paymentStatus, forceEnabled = false }: Props) {
   const [plan, setPlan] = useState(PLANS[0].value);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  const canPay = ['TEST_PASSED', 'COMPLETED', 'PASS'].includes(status);
+  const alreadyPaid = paymentStatus === 'PAID' || paymentStatus === 'MANUAL';
+  const canPay = (forceEnabled && !alreadyPaid) || ['TEST_PASSED', 'COMPLETED', 'PASS'].includes(status);
 
   async function handlePay() {
+    if (alreadyPaid) {
+      setMessage('Bereits bezahlt.');
+      return;
+    }
     if (!canPay) {
       setMessage('Lizenzpläne werden erst nach bestandenem Test freigeschaltet.');
       return;
@@ -67,12 +74,18 @@ export default function ProductPayButton({ productId, status }: Props) {
       <button
         type="button"
         onClick={handlePay}
-        disabled={!canPay || loading}
+        disabled={!canPay || loading || alreadyPaid}
         className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-xs font-semibold transition ${
-          canPay ? 'bg-slate-900 text-white hover:bg-black' : 'bg-gray-200 text-slate-500 cursor-not-allowed'
+          canPay && !alreadyPaid ? 'bg-slate-900 text-white hover:bg-black' : 'bg-gray-200 text-slate-500 cursor-not-allowed'
         }`}
       >
-        {loading ? 'Checkout vorbereiten…' : canPay ? 'Zahlung starten' : 'Nach Test verfügbar'}
+        {loading
+          ? 'Checkout vorbereiten…'
+          : alreadyPaid
+          ? 'Bereits bezahlt'
+          : canPay
+          ? 'Zahlung starten'
+          : 'Nach Test verfügbar'}
       </button>
       {message && <p className="text-xs text-rose-600">{message}</p>}
     </div>

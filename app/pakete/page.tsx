@@ -1,7 +1,15 @@
 'use client';
 import { PackageCard } from '@/components/PackageCard';
+import { usePrecheckEligibility } from '@/hooks/usePrecheckEligibility';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function Packages() {
+  const router = useRouter();
+  const { hasPrecheck, paidAndPassed, loading } = usePrecheckEligibility();
+  const [notice, setNotice] = useState<string | null>(null);
+  const disabledLabel = 'Pre-Check + Grundgebühr + Prüfung nötig';
+
   async function choose(plan: string) {
     const res = await fetch('/api/payment', {
       method: 'POST',
@@ -13,29 +21,57 @@ export default function Packages() {
     window.location.href = data.url;
   }
 
+  const handleGuardedSelect = (plan: string) => {
+    if (!hasPrecheck || !paidAndPassed) {
+      setNotice('Bitte Pre-Check abschließen, Grundgebühr bezahlen und Prüfung abwarten. Weiterleitung zum Formular.');
+      router.push('/produkte/produkt-test');
+      return;
+    }
+    choose(plan);
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-6 pt-20 pb-16">
       <h1 className="text-3xl font-semibold text-[#2e4053]">Lizenzpläne</h1>
       <p className="text-gray-600 mt-2">Wählen Sie Ihren Plan für das Prüfsiegel.</p>
+      {notice && <p className="mt-3 text-sm text-amber-700">{notice}</p>}
 
       <div className="grid md:grid-cols-3 gap-6 mt-8">
         <PackageCard
           title="Basic"
           price="0,99€/Tag (jährlich)"
           subtitle="DE, 1 Kanal"
-          onSelect={() => choose('BASIC')}
+          onSelect={() => handleGuardedSelect('BASIC')}
+          disabled={!hasPrecheck || !paidAndPassed || loading}
+          disabledLabel={disabledLabel}
+          onDisabledClick={() => {
+            setNotice('Bitte Pre-Check abschließen, Grundgebühr bezahlen und Prüfung abwarten. Weiterleitung zum Formular.');
+            router.push('/produkte/produkt-test');
+          }}
         />
         <PackageCard
           title="Premium"
           price="1,47€/Tag (jährlich)"
           subtitle="EU-Sprachen, alle Kanäle"
-          onSelect={() => choose('PREMIUM')}
+          onSelect={() => handleGuardedSelect('PREMIUM')}
+          disabled={!hasPrecheck || !paidAndPassed || loading}
+          disabledLabel={disabledLabel}
+          onDisabledClick={() => {
+            setNotice('Bitte Pre-Check abschließen, Grundgebühr bezahlen und Prüfung abwarten. Weiterleitung zum Formular.');
+            router.push('/produkte/produkt-test');
+          }}
         />
         <PackageCard
           title="Lifetime"
           price="1466€ einmalig"
           subtitle="Zertifikat & Bericht, alle Kanäle"
-          onSelect={() => choose('LIFETIME')}
+          onSelect={() => handleGuardedSelect('LIFETIME')}
+          disabled={!hasPrecheck || !paidAndPassed || loading}
+          disabledLabel={disabledLabel}
+          onDisabledClick={() => {
+            setNotice('Bitte Pre-Check abschließen, Grundgebühr bezahlen und Prüfung abwarten. Weiterleitung zum Formular.');
+            router.push('/produkte/produkt-test');
+          }}
         />
       </div>
     </div>

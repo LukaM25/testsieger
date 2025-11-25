@@ -28,6 +28,7 @@ type FormValues = z.infer<typeof Schema>;
 export default function PrecheckForm() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const { locale } = useLocale();
   const tr = (de: string, en: string) => (locale === 'en' ? en : de);
 
@@ -37,17 +38,20 @@ export default function PrecheckForm() {
 
   const onSubmit = async (values: FormValues) => {
     setSubmitting(true);
+    setRedirecting(false);
     const res = await fetch('/api/precheck', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(values),
     });
     const data = await res.json();
-    setSubmitting(false);
     if (data?.ok && data?.redirect) {
-      router.push(data.redirect);
+      const target = data.redirect || `/precheck${data.productId ? `?productId=${data.productId}` : ''}`;
+      setRedirecting(true);
+      setTimeout(() => router.push(target), 800);
     } else {
       alert('Fehler beim Absenden. Bitte prüfen Sie Ihre Eingaben.');
+      setSubmitting(false);
     }
   };
 
@@ -180,6 +184,12 @@ export default function PrecheckForm() {
         >
           {submitting ? tr('Wird gesendet…', 'Sending…') : tr('Jetzt starten', 'Start now')}
         </button>
+
+        {redirecting && (
+          <p className="text-sm text-gray-700">
+            {tr('Weiterleitung zum Precheck-Portal …', 'Redirecting to the Precheck portal …')}
+          </p>
+        )}
       </form>
 
       <p className="mt-6 text-sm text-gray-600">
