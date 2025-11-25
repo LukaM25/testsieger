@@ -3,9 +3,9 @@
 import { useState } from 'react';
 
 const PLANS = [
-  { label: 'Basic', value: 'BASIC' },
-  { label: 'Premium', value: 'PREMIUM' },
-  { label: 'Lifetime', value: 'LIFETIME' },
+  { label: 'Basic – 0,99 € / Tag (jährlich)', value: 'BASIC' },
+  { label: 'Premium – 1,47 € / Tag (jährlich)', value: 'PREMIUM' },
+  { label: 'Lifetime – 1466 € einmalig', value: 'LIFETIME' },
 ];
 
 type Props = {
@@ -18,11 +18,11 @@ export default function ProductPayButton({ productId, status }: Props) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  const canPay = status === 'PRECHECK';
+  const canPay = ['TEST_PASSED', 'COMPLETED', 'PASS'].includes(status);
 
   async function handlePay() {
     if (!canPay) {
-      setMessage('Produkt muss vorher freigegeben werden.');
+      setMessage('Lizenzpläne werden erst nach bestandenem Test freigeschaltet.');
       return;
     }
     setLoading(true);
@@ -48,7 +48,7 @@ export default function ProductPayButton({ productId, status }: Props) {
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <label htmlFor={`plan-${productId}`} className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Plan
+          Lizenzplan
         </label>
         <select
           id={`plan-${productId}`}
@@ -72,7 +72,7 @@ export default function ProductPayButton({ productId, status }: Props) {
           canPay ? 'bg-slate-900 text-white hover:bg-black' : 'bg-gray-200 text-slate-500 cursor-not-allowed'
         }`}
       >
-        {loading ? 'Checkout vorbereiten…' : canPay ? 'Zahlung starten' : 'Noch nicht verfügbar'}
+        {loading ? 'Checkout vorbereiten…' : canPay ? 'Zahlung starten' : 'Nach Test verfügbar'}
       </button>
       {message && <p className="text-xs text-rose-600">{message}</p>}
     </div>

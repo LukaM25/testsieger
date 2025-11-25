@@ -92,7 +92,10 @@ export async function POST(req: Request) {
     // 4) Set session & respond with next URL
     await setSession({ userId, email: data.email });
 
-    return NextResponse.json({ ok: true, redirect: '/packages' });
+    const params = new URLSearchParams();
+    params.set('product', product.name);
+
+    return NextResponse.json({ ok: true, redirect: `/precheck/success?${params.toString()}` });
   } catch (err: any) {
     console.error(err);
     if (err?.issues) {

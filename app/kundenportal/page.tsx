@@ -67,7 +67,7 @@ export default async function KundenportalPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-500">Portal</p>
           <h1 className="mt-2 text-4xl font-bold text-slate-900 md:text-5xl">Digitales Kundenportal</h1>
           <p className="mt-4 text-lg text-slate-600">
-            Hier sehen Sie Ihre eingereichten Produkte. Solange ein Produkt noch nicht bezahlt ist, können Sie an dieser Stelle direkt in den Stripes Checkout wechseln.
+            Hier sehen Sie Ihre eingereichten Produkte. Die Testgebühr begleichen Sie hier; Lizenzpläne wählen und bezahlen Sie erst nach bestandenem Test.
           </p>
           <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
@@ -91,7 +91,7 @@ export default async function KundenportalPage() {
           <header className="flex flex-col gap-2">
             <h2 className="text-2xl font-semibold text-slate-900">Ihre Produkte</h2>
             <p className="text-sm text-slate-500">
-              Wählen Sie die Zahlung, sobald der Pre-Check abgeschlossen ist. Das System sendet Ihnen danach automatisch ein Prüfbericht per E-Mail.
+              Sobald der Pre-Check abgeschlossen ist, begleichen Sie hier die Testgebühr. Das System sendet Ihnen danach automatisch einen Prüfbericht per E-Mail; Lizenzgebühren folgen erst nach bestandenem Test.
             </p>
           </header>
           <div className="mt-6 space-y-6">
@@ -161,11 +161,13 @@ function statusLabel(status: string) {
     case 'PRECHECK':
       return 'Pre-Check eingereicht';
     case 'PAID':
-      return 'Zahlung erhalten';
+      return 'Testgebühr bezahlt';
+    case 'TEST_PASSED':
+      return 'Test bestanden';
     case 'IN_REVIEW':
       return 'Prüfung läuft';
     case 'COMPLETED':
-      return 'Abgeschlossen';
+      return 'Zertifikat erstellt';
     default:
       return status;
   }

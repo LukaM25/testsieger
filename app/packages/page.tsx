@@ -13,9 +13,9 @@ export default function Packages() {
   }
   return (
     <div className="grid md:grid-cols-3 gap-4">
-      <PackageCard title="Basic" price="254€ + 0,99€/Tag" subtitle="DE, 1 Kanal" onSelect={() => choose('BASIC')} />
-      <PackageCard title="Premium" price="254€ + 1,59€/Tag" subtitle="EU‑Sprachen, alle Kanäle" onSelect={() => choose('PREMIUM')} />
-      <PackageCard title="Lifetime" price="1477€" subtitle="Zertifikat & Bericht, alle Kanäle" onSelect={() => choose('LIFETIME')} />
+      <PackageCard title="Basic" price="0,99€/Tag (jährlich)" subtitle="DE, 1 Kanal" onSelect={() => choose('BASIC')} />
+      <PackageCard title="Premium" price="1,47€/Tag (jährlich)" subtitle="EU‑Sprachen, alle Kanäle" onSelect={() => choose('PREMIUM')} />
+      <PackageCard title="Lifetime" price="1466€ einmalig" subtitle="Zertifikat & Bericht, alle Kanäle" onSelect={() => choose('LIFETIME')} />
     </div>
   );
 }

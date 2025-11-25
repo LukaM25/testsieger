@@ -15,25 +15,25 @@ export default function Packages() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 pt-20 pb-16">
-      <h1 className="text-3xl font-semibold text-[#2e4053]">Pakete</h1>
-      <p className="text-gray-600 mt-2">Wählen Sie Ihr Paket.</p>
+      <h1 className="text-3xl font-semibold text-[#2e4053]">Lizenzpläne</h1>
+      <p className="text-gray-600 mt-2">Wählen Sie Ihren Plan für das Prüfsiegel.</p>
 
       <div className="grid md:grid-cols-3 gap-6 mt-8">
         <PackageCard
           title="Basic"
-          price="254€ + 0,99€/Tag"
+          price="0,99€/Tag (jährlich)"
           subtitle="DE, 1 Kanal"
           onSelect={() => choose('BASIC')}
         />
         <PackageCard
           title="Premium"
-          price="254€ + 1,59€/Tag"
+          price="1,47€/Tag (jährlich)"
           subtitle="EU-Sprachen, alle Kanäle"
           onSelect={() => choose('PREMIUM')}
         />
         <PackageCard
           title="Lifetime"
-          price="1477€"
+          price="1466€ einmalig"
           subtitle="Zertifikat & Bericht, alle Kanäle"
           onSelect={() => choose('LIFETIME')}
         />

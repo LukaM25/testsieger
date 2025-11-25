@@ -1,190 +1,264 @@
-// app/precheck/page.tsx
-'use client';
+"use client";
 
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useLocale } from '@/components/LocaleProvider';
+import Image from "next/image";
+import Link from "next/link";
+import { useLocale } from "@/components/LocaleProvider";
+import { useEffect, useState } from "react";
 
-const Schema = z.object({
-  name: z.string().min(2),
-  company: z.string().optional(),
-  email: z.string().email(),
-  address: z.string().min(5),
-  password: z.string().min(8),
-  productName: z.string().min(2),
-  brand: z.string().min(1),
-  category: z.string().optional(),
-  code: z.string().optional(),
-  specs: z.string().optional(),
-  size: z.string().optional(),
-  madeIn: z.string().optional(),
-  material: z.string().optional(),
-});
-type FormValues = z.infer<typeof Schema>;
+// --- Types ---
+type TestOption = {
+  title: { de: string; en: string };
+  price: { de: string; en: string };
+  timeline: { de: string; en: string };
+  href: string;
+};
 
-export default function PrecheckPage() {
-  const router = useRouter();
-  const [submitting, setSubmitting] = useState(false);
-  const { locale } = useLocale();
-  const tr = (de: string, en: string) => (locale === 'en' ? en : de);
+type Plan = {
+  name: string;
+  price: { de: string; en: string };
+  detail: { de: string; en: string };
+  href: string;
+};
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
-    resolver: zodResolver(Schema),
-  });
+// --- Data ---
+const testOptions: TestOption[] = [
+  {
+    title: { de: "Produkttest Checkout", en: "Product test checkout" },
+    price: { de: "254,00 € zzgl. MwSt.", en: "€254 plus VAT" },
+    timeline: { de: "14–17 Werktage nach Erhalt", en: "14–17 business days after receipt" },
+    href: "/kontakt?anfrage=produkttest-checkout",
+  },
+  {
+    title: { de: "Produkttest Priority", en: "Product test priority" },
+    price: { de: "254,00 € + 64 € zzgl. MwSt.", en: "€254 + €64 plus VAT" },
+    timeline: { de: "4–7 Werktage nach Erhalt", en: "4–7 business days after receipt" },
+    href: "/kontakt?anfrage=produkttest-priority",
+  },
+];
 
-  const onSubmit = async (values: FormValues) => {
-    setSubmitting(true);
-    const res = await fetch('/api/precheck', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(values),
-    });
-    const data = await res.json();
-    setSubmitting(false);
-    if (data?.ok && data?.redirect) {
-      router.push(data.redirect);
-    } else {
-      alert('Fehler beim Absenden. Bitte prüfen Sie Ihre Eingaben.');
-    }
-  };
+const plans: Plan[] = [
+  {
+    name: "Basic",
+    price: { de: "0,99 € / Tag (jährlich)", en: "€0.99 / day (yearly)" },
+    detail: { de: "DE · 1 Kanal", en: "DE · 1 channel" },
+    href: "/pakete?plan=basic",
+  },
+  {
+    name: "Premium",
+    price: { de: "1,47 € / Tag (jährlich)", en: "€1.47 / day (yearly)" },
+    detail: { de: "EU-Sprachen · alle Kanäle", en: "EU languages · all channels" },
+    href: "/pakete?plan=premium",
+  },
+  {
+    name: "Lifetime",
+    price: { de: "1466 € einmalig", en: "€1466 one-time" },
+    detail: { de: "Zertifikat & Bericht · alle Kanäle", en: "Certificate & report · all channels" },
+    href: "/pakete?plan=lifetime",
+  },
+];
 
-  const Input = (props: any) => (
-    <input
-      {...props}
-      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-800"
-    />
-  );
+// --- Animation Component ---
+const FadeIn = ({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) => {
+  const [isVisible, setIsVisible] = useState(false);
 
-  const Label = ({ children }: { children: React.ReactNode }) => (
-    <label className="text-sm font-medium text-gray-800">{children}</label>
-  );
-
-  const Error = ({ msg }: { msg?: string }) =>
-    msg ? <p className="text-sm text-red-600">{msg}</p> : null;
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), delay);
+    return () => clearTimeout(timer);
+  }, [delay]);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="mb-6 text-3xl font-semibold">{tr('Pre-Check (0 €)', 'Pre-check (0 €)')}</h1>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div>
-            <Label>{tr('Name', 'Name')}</Label>
-            <Input {...register('name')} placeholder={tr('Max Mustermann', 'John Doe')} />
-            <Error msg={errors.name?.message} />
-          </div>
-          <div>
-            <Label>{tr('Firma (optional)', 'Company (optional)')}</Label>
-            <Input {...register('company')} placeholder={tr('Ihre Firma GmbH', 'Your company LLC')} />
-          </div>
-          <div>
-            <Label>{tr('E-Mail', 'Email')}</Label>
-            <Input {...register('email')} type="email" placeholder="name@domain.tld" />
-            <Error msg={errors.email?.message} />
-          </div>
-          <div>
-            <Label>{tr('Passwort', 'Password')}</Label>
-            <Input {...register('password')} type="password" placeholder="••••••••" />
-            <Error msg={errors.password?.message} />
-          </div>
-          <div className="md:col-span-2">
-            <Label>{tr('Adresse', 'Address')}</Label>
-            <Input {...register('address')} placeholder={tr('Straße Nr, PLZ Ort, Land', 'Street, ZIP city, country')} />
-            <Error msg={errors.address?.message} />
-          </div>
-        </div>
-
-        <hr className="my-2" />
-
-        <h2 className="text-xl font-semibold">{tr('Produktdaten', 'Product data')}</h2>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="md:col-span-2">
-            <Label>{tr('Kategorie', 'Category')}</Label>
-            <select
-              {...register('category')}
-              defaultValue=""
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-800"
-            >
-              <option value="">{tr('Nichts ausgewählt', 'Nothing selected')}</option>
-              <option value="Ausbildung">Ausbildung</option>
-              <option value="Auto & Motorrad">Auto &amp; Motorrad</option>
-              <option value="Baby">Baby</option>
-              <option value="Baumarkt">Baumarkt</option>
-              <option value="Beleuchtung">Beleuchtung</option>
-              <option value="Bücher">Bücher</option>
-              <option value="Bürobedarf & Schreibwaren">Bürobedarf &amp; Schreibwaren</option>
-              <option value="Computer & Zubehör">Computer &amp; Zubehör</option>
-              <option value="DVD & Blu-ray">DVD &amp; Blu-ray</option>
-              <option value="Elektro-Großgeräte">Elektro-Großgeräte</option>
-              <option value="Elektronik & Foto">Elektronik &amp; Foto</option>
-              <option value="Garten">Garten</option>
-              <option value="Gewerbe, Industrie & Wissenschaft">Gewerbe, Industrie &amp; Wissenschaft</option>
-              <option value="Handgefertigte Produkte">Handgefertigte Produkte</option>
-              <option value="Haustierbedarf">Haustierbedarf</option>
-              <option value="Kamera & Foto">Kamera &amp; Foto</option>
-              <option value="Kosmetik & Pflege">Kosmetik &amp; Pflege</option>
-              <option value="Küche, Haushalt & Wohnen">Küche, Haushalt &amp; Wohnen</option>
-              <option value="Lebensmittel & Getränke">Lebensmittel &amp; Getränke</option>
-              <option value="Mode">Mode</option>
-              <option value="Musikinstrumente & DJ-Equipment">Musikinstrumente &amp; DJ-Equipment</option>
-              <option value="Software">Software</option>
-              <option value="Spiele & Gaming">Spiele &amp; Gaming</option>
-              <option value="Spielzeug">Spielzeug</option>
-              <option value="Sport & Freizeit">Sport &amp; Freizeit</option>
-            </select>
-          </div>
-          <div>
-            <Label>{tr('Produktname', 'Product name')}</Label>
-            <Input {...register('productName')} placeholder={tr('Beispiel Produkt', 'Sample product')} />
-            <Error msg={errors.productName?.message} />
-          </div>
-          <div>
-            <Label>{tr('Marke', 'Brand')}</Label>
-            <Input {...register('brand')} placeholder={tr('Markenname', 'Brand name')} />
-            <Error msg={errors.brand?.message} />
-          </div>
-          <div>
-            <Label>{tr('Hersteller-/Artikelnummer', 'Manufacturer / SKU')}</Label>
-            <Input {...register('code')} placeholder="ABC-123" />
-          </div>
-          <div>
-            <Label>{tr('Verpackungsgröße / Maße', 'Package size / dimensions')}</Label>
-            <Input {...register('size')} placeholder={tr('z.B. 30×20×10 cm', 'e.g. 30×20×10 cm')} />
-          </div>
-          <div>
-            <Label>{tr('Wo gefertigt', 'Manufactured in')}</Label>
-            <Input {...register('madeIn')} placeholder={tr('Land', 'Country')} />
-          </div>
-          <div>
-            <Label>{tr('Material (hauptsächlich)', 'Material (primary)')}</Label>
-            <Input {...register('material')} placeholder={tr('z.B. Edelstahl', 'e.g. stainless steel')} />
-          </div>
-          <div className="md:col-span-2">
-            <Label>{tr('Produktspezifikationen', 'Product specifications')}</Label>
-            <textarea
-              {...register('specs')}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-800"
-              rows={4}
-              placeholder={tr('z.B. wasserdicht, schwer entflammbar, energiesparend …', 'e.g. waterproof, flame retardant, energy saving …')}
-            />
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-xl bg-gray-900 px-5 py-3 font-medium text-white hover:bg-black disabled:opacity-60"
-        >
-          {submitting ? tr('Wird gesendet…', 'Sending…') : tr('Jetzt starten', 'Start now')}
-        </button>
-      </form>
-
-      <p className="mt-6 text-sm text-gray-600">
-        {tr('Hinweis: Nach dem Absenden wird automatisch ein Kundenkonto erstellt.', 'Note: After submitting, a customer account is created automatically.')}
-      </p>
+    <div
+      className={`transition-all duration-700 ease-out transform ${
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      } ${className}`}
+    >
+      {children}
     </div>
+  );
+};
+
+export default function PrecheckPage() {
+  const { locale } = useLocale();
+  const tr = (de: string, en: string) => (locale === "en" ? en : de);
+
+  return (
+    <main className="bg-white text-slate-900 overflow-hidden font-sans">
+      <section className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_20%_10%,#e0f2fe_0%,transparent_50%),radial-gradient(140%_90%_at_80%_-10%,#eef2ff_0%,transparent_55%)]" />
+
+        <div className="relative mx-auto max-w-6xl px-6 py-20 md:py-24 space-y-16">
+          <FadeIn delay={100}>
+            <div className="flex flex-col gap-10 rounded-3xl border border-slate-100/70 bg-white/80 p-8 shadow-[0_30px_80px_-50px_rgba(15,23,42,0.45)] md:flex-row md:items-start md:justify-between md:p-10">
+              <div className="space-y-6 max-w-3xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">
+                  {tr("Ergebnis", "Result")}
+                </p>
+                <div className="space-y-4">
+                  <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-slate-900">
+                    {tr("Pre-Check bestanden", "Pre-check passed")}
+                  </h1>
+                  <p className="text-lg md:text-xl font-medium text-slate-800">
+                    {tr("Produkt jetzt an uns senden.", "Send your product to us now.")}
+                  </p>
+                  <p className="text-base md:text-lg text-slate-600 leading-relaxed">
+                    {tr(
+                      "Hierfür fällt einmalig eine Testgebühr in Höhe von 254,00 € an. Nach Bezahlung senden wir eine E-Mail mit Rechnung und Versandadresse.",
+                      "A one-time test fee of €254 is due. After payment we will email your invoice and the shipping address."
+                    )}
+                  </p>
+                </div>
+                <div className="inline-flex items-center gap-3 rounded-full bg-slate-900 text-white px-4 py-2 text-xs font-semibold tracking-[0.18em] w-fit shadow-md">
+                  {tr("Nächster Schritt: Versand & Zahlung", "Next step: shipping & payment")}
+                </div>
+              </div>
+
+              <div className="relative shrink-0 w-40 h-40 md:w-56 md:h-56 lg:w-64 lg:h-64 self-start rounded-3xl bg-gradient-to-b from-white to-slate-50 p-3 shadow-inner ring-1 ring-slate-200">
+                <Image
+                  src="/siegel.png"
+                  alt={tr("Testsieger Siegel", "Testsieger seal")}
+                  fill
+                  className="object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-105"
+                  priority
+                />
+              </div>
+            </div>
+          </FadeIn>
+
+          <ol className="space-y-14 md:space-y-16 list-decimal list-inside md:list-outside md:pl-6">
+            <li className="space-y-8">
+              <FadeIn delay={180}>
+                <div className="space-y-3">
+                  <div className="text-2xl font-semibold text-slate-900">
+                    {tr("Produkt jetzt an uns senden", "Send your product to us now")}
+                  </div>
+                  <p className="text-slate-600 max-w-3xl leading-relaxed text-lg">
+                    {tr(
+                      "Wählen Sie den passenden Prüflauf und schließen Sie den Checkout ab, damit wir Versandadresse und Rechnung bereitstellen können.",
+                      "Choose the processing speed and complete checkout so we can provide shipping details and your invoice."
+                    )}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  {testOptions.map((option, idx) => (
+                    <Link
+                      key={option.title.de}
+                      href={option.href}
+                      className="group relative flex h-full flex-col items-center justify-between overflow-hidden rounded-3xl border border-white/15 px-10 py-12 text-center text-white shadow-[0_28px_80px_-45px_rgba(15,23,42,0.55)] ring-1 ring-slate-900/10 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-blue-900/30"
+                      style={{
+                        backgroundImage: idx === 0
+                          ? "linear-gradient(135deg, #0f172a 0%, #1e3a8a 52%, #2563eb 100%)"
+                          : "linear-gradient(135deg, #111827 0%, #1d4ed8 50%, #2563eb 100%)",
+                      }}
+                    >
+                      <div className="flex flex-col items-center space-y-2">
+                        <div className="text-2xl font-semibold leading-tight tracking-tight">
+                          {tr(option.title.de, option.title.en)}
+                        </div>
+                        <div className="text-lg font-medium text-white/95">
+                          {tr(option.price.de, option.price.en)}
+                        </div>
+                        <span className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-white/85">
+                          {tr(option.timeline.de, option.timeline.en)}
+                        </span>
+                      </div>
+
+                      <div className="mt-8 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white transition group-hover:bg-white/25">
+                        {tr("Zum Checkout", "Go to checkout")}
+                        <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </FadeIn>
+            </li>
+
+            <li className="space-y-4">
+              <FadeIn delay={260}>
+                <div className="text-2xl font-semibold text-slate-900">{tr("Produktprüfung", "Product testing")}</div>
+                <p className="text-slate-600 max-w-3xl text-lg leading-relaxed">
+                  {tr(
+                    "Die Produktprüfung wird innerhalb des angegebenen Zeitraums nach Wareneingang durchgeführt.",
+                    "Testing is carried out within the stated timeframe once your sample arrives."
+                  )}
+                </p>
+              </FadeIn>
+            </li>
+
+            <li className="space-y-4">
+              <FadeIn delay={320}>
+                <div className="text-2xl font-semibold text-slate-900">{tr("Lizenzgebühren", "License fees")}</div>
+                <p className="text-slate-600 max-w-3xl text-lg leading-relaxed">
+                  {tr(
+                    "Lizenzgebühren fallen erst nach Annahme des Siegels und Vorlage der Prüfergebnisse an.",
+                    "License fees only start after the seal is approved and your test results are ready."
+                  )}
+                </p>
+              </FadeIn>
+            </li>
+
+            <li className="space-y-8">
+              <FadeIn delay={380}>
+                <div className="text-2xl font-semibold text-slate-900">
+                  {tr("Lizenzplan auswählen und Siegel erhalten", "Choose a license plan and receive your seal")}
+                </div>
+              <div className="grid gap-6 md:grid-cols-3 pt-4">
+                {plans.map((plan, i) => (
+                  <div
+                    key={plan.name}
+                    className="flex h-full flex-col items-center justify-between rounded-2xl border border-slate-200 bg-white/90 p-7 text-center shadow-[0_18px_50px_-35px_rgba(15,23,42,0.35)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                    style={{ animationDelay: `${i * 100}ms` }}
+                  >
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold uppercase tracking-[0.16em] text-white shadow-sm">
+                      {plan.name[0]}
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      <div className="text-lg font-semibold text-slate-900">{plan.name}</div>
+                      <div className="text-base font-medium text-slate-700">{tr(plan.price.de, plan.price.en)}</div>
+                      <p className="text-sm text-slate-500 leading-relaxed">{tr(plan.detail.de, plan.detail.en)}</p>
+                    </div>
+                    <Link
+                      href={plan.href}
+                      className="mt-8 inline-flex items-center justify-center rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-black"
+                    >
+                      {tr("Lizenzplan wählen", "Select plan")}
+                      <span className="ml-2 transition-transform duration-300 group-hover:translate-x-1">→</span>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </FadeIn>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 bg-slate-50/80">
+        <FadeIn delay={450}>
+          <div className="mx-auto max-w-6xl px-6 py-18 md:py-20 space-y-8">
+            <div className="space-y-2">
+              <h2 className="text-2xl font-semibold text-slate-900">{tr("Mach dein Listing sichtbar", "Make your listing stand out")}</h2>
+              <p className="text-slate-600 max-w-2xl text-lg leading-relaxed">
+                {tr(
+                  "Spare Werbebudget gezielt und steigere deine Conversion Rate um bis zu 90 %.",
+                  "Use your ad budget efficiently and raise your conversion rate by up to 90%."
+                )}
+              </p>
+            </div>
+            <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl transition-transform duration-700 hover:scale-[1.01]">
+              <div className="relative aspect-[16/9] w-full">
+                <Image
+                  src="/images/amazonsiegel.png"
+                  alt={tr("Listing mit Testsieger-Siegel", "Listing with Testsieger seal")}
+                  fill
+                  className="object-cover"
+                  sizes="(min-width: 1280px) 1100px, (min-width: 768px) 80vw, 100vw"
+                />
+              </div>
+            </div>
+          </div>
+        </FadeIn>
+      </section>
+    </main>
   );
 }

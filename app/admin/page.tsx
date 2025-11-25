@@ -54,9 +54,10 @@ type AdminProduct = {
 const statusLabel = (status: string) => {
   switch (status) {
     case 'PRECHECK': return 'Pre-Check eingereicht';
-    case 'PAID': return 'Zahlung erhalten';
+    case 'PAID': return 'Testgebühr bezahlt';
+    case 'TEST_PASSED': return 'Test bestanden';
     case 'IN_REVIEW': return 'Prüfung läuft';
-    case 'COMPLETED': return 'Abgeschlossen';
+    case 'COMPLETED': return 'Zertifikat erstellt';
     case 'RECEIVED':
     case 'ANALYSIS':
     case 'COMPLETION':

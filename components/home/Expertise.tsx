@@ -9,9 +9,9 @@ export default function Expertise() {
   const copy = locale === 'en'
     ? {
         title: 'Our Expertise',
-        block1Title: 'Product tests for consumers',
+        block1Title: 'Product tests for companies',
         block1Body:
-          'We don’t just test – we compare, question, and deliver clear results consumers can trust. We make transparent what others hide: quality, safety, and everyday usability.',
+          'We don’t just test – we compare, question, and deliver clear results procurement and product teams can act on. We make transparent what others hide: quality, safety, and everyday usability.',
         more: 'LEARN MORE',
         block2Title: 'Company assessments for training',
         block2Body:
@@ -19,9 +19,9 @@ export default function Expertise() {
       }
     : {
         title: 'Unsere Expertise',
-        block1Title: 'Produkt Tests für Verbraucher',
+        block1Title: 'Produkt Tests für Unternehmen',
         block1Body:
-          'Wir prüfen nicht nur – wir vergleichen, hinterfragen und liefern klare Ergebnisse, auf die Verbraucher vertrauen können. Wir machen transparent, was andere verschweigen: Qualität, Sicherheit und Alltagstauglichkeit.',
+          'Wir prüfen nicht nur – wir vergleichen, hinterfragen und liefern klare Ergebnisse, auf die Einkauf und Produktteams bauen können. Wir machen transparent, was andere verschweigen: Qualität, Sicherheit und Alltagstauglichkeit.',
         more: 'MEHR ERFAHREN',
         block2Title: 'Betriebsbewertung für Ausbildung',
         block2Body:

@@ -17,7 +17,7 @@ export default function Hero() {
       };
 
   return (
-<section className="relative overflow-hidden bg-slate-950 text-white min-h-[80vh] lg:min-h-[70vh] xl:min-h-[70vh]">
+    <section className="relative overflow-hidden bg-slate-950 text-white min-h-[77vh] lg:min-h-[80vh] xl:min-h-[80vh]">
       {/* hero image container is absolute so we set section min-height to reveal more of the photo on large screens */}
       <div data-animate="hero-image" className="absolute inset-0">
         <Image
@@ -26,13 +26,13 @@ export default function Hero() {
           fill
           priority
           className="object-cover object-center brightness-75"
-          style={{ objectPosition: "50% 25%" }}
+          style={{ objectPosition: '50% 40%' }}
           sizes="120vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-900/60 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-900/70 to-slate-900/20" />
       </div>
 
-        <div className="relative mx-auto grid max-w-6xl gap-8 px-6 py-16 sm:gap-10 sm:py-20 lg:grid-cols-[1.1fr,0.9fr] lg:items-end lg:py-24">
+      <div className="relative mx-auto grid max-w-6xl gap-8 px-6 py-16 sm:gap-10 sm:py-20 lg:grid-cols-[1.1fr,0.9fr] lg:items-end lg:py-24">
         <div className="space-y-6">
           <div className="space-y-2">
             <h1 data-animate="hero-title" className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-6xl">

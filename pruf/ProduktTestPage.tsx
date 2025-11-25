@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { PackageCard } from "@/components/PackageCard";
 import { stagger } from "@/lib/animation";
-import PrecheckPage from "@/app/precheck/page";
+import PrecheckForm from "@/components/precheck/PrecheckForm";
 import AnimateOnView from "@/components/AnimateOnView";
 import Counter from "@/components/Counter";
 import { useLocale } from "@/components/LocaleProvider";
@@ -16,9 +16,9 @@ type StepCard = {
 };
 
 const steps: StepCard[] = [
-  { src: "/images/ablauf/1free.PNG", label: { de: "Kostenloser PRE-CHECK", en: "Free pre-check" } },
-  { src: "/images/ablauf/2lizenz.PNG", label: { de: "Lizenzplan auswählen", en: "Choose license plan" } },
+  { src: "/images/ablauf/1free.PNG", label: { de: "Kostenloser Pre-Check", en: "Free pre-check" } },
   { src: "/images/ablauf/3liefer.PNG", label: { de: "Produkt an uns senden", en: "Send product to us" } },
+  { src: "/images/ablauf/2lizenz.PNG", label: { de: "Lizenzplan auswählen", en: "Choose license plan" } },
   { src: "/images/ablauf/4testergebnis.PNG", label: { de: "Testergebnis & Siegel erhalten", en: "Receive test result & seal" } },
 ];
 
@@ -174,7 +174,7 @@ export default function ProduktTestPage() {
             </div>
           </div>
           <h1 data-animate="hero-title" className="text-3xl font-bold">
-            {tr('Ihr Produkt verdient Vertrauen.', 'Your product deserves trust.')}
+            {tr('Ihr Produkt verdient Vertrauen', 'Your product deserves trust')}
           </h1>
           <p data-animate="hero-text" className="text-sm text-slate-600">
             {tr(
@@ -323,7 +323,7 @@ export default function ProduktTestPage() {
           aria-hidden={!showPrecheck}
         >
           <div ref={contentRef} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm text-slate-900">
-            <PrecheckPage />
+            <PrecheckForm />
           </div>
         </div>
       </section>
