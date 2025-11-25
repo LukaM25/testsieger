@@ -8,16 +8,14 @@ export default function Hero() {
     ? {
         title: <>Trust through <span className="text-sky-300">testing</span></>,
         body: 'Objective assessments, transparent methods and measurable quality – with a seal that provides guidance.',
-        badge: 'Certificate • QR verification',
       }
     : {
         title: <>Vertrauen durch <span className="text-sky-300">Prüfung</span></>,
         body: 'Objektive Bewertungen, transparente Verfahren und messbare Qualität – mit einem Siegel, das Orientierung schafft.',
-        badge: 'Zertifikat • QR‑Verifikation',
       };
 
   return (
-    <section className="relative overflow-hidden bg-slate-950 text-white min-h-[77vh] lg:min-h-[80vh] xl:min-h-[80vh]">
+    <section className="relative overflow-hidden bg-slate-950 text-white min-h-[70vh] lg:min-h-[72vh] xl:min-h-[72vh]">
       {/* hero image container is absolute so we set section min-height to reveal more of the photo on large screens */}
       <div data-animate="hero-image" className="absolute inset-0">
         <Image
@@ -26,7 +24,7 @@ export default function Hero() {
           fill
           priority
           className="object-cover object-center brightness-75"
-          style={{ objectPosition: '50% 40%' }}
+          style={{ objectPosition: '50% 45%' }}
           sizes="120vw"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-900/70 to-slate-900/20" />
@@ -50,11 +48,7 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className="hidden lg:flex items-end justify-end">
-          <div className="mr-6 mb-6 rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-sm text-white/90 shadow-lg transform transition motion-safe:animate-float">
-            {copy.badge}
-          </div>
-        </div>
+
       </div>
     </section>
   );
