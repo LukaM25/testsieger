@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import LogoutButton from '@/components/LogoutButton';
 import { useCertificateActions } from '@/hooks/useCertificateActions';
 import { CertificatePreviewModal } from '@/components/CertificatePreviewModal';
-import { usePrecheckStatusData } from '@/hooks/usePrecheckStatusData';
+import { usePrecheckStatusData, type ProductStatusPayload } from '@/hooks/usePrecheckStatusData';
 import { PrecheckStatusCard } from '@/components/PrecheckStatusCard';
 
 interface DashboardClientProps {
@@ -14,18 +14,20 @@ interface DashboardClientProps {
 export default function DashboardClient({ user }: DashboardClientProps) {
   const { handlePreview, handleSend, previewUrl, isLoading, isSending } = useCertificateActions();
   const [activeCertId, setActiveCertId] = useState<string | null>(null);
-  const initialStatusProducts = useMemo(
+  const initialStatusProducts = useMemo<ProductStatusPayload[]>(
     () =>
-      (user.products || []).map((p: any) => ({
-        id: p.id,
-        name: p.name,
-        paymentStatus: p.paymentStatus ?? 'UNPAID',
-        adminProgress: p.adminProgress ?? 'PRECHECK',
-        status: p.status ?? 'PRECHECK',
-        createdAt: typeof p.createdAt === 'string' ? p.createdAt : p.createdAt?.toISOString?.() ?? undefined,
-        brand: p.brand ?? null,
-        certificate: p.certificate ? { id: p.certificate.id, pdfUrl: p.certificate.pdfUrl ?? null } : null,
-      })),
+      (user.products || []).map(
+        (p: any): ProductStatusPayload => ({
+          id: p.id,
+          name: p.name,
+          paymentStatus: (p.paymentStatus ?? 'UNPAID') as ProductStatusPayload['paymentStatus'],
+          adminProgress: (p.adminProgress ?? 'PRECHECK') as ProductStatusPayload['adminProgress'],
+          status: p.status ?? 'PRECHECK',
+          createdAt: typeof p.createdAt === 'string' ? p.createdAt : p.createdAt?.toISOString?.() ?? undefined,
+          brand: p.brand ?? null,
+          certificate: p.certificate ? { id: p.certificate.id, pdfUrl: p.certificate.pdfUrl ?? null } : null,
+        })
+      ),
     [user.products]
   );
   const statusState = usePrecheckStatusData({ initialProducts: initialStatusProducts });
@@ -74,7 +76,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
         setSubmitMessage(data.error || 'Produkt konnte nicht angelegt werden.');
         return;
       }
-      const mapped = {
+      const mapped: ProductStatusPayload = {
         id: data.product.id,
         name: data.product.name,
         brand: data.product.brand ?? null,
