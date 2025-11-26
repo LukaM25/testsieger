@@ -5,7 +5,7 @@ const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
-const FROM_EMAIL = process.env.MAIL_FROM ?? 'no-reply@your-domain.tld';
+const FROM_EMAIL = process.env.MAIL_FROM ?? 'pruefsiegel@lucidstar.de';
 
 const transporter = SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS
   ? nodemailer.createTransport({
@@ -18,12 +18,12 @@ const transporter = SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS
 
 type Attachment = { filename: string; content: Buffer; contentType?: string };
 
-async function sendEmail(opts: { to: string; subject: string; html: string; attachments?: Attachment[] }) {
-  const { to, subject, html, attachments } = opts;
+async function sendEmail(opts: { to: string; subject: string; html: string; attachments?: Attachment[]; from?: string }) {
+  const { to, subject, html, attachments, from } = opts;
 
   if (transporter) {
     await transporter.sendMail({
-      from: FROM_EMAIL,
+      from: from ?? FROM_EMAIL,
       to,
       subject,
       html,
@@ -43,7 +43,7 @@ export async function sendPrecheckConfirmation(opts: {
   shippingAddress?: string;
 }) {
   const { to, name, productName, invoicePdf, shippingAddress } = opts;
-  const appUrl = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
+  const appUrl = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://pruefsiegelzentrum.vercel.app';
 
   const html = `
     <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height:1.6; color:#111">
@@ -61,6 +61,7 @@ export async function sendPrecheckConfirmation(opts: {
   `;
 
   await sendEmail({
+    from: `Pruefsiegel Zentrum UG – Pre-Check <${FROM_EMAIL}>`,
     to,
     subject: 'Pre-Check eingegangen – Grundgebühr jetzt bezahlen',
     html,
@@ -116,6 +117,7 @@ export async function sendCompletionEmail(opts: {
   `;
 
   await sendEmail({
+    from: `Pruefsiegel Zentrum UG – Completion <${FROM_EMAIL}>`,
     to,
     subject: `Prüfung abgeschlossen – ${productName}`,
     html,
@@ -139,6 +141,7 @@ export async function sendFailureNotification(opts: {
     </div>
   `;
   await sendEmail({
+    from: `Pruefsiegel Zentrum UG – Status <${FROM_EMAIL}>`,
     to,
     subject: `Statusmeldung zu ${productName}`,
     html,

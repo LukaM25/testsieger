@@ -17,6 +17,7 @@ const transporter = nodemailer.createTransport({
     pass: process.env.SMTP_PASS,
   },
 });
+const MAIL_FROM = process.env.MAIL_FROM || process.env.SMTP_USER;
 
 export async function processAndSendCertificate(certificateId, userEmail) {
   console.log(`Processing certificate: ${certificateId}`);
@@ -95,7 +96,7 @@ const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/lizenzen?q=${record
     // 5. Send Email
     console.log(`Sending email to ${userEmail}...`);
     await transporter.sendMail({
-      from: `"Certificate Team" <${process.env.SMTP_USER}>`,
+      from: `Pruefsiegel Zentrum UG – Certificate <${MAIL_FROM}>`,
       to: userEmail,
       subject: `Your Product Certificate: ${record.name}`,
       html: `
