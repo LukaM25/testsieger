@@ -125,7 +125,7 @@ export default function PrecheckPage() {
             <div className="flex flex-col gap-10 rounded-3xl border border-slate-100/70 bg-white/80 p-8 shadow-[0_30px_80px_-50px_rgba(15,23,42,0.45)] md:flex-row md:items-start md:justify-between md:p-10">
               <div className="space-y-6 max-w-3xl">
                 <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">
-                  {tr("Ergebnis", "Result")}
+                  {tr("1. Ergebnis", "1. Result")}
                 </p>
                 <div className="space-y-4">
                   <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-slate-900">
@@ -158,69 +158,67 @@ export default function PrecheckPage() {
             </div>
           </FadeIn>
 
-          <ol className="space-y-14 md:space-y-16 list-decimal list-inside md:list-outside md:pl-6">
-            <li className="space-y-8">
-              <FadeIn delay={180}>
-                <div className="space-y-3">
-                  <div className="text-2xl font-semibold text-slate-900">
-                    {tr("Produkt jetzt an uns senden", "Send your product to us now")}
-                  </div>
-                  <p className="text-slate-600 max-w-3xl leading-relaxed text-lg">
-                    {tr(
-                      "Wählen Sie den passenden Prüflauf und schließen Sie den Checkout ab, damit wir Versandadresse und Rechnung bereitstellen können.",
-                      "Choose the processing speed and complete checkout so we can provide shipping details and your invoice."
-                    )}
-                  </p>
+          <div className="space-y-14 md:space-y-16">
+            <FadeIn delay={180}>
+              <div className="space-y-3">
+                <div className="text-2xl font-semibold text-slate-900">
+                  {tr("2. Produkt jetzt an uns senden", "2. Send your product to us now")}
                 </div>
+                <p className="text-slate-600 max-w-3xl leading-relaxed text-lg">
+                  {tr(
+                    "Wählen Sie den passenden Prüflauf und schließen Sie den Checkout ab, damit wir Versandadresse und Rechnung bereitstellen können.",
+                    "Choose the processing speed and complete checkout so we can provide shipping details and your invoice."
+                  )}
+                </p>
+              </div>
 
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  {testOptions.map((option, idx) => (
-                    <Link
-                      key={option.title.de}
-                      href={option.href}
-                      className="group relative flex h-full flex-col items-center justify-between overflow-hidden rounded-3xl border border-white/15 px-10 py-12 text-center text-white shadow-[0_28px_80px_-45px_rgba(15,23,42,0.55)] ring-1 ring-slate-900/10 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-blue-900/30"
-                      style={{
-                        backgroundImage: idx === 0
-                          ? "linear-gradient(135deg, #0f172a 0%, #1e3a8a 52%, #2563eb 100%)"
-                          : "linear-gradient(135deg, #111827 0%, #1d4ed8 50%, #2563eb 100%)",
-                      }}
-                    >
-                      <div className="flex flex-col items-center space-y-2">
-                        <div className="text-2xl font-semibold leading-tight tracking-tight">
-                          {tr(option.title.de, option.title.en)}
-                        </div>
-                        <div className="text-lg font-medium text-white/95">
-                          {tr(option.price.de, option.price.en)}
-                        </div>
-                        <span className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-white/85">
-                          {tr(option.timeline.de, option.timeline.en)}
-                        </span>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {testOptions.map((option, idx) => (
+                  <Link
+                    key={option.title.de}
+                    href={option.href}
+                    className="group relative flex h-full flex-col items-center justify-between overflow-hidden rounded-3xl border border-white/15 px-10 py-12 text-center text-white shadow-[0_28px_80px_-45px_rgba(15,23,42,0.55)] ring-1 ring-slate-900/10 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-blue-900/30"
+                    style={{
+                      backgroundImage: idx === 0
+                        ? "linear-gradient(135deg, #0f172a 0%, #1e3a8a 52%, #2563eb 100%)"
+                        : "linear-gradient(135deg, #111827 0%, #1d4ed8 50%, #2563eb 100%)",
+                    }}
+                  >
+                    <div className="flex flex-col items-center space-y-2">
+                      <div className="text-2xl font-semibold leading-tight tracking-tight">
+                        {tr(option.title.de, option.title.en)}
                       </div>
-
-                      <div className="mt-8 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white transition group-hover:bg-white/25">
-                        {tr("Zum Checkout", "Go to checkout")}
-                        <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+                      <div className="text-lg font-medium text-white/95">
+                        {tr(option.price.de, option.price.en)}
                       </div>
-                    </Link>
-                  ))}
-                </div>
-              </FadeIn>
-            </li>
+                      <span className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-white/85">
+                        {tr(option.timeline.de, option.timeline.en)}
+                      </span>
+                    </div>
 
-            <li className="space-y-4">
-              <FadeIn delay={260}>
-                <div className="text-2xl font-semibold text-slate-900">{tr("Produktprüfung", "Product testing")}</div>
+                    <div className="mt-8 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white transition group-hover:bg-white/25">
+                      {tr("Zum Checkout", "Go to checkout")}
+                      <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </FadeIn>
+
+            <FadeIn delay={260}>
+              <div className="space-y-4">
+                <div className="text-2xl font-semibold text-slate-900">{tr("3. Produktprüfung", "3. Product testing")}</div>
                 <p className="text-slate-600 max-w-3xl text-lg leading-relaxed">
                   {tr(
                     "Die Produktprüfung wird innerhalb des angegebenen Zeitraums nach Wareneingang durchgeführt.",
                     "Testing is carried out within the stated timeframe once your sample arrives."
                   )}
                 </p>
-              </FadeIn>
-            </li>
+              </div>
+            </FadeIn>
 
-            <li className="space-y-4">
-              <FadeIn delay={320}>
+            <FadeIn delay={320}>
+              <div className="space-y-4">
                 <div className="text-2xl font-semibold text-slate-900">{tr("Lizenzgebühren", "License fees")}</div>
                 <p className="text-slate-600 max-w-3xl text-lg leading-relaxed">
                   {tr(
@@ -228,13 +226,13 @@ export default function PrecheckPage() {
                     "License fees only start after the seal is approved and your test results are ready."
                   )}
                 </p>
-              </FadeIn>
-            </li>
+              </div>
+            </FadeIn>
 
-            <li className="space-y-8">
-              <FadeIn delay={380}>
+            <FadeIn delay={380}>
+              <div className="space-y-8">
                 <div className="text-2xl font-semibold text-slate-900">
-                  {tr("Lizenzplan auswählen und Siegel erhalten", "Choose a license plan and receive your seal")}
+                  {tr("4. Lizenzplan auswählen und Siegel erhalten", "4. Choose a license plan and receive your seal")}
                 </div>
                 {planNotice && <p className="text-sm text-amber-700">{planNotice}</p>}
                 <div className="grid gap-6 md:grid-cols-3 pt-4">
@@ -266,9 +264,9 @@ export default function PrecheckPage() {
                     </div>
                   ))}
                 </div>
-              </FadeIn>
-            </li>
-          </ol>
+              </div>
+            </FadeIn>
+          </div>
 
         </div>
       </section>
