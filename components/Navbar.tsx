@@ -26,7 +26,7 @@ const navigation: (NavItem | NavSection)[] = [
   {
     label: "Leistungen",
     items: [
-      { label: "Pre-Check", href: "/precheck" },
+      { label: "Lizenzpläne", href: "/pakete" },
       { label: "Prüfverfahren", href: "/verfahren" },
       { label: "Testergebnisse", href: "/testergebnisse" },
     ],

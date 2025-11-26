@@ -184,7 +184,7 @@ export default function ProduktTestPage() {
           </p>
           <div>
             <a data-animate="hero-cta" href="/precheck" className="inline-flex mt-3 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-lg transition hover:bg-black">
-              {tr('Jetzt Pre-Check', 'Start pre-check')}
+              {tr('Zum Pre-Check', 'To pre-check')}
             </a>
           </div>
         </div>
