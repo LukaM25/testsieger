@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from 'react';
-import Link from 'next/link';
+import { useMemo, useState } from 'react';
 import LogoutButton from '@/components/LogoutButton';
 import { useCertificateActions } from '@/hooks/useCertificateActions';
 import { CertificatePreviewModal } from '@/components/CertificatePreviewModal';
+import { usePrecheckStatusData } from '@/hooks/usePrecheckStatusData';
+import { PrecheckStatusCard } from '@/components/PrecheckStatusCard';
 
 interface DashboardClientProps {
   user: any;
@@ -13,7 +14,22 @@ interface DashboardClientProps {
 export default function DashboardClient({ user }: DashboardClientProps) {
   const { handlePreview, handleSend, previewUrl, isLoading, isSending } = useCertificateActions();
   const [activeCertId, setActiveCertId] = useState<string | null>(null);
-  const [products, setProducts] = useState(user.products || []);
+  const initialStatusProducts = useMemo(
+    () =>
+      (user.products || []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        paymentStatus: p.paymentStatus ?? 'UNPAID',
+        adminProgress: p.adminProgress ?? 'PRECHECK',
+        status: p.status ?? 'PRECHECK',
+        createdAt: typeof p.createdAt === 'string' ? p.createdAt : p.createdAt?.toISOString?.() ?? undefined,
+        brand: p.brand ?? null,
+        certificate: p.certificate ? { id: p.certificate.id, pdfUrl: p.certificate.pdfUrl ?? null } : null,
+      })),
+    [user.products]
+  );
+  const statusState = usePrecheckStatusData({ initialProducts: initialStatusProducts });
+  const { products, setProducts, setSelectedProductId } = statusState;
   const [orders] = useState(user.orders || []);
   const [showSubmit, setShowSubmit] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
@@ -58,8 +74,18 @@ export default function DashboardClient({ user }: DashboardClientProps) {
         setSubmitMessage(data.error || 'Produkt konnte nicht angelegt werden.');
         return;
       }
-      setProducts((prev: any[]) => [{ ...data.product, status: 'PRECHECK', adminProgress: 'PRECHECK', paymentStatus: 'UNPAID' }, ...prev]);
-      setSubmitMessage('Produkt angelegt. Lade Liste neu …');
+      const mapped = {
+        id: data.product.id,
+        name: data.product.name,
+        brand: data.product.brand ?? null,
+        paymentStatus: 'UNPAID',
+        adminProgress: 'PRECHECK',
+        status: 'PRECHECK',
+        certificate: null,
+      };
+      setProducts((prev) => [mapped, ...prev]);
+      setSelectedProductId(data.product.id);
+      setSubmitMessage('Produkt angelegt.');
       setNewProduct({
         productName: '',
         brand: '',
@@ -70,7 +96,6 @@ export default function DashboardClient({ user }: DashboardClientProps) {
         madeIn: '',
         material: '',
       });
-      setTimeout(() => window.location.reload(), 800);
     } finally {
       setSubmitLoading(false);
     }
@@ -85,6 +110,8 @@ export default function DashboardClient({ user }: DashboardClientProps) {
         </div>
 
         <div className="grid gap-10">
+          <PrecheckStatusCard state={statusState} />
+
           <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <button
               type="button"
