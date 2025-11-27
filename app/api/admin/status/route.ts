@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { ProductStatus } from '@prisma/client';
 import { isAdminAuthed } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
-import { sendFailureNotification } from '@/lib/email';
+import { sendFailureNotification, sendProductReceivedEmail } from '@/lib/email';
 
 export const runtime = 'nodejs';
 
@@ -45,6 +45,12 @@ export async function POST(req: Request) {
     }).catch((err) => {
       console.error('FAILURE_EMAIL_ERROR', err);
     });
+  } else if (status === 'RECEIVED') {
+    await sendProductReceivedEmail({
+      to: product.user.email,
+      name: product.user.name,
+      productName: product.name,
+    }).catch((err) => console.error('RECEIVED_EMAIL_ERROR', err));
   }
 
   return NextResponse.json({ ok: true, status });

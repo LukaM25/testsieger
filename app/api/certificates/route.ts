@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendPrecheckConfirmation } from "@/lib/email";
+import { sendCompletionEmail } from "@/lib/email";
 import { generateCertificatePdf } from "@/pdfGenerator";
 import QRCode from "qrcode";
 import fs from "fs/promises";
@@ -94,10 +94,15 @@ export async function POST(req: Request) {
       },
     });
 
-    await sendPrecheckConfirmation({
+    await sendCompletionEmail({
       to: product.user.email,
       name: product.user.name,
       productName: product.name,
+      verifyUrl,
+      pdfUrl: pdfRel,
+      qrUrl: qrRel,
+      pdfBuffer,
+      documentId: undefined,
     });
 
     return NextResponse.json({

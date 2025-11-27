@@ -2,6 +2,8 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
+import { sendPrecheckPaymentSuccess } from "@/lib/email";
+import { generateInvoicePdf } from "@/lib/invoice";
 import { completeProduct, CompletionError } from '@/lib/completion';
 
 export const runtime = "nodejs"; // ensure Node runtime for raw body
@@ -47,6 +49,49 @@ export async function POST(req: Request) {
         where: { id: productId },
         data: { status: 'PAID', paymentStatus: 'PAID' },
       });
+    }
+
+    // Send confirmation for pre-check fee payments (standard or priority)
+    if (plan === 'PRECHECK_FEE' || plan === 'PRECHECK_PRIORITY') {
+      const product = await prisma.product.findUnique({
+        where: { id: productId },
+        include: { user: true },
+      });
+      if (product?.user) {
+        const priceId =
+          plan === 'PRECHECK_PRIORITY'
+            ? process.env.STRIPE_PRICE_PRECHECK_PRIORITY
+            : process.env.STRIPE_PRICE_PRECHECK_STANDARD;
+        let amountCents = plan === 'PRECHECK_PRIORITY' ? 31800 : 25400; // fallback
+        if (priceId) {
+          try {
+            const price = await stripe.prices.retrieve(priceId);
+            if (typeof price.unit_amount === 'number') {
+              amountCents = price.unit_amount;
+            }
+          } catch (err) {
+            console.error('PRICE_LOOKUP_ERROR', err);
+          }
+        }
+        const invoicePdf = await generateInvoicePdf({
+          customerName: product.user.name,
+          customerEmail: product.user.email,
+          address: product.user.address ?? '',
+          productName: product.name,
+          amountCents,
+          invoiceNumber: `PC-${product.id.slice(0, 8)}`,
+        }).catch(() => null);
+
+        await sendPrecheckPaymentSuccess({
+          to: product.user.email,
+          name: product.user.name,
+          productName: product.name,
+          shippingAddress: product.user.address ?? null,
+          receiptPdf: invoicePdf ?? undefined,
+        }).catch((err) => {
+          console.error('PRECHECK_PAYMENT_EMAIL_ERROR', err);
+        });
+      }
     }
   }
 

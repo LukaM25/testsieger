@@ -229,6 +229,7 @@ function AdminProductRow({
   const [paymentStatusValue, setPaymentStatusValue] = useState<PaymentStatusOption>(
     (product.paymentStatus as PaymentStatusOption) || 'UNPAID'
   );
+  const [autoSent, setAutoSent] = useState(false);
   
   useEffect(() => {
     setPaymentStatusValue((product.paymentStatus as PaymentStatusOption) || 'UNPAID');
@@ -291,6 +292,10 @@ function AdminProductRow({
       }
       setLocalMessage('Status aktualisiert.');
       onUpdated();
+      if (selectedStatus === 'PASS' && canSendCertificate && !autoSent) {
+        setAutoSent(true);
+        await handleSendCertificate({ auto: true });
+      }
     } catch (err) {
       console.error(err);
       setLocalMessage('Aktualisierung fehlgeschlagen.');
@@ -299,10 +304,16 @@ function AdminProductRow({
     }
   };
 
-  // FIX: Allow sending if payment is PAID, regardless of the workflow status
-  const canSendCertificate = product.paymentStatus === 'PAID' || ['PAID', 'IN_REVIEW', 'COMPLETED'].includes(product.status);
+  // Allow sending if payment is PAID/MANUAL and workflow is at least IN_REVIEW or PASS selected
+  const paymentIsCovered =
+    paymentStatusValue === 'PAID' ||
+    paymentStatusValue === 'MANUAL' ||
+    product.paymentStatus === 'PAID' ||
+    product.paymentStatus === 'MANUAL';
+  const workflowReady = product.status === 'IN_REVIEW' || product.status === 'COMPLETED' || selectedStatus === 'PASS';
+  const canSendCertificate = paymentIsCovered && workflowReady;
   
-  const handleSendCertificate = async () => {
+  const handleSendCertificate = async (opts?: { auto?: boolean }) => {
     if (!canSendCertificate) {
       setLocalMessage('Produkt muss mindestens IN_REVIEW sein oder BEZAHLT, bevor das Zertifikat versendet wird.');
       return;
@@ -320,7 +331,7 @@ function AdminProductRow({
         setLocalMessage(data.error || 'Zertifikat konnte nicht versendet werden.');
         return;
       }
-      setLocalMessage('Zertifikat versendet (Internal Engine).');
+      setLocalMessage(opts?.auto ? 'Zertifikat automatisch versendet (Internal Engine).' : 'Zertifikat versendet (Internal Engine).');
       onUpdated();
     } catch (err) {
       console.error(err);
@@ -432,7 +443,7 @@ function AdminProductRow({
               <button
                 type="button"
                 disabled={sendLoading || !canSendCertificate}
-                onClick={handleSendCertificate}
+                onClick={() => handleSendCertificate()}
                 className="rounded-lg border border-emerald-600 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 transition hover:bg-emerald-50 disabled:opacity-70"
               >
                 {sendLoading ? 'Sendet...' : canSendCertificate ? 'Send Cert' : 'Warten auf Zahlung'}

@@ -44,19 +44,32 @@ export async function sendPrecheckConfirmation(opts: {
 }) {
   const { to, name, productName, invoicePdf, shippingAddress } = opts;
   const appUrl = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://pruefsiegelzentrum.vercel.app';
+  const checkoutAnchor = `${appUrl.replace(/\/$/, '')}/precheck#checkout-options`;
+  const licenseAnchor = `${appUrl.replace(/\/$/, '')}/precheck#license-plans`;
 
   const html = `
     <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height:1.6; color:#111">
       <p>Hallo ${escapeHtml(name || '')},</p>
-      <p>Ihr Pre-Check für <strong>${escapeHtml(productName)}</strong> ist bei uns eingegangen.</p>
-      <p>Bitte begleichen Sie die Grundgebühr. Nach Zahlung senden wir Versandadresse und Rechnung.</p>
-      <p>
-        <a href="${appUrl}/lizenzen" style="display:inline-block;padding:10px 16px;border-radius:8px;background:#111;color:#fff;text-decoration:none;">
-          Lizenzpläne ansehen
-        </a>
+      <p>Ihr Pre-Check für <strong>${escapeHtml(productName)}</strong> ist eingegangen.</p>
+      <p>Bitte bezahlen Sie jetzt die Grundgebühr (254 € zzgl. 19 % MwSt. = 302,26 €), damit wir Versandadresse und Rechnung bereitstellen.</p>
+      <p style="margin:16px 0 8px;">
+        <a href="${checkoutAnchor}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">Grundgebühr bezahlen</a>
       </p>
-      ${shippingAddress ? `<p style="font-size:13px;color:#444;">Vorläufige Versandadresse: ${escapeHtml(shippingAddress)}</p>` : ''}
-      <p>Danke!<br/>Prüfsiegel Zentrum UG</p>
+      <p style="font-size:13px;color:#444;margin-top:12px;">Sobald die Zahlung erfolgt ist, können Sie hier den Lizenzplan wählen:</p>
+      <p>
+        <a href="${licenseAnchor}" style="display:inline-block;padding:10px 16px;border-radius:10px;background:#111827;color:#fff;text-decoration:none;font-weight:600;">Lizenzplan auswählen</a>
+      </p>
+      ${shippingAddress ? `<p style="font-size:13px;color:#444;margin-top:12px;">Vorläufige Versandadresse: ${escapeHtml(shippingAddress)}</p>` : ''}
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;" />
+      <p style="color:#111;margin:0;"><strong>EN:</strong> Your pre-check for <strong>${escapeHtml(productName)}</strong> has been received. Please pay the base fee (254 € + 19% VAT = 302.26 €) so we can provide the shipping address and invoice.</p>
+      <p style="margin:12px 0 8px;">
+        <a href="${checkoutAnchor}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">Pay base fee</a>
+      </p>
+      <p style="font-size:13px;color:#444;margin-top:12px;">After payment, choose your license plan:</p>
+      <p>
+        <a href="${licenseAnchor}" style="display:inline-block;padding:10px 16px;border-radius:10px;background:#111827;color:#fff;text-decoration:none;font-weight:600;">Select license plan</a>
+      </p>
+      <p style="margin-top:18px;">Danke!<br/>Prüfsiegel Zentrum UG</p>
     </div>
   `;
 
@@ -138,12 +151,89 @@ export async function sendFailureNotification(opts: {
       <p>bei der Prüfung Ihres Produkts <strong>${escapeHtml(productName)}</strong> fehlen noch einige Informationen.</p>
       <p><strong>Grund:</strong> ${escapeHtml(reason)}</p>
       <p>Bitte senden Sie uns die fehlenden Angaben, damit wir fortfahren können.</p>
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0;" />
+      <p><strong>EN:</strong> We need more information for <strong>${escapeHtml(productName)}</strong>.<br/>Reason: ${escapeHtml(reason)}<br/>Please send the missing details so we can proceed.</p>
     </div>
   `;
   await sendEmail({
     from: `Pruefsiegel Zentrum UG – Status <${FROM_EMAIL}>`,
     to,
     subject: `Statusmeldung zu ${productName}`,
+    html,
+  });
+}
+
+export async function sendPrecheckPaymentSuccess(opts: {
+  to: string;
+  name: string;
+  productName: string;
+  receiptPdf?: Buffer;
+  shippingAddress?: string | null;
+}) {
+  const { to, name, productName, receiptPdf, shippingAddress } = opts;
+  const appUrl = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://pruefsiegelzentrum.vercel.app';
+  const licenseAnchor = `${appUrl.replace(/\/$/, '')}/precheck#license-plans`;
+  const html = `
+    <div style="font-family:system-ui,Arial;line-height:1.6;color:#111">
+      <p>Hallo ${escapeHtml(name)},</p>
+      <p>Zahlungseingang für <strong>${escapeHtml(productName)}</strong> bestätigt. Vielen Dank!</p>
+      ${shippingAddress ? `<p style="font-size:13px;color:#444;">Versandadresse: ${escapeHtml(shippingAddress)}</p>` : ''}
+      <p style="margin:14px 0 10px;">Lassen Sie uns jetzt den Lizenzplan wählen und das Siegel erhalten:</p>
+      <p>
+        <a href="${licenseAnchor}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">Lizenzplan auswählen</a>
+      </p>
+      <p style="margin-top:14px;font-size:13px;color:#444;">Die Quittung befindet sich im Anhang.</p>
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;" />
+      <p><strong>EN:</strong> Payment received for <strong>${escapeHtml(productName)}</strong>. Thank you!</p>
+      ${shippingAddress ? `<p style="font-size:13px;color:#444;">Shipping address: ${escapeHtml(shippingAddress)}</p>` : ''}
+      <p style="margin:12px 0 10px;">Choose your license plan next:</p>
+      <p>
+        <a href="${licenseAnchor}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">Select license plan</a>
+      </p>
+      <p style="margin-top:14px;font-size:13px;color:#444;">Receipt is attached.</p>
+      <p style="margin-top:18px;">Prüfsiegel Zentrum UG</p>
+    </div>
+  `;
+
+  await sendEmail({
+    from: `Pruefsiegel Zentrum UG – Zahlung <${FROM_EMAIL}>`,
+    to,
+    subject: 'Prüfung bestanden – Zahlung eingegangen',
+    html,
+    attachments: receiptPdf
+      ? [
+          {
+            filename: `Quittung-${productName}.pdf`,
+            content: receiptPdf,
+            contentType: 'application/pdf',
+          },
+        ]
+      : undefined,
+  });
+}
+
+export async function sendProductReceivedEmail(opts: {
+  to: string;
+  name: string;
+  productName: string;
+}) {
+  const { to, name, productName } = opts;
+  const html = `
+    <div style="font-family:system-ui,Arial;line-height:1.6;color:#111">
+      <p>Hallo ${escapeHtml(name)},</p>
+      <p>Wir haben Ihr Produkt <strong>${escapeHtml(productName)}</strong> erhalten. Die Analyse startet in Kürze.</p>
+      <p style="margin-top:12px;">Danke für Ihr Vertrauen.</p>
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:18px 0;" />
+      <p><strong>EN:</strong> We have received your product <strong>${escapeHtml(productName)}</strong>. Analysis will start shortly.</p>
+      <p style="margin-top:12px;">Thank you for your trust.</p>
+      <p style="margin-top:16px;">Prüfsiegel Zentrum UG</p>
+    </div>
+  `;
+
+  await sendEmail({
+    from: `Pruefsiegel Zentrum UG – Wareneingang <${FROM_EMAIL}>`,
+    to,
+    subject: 'Produkt eingegangen – Analyse startet',
     html,
   });
 }

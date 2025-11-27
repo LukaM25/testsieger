@@ -4,15 +4,16 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLocale } from "@/components/LocaleProvider";
-import { useEffect, useState, MouseEvent } from "react";
+import { useEffect, useState, MouseEvent, useRef } from "react";
 import { usePrecheckStatusData } from "@/hooks/usePrecheckStatusData";
 
 // --- Types ---
 type TestOption = {
+  id: string;
   title: { de: string; en: string };
   price: { de: string; en: string };
+  gross: { de: string; en: string };
   timeline: { de: string; en: string };
-  href: string;
 };
 
 type Plan = {
@@ -25,16 +26,18 @@ type Plan = {
 // --- Data ---
 const testOptions: TestOption[] = [
   {
+    id: "standard",
     title: { de: "Produkttest Checkout", en: "Product test checkout" },
     price: { de: "254,00 € zzgl. MwSt.", en: "€254 plus VAT" },
+    gross: { de: "Brutto: 302,26 €", en: "Gross: €302.26" },
     timeline: { de: "14–17 Werktage nach Erhalt", en: "14–17 business days after receipt" },
-    href: "/kontakt?anfrage=produkttest-checkout",
   },
   {
+    id: "priority",
     title: { de: "Produkttest Priority", en: "Product test priority" },
-    price: { de: "254,00 € + 64 € zzgl. MwSt.", en: "€254 + €64 plus VAT" },
+    price: { de: "318,00 € zzgl. MwSt. (254 € + 64 €)", en: "€318 plus VAT (€254 + €64)" },
+    gross: { de: "Brutto: 378,42 €", en: "Gross: €378.42" },
     timeline: { de: "4–7 Werktage nach Erhalt", en: "4–7 business days after receipt" },
-    href: "/kontakt?anfrage=produkttest-priority",
   },
 ];
 
@@ -53,7 +56,7 @@ const plans: Plan[] = [
   },
   {
     name: "Lifetime",
-    price: { de: "1466 € einmalig", en: "€1466 one-time" },
+    price: { de: "1466,00 € einmalig", en: "€1466,00 one-time" },
     detail: { de: "Zertifikat & Bericht · alle Kanäle", en: "Certificate & report · all channels" },
     href: "/pakete?plan=lifetime",
   },
@@ -88,12 +91,16 @@ export default function PrecheckPage() {
   const statusState = usePrecheckStatusData({ initialProductId: productId });
   const { productStatus } = statusState;
   const [planNotice, setPlanNotice] = useState<string | null>(null);
+  const [payError, setPayError] = useState<string | null>(null);
+  const [paying, setPaying] = useState<string | null>(null);
+  const [heroStage, setHeroStage] = useState<"loading" | "done">("loading");
+  const checkoutRef = useRef<HTMLDivElement | null>(null);
 
   const isPaid = productStatus ? ["PAID", "MANUAL"].includes(productStatus.paymentStatus) : false;
   const isPassed = productStatus
     ? productStatus.adminProgress === "PASS" || productStatus.adminProgress === "COMPLETION" || productStatus.status === "COMPLETED"
     : false;
-  const heroHeading = isPaid ? tr("Pre-Check bestanden", "Pre-check passed") : tr("Pre-Check erfolgreich", "Pre-check successful");
+  const heroHeading = heroStage === "loading" ? tr("Pre-Check …", "Pre-check …") : tr("Pre-Check bestanden!", "Pre-check passed!");
   const planDisabledTitle = tr(
     "Bitte zuerst den Pre-Check und die Grundgebühr abschließen. Wir leiten dich zum Formular.",
     "Please finish the pre-check and base fee first. We’ll take you to the form."
@@ -115,6 +122,57 @@ export default function PrecheckPage() {
     router.push("/produkte/produkt-test");
   };
 
+  const handlePayClick = async (optionId: string) => {
+    if (!productStatus) {
+      setPayError(tr("Bitte zuerst ein Produkt auswählen oder Pre-Check einreichen.", "Please select a product or submit a pre-check first."));
+      return;
+    }
+    if (isPaid) {
+      setPayError(tr("Bereits bezahlt.", "Already paid."));
+      return;
+    }
+    setPayError(null);
+    setPaying(optionId);
+    try {
+      const res = await fetch("/api/precheck/pay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: productStatus.id, option: optionId }),
+      });
+      const data = await res.json();
+      if (res.status === 401) {
+        setPayError(tr("Bitte einloggen, um die Zahlung zu starten.", "Please sign in to start payment."));
+        return;
+      }
+      if (!res.ok) {
+        setPayError(data?.error || tr("Zahlung konnte nicht gestartet werden.", "Could not start payment."));
+        return;
+      }
+      if (data?.alreadyPaid) {
+        setPayError(tr("Bereits bezahlt.", "Already paid."));
+        return;
+      }
+      if (data?.url) {
+        window.location.href = data.url as string;
+      }
+    } catch (err) {
+      setPayError(tr("Zahlung konnte nicht gestartet werden.", "Could not start payment."));
+    } finally {
+      setPaying(null);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => setHeroStage("done"), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (heroStage === "done" && checkoutRef.current) {
+      checkoutRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [heroStage]);
+
   return (
     <main className="bg-white text-slate-900 overflow-hidden font-sans">
       <section className="relative overflow-hidden">
@@ -131,6 +189,12 @@ export default function PrecheckPage() {
                   <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-slate-900">
                     {heroHeading}
                   </h1>
+                  {heroStage === "loading" && (
+                    <div className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600">
+                      <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" aria-hidden />
+                      {tr("Lädt Ergebnis …", "Loading result …")}
+                    </div>
+                  )}
                   <p className="text-lg md:text-xl font-medium text-slate-800">
                     {tr("Produkt jetzt an uns senden.", "Send your product to us now.")}
                   </p>
@@ -160,7 +224,7 @@ export default function PrecheckPage() {
 
           <div className="space-y-14 md:space-y-16">
             <FadeIn delay={180}>
-              <div className="space-y-3">
+              <div className="space-y-3" id="checkout-options" ref={checkoutRef}>
                 <div className="text-2xl font-semibold text-slate-900">
                   {tr("2. Produkt jetzt an uns senden", "2. Send your product to us now")}
                 </div>
@@ -174,10 +238,14 @@ export default function PrecheckPage() {
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {testOptions.map((option, idx) => (
-                  <Link
+                  <button
                     key={option.title.de}
-                    href={option.href}
-                    className="group relative flex h-full flex-col items-center justify-between overflow-hidden rounded-3xl border border-white/15 px-10 py-12 text-center text-white shadow-[0_28px_80px_-45px_rgba(15,23,42,0.55)] ring-1 ring-slate-900/10 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-blue-900/30"
+                    type="button"
+                    onClick={() => handlePayClick(option.id)}
+                    disabled={isPaid || paying === option.id}
+                    className={`group relative flex h-full flex-col items-center justify-between overflow-hidden rounded-3xl border border-white/15 px-10 py-12 text-center text-white shadow-[0_28px_80px_-45px_rgba(15,23,42,0.55)] ring-1 ring-slate-900/10 transition-all duration-300 ${
+                      isPaid ? "opacity-70 cursor-not-allowed" : "hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-blue-900/30"
+                    }`}
                     style={{
                       backgroundImage: idx === 0
                         ? "linear-gradient(135deg, #0f172a 0%, #1e3a8a 52%, #2563eb 100%)"
@@ -191,18 +259,24 @@ export default function PrecheckPage() {
                       <div className="text-lg font-medium text-white/95">
                         {tr(option.price.de, option.price.en)}
                       </div>
+                      <div className="text-sm font-semibold text-white/90">{tr(option.gross.de, option.gross.en)}</div>
                       <span className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-white/85">
                         {tr(option.timeline.de, option.timeline.en)}
                       </span>
                     </div>
 
                     <div className="mt-8 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white transition group-hover:bg-white/25">
-                      {tr("Zum Checkout", "Go to checkout")}
+                      {isPaid
+                        ? tr("Bereits bezahlt", "Already paid")
+                        : paying === option.id
+                        ? tr("Starte Zahlung…", "Starting payment…")
+                        : tr("Zum Checkout", "Go to checkout")}
                       <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
                     </div>
-                  </Link>
+                  </button>
                 ))}
               </div>
+              {payError && <p className="text-sm text-amber-700">{payError}</p>}
             </FadeIn>
 
             <FadeIn delay={260}>
@@ -231,7 +305,7 @@ export default function PrecheckPage() {
 
             <FadeIn delay={380}>
               <div className="space-y-8">
-                <div className="text-2xl font-semibold text-slate-900">
+                <div className="text-2xl font-semibold text-slate-900" id="license-plans">
                   {tr("4. Lizenzplan auswählen und Siegel erhalten", "4. Choose a license plan and receive your seal")}
                 </div>
                 {planNotice && <p className="text-sm text-amber-700">{planNotice}</p>}

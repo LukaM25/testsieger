@@ -119,8 +119,10 @@ export default function ProduktTestPage() {
   const [packageLoading, setPackageLoading] = useState<string | null>(null);
   const [showPrecheck, setShowPrecheck] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
+  const precheckSectionRef = useRef<HTMLElement | null>(null);
   const [contentMaxHeight, setContentMaxHeight] = useState<string>('0px');
   const [heroAnim, setHeroAnim] = useState(false);
+  const [ctaNotice, setCtaNotice] = useState<string | null>(null);
 
   // update max-height when showPrecheck toggles to enable smooth height transition
   useEffect(() => {
@@ -163,6 +165,30 @@ export default function ProduktTestPage() {
     }
   }
 
+  const scrollToPrecheck = () => {
+    precheckSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handlePrecheckCta = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    setCtaNotice(null);
+    try {
+      const res = await fetch('/api/precheck/status', { method: 'GET' });
+      if (res.ok) {
+        window.location.href = '/precheck';
+        return;
+      }
+    } catch {
+      // ignore and fall back to opening form
+    }
+    setCtaNotice(tr('Bitte Konto erstellen und Produkt für den Pre-Check einreichen.', 'Please create an account and submit your product for the pre-check.'));
+    setShowPrecheck(true);
+    // ensure height animation opens
+    requestAnimationFrame(() => {
+      scrollToPrecheck();
+    });
+  };
+
   return (
     <main className="bg-white text-slate-900">
       <section className="relative mx-auto flex max-w-6xl flex-col gap-10 px-6 py-16 sm:flex-row sm:items-center sm:justify-between lg:py-20">
@@ -183,9 +209,13 @@ export default function ProduktTestPage() {
             )}
           </p>
           <div>
-            <a data-animate="hero-cta" href="/precheck" className="inline-flex mt-3 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-lg transition hover:bg-black">
+            <button
+              data-animate="hero-cta"
+              onClick={handlePrecheckCta}
+              className="inline-flex mt-3 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-lg transition hover:bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
+            >
               {tr('Zum Pre-Check', 'To pre-check')}
-            </a>
+            </button>
           </div>
         </div>
         {/* right-side visual: layered siegel images with entrance animation */}
@@ -282,7 +312,7 @@ export default function ProduktTestPage() {
         </div>
       </section>
       {/* Inserted Pre-Check form inline so the Produkt Test page is self-contained */}
-      <section id="precheck" className="mx-auto max-w-3xl px-4 py-10">
+      <section id="precheck" ref={precheckSectionRef} className="mx-auto max-w-3xl px-4 py-10">
         <div className="flex flex-col items-center gap-4 rounded-full bg-indigo-900 px-6 py-8 text-black">
           <button
             type="button"
@@ -314,6 +344,7 @@ export default function ProduktTestPage() {
               <path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.06z" />
             </svg>
           </button>
+          {ctaNotice && <p className="text-sm font-semibold text-white/90 text-center px-4">{ctaNotice}</p>}
         </div>
 
         <div

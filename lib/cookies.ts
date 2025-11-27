@@ -5,7 +5,8 @@ import jwt from 'jsonwebtoken';
 
 const COOKIE_NAME = 'tc_session';
 const SECRET = process.env.JWT_SECRET!;
-const MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+// Session lifetime: 24 hours
+const MAX_AGE = 60 * 60 * 24; // 1 day
 
 export async function setSession(payload: { userId: string; email: string }) {
   if (!SECRET) throw new Error('Missing JWT_SECRET in env');
