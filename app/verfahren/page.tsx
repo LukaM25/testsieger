@@ -22,7 +22,7 @@ const phases = [
     description:
       'Labor- und Feldtests nach DIN EN ISO/IEC 17025. Wir arbeiten mit spezialisierten Partnerlaboren und dokumentieren jeden Messschritt.',
     actions: [
-      { label: 'Beispiel-Report ansehen', href: '/testergebnisse' },
+      { label: 'Beispiel-Report ansehen', href: '/lizenzen' },
     ],
   },
   {

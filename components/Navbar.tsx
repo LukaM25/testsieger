@@ -28,7 +28,7 @@ const navigation: (NavItem | NavSection)[] = [
     items: [
       { label: "Lizenzpläne", href: "/pakete" },
       { label: "Prüfverfahren", href: "/verfahren" },
-      { label: "Testergebnisse", href: "/testergebnisse" },
+      { label: "Lizenzverwaltung", href: "/lizenzen" },
     ],
   },
   {

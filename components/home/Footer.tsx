@@ -91,7 +91,6 @@ export default function Footer() {
             <ul className="mt-3 space-y-2 text-sm text-gray-700">
               <li><Link href="/precheck" className="hover:underline">{copy.precheck}</Link></li>
               <li><Link href="/produkte" className="hover:underline">{copy.productTest}</Link></li>
-              <li><Link href="/testergebnisse" className="hover:underline">{copy.results}</Link></li>
               <li><Link href="/verfahren" className="hover:underline">{copy.procedure}</Link></li>
             </ul>
           </div>
