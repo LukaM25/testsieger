@@ -499,6 +499,12 @@ function AdminProductRow({
                 PDF
               </a>
             )}
+            <a
+              href={`/api/admin/products/${product.id}/rating-sheet`}
+              className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700 transition hover:bg-slate-50"
+            >
+              Rating CSV
+            </a>
             {product.certificate?.sealUrl && (
               <a
                 href={product.certificate.sealUrl}
