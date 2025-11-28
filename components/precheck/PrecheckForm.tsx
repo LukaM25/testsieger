@@ -11,7 +11,12 @@ const Schema = z.object({
   name: z.string().min(2),
   company: z.string().optional(),
   email: z.string().email(),
-  address: z.string().min(5),
+  addressStreet: z.string().min(2),
+  addressNumber: z.string().min(1),
+  addressPostal: z.string().min(3),
+  addressCity: z.string().min(2),
+  addressCountry: z.string().min(2),
+  addressLine2: z.string().optional(),
   password: z.string().min(8),
   productName: z.string().min(2),
   brand: z.string().min(1),
@@ -37,12 +42,23 @@ export default function PrecheckForm() {
   });
 
   const onSubmit = async (values: FormValues) => {
+    const addressParts = [
+      `${values.addressStreet} ${values.addressNumber}`.trim(),
+      values.addressLine2?.trim(),
+      `${values.addressPostal} ${values.addressCity}`.trim(),
+      values.addressCountry.trim(),
+    ].filter(Boolean);
+    const address = addressParts.join(', ');
+
     setSubmitting(true);
     setRedirecting(false);
     const res = await fetch('/api/precheck', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(values),
+      body: JSON.stringify({
+        ...values,
+        address,
+      }),
     });
     const data = await res.json();
     if (data?.error === 'LOGIN_REQUIRED' && data?.redirect) {
@@ -100,10 +116,37 @@ export default function PrecheckForm() {
             <Input {...register('password')} type="password" placeholder="••••••••" />
             <Error msg={errors.password?.message} />
           </div>
-          <div className="md:col-span-2">
-            <Label>{tr('Adresse', 'Address')}</Label>
-            <Input {...register('address')} placeholder={tr('Straße Nr, PLZ Ort, Land', 'Street, ZIP city, country')} />
-            <Error msg={errors.address?.message} />
+          <div className="md:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label>{tr('Straße', 'Street')}</Label>
+              <Input {...register('addressStreet')} placeholder={tr('Musterstraße', 'Example Street')} />
+              <Error msg={errors.addressStreet?.message} />
+            </div>
+            <div>
+              <Label>{tr('Hausnummer', 'House number')}</Label>
+              <Input {...register('addressNumber')} placeholder="12a" />
+              <Error msg={errors.addressNumber?.message} />
+            </div>
+            <div>
+              <Label>{tr('PLZ', 'ZIP')}</Label>
+              <Input {...register('addressPostal')} placeholder="12345" />
+              <Error msg={errors.addressPostal?.message} />
+            </div>
+            <div>
+              <Label>{tr('Ort', 'City')}</Label>
+              <Input {...register('addressCity')} placeholder={tr('Berlin', 'City')} />
+              <Error msg={errors.addressCity?.message} />
+            </div>
+            <div>
+              <Label>{tr('Land', 'Country')}</Label>
+              <Input {...register('addressCountry')} placeholder={tr('Deutschland', 'Country')} />
+              <Error msg={errors.addressCountry?.message} />
+            </div>
+            <div>
+              <Label>{tr('Adresszusatz (optional)', 'Address line 2 (optional)')}</Label>
+              <Input {...register('addressLine2')} placeholder={tr('c/o, Etage, etc.', 'c/o, floor, etc.')} />
+              <Error msg={errors.addressLine2?.message} />
+            </div>
           </div>
         </div>
 
