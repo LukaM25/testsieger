@@ -94,7 +94,7 @@ const phasesQa = {
       answer: {
         de: 'Je nach Produktkategorie beträgt die Durchlaufzeit zwischen 14 und 21 Werktagen. Mit Buchungsoption sind 7 Werktage möglich.',
         en: 'Depending on the product category the lead time is 14–21 business days. With booking option we can deliver in 7 business days.',
-      },
+      }, 
     },
     {
       question: { de: 'Welche Unterlagen benötigen wir?', en: 'Which documents do we need?' },
@@ -120,6 +120,8 @@ export default function ProduktTestPage() {
   const [showPrecheck, setShowPrecheck] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const precheckSectionRef = useRef<HTMLElement | null>(null);
+  const previewRef = useRef<HTMLElement | null>(null);
+  const [carouselIndex, setCarouselIndex] = useState(0);
   const [contentMaxHeight, setContentMaxHeight] = useState<string>('0px');
   const [heroAnim, setHeroAnim] = useState(false);
   const [ctaNotice, setCtaNotice] = useState<string | null>(null);
@@ -169,6 +171,10 @@ export default function ProduktTestPage() {
     precheckSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  const scrollToPreview = () => {
+    previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
   const handlePrecheckCta = async (e: React.MouseEvent) => {
     e.preventDefault();
     setCtaNotice(null);
@@ -189,6 +195,13 @@ export default function ProduktTestPage() {
     });
   };
 
+  useEffect(() => {
+    const id = setInterval(() => {
+      setCarouselIndex((prev) => (prev + 1) % 2);
+    }, 3200);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <main className="bg-white text-slate-900">
       <section className="relative mx-auto flex max-w-6xl flex-col gap-10 px-6 py-16 sm:flex-row sm:items-center sm:justify-between lg:py-20">
@@ -196,7 +209,7 @@ export default function ProduktTestPage() {
           <div className="flex items-center gap-4">
             <div>
               <p data-animate="hero-badge" className="text-xs font-semibold uppercase tracking-[0.4em] text-slate-500"></p>
-              <Image src="/tclogo.png" alt="TC Logo" width={525} height={138} className="mb-4 h-[110px] w-[220px] object-contain" />
+              <Image src="/tclogo.png" alt="TC Logo" width={525} height={138} className="mb-4 h-[138px] w-[275px] object-contain" />
             </div>
           </div>
           <h1 data-animate="hero-title" className="text-3xl font-bold">
@@ -208,13 +221,19 @@ export default function ProduktTestPage() {
               'We support you from pre-check to seal – transparent, digital, and with a clear evaluation framework.'
             )}
           </p>
-          <div>
+          <div className="flex flex-wrap gap-3">
             <button
               data-animate="hero-cta"
               onClick={handlePrecheckCta}
               className="inline-flex mt-3 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-lg transition hover:bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
             >
               {tr('Zum Pre-Check', 'To pre-check')}
+            </button>
+            <button
+              onClick={scrollToPreview}
+              className="inline-flex mt-3 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-lg transition hover:bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
+            >
+              {tr('Produkt Vorschau', 'Product preview')}
             </button>
           </div>
         </div>
@@ -474,6 +493,52 @@ export default function ProduktTestPage() {
 </h2>
 </div>
 </div>
+        </div>
+      </section>
+
+      {/* Produkt Vorschau carousel */}
+      <section ref={previewRef} className="mx-auto max-w-6xl px-6 py-12">
+        <div className="rounded-3xl border border-slate-200 bg-slate-50/80 p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.45)]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
+                {tr('Produkt Vorschau', 'Product preview')}
+              </p>
+              <h2 className="text-2xl font-semibold text-slate-900">{tr('So sehen geprüfte Produkte aus', 'A look at tested products')}</h2>
+              <p className="text-sm text-slate-600">
+                {tr('Beispiele aus aktuellen Bewertungen. Swipe oder warten, um weitere zu sehen.', 'Examples from current reviews. Swipe or wait to see more.')}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {[0, 1].map((i) => (
+                <button
+                  key={i}
+                  onClick={() => setCarouselIndex(i)}
+                  className={`h-2.5 w-2.5 rounded-full transition ${carouselIndex === i ? 'bg-slate-900' : 'bg-slate-300'}`}
+                  aria-label={`Slide ${i + 1}`}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="relative mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <div
+              className="flex transition-transform duration-700 ease-in-out"
+              style={{ transform: `translateX(-${carouselIndex * 100}%)` }}
+            >
+              {['/carosel/1v1.jpg', '/carosel/IMG_4214.jpeg'].map((src, idx) => (
+                <div key={src} className="min-w-full flex justify-center items-center bg-slate-100">
+                  <Image
+                    src={src}
+                    alt={tr('Produkt Vorschaubild', 'Product preview image')}
+                    width={1400}
+                    height={700}
+                    className="h-[360px] w-full object-cover md:h-[440px] lg:h-[520px]"
+                    priority={idx === 0}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
