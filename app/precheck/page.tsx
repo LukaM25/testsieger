@@ -180,9 +180,11 @@ export default function PrecheckPage() {
   }, [heroStage]);
 
   useEffect(() => {
-    if (heroStage === "done" && checkoutRef.current) {
-      checkoutRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
+    if (heroStage !== "done" || !checkoutRef.current) return;
+    const active = document.activeElement as HTMLElement | null;
+    const isFormFocus = active && ["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName);
+    if (isFormFocus) return; // avoid stealing focus/closing keyboard on mobile
+    checkoutRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [heroStage]);
 
   return (
