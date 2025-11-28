@@ -94,13 +94,17 @@ export default function PrecheckPage() {
   const [payError, setPayError] = useState<string | null>(null);
   const [paying, setPaying] = useState<string | null>(null);
   const [heroStage, setHeroStage] = useState<"loading" | "done">("loading");
+  const [dots, setDots] = useState(0);
   const checkoutRef = useRef<HTMLDivElement | null>(null);
 
   const isPaid = productStatus ? ["PAID", "MANUAL"].includes(productStatus.paymentStatus) : false;
   const isPassed = productStatus
     ? productStatus.adminProgress === "PASS" || productStatus.adminProgress === "COMPLETION" || productStatus.status === "COMPLETED"
     : false;
-  const heroHeading = heroStage === "loading" ? tr("Pre-Check …", "Pre-check …") : tr("Pre-Check bestanden!", "Pre-check passed!");
+  const heroHeading =
+    heroStage === "loading"
+      ? `${tr("Pre-Check", "Pre-check")}${".".repeat((dots % 3) + 1)}`
+      : tr("Pre-Check bestanden!", "Pre-check passed!");
   const planDisabledTitle = tr(
     "Bitte zuerst den Pre-Check und die Grundgebühr abschließen. Wir leiten dich zum Formular.",
     "Please finish the pre-check and base fee first. We’ll take you to the form."
@@ -163,9 +167,17 @@ export default function PrecheckPage() {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => setHeroStage("done"), 3000);
+    const timer = setTimeout(() => setHeroStage("done"), 7000);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (heroStage !== "loading") return;
+    const interval = setInterval(() => {
+      setDots((d) => (d + 1) % 3);
+    }, 500);
+    return () => clearInterval(interval);
+  }, [heroStage]);
 
   useEffect(() => {
     if (heroStage === "done" && checkoutRef.current) {
