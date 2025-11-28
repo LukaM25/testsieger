@@ -96,6 +96,8 @@ export default function PrecheckPage() {
   const [heroStage, setHeroStage] = useState<"loading" | "done">("loading");
   const [dots, setDots] = useState(0);
   const [heroSeen, setHeroSeen] = useState(false);
+  const heroTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dotsTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const checkoutRef = useRef<HTMLDivElement | null>(null);
 
   const isPaid = productStatus ? ["PAID", "MANUAL"].includes(productStatus.paymentStatus) : false;
@@ -168,27 +170,60 @@ export default function PrecheckPage() {
   };
 
   useEffect(() => {
-    // Only run the loading phase once per session
-    const hasSeen = typeof window !== "undefined" && sessionStorage.getItem("precheckHeroSeen") === "1";
+    if (typeof window === "undefined") return;
+    const isCoarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+    const hasSeen = sessionStorage.getItem("precheckHeroSeen") === "1";
+
+    if (isCoarse) {
+      setHeroStage("done");
+      setHeroSeen(true);
+      sessionStorage.setItem("precheckHeroSeen", "1");
+      return;
+    }
+
     if (hasSeen) {
       setHeroSeen(true);
       setHeroStage("done");
       return;
     }
+
     setHeroSeen(false);
-    const timer = setTimeout(() => {
+    heroTimer.current = setTimeout(() => {
       setHeroStage("done");
       sessionStorage.setItem("precheckHeroSeen", "1");
     }, 7000);
-    return () => clearTimeout(timer);
+
+    const onFocus = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target) return;
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) {
+        if (heroTimer.current) clearTimeout(heroTimer.current);
+        setHeroStage("done");
+        sessionStorage.setItem("precheckHeroSeen", "1");
+      }
+    };
+    window.addEventListener("focusin", onFocus);
+
+    return () => {
+      if (heroTimer.current) clearTimeout(heroTimer.current);
+      window.removeEventListener("focusin", onFocus);
+    };
   }, []);
 
   useEffect(() => {
-    if (heroStage !== "loading") return;
-    const interval = setInterval(() => {
+    if (heroStage !== "loading") {
+      if (dotsTimer.current) {
+        clearInterval(dotsTimer.current);
+        dotsTimer.current = null;
+      }
+      return;
+    }
+    dotsTimer.current = setInterval(() => {
       setDots((d) => (d + 1) % 3);
     }, 500);
-    return () => clearInterval(interval);
+    return () => {
+      if (dotsTimer.current) clearInterval(dotsTimer.current);
+    };
   }, [heroStage]);
 
   // Removed auto-scroll to avoid disrupting mobile keyboards
