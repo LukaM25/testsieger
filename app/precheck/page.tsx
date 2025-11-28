@@ -95,6 +95,7 @@ export default function PrecheckPage() {
   const [paying, setPaying] = useState<string | null>(null);
   const [heroStage, setHeroStage] = useState<"loading" | "done">("loading");
   const [dots, setDots] = useState(0);
+  const [heroSeen, setHeroSeen] = useState(false);
   const checkoutRef = useRef<HTMLDivElement | null>(null);
 
   const isPaid = productStatus ? ["PAID", "MANUAL"].includes(productStatus.paymentStatus) : false;
@@ -167,7 +168,18 @@ export default function PrecheckPage() {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => setHeroStage("done"), 7000);
+    // Only run the loading phase once per session
+    const hasSeen = typeof window !== "undefined" && sessionStorage.getItem("precheckHeroSeen") === "1";
+    if (hasSeen) {
+      setHeroSeen(true);
+      setHeroStage("done");
+      return;
+    }
+    setHeroSeen(false);
+    const timer = setTimeout(() => {
+      setHeroStage("done");
+      sessionStorage.setItem("precheckHeroSeen", "1");
+    }, 7000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -179,13 +191,7 @@ export default function PrecheckPage() {
     return () => clearInterval(interval);
   }, [heroStage]);
 
-  useEffect(() => {
-    if (heroStage !== "done" || !checkoutRef.current) return;
-    const active = document.activeElement as HTMLElement | null;
-    const isFormFocus = active && ["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName);
-    if (isFormFocus) return; // avoid stealing focus/closing keyboard on mobile
-    checkoutRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [heroStage]);
+  // Removed auto-scroll to avoid disrupting mobile keyboards
 
   return (
     <main className="bg-white text-slate-900 overflow-hidden font-sans">
