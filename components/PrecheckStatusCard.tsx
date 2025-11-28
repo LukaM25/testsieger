@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale } from "@/components/LocaleProvider";
-import ProductPayButton from "@/app/kundenportal/ProductPayButton";
+import ProductPayButton from "@/app/dashboard/ProductPayButton";
 import { usePrecheckStatusData, ProductStatusPayload } from "@/hooks/usePrecheckStatusData";
 
 type Props = {

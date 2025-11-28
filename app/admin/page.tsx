@@ -48,6 +48,9 @@ type AdminProduct = {
     qrUrl?: string | null;
     seal_number?: string | null;
     externalReferenceId?: string | null;
+    ratingScore?: string | null;
+    ratingLabel?: string | null;
+    sealUrl?: string | null;
   } | null;
 };
 
@@ -95,6 +98,11 @@ export default function AdminPage() {
     } finally {
       setLoadingProducts(false);
     }
+  }, []);
+
+  useEffect(() => {
+    // If a regular user session is present, clear it to avoid mixed user/admin state.
+    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -238,6 +246,7 @@ function AdminProductRow({
   const [paymentStatusLoading, setPaymentStatusLoading] = useState(false);
   const [paymentStatusMessage, setPaymentStatusMessage] = useState<string | null>(null);
   const [localMessage, setLocalMessage] = useState<string | null>(null);
+  const [genLoading, setGenLoading] = useState(false);
 
   // NEW: Smart Preview Handler (Stops the Reload loop)
   const handleSmartPreview = async () => {
@@ -383,6 +392,31 @@ function AdminProductRow({
     ['Adresse', product.user.address],
   ];
 
+  const sheetUrl = `https://docs.google.com/spreadsheets/d/1uwauj30aZ4KpwSHBL3Yi6yB85H_OQypI5ogKuR82KFk/edit?usp=sharing&productId=${product.id}`;
+
+  const handleGenerateWithRating = async () => {
+    setLocalMessage(null);
+    setGenLoading(true);
+    try {
+      const res = await fetch(`/api/admin/products/${product.id}/generate-cert-with-rating`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setLocalMessage(data.error || 'Zertifikat/ Siegel konnte nicht erstellt werden.');
+        return;
+      }
+      setLocalMessage('Zertifikat & Siegel erstellt.');
+      onUpdated();
+    } catch (err) {
+      console.error(err);
+      setLocalMessage('Erstellung fehlgeschlagen.');
+    } finally {
+      setGenLoading(false);
+    }
+  };
+
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -395,6 +429,11 @@ function AdminProductRow({
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs uppercase tracking-[0.3em] text-slate-500">
               {statusLabel(product.status)}
             </span>
+            {product.certificate?.ratingScore && product.certificate?.ratingLabel && (
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                {product.certificate.ratingScore} · {product.certificate.ratingLabel}
+              </span>
+            )}
             <span className="text-lg font-semibold text-slate-900">{product.name}</span>
             <span className="text-sm text-slate-500">{product.brand}</span>
             <span className="text-xs text-slate-400">{new Date(product.createdAt).toLocaleTimeString('de-DE')}</span>
@@ -460,6 +499,32 @@ function AdminProductRow({
                 PDF
               </a>
             )}
+            {product.certificate?.sealUrl && (
+              <a
+                href={product.certificate.sealUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-lg border border-amber-600 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-700 transition hover:bg-amber-50"
+              >
+                Siegel
+              </a>
+            )}
+            <a
+              href={sheetUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700 transition hover:bg-slate-50"
+            >
+              Rating Sheet
+            </a>
+            <button
+              type="button"
+              disabled={genLoading}
+              onClick={handleGenerateWithRating}
+              className="rounded-lg border border-amber-700 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-800 transition hover:bg-amber-50 disabled:opacity-70"
+            >
+              {genLoading ? 'Erstellt…' : 'Cert & Siegel'}
+            </button>
           </div>
         </div>
 

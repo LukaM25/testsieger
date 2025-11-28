@@ -103,7 +103,7 @@ export default async function TestergebnissePage({ searchParams }: Props) {
               {tr('Prüfbericht anfordern', 'Request test report')}
             </Link>
             <Link
-              href="/kundenportal"
+              href="/dashboard"
               className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-medium text-slate-800 transition hover:bg-slate-100"
             >
               {tr('Kundenportal öffnen', 'Open customer portal')}

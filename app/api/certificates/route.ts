@@ -36,7 +36,7 @@ export async function POST(req: Request) {
         },
       }));
 
-    const verifyUrl = `${baseDomain.replace(/\/$/, "")}/licences/${cert.id}`;
+    const verifyUrl = `${baseDomain.replace(/\/$/, "")}/lizenzen?q=${encodeURIComponent(cert.id)}`;
     const qrBuffer = await QRCode.toBuffer(verifyUrl, { margin: 1, width: 512 });
 
     const uploadsDir = path.join(process.cwd(), "public", "uploads");

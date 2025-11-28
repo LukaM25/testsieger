@@ -38,10 +38,14 @@ export async function GET() {
     },
     certificate: product.certificate
       ? {
+          id: product.certificate.id,
           pdfUrl: product.certificate.pdfUrl,
           qrUrl: product.certificate.qrUrl,
           seal_number: product.certificate.seal_number,
           externalReferenceId: product.certificate.externalReferenceId,
+          ratingScore: product.certificate.ratingScore,
+          ratingLabel: product.certificate.ratingLabel,
+          sealUrl: product.certificate.sealUrl,
         }
       : null,
   }));

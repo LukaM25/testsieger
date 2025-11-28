@@ -14,7 +14,7 @@ const phases = [
       'Kostenloser Pre-Check inklusive Dokumentenprüfung und Plausibilitätsbewertung, um Aufwand und benötigte Nachweise frühzeitig abzuschätzen.',
     actions: [
       { label: 'Pre-Check starten', href: '/precheck' },
-      { label: 'Unterlagen-Checkliste', href: '/kundenportal' },
+      { label: 'Unterlagen-Checkliste', href: '/dashboard' },
     ],
   },
   {

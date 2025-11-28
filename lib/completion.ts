@@ -46,7 +46,7 @@ export async function completeProduct(productId: string): Promise<CompletionResu
       data: { productId: product.id, pdfUrl: '', qrUrl: '', seal_number: seal },
     }));
   const certificateId = certificateRecord.id;
-  const verifyUrl = `${APP_URL.replace(/\/$/, '')}/licences/${certificateId}`;
+  const verifyUrl = `${APP_URL.replace(/\/$/, '')}/lizenzen?q=${encodeURIComponent(certificateId)}`;
   const qrBuffer = await QRCode.toBuffer(verifyUrl, { margin: 1, width: 512 });
 
   const pdfBuffer = await generateCertificatePdf({

@@ -79,7 +79,7 @@ export default function Footer() {
               <li><Link href="/produkte" className="hover:underline">{copy.productCert}</Link></li>
               <li><Link href="/lizenzen" className="hover:underline">{copy.licenseSearch}</Link></li>
               <li><Link href="/kontakt" className="hover:underline">{copy.contact}</Link></li>
-              <li><Link href="/kundenportal" className="hover:underline">{copy.portal}</Link></li>
+              <li><Link href="/dashboard" className="hover:underline">{copy.portal}</Link></li>
             </ul>
           </div>
 

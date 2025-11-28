@@ -61,6 +61,9 @@ model Certificate {
   createdAt           DateTime @default(now())
   seal_number         String   @unique @default(uuid())
   externalReferenceId String?  @unique
+  ratingScore         String?
+  ratingLabel         String?
+  sealUrl             String?
   product             Product  @relation(fields: [productId], references: [id])
   snapshotData        Json?    // Added via SQL
   lastSentAt          DateTime? // Added via SQL

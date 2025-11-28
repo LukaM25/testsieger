@@ -5,8 +5,8 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { setSession } from '@/lib/cookies';
 import { sendPrecheckConfirmation } from '@/lib/email';
-import { stripe } from '@/lib/stripe';
 import { generateInvoicePdf } from '@/lib/invoice';
+import { getSession } from '@/lib/cookies';
 
 const PrecheckSchema = z.object({
   name: z.string().min(2),
@@ -30,9 +30,22 @@ export async function POST(req: Request) {
     const json = await req.json();
     const data = PrecheckSchema.parse(json);
     const category = data.category?.trim() || undefined;
+    const session = await getSession();
 
     // 1) Ensure user exists (or create)
     const existing = await prisma.user.findUnique({ where: { email: data.email } });
+
+    if (existing && (!session || session.userId !== existing.id)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: 'LOGIN_REQUIRED',
+          redirect: `/login?email=${encodeURIComponent(data.email)}`,
+          message: 'Account existiert bereits. Bitte einloggen.',
+        },
+        { status: 409 }
+      );
+    }
 
     let userId: string;
     if (!existing) {
@@ -84,8 +97,6 @@ export async function POST(req: Request) {
       select: { id: true, name: true, brand: true },
     });
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.APP_URL || 'http://localhost:3000';
-
     // 3) Prepare invoice PDF
     const invoicePdf = await generateInvoicePdf({
       customerName: data.name,
@@ -105,28 +116,7 @@ export async function POST(req: Request) {
       shippingAddress: data.address,
     }).catch(() => { /* avoid blocking */ });
 
-    // 5) Create checkout session for Grundgebühr
-    const checkout = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      customer_email: data.email,
-      client_reference_id: `${userId}:${product.id}:PRECHECK_FEE`,
-      line_items: [
-        {
-          price_data: {
-            currency: 'eur',
-            unit_amount: 25400,
-            product_data: {
-              name: `Pre-Check: ${product.name}`,
-            },
-          },
-          quantity: 1,
-        },
-      ],
-      success_url: `${baseUrl}/precheck?productId=${product.id}&product=${encodeURIComponent(product.name)}`,
-      cancel_url: `${baseUrl}/precheck?productId=${product.id}&product=${encodeURIComponent(product.name)}`,
-    });
-
-    // 6) Set session & respond with checkout URL
+    // 5) Set session & respond with redirect to precheck overview
     await setSession({ userId, email: data.email });
 
     const params = new URLSearchParams();
@@ -135,7 +125,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       ok: true,
       productId: product.id,
-      redirect: checkout.url ?? `/precheck?productId=${product.id}&${params.toString()}`,
+      redirect: `/precheck?productId=${product.id}&${params.toString()}`,
     });
   } catch (err: any) {
     console.error(err);

@@ -36,7 +36,7 @@ const sections: NavSection[] = [
     items: [
       { labelKey: "nav.careers", href: "/karriere" },
       { labelKey: "nav.contact", href: "/kontakt" },
-      { labelKey: "nav.portal", href: "/kundenportal" },
+      { labelKey: "nav.portal", href: "/dashboard" },
       { labelKey: "nav.login", href: "/login" },
     ],
   },
@@ -573,7 +573,7 @@ export default function Navbar() {
                     <p className="text-sm font-semibold text-slate-900">{profileUser.name}</p>
                     <div className="space-y-2">
                       <Link
-                        href="/kundenportal"
+                        href="/dashboard"
                         className="block rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 text-left transition hover:bg-slate-50"
                         onClick={() => setProfileOpen(false)}
                       >

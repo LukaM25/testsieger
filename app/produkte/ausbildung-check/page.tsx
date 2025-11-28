@@ -113,7 +113,7 @@ export default function AusbildungCheckPage() {
           </ol>
           <div className="mt-8">
             <Link
-              href="/packages"
+              href="/pakete"
               className="rounded-lg bg-black px-5 py-3 text-white hover:bg-gray-900"
             >
               Pakete ansehen

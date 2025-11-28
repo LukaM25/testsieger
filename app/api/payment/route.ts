@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     line_items: [{ price: priceId, quantity: 1 }],
     client_reference_id: `${session.userId}:${product.id}:${plan}`,
     success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
-    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/packages`,
+    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/pakete`,
   });
 
   await prisma.order.create({

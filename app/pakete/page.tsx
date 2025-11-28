@@ -69,18 +69,24 @@ function Reveal({
 
 export default function Packages() {
   const router = useRouter();
-  const { hasPrecheck, paidAndPassed, loading } = usePrecheckEligibility();
+  const { hasPrecheck, paidAndPassed, loading, productId, licensePaid } = usePrecheckEligibility();
   const [notice, setNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<string | null>(null);
   const guardMessage = "Bitte Pre-Check abschließen, Grundgebühr bezahlen und Prüfung abwarten. Wir leiten dich zum Formular.";
+  const paidMessage = "Lizenzplan bereits bezahlt. Du kannst nicht erneut zahlen.";
 
   async function choose(plan: string) {
+    if (!productId) {
+      setNotice(guardMessage);
+      router.push("/produkte/produkt-test");
+      return;
+    }
     setSubmitting(plan);
     try {
       const res = await fetch("/api/payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, productId }),
       });
       const data = await res.json();
       if (!res.ok || !data.url) {
@@ -88,13 +94,19 @@ export default function Packages() {
         return;
       }
       window.location.href = data.url;
+    } catch (err) {
+      setNotice("Zahlung konnte nicht gestartet werden.");
     } finally {
       setSubmitting(null);
     }
   }
 
   const handleGuardedSelect = (plan: string) => {
-    if (!hasPrecheck || !paidAndPassed) {
+    if (licensePaid) {
+      setNotice(paidMessage);
+      return;
+    }
+    if (!hasPrecheck || !paidAndPassed || !productId) {
       setNotice(guardMessage);
       router.push("/produkte/produkt-test");
       return;
@@ -160,7 +172,8 @@ export default function Packages() {
 
           <div className="grid gap-6 md:grid-cols-3">
             {plans.map((plan, idx) => {
-              const disabled = !hasPrecheck || !paidAndPassed || loading || submitting === plan.key;
+              const disabled =
+                licensePaid || !hasPrecheck || !paidAndPassed || !productId || loading || submitting === plan.key;
               return (
                 <Reveal key={plan.key} delay={idx * 60 + 60}>
                   <div className="flex h-full flex-col justify-between rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)]">
@@ -176,7 +189,13 @@ export default function Packages() {
                       className={`mt-8 rounded-full px-4 py-2 text-sm font-semibold ${
                         disabled ? "bg-slate-200 text-slate-500 cursor-not-allowed" : "bg-slate-900 text-white transition hover:bg-black"
                       }`}
-                      title={!hasPrecheck || !paidAndPassed ? guardMessage : undefined}
+                      title={
+                        licensePaid
+                          ? paidMessage
+                          : !hasPrecheck || !paidAndPassed
+                            ? guardMessage
+                            : undefined
+                      }
                     >
                       {submitting === plan.key ? "Wird geöffnet…" : "Lizenzplan wählen"}
                     </button>

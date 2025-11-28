@@ -36,7 +36,7 @@ const navigation: (NavItem | NavSection)[] = [
     items: [
       { label: "Pakete", href: "/pakete" },
       { label: "Lizenzverwaltung", href: "/lizenzen" },
-      { label: "Kundenportal", href: "/kundenportal" },
+      { label: "Kundenportal", href: "/dashboard" },
     ],
   },
   {

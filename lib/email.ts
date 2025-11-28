@@ -138,6 +138,54 @@ export async function sendCompletionEmail(opts: {
   });
 }
 
+export async function sendCertificateAndSealEmail(opts: {
+  to: string;
+  name: string;
+  productName: string;
+  verifyUrl: string;
+  pdfBuffer?: Buffer;
+  sealBuffer?: Buffer;
+}) {
+  const { to, name, productName, verifyUrl, pdfBuffer, sealBuffer } = opts;
+  const attachments: Attachment[] = [];
+  if (pdfBuffer) {
+    attachments.push({
+      filename: `${productName}-Pruefbericht.pdf`,
+      content: pdfBuffer,
+      contentType: 'application/pdf',
+    });
+  }
+  if (sealBuffer) {
+    attachments.push({
+      filename: `${productName}-Siegel.png`,
+      content: sealBuffer,
+      contentType: 'image/png',
+    });
+  }
+
+  const html = `
+    <div style="font-family:system-ui,Arial;line-height:1.6;color:#111">
+      <p>Hallo ${escapeHtml(name)},</p>
+      <p>Ihr Prüfbericht und das Siegel für <strong>${escapeHtml(productName)}</strong> stehen bereit.</p>
+      <p>
+        Verifikation: <a href="${verifyUrl}" style="color:#1d4ed8;font-weight:600;">${verifyUrl}</a>
+      </p>
+      <p style="margin:12px 0;">Im Anhang finden Sie den Prüfbericht (PDF) und das Siegel (PNG).</p>
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:18px 0;" />
+      <p><strong>EN:</strong> Your report and seal for <strong>${escapeHtml(productName)}</strong> are ready. Verification link: <a href="${verifyUrl}" style="color:#1d4ed8;font-weight:600;">${verifyUrl}</a>.</p>
+      <p style="margin-top:18px;">Danke!<br/>Prüfsiegel Zentrum UG</p>
+    </div>
+  `;
+
+  await sendEmail({
+    from: `Pruefsiegel Zentrum UG – Zertifikat <${FROM_EMAIL}>`,
+    to,
+    subject: `Prüfbericht & Siegel – ${productName}`,
+    html,
+    attachments: attachments.length ? attachments : undefined,
+  });
+}
+
 export async function sendFailureNotification(opts: {
   to: string;
   name: string;

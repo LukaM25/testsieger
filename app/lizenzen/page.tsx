@@ -72,7 +72,7 @@ export default async function LizenzenPage() {
           </p>
           <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link
-              href="/kundenportal"
+              href="/dashboard"
               className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-black"
             >
               Zum Kundenportal

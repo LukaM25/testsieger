@@ -14,7 +14,7 @@ export default async function DashboardPage() {
         include: { certificate: true },
         orderBy: { createdAt: 'desc' },
       },
-      orders: { orderBy: { createdAt: 'desc' } },
+      orders: { include: { product: true }, orderBy: { createdAt: 'desc' } },
     },
   });
 

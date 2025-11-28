@@ -57,7 +57,7 @@ const phasesQa = {
       },
       actions: [
         { label: { de: 'Pre-Check starten', en: 'Start pre-check' }, href: '/precheck' },
-        { label: { de: 'Unterlagen-Checkliste', en: 'Documentation checklist' }, href: '/kundenportal' },
+        { label: { de: 'Unterlagen-Checkliste', en: 'Documentation checklist' }, href: '/dashboard' },
       ],
     },
     {

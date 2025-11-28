@@ -45,6 +45,12 @@ export default function PrecheckForm() {
       body: JSON.stringify(values),
     });
     const data = await res.json();
+    if (data?.error === 'LOGIN_REQUIRED' && data?.redirect) {
+      alert(tr('Es existiert bereits ein Konto mit dieser E-Mail. Bitte einloggen.', 'An account with this email already exists. Please sign in.'));
+      router.push(data.redirect as string);
+      setSubmitting(false);
+      return;
+    }
     if (data?.ok && data?.redirect) {
       const target = data.redirect || `/precheck${data.productId ? `?productId=${data.productId}` : ''}`;
       setRedirecting(true);

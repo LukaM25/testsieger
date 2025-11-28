@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/cookies';
+import { Plan } from '@prisma/client';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -21,7 +22,16 @@ export async function GET(req: Request) {
         orderBy: { createdAt: 'desc' },
       });
 
-  if (!product) return NextResponse.json({ ok: true, product: null });
+  if (!product) return NextResponse.json({ ok: true, product: null, licensePaid: false });
+
+  const paidLicense = await prisma.order.findFirst({
+    where: {
+      userId: session.userId,
+      productId: product.id,
+      paidAt: { not: null },
+      plan: { in: [Plan.BASIC, Plan.PREMIUM, Plan.LIFETIME] },
+    },
+  });
 
   return NextResponse.json({
     ok: true,
@@ -33,5 +43,6 @@ export async function GET(req: Request) {
       status: product.status,
       createdAt: product.createdAt,
     },
+    licensePaid: !!paidLicense,
   });
 }
