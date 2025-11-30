@@ -29,7 +29,7 @@ export type CompletionResult = {
 /**
  * Creates the certificate PDF, stores the assets, marks the product completed and emails the customer.
  */
-export async function completeProduct(productId: string): Promise<CompletionResult> {
+export async function completeProduct(productId: string, message?: string): Promise<CompletionResult> {
   const product = await prisma.product.findUnique({
     where: { id: productId },
     include: { user: true, certificate: true },
@@ -125,6 +125,7 @@ export async function completeProduct(productId: string): Promise<CompletionResu
     qrUrl: qrRel,
     pdfBuffer,
     documentId: undefined,
+    message,
   });
 
   return {

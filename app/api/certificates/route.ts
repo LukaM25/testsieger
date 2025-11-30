@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
-    const { productId } = await req.json();
+    const { productId, message } = await req.json();
 
     const product = await prisma.product.findUnique({
       where: { id: productId },
@@ -103,6 +103,7 @@ export async function POST(req: Request) {
       qrUrl: qrRel,
       pdfBuffer,
       documentId: undefined,
+      message: typeof message === 'string' ? message.slice(0, 1000) : undefined,
     });
 
     return NextResponse.json({

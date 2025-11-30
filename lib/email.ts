@@ -99,8 +99,9 @@ export async function sendCompletionEmail(opts: {
   qrUrl: string;
   pdfBuffer?: Buffer;
   documentId?: string;
+  message?: string;
 }) {
-  const { to, name, productName, verifyUrl, pdfUrl, qrUrl, pdfBuffer, documentId } = opts;
+  const { to, name, productName, verifyUrl, pdfUrl, qrUrl, pdfBuffer, documentId, message } = opts;
   const attachments = pdfBuffer
     ? [
         {
@@ -125,6 +126,7 @@ export async function sendCompletionEmail(opts: {
         QR-Code: <a href="${qrUrl}" style="color:#1d4ed8;font-weight:600;">Download</a>
       </p>
       ${documentId ? `<p>PDFMonkey-Dokument-ID: <code>${escapeHtml(documentId)}</code></p>` : ''}
+      ${renderNote(message)}
       <p>Danke!<br />Prüfsiegel Zentrum UG</p>
     </div>
   `;
@@ -145,8 +147,9 @@ export async function sendCertificateAndSealEmail(opts: {
   verifyUrl: string;
   pdfBuffer?: Buffer;
   sealBuffer?: Buffer;
+  message?: string;
 }) {
-  const { to, name, productName, verifyUrl, pdfBuffer, sealBuffer } = opts;
+  const { to, name, productName, verifyUrl, pdfBuffer, sealBuffer, message } = opts;
   const attachments: Attachment[] = [];
   if (pdfBuffer) {
     attachments.push({
@@ -171,6 +174,7 @@ export async function sendCertificateAndSealEmail(opts: {
         Verifikation: <a href="${verifyUrl}" style="color:#1d4ed8;font-weight:600;">${verifyUrl}</a>
       </p>
       <p style="margin:12px 0;">Im Anhang finden Sie den Prüfbericht (PDF) und das Siegel (PNG).</p>
+      ${renderNote(message)}
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:18px 0;" />
       <p><strong>EN:</strong> Your report and seal for <strong>${escapeHtml(productName)}</strong> are ready. Verification link: <a href="${verifyUrl}" style="color:#1d4ed8;font-weight:600;">${verifyUrl}</a>.</p>
       <p style="margin-top:18px;">Danke!<br/>Prüfsiegel Zentrum UG</p>
@@ -284,6 +288,18 @@ export async function sendProductReceivedEmail(opts: {
     subject: 'Produkt eingegangen – Analyse startet',
     html,
   });
+}
+
+function renderNote(message?: string) {
+  const trimmed = (message || '').trim();
+  if (!trimmed) return '';
+  const safe = escapeHtml(trimmed).replace(/\n/g, '<br />');
+  return `
+    <div style="margin:14px 0;padding:12px;border:1px solid #e5e7eb;border-radius:10px;background:#f8fafc;">
+      <p style="margin:0 0 6px;font-weight:700;">Note from the Prüfsiegel Team:</p>
+      <p style="margin:0;color:#0f172a;">${safe}</p>
+    </div>
+  `;
 }
 
 // minimal XSS-safe escaping for interpolated strings in HTML

@@ -46,14 +46,16 @@ async function generateSealNumber() {
   throw new Error("SEAL_GENERATION_FAILED");
 }
 
-export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
     await requireAdmin();
   } catch {
     return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
   }
 
-  const { id: productId } = await params;
+  const { id: productId } = params;
+  const body = await req.json().catch(() => ({} as Record<string, unknown>));
+  const message = typeof body.message === "string" ? body.message.slice(0, 1000) : undefined;
 
   try {
     const rows = await fetchSheet();
@@ -178,6 +180,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
         verifyUrl,
         pdfBuffer,
         sealBuffer,
+        message,
       });
     } catch (err) {
       console.error("CERT_SEAL_EMAIL_ERROR", err);

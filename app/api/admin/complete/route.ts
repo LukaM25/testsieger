@@ -4,7 +4,7 @@ import { processAndSendCertificate } from '@/emailService';
 
 export async function POST(req: Request) {
   try {
-    const { productId } = await req.json();
+    const { productId, message } = await req.json();
 
     if (!productId) {
       return NextResponse.json({ error: 'ProductId is missing' }, { status: 400 });
@@ -41,7 +41,11 @@ export async function POST(req: Request) {
     console.log(`🚀 Starting Internal Engine for Cert ID: ${certId}`);
 
     // 3. Trigger the 100x Engine
-    await processAndSendCertificate(certId, product.user.email);
+    await processAndSendCertificate(
+      certId,
+      product.user.email,
+      typeof message === 'string' ? message.slice(0, 1000) : undefined
+    );
 
     return NextResponse.json({ success: true, message: 'Certificate sent via Internal Engine' });
 

@@ -19,7 +19,7 @@ const transporter = nodemailer.createTransport({
 });
 const MAIL_FROM = process.env.MAIL_FROM || process.env.SMTP_USER;
 
-export async function processAndSendCertificate(certificateId, userEmail) {
+export async function processAndSendCertificate(certificateId, userEmail, message) {
   console.log(`Processing certificate: ${certificateId}`);
   const client = await pool.connect();
   
@@ -95,6 +95,8 @@ const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/lizenzen?q=${record
 
     // 5. Send Email
     console.log(`Sending email to ${userEmail}...`);
+    const note = formatNote(message);
+
     await transporter.sendMail({
       from: `Pruefsiegel Zentrum UG – Certificate <${MAIL_FROM}>`,
       to: userEmail,
@@ -103,6 +105,7 @@ const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/lizenzen?q=${record
         <p>Dear ${record.user_name},</p>
         <p>Your product <strong>${record.name}</strong> has been successfully verified.</p>
         <p>Please find your official certificate attached.</p>
+        ${note}
       `,
       attachments: [
         {
@@ -126,4 +129,21 @@ const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/lizenzen?q=${record
   } finally {
     client.release();
   }
+}
+
+function formatNote(message) {
+  if (!message || typeof message !== 'string') return '';
+  const trimmed = message.trim().slice(0, 1000);
+  if (!trimmed) return '';
+  const safe = trimmed
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/\n/g, '<br />');
+  return `<div style="margin:14px 0;padding:12px;border:1px solid #e5e7eb;border-radius:10px;background:#f8fafc;">
+    <p style="margin:0 0 6px;font-weight:700;">Note from the Prüfsiegel Team:</p>
+    <p style="margin:0;color:#0f172a;">${safe}</p>
+  </div>`;
 }

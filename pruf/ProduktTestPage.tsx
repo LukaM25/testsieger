@@ -45,6 +45,8 @@ const verfahrenHighlights = [
   { src: "/images/iconen/qualitat.PNG", label: { de: "Qualität", en: "Quality" } },
 ];
 
+const carouselImages = ['/carosel/prod1.jpeg', '/carosel/prod2.jpeg', '/carosel/prod3.jpeg'];
+
 // Reuse the full precheck page component here to keep validation and behavior consistent
 
 const phasesQa = {
@@ -124,11 +126,26 @@ export default function ProduktTestPage() {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [contentMaxHeight, setContentMaxHeight] = useState<string>('0px');
   const [heroAnim, setHeroAnim] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
+    () => typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false
+  );
+  const [isCoarsePointer, setIsCoarsePointer] = useState(
+    () => typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(pointer: coarse)').matches
+      : false
+  );
   const [ctaNotice, setCtaNotice] = useState<string | null>(null);
 
   // update max-height when showPrecheck toggles to enable smooth height transition
   useEffect(() => {
     if (!contentRef.current) return;
+    if (isCoarsePointer) {
+      // avoid height animations on touch devices to reduce layout churn that can close mobile keyboards
+      setContentMaxHeight(showPrecheck ? 'none' : '0px');
+      return;
+    }
     if (showPrecheck) {
       const h = contentRef.current.scrollHeight;
       // set to actual scrollHeight to animate open
@@ -143,12 +160,44 @@ export default function ProduktTestPage() {
       // next frame set to 0 to trigger transition
       requestAnimationFrame(() => requestAnimationFrame(() => setContentMaxHeight('0px')));
     }
-  }, [showPrecheck]);
+  }, [showPrecheck, isCoarsePointer]);
 
   useEffect(() => {
     // trigger hero image entrance animation on mount
     const t = setTimeout(() => setHeroAnim(true), 60);
     return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const coarseQuery = window.matchMedia('(pointer: coarse)');
+    const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setIsCoarsePointer(coarseQuery.matches);
+    setPrefersReducedMotion(reduceMotionQuery.matches);
+    const handleCoarse = (e: MediaQueryListEvent) => setIsCoarsePointer(e.matches);
+    const handleReduce = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    if (coarseQuery.addEventListener) {
+      coarseQuery.addEventListener('change', handleCoarse);
+    } else if (coarseQuery.addListener) {
+      coarseQuery.addListener(handleCoarse);
+    }
+    if (reduceMotionQuery.addEventListener) {
+      reduceMotionQuery.addEventListener('change', handleReduce);
+    } else if (reduceMotionQuery.addListener) {
+      reduceMotionQuery.addListener(handleReduce);
+    }
+    return () => {
+      if (coarseQuery.removeEventListener) {
+        coarseQuery.removeEventListener('change', handleCoarse);
+      } else if (coarseQuery.removeListener) {
+        coarseQuery.removeListener(handleCoarse);
+      }
+      if (reduceMotionQuery.removeEventListener) {
+        reduceMotionQuery.removeEventListener('change', handleReduce);
+      } else if (reduceMotionQuery.removeListener) {
+        reduceMotionQuery.removeListener(handleReduce);
+      }
+    };
   }, []);
 
   async function choosePackage(plan: string) {
@@ -168,11 +217,30 @@ export default function ProduktTestPage() {
   }
 
   const scrollToPrecheck = () => {
-    precheckSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (isCoarsePointer) {
+      // jump instantly on touch devices to avoid smooth-scroll conflicts with the keyboard
+      if (typeof window !== 'undefined') {
+        if (window.location.hash === '#precheck') {
+          precheckSectionRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' });
+        } else {
+          window.location.hash = 'precheck';
+        }
+      }
+      return;
+    }
+    precheckSectionRef.current?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
+  };
+
+  const goPrevSlide = () => {
+    setCarouselIndex((prev) => (prev - 1 + carouselImages.length) % carouselImages.length);
+  };
+
+  const goNextSlide = () => {
+    setCarouselIndex((prev) => (prev + 1) % carouselImages.length);
   };
 
   const scrollToPreview = () => {
-    previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    previewRef.current?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'center' });
   };
 
   const handlePrecheckCta = async (e: React.MouseEvent) => {
@@ -197,7 +265,7 @@ export default function ProduktTestPage() {
 
   useEffect(() => {
     const id = setInterval(() => {
-      setCarouselIndex((prev) => (prev + 1) % 2);
+      setCarouselIndex((prev) => (prev + 1) % carouselImages.length);
     }, 3200);
     return () => clearInterval(id);
   }, []);
@@ -459,8 +527,8 @@ export default function ProduktTestPage() {
 
       {/* Pakete section using PackageCard */}
       <section id="pakete" className="mx-auto max-w-6xl px-6 py-16">
-        <div className="flex flex-col items-center gap-10 lg:flex-row lg:items-center lg:justify-between">
-          <div className="w-full lg:w-1/2 flex justify-center">
+        <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
+          <div className="flex justify-center">
             <Image
               src="/lampen.png"
               alt="Lampe"
@@ -470,29 +538,22 @@ export default function ProduktTestPage() {
               priority
             />
           </div>
-          <div className="w-full lg:w-1/2 flex justify-center lg:justify-start">
-  {/* WRAPPER DIV ADDED to protect text from flexbox shrinking */}
-  <div className="w-full lg:w-1/2 flex justify-center lg:justify-start">
-  <h2 
-  data-animate="card" // 1. This triggers the scroll animation
-  style={{ 
-    // 2. Fluid Size (~30% smaller than max)
-    fontSize: 'clamp(1.8rem, 3.5vw, 4.5rem)', 
-    
-    // 3. SaaS Typography
-    fontWeight: '800',           
-    letterSpacing: '-0.04em',    
-    lineHeight: '1',             
-    color: '#0f172a',            
-    whiteSpace: 'nowrap',        
-    fontFamily: 'Inter, system-ui, sans-serif' 
-  }} 
-  className="drop-shadow-sm transition-all duration-700" // Optional: ensures smooth motion
->
-  {tr('Mach dich sichtbar', 'Make yourself visible')}
-</h2>
-</div>
-</div>
+          <div className="w-full max-w-xl lg:ml-4 flex justify-center lg:justify-start">
+            <h2
+              data-animate="card"
+              style={{
+                fontSize: 'clamp(2.2rem, 3vw, 4rem)',
+                fontWeight: 800,
+                letterSpacing: '-0.04em',
+                lineHeight: '1.05',
+                color: '#0f172a',
+                fontFamily: 'Inter, system-ui, sans-serif',
+              }}
+              className="drop-shadow-sm transition-all duration-700 text-balance"
+            >
+              {tr('Mach dich sichtbar', 'Make yourself visible')}
+            </h2>
+          </div>
         </div>
       </section>
 
@@ -510,7 +571,7 @@ export default function ProduktTestPage() {
               </p>
             </div>
             <div className="flex gap-2">
-              {[0, 1].map((i) => (
+              {carouselImages.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setCarouselIndex(i)}
@@ -521,18 +582,34 @@ export default function ProduktTestPage() {
             </div>
           </div>
           <div className="relative mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <button
+              type="button"
+              onClick={goPrevSlide}
+              aria-label={tr('Vorheriges Bild', 'Previous image')}
+              className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow-sm ring-1 ring-slate-200 transition hover:bg-white hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
+            >
+              <span className="block h-4 w-4 rotate-180 border-b-2 border-r-2 border-slate-800" />
+            </button>
+            <button
+              type="button"
+              onClick={goNextSlide}
+              aria-label={tr('Nächstes Bild', 'Next image')}
+              className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow-sm ring-1 ring-slate-200 transition hover:bg-white hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
+            >
+              <span className="block h-4 w-4 border-b-2 border-r-2 border-slate-800" />
+            </button>
             <div
               className="flex transition-transform duration-700 ease-in-out"
               style={{ transform: `translateX(-${carouselIndex * 100}%)` }}
             >
-              {['/carosel/1v1.jpg', '/carosel/IMG_4214.jpeg'].map((src, idx) => (
-                <div key={src} className="min-w-full flex justify-center items-center bg-slate-100">
+              {carouselImages.map((src, idx) => (
+                <div key={src} className="min-w-full flex justify-center items-center bg-slate-50">
                   <Image
                     src={src}
                     alt={tr('Produkt Vorschaubild', 'Product preview image')}
                     width={1400}
-                    height={700}
-                    className="h-[360px] w-full object-cover md:h-[440px] lg:h-[520px]"
+                    height={900}
+                    className="h-[280px] w-full object-contain sm:h-[340px] md:h-[420px] lg:h-[500px]"
                     priority={idx === 0}
                   />
                 </div>

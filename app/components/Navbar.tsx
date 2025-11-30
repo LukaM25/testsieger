@@ -27,7 +27,6 @@ const sections: NavSection[] = [
       { labelKey: "nav.plans", href: "/pakete" },
       { labelKey: "nav.productTest", href: "/produkte/produkt-test" },
       { labelKey: "nav.trainingCheck", href: "/produkte/ausbildung-check" },
-      { labelKey: "nav.results", href: "/testergebnisse" },
       { labelKey: "nav.licensing", href: "/lizenzen" },
     ],
   },

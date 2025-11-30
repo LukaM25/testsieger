@@ -12,6 +12,7 @@ export async function POST(req: Request) {
 
     const form = await req.formData();
     const productId = String(form.get('productId') || '');
+    const message = form.get('message');
     const file = form.get('report') as File | null;
 
     if (!productId || !file) {
@@ -78,6 +79,7 @@ export async function POST(req: Request) {
       verifyUrl,
       pdfUrl: pdfRel,
       qrUrl: qrRel,
+      message: typeof message === 'string' ? message.slice(0, 1000) : undefined,
     }).catch(e => console.error('Email error', e));
 
     return NextResponse.json({ ok: true, verifyUrl, certId: cert.id });
