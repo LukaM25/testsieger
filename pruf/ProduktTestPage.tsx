@@ -217,17 +217,7 @@ export default function ProduktTestPage() {
   }
 
   const scrollToPrecheck = () => {
-    if (isCoarsePointer) {
-      // jump instantly on touch devices to avoid smooth-scroll conflicts with the keyboard
-      if (typeof window !== 'undefined') {
-        if (window.location.hash === '#precheck') {
-          precheckSectionRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' });
-        } else {
-          window.location.hash = 'precheck';
-        }
-      }
-      return;
-    }
+    if (isCoarsePointer) return; // avoid any programmatic scroll on touch to prevent keyboard blur
     precheckSectionRef.current?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
   };
 
@@ -264,11 +254,12 @@ export default function ProduktTestPage() {
   };
 
   useEffect(() => {
+    if (isCoarsePointer) return; // avoid background re-renders that can nudge mobile keyboard
     const id = setInterval(() => {
       setCarouselIndex((prev) => (prev + 1) % carouselImages.length);
     }, 3200);
     return () => clearInterval(id);
-  }, []);
+  }, [isCoarsePointer]);
 
   return (
     <main className="bg-white text-slate-900">
