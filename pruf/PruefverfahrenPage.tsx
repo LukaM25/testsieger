@@ -114,7 +114,7 @@ export default function PruefverfahrenPage(props: { data: Extract }) {
 
       <section className="mx-auto max-w-6xl px-4 pb-24">
         <a
-          href="/pruf/Pru%CC%88fkriterien%20o%CC%88ffentlich.pdf"
+          href="/verfahrenpdf/pruefkriterium.pdf"
           className="inline-flex items-center rounded-xl bg-slate-900 px-5 py-3 text-white"
         >
           PDF – Prüfkriterien (Öffentlich)

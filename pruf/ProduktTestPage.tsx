@@ -696,7 +696,7 @@ export default function ProduktTestPage() {
           <div className="flex justify-start">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
               <a
-                href="/verfahrenpdf/Pru%CC%88fkriterien%20o%CC%88ffentlich.pdf"
+                href="/verfahrenpdf/pruefkriterium.pdf"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-lg transition hover:bg-black"
