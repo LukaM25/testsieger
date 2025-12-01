@@ -14,7 +14,7 @@ export default function ImpressumPage() {
       </p>
       <p className="mt-2">
         Vertreten durch: <br />
-        Luka Matanic
+        Etwas Müller
       </p>
       <p className="mt-2">
         Kontakt: <br />
@@ -22,7 +22,7 @@ export default function ImpressumPage() {
       </p>
       <p className="mt-2">USt-ID: ATU12345678</p>
       <p className="mt-8 text-sm text-gray-500">
-        Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV: Luka Matanic
+        Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV: Etwas Müller
       </p>
     </div>
   );

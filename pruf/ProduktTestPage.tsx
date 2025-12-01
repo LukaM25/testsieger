@@ -3,10 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
-import { PackageCard } from "@/components/PackageCard";
 import { stagger } from "@/lib/animation";
 import PrecheckForm from "@/components/precheck/PrecheckForm";
-import AnimateOnView from "@/components/AnimateOnView";
 import Counter from "@/components/Counter";
 import { useLocale } from "@/components/LocaleProvider";
 
@@ -45,51 +43,12 @@ const verfahrenHighlights = [
   { src: "/images/iconen/qualitat.PNG", label: { de: "Qualität", en: "Quality" } },
 ];
 
+// Add cache-busting query params so updated public images show without hard refresh
 const carouselImages = ['/carosel/prod1.jpeg', '/carosel/prod2.jpeg', '/carosel/prod3.jpeg'];
 
 // Reuse the full precheck page component here to keep validation and behavior consistent
 
 const phasesQa = {
-  phases: [
-    {
-      title: { de: '1. Vorqualifizierung', en: '1. Pre-qualification' },
-      description: {
-        de: 'Kostenloser Pre-Check inklusive Dokumentenprüfung und Plausibilitätsbewertung, um Aufwand und benötigte Nachweise frühzeitig abzuschätzen.',
-        en: 'Free pre-check including document review and plausibility assessment to estimate effort and required evidence early.',
-      },
-      actions: [
-        { label: { de: 'Pre-Check starten', en: 'Start pre-check' }, href: '/precheck' },
-        { label: { de: 'Unterlagen-Checkliste', en: 'Documentation checklist' }, href: '/dashboard' },
-      ],
-    },
-    {
-      title: { de: '2. Technische Analyse', en: '2. Technical analysis' },
-      description: {
-        de: 'Labor- und Feldtests nach DIN EN ISO/IEC 17025. Wir arbeiten mit spezialisierten Partnerlaboren und dokumentieren jeden Messschritt.',
-        en: 'Lab and field tests per DIN EN ISO/IEC 17025. We work with specialized partner labs and document every measurement step.',
-      },
-      actions: [ { label: { de: 'Beispiel-Report ansehen', en: 'View sample report' }, href: '/testergebnisse' } ],
-    },
-    {
-      title: { de: '3. Bewertung & Gutachten', en: '3. Evaluation & report' },
-      description: {
-        de: 'Zusammenführen aller Messergebnisse, Abgleich mit Branchenbenchmarks sowie Erstellung eines Gutachtens inklusive Handlungsempfehlungen.',
-        en: 'Consolidating all measurements, benchmarking, and creating an expert report including recommendations.',
-      },
-      actions: [ { label: { de: 'Beratung anfordern', en: 'Request consultation' }, href: '/kontakt' } ],
-    },
-    {
-      title: { de: '4. Lizenzierung & Monitoring', en: '4. Licensing & monitoring' },
-      description: {
-        de: 'Bei erfolgreicher Bewertung vergeben wir die Nutzungslizenz des Prüfsiegels. Anschließend überwachen wir Produktänderungen und Feedbackkanäle.',
-        en: 'After a successful evaluation we issue the seal license. We then monitor product changes and feedback channels.',
-      },
-      actions: [
-        { label: { de: 'Lizenzbedingungen', en: 'License terms' }, href: '/lizenzen' },
-        { label: { de: 'Monitoring buchen', en: 'Book monitoring' }, href: '/pakete' },
-      ],
-    },
-  ],
   qa: [
     {
       question: { de: 'Wie lange dauert der gesamte Prozess?', en: 'How long does the entire process take?' },
@@ -118,7 +77,6 @@ const phasesQa = {
 export default function ProduktTestPage() {
   const { locale } = useLocale();
   const tr = (de: string, en: string) => (locale === 'en' ? en : de);
-  const [packageLoading, setPackageLoading] = useState<string | null>(null);
   const [showPrecheck, setShowPrecheck] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const precheckSectionRef = useRef<HTMLElement | null>(null);
@@ -200,22 +158,6 @@ export default function ProduktTestPage() {
     };
   }, []);
 
-  async function choosePackage(plan: string) {
-    try {
-      setPackageLoading(plan);
-      const res = await fetch('/api/payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan }),
-      });
-      const data = await res.json();
-      if (!res.ok) return alert(data.error || tr('Fehler', 'Error'));
-      window.location.href = data.url;
-    } finally {
-      setPackageLoading(null);
-    }
-  }
-
   const scrollToPrecheck = () => {
     if (isCoarsePointer) return; // avoid any programmatic scroll on touch to prevent keyboard blur
     precheckSectionRef.current?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
@@ -254,12 +196,12 @@ export default function ProduktTestPage() {
   };
 
   useEffect(() => {
-    if (isCoarsePointer) return; // avoid background re-renders that can nudge mobile keyboard
+    if (isCoarsePointer || prefersReducedMotion) return; // avoid background updates for touch/reduced motion
     const id = setInterval(() => {
       setCarouselIndex((prev) => (prev + 1) % carouselImages.length);
     }, 3200);
     return () => clearInterval(id);
-  }, [isCoarsePointer]);
+  }, [isCoarsePointer, prefersReducedMotion]);
 
   return (
     <main className="bg-white text-slate-900">
@@ -391,27 +333,33 @@ export default function ProduktTestPage() {
       </section>
       {/* Inserted Pre-Check form inline so the Produkt Test page is self-contained */}
       <section id="precheck" ref={precheckSectionRef} className="mx-auto max-w-3xl px-4 py-10">
-        <div className="flex flex-col items-center gap-4 rounded-full bg-indigo-900 px-6 py-8 text-black">
+        <div className="flex flex-col items-center gap-4 text-slate-900">
           <button
             type="button"
             onClick={() => setShowPrecheck((s) => !s)}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowPrecheck((s) => !s); }}
-            className="flex w-full flex-col items-center gap-1 rounded-full bg-white px-14 py-6 text-center text-black shadow-[0_20px_40px_rgba(15,23,42,0.25)] transition hover:scale-[1.01] focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500 border border-3 border-indigo-600 ring-3 ring-indigo-700/90"
+            className="relative flex w-full flex-col items-center gap-2 rounded-full px-14 py-6 text-center text-white shadow-[0_18px_40px_-16px_rgba(132,169,140,0.55),0_10px_20px_-12px_rgba(15,23,42,0.35)] transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_22px_48px_-14px_rgba(132,169,140,0.55),0_12px_24px_-12px_rgba(15,23,42,0.35)] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#84A98C] bg-[linear-gradient(135deg,_#84A98C,_#6f8c77)]"
+            style={{ background: 'linear-gradient(135deg, #84A98C, #6f8c77)' }}
             aria-expanded={showPrecheck}
             aria-controls="precheck-content"
           >
             <span className="text-2xl font-semibold tracking-[0.18em]">
               {tr('Kostenloser Pre-Check', 'Free pre-check')}
             </span>
-            <span className="text-sm font-semibold uppercase tracking-[0.28em] text-black/70 inline-flex items-center justify-center gap-2">
+            <span className="text-sm font-semibold uppercase tracking-[0.28em] text-white/90 inline-flex items-center justify-center gap-2">
               {tr('(Dauert nur 3 Minuten)', '(Takes only 3 minutes)')}
-              <Image 
-                src="/images/iconen/stopwatch.png"
-                alt="Stopwatch" 
-                width={28} 
-                height={28} 
-                className="opacity-70 pb-1"
-              />
+              <svg
+                aria-hidden="true"
+                className="h-6 w-6 text-white/90"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.8}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a6.75 6.75 0 1 0 6.75 6.75" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.5v5.25l3 1.5" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.5 2.75h5M10.75 3.5l-.5 2.25M13.25 3.5l.5 2.25" />
+              </svg>
             </span>
             <svg
               className={`h-6 w-6 transition-transform duration-200 ${showPrecheck ? 'rotate-180' : 'rotate-0'}`}
@@ -422,7 +370,7 @@ export default function ProduktTestPage() {
               <path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.06z" />
             </svg>
           </button>
-          {ctaNotice && <p className="text-sm font-semibold text-white/90 text-center px-4">{ctaNotice}</p>}
+          {ctaNotice && <p className="text-sm font-semibold text-emerald-900 text-center px-4">{ctaNotice}</p>}
         </div>
 
         <div
@@ -452,7 +400,7 @@ export default function ProduktTestPage() {
               className="relative flex flex-col items-center gap-5 rounded-[40px] border border-slate-200 bg-white p-8 text-center shadow-sm shadow-slate-200 w-[clamp(240px,32vw,360px)]"
             >
               <span className="absolute right-3 top-3 rounded-full bg-slate-100 p-1 shadow-inner">
-                <Image src="/checkmark.png" alt="Check" width={22} height={22} className="h-5 w-5 object-contain" />
+                <Image src="/checkmark.png" alt="Check" width={24} height={24} className="h-6 w-6 object-contain" />
               </span>
               <Image src={item.src} alt={tr(item.label.de, item.label.en)} width={96} height={96} className="h-20 w-20 object-contain" />
               <p className="text-xl font-semibold text-slate-900">{tr(item.label.de, item.label.en)}</p>
@@ -475,41 +423,53 @@ export default function ProduktTestPage() {
       <section className="mx-auto max-w-6xl px-6 py-16">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Exclusivität */}
-          <div className="flex flex-col items-center justify-center rounded-2xl bg-slate-50 p-8 text-center">
-            <div className="text-5xl font-bold text-slate-900">
+          <div
+            className="flex flex-col items-center justify-center rounded-2xl p-8 text-center"
+            style={{ backgroundColor: "#84A98C" }}
+          >
+            <div className="text-5xl font-bold text-white">
               <Counter start={0} end={1} duration={1000} />
             </div>
-            <div className="mt-2 text-sm font-medium uppercase tracking-wide text-slate-500">
+            <div className="mt-2 text-sm font-medium uppercase tracking-wide text-slate-100">
               {tr('Exclusivität', 'Exclusivity')}
             </div>
           </div>
 
           {/* Ranking Top */}
-          <div className="flex flex-col items-center justify-center rounded-2xl bg-slate-50 p-8 text-center">
-            <div className="text-5xl font-bold text-slate-900">
+          <div
+            className="flex flex-col items-center justify-center rounded-2xl p-8 text-center"
+            style={{ backgroundColor: "#84A98C" }}
+          >
+            <div className="text-5xl font-bold text-white">
               <Counter start={1} end={10} duration={1500} />
             </div>
-            <div className="mt-2 text-sm font-medium uppercase tracking-wide text-slate-500">
+            <div className="mt-2 text-sm font-medium uppercase tracking-wide text-slate-100">
               {tr('Ranking Top', 'Top ranking')}
             </div>
           </div>
 
           {/* Klienten */}
-          <div className="flex flex-col items-center justify-center rounded-2xl bg-slate-50 p-8 text-center">
-            <div className="text-5xl font-bold text-slate-900">
+          <div
+            className="flex flex-col items-center justify-center rounded-2xl p-8 text-center"
+            style={{ backgroundColor: "#84A98C" }}
+          >
+            <div className="text-5xl font-bold text-white">
               <Counter start={0} end={233} duration={2000} />
             </div>
-            <div className="mt-2 text-sm font-medium uppercase tracking-wide text-slate-500">
+            <div className="mt-2 text-sm font-medium uppercase tracking-wide text-slate-100">
               {tr('Klienten', 'Clients')}
             </div>
           </div>
 
           {/* Siegel vergaben */}
-          <div className="flex flex-col items-center justify-center rounded-2xl bg-slate-50 p-8 text-center">
-            <div className="text-5xl font-bold text-slate-900">
+          <div
+            className="flex flex-col items-center justify-center rounded-2xl p-8 text-center"
+            style={{ backgroundColor: "#84A98C" }}
+          >
+            <div className="text-5xl font-bold text-white">
               <Counter start={47} end={477} duration={2500} />
             </div>
-            <div className="mt-2 text-sm font-medium uppercase tracking-wide text-slate-500">
+            <div className="mt-2 text-sm font-medium uppercase tracking-wide text-slate-100">
               {tr('Siegel vergaben', 'Seals awarded')}
             </div>
           </div>

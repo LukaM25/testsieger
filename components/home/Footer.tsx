@@ -1,111 +1,92 @@
 "use client";
 import Link from 'next/link';
-import Image from 'next/image';
-import { stagger } from '@/lib/animation';
 import { useLocale } from '@/components/LocaleProvider';
 
 export default function Footer() {
   const { locale } = useLocale();
   const copy = locale === 'en'
     ? {
-        title: 'German Seal Institute',
-        intro: 'Independent, privately run testing institute for consumer tests – not a government institution.',
-        service: 'Service',
-        institute: 'The Institute',
-        legal: 'Legal',
-        productCert: 'Product certification',
-        licenseSearch: 'License search',
-        contact: 'Contact',
-        portal: 'Customer portal',
-        precheck: 'Free pre-check',
-        productTest: 'Have product tested',
-        results: 'Test results',
-        procedure: 'Testing procedure',
-        imprint: 'Imprint',
-        privacy: 'Privacy',
-        terms: 'Terms & Conditions',
-      }
+      title: 'German Seal Institute',
+      tagline: 'The modern standard for B2B verification and compliance.',
+      products: 'Products',
+      company: 'Company',
+      productTest: 'Product Tests',
+      trainingCheck: 'Training Check',
+      about: 'About Us',
+      contact: 'Contact',
+      imprint: 'Imprint',
+      rights: 'All rights reserved',
+    }
     : {
-        title: 'Deutsches Prüf­siegel Institut',
-        intro: 'Unabhängiges, privatwirtschaftliches Prüfinstitut für Verbrauchertests – keine staatliche Institution.',
-        service: 'Service',
-        institute: 'Das Institut',
-        legal: 'Rechtliches',
-        productCert: 'Produktzertifizierung',
-        licenseSearch: 'Lizenzsuche',
-        contact: 'Kontakt',
-        portal: 'Kundenportal',
-        precheck: 'Kostenloser Pre-Check',
-        productTest: 'Produkt testen lassen',
-        results: 'Testergebnisse',
-        procedure: 'Prüfverfahren',
-        imprint: 'Impressum',
-        privacy: 'Datenschutz',
-        terms: 'AGB',
-      };
+      title: 'Deutsches Prüf­siegel Institut',
+      tagline: 'Der moderne Standard für B2B-Verifizierung und Compliance.',
+      products: 'Produkte',
+      company: 'Unternehmen',
+      productTest: 'Produkt Tests',
+      trainingCheck: 'Ausbildungs Check',
+      about: 'Über uns',
+      contact: 'Kontakt',
+      imprint: 'Impressum',
+      rights: 'Alle Rechte vorbehalten',
+    };
+
   return (
-    <footer className="relative mt-12 border-t border-gray-200 bg-white overflow-hidden">
-      <div className="absolute inset-0">
-        <Image
-          src="/images/footer-band.jpg"
-          alt="Dekoratives Band"
-          fill
-          className="object-cover opacity-75"
-          sizes="100vw"
-          priority
-        />
-        <div className="absolute inset-0 bg-white/70" />
-      </div>
-      <div className="relative z-10 mx-auto max-w-6xl px-6 py-12">
-        <div className="grid gap-10 md:grid-cols-4">
-          <div
-            data-animate="footer-column"
-            style={stagger(0)}
-            className="md:col-span-1"
-          >
-            <div className="text-xl font-semibold">{copy.title}</div>
-            <p className="mt-3 text-sm text-gray-600">
-              {copy.intro}
+    <footer
+      className="text-white py-16 border-t border-white/5"
+      style={{ backgroundColor: '#0f1b14' }}
+    >
+      <div className="mx-auto max-w-6xl px-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+          <div className="col-span-1 md:col-span-2">
+            <span className="text-xl font-bold tracking-wide block mb-6">
+              Testsieger<span className="text-brand-green font-normal">Check</span>
+            </span>
+            <p className="text-gray-400 font-light max-w-xs leading-relaxed text-sm">
+              {copy.tagline}
             </p>
-            <p className="mt-3 text-xs text-gray-500">© {new Date().getFullYear()} Prüfsiegel Zentrum UG.</p>
           </div>
-
-          <div
-            data-animate="footer-column"
-            style={stagger(1)}
-          >
-            <div className="text-sm font-semibold">{copy.service}</div>
-            <ul className="mt-3 space-y-2 text-sm text-gray-700">
-              <li><Link href="/produkte" className="hover:underline">{copy.productCert}</Link></li>
-              <li><Link href="/lizenzen" className="hover:underline">{copy.licenseSearch}</Link></li>
-              <li><Link href="/kontakt" className="hover:underline">{copy.contact}</Link></li>
-              <li><Link href="/dashboard" className="hover:underline">{copy.portal}</Link></li>
+          <div>
+            <h4 className="text-brand-green text-xs uppercase tracking-widest mb-6 font-bold">
+              {copy.products}
+            </h4>
+            <ul className="space-y-3 font-light text-sm text-gray-400">
+              <li>
+                <Link href="/produkte/produkt-test" className="hover:text-white transition-colors">
+                  {copy.productTest}
+                </Link>
+              </li>
+              <li>
+                <Link href="/produkte/ausbildung-check" className="hover:text-white transition-colors">
+                  {copy.trainingCheck}
+                </Link>
+              </li>
             </ul>
           </div>
-
-          <div
-            data-animate="footer-column"
-            style={stagger(2)}
-          >
-            <div className="text-sm font-semibold">{copy.institute}</div>
-            <ul className="mt-3 space-y-2 text-sm text-gray-700">
-              <li><Link href="/precheck" className="hover:underline">{copy.precheck}</Link></li>
-              <li><Link href="/produkte" className="hover:underline">{copy.productTest}</Link></li>
-              <li><Link href="/verfahren" className="hover:underline">{copy.procedure}</Link></li>
+          <div>
+            <h4 className="text-brand-green text-xs uppercase tracking-widest mb-6 font-bold">
+              {copy.company}
+            </h4>
+            <ul className="space-y-3 font-light text-sm text-gray-400">
+              <li>
+                <Link href="/ueber-uns" className="hover:text-white transition-colors">
+                  {copy.about}
+                </Link>
+              </li>
+              <li>
+                <Link href="/kontakt" className="hover:text-white transition-colors">
+                  {copy.contact}
+                </Link>
+              </li>
+              <li>
+                <Link href="/impressum" className="hover:text-white transition-colors">
+                  {copy.imprint}
+                </Link>
+              </li>
             </ul>
           </div>
-
-          <div
-            data-animate="footer-column"
-            style={stagger(3)}
-          >
-            <div className="text-sm font-semibold">{copy.legal}</div>
-            <ul className="mt-3 space-y-2 text-sm text-gray-700">
-              <li><Link href="/impressum" className="hover:underline">{copy.imprint}</Link></li>
-              <li><Link href="/datenschutz" className="hover:underline">{copy.privacy}</Link></li>
-              <li><Link href="/agb" className="hover:underline">{copy.terms}</Link></li>
-            </ul>
-          </div>
+        </div>
+        <div className="mt-16 pt-8 border-t border-white/5 text-xs text-gray-500 text-center uppercase tracking-widest">
+          &copy; {new Date().getFullYear()} TestsiegerCheck. {copy.rights}.
         </div>
       </div>
     </footer>

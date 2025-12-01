@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  a {
+    @apply underline-offset-4;
+  }
+
+  a:hover {
+    @apply text-brand-green;
+  }
+
+  a:focus-visible {
+    @apply outline-none ring-2 ring-brand-green ring-offset-2;
+  }
+
+  button:focus-visible {
+    @apply outline-none ring-2 ring-brand-green ring-offset-2;
+  }
+}
+
 /* smooth fonts + predictable defaults */
 html, body {
   height: 100%;

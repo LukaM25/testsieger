@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { stagger } from '@/lib/animation';
 
 export const metadata = {
   title: 'Ausbildung Check – Prüfsiegel Zentrum UG',
@@ -10,34 +11,50 @@ export default function AusbildungCheckPage() {
   return (
     <main className="min-h-screen bg-gray-50">
       {/* Hero */}
-      <section className="relative overflow-hidden bg-white">
-        <div className="mx-auto max-w-6xl px-6 py-20">
-          <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
-            Ausbildung&nbsp;Check
-          </h1>
-          <p className="mt-4 max-w-2xl text-lg text-gray-700">
-            Wir bewerten Ausbildungsbetriebe nach klaren, transparenten Kriterien.
-            Ziel: verlässliche Orientierung für Bewerber und messbare Qualität für Betriebe.
-          </p>
-          <div className="mt-6 flex gap-3">
-            <Link
-              href="/precheck"
-              className="rounded-lg bg-black px-5 py-3 text-white hover:bg-gray-900"
-            >
-              Jetzt kostenloser Pre-Check
-            </Link>
-            <Link
-              href="/kontakt"
-              className="rounded-lg border px-5 py-3 hover:bg-gray-100"
-            >
-              Kontakt aufnehmen
-            </Link>
+      <section className="relative overflow-hidden bg-slate-950 text-white min-h-[70vh] lg:min-h-[80vh] flex items-end">
+        <div data-animate="hero-image" className="absolute inset-0 isolate">
+          <video
+            autoPlay
+            muted
+            playsInline
+            className="absolute inset-0 h-full w-full object-cover object-[center_40%] brightness-90"
+          >
+            <source src="/videos/ausbildung.mp4" type="video/mp4" />
+          </video>
+        </div>
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-slate-950/20"
+        />
+        <div data-animate="section" className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-20 pt-8 sm:pt-10 flex justify-end">
+          <div className="inline-block max-w-lg rounded-2xl border border-white/12 bg-slate-950/35 backdrop-blur-sm p-5 md:p-6 shadow-[0_20px_50px_-35px_rgba(0,0,0,0.75)] transform -translate-y-[20px] transition duration-300 hover:-translate-y-[26px] hover:scale-[1.01]">
+            <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
+              Ausbildung&nbsp;Check
+            </h1>
+            <p className="mt-4 max-w-2xl text-lg text-gray-100">
+              Wir bewerten Ausbildungsbetriebe nach klaren, transparenten Kriterien.
+              Ziel: verlässliche Orientierung für Bewerber und messbare Qualität für Betriebe.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                href="/precheck"
+                className="rounded-lg bg-white/95 px-5 py-3 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-white"
+              >
+                Jetzt kostenloser Pre-Check
+              </Link>
+              <Link
+                href="/kontakt"
+                className="rounded-lg border border-white/40 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white hover:bg-white/10"
+              >
+                Kontakt aufnehmen
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       {/* What we check */}
-      <section className="mx-auto max-w-6xl px-6 py-14">
+      <section data-animate="section" className="mx-auto max-w-6xl px-6 py-14">
         <h2 className="text-2xl font-semibold">Was wird geprüft?</h2>
         <div className="mt-6 grid gap-6 md:grid-cols-3">
           {[
@@ -71,8 +88,13 @@ export default function AusbildungCheckPage() {
               text:
                 'Onboarding, Info-Materialien, regelmäßige Abstimmungen zwischen Betrieb/Schule/Azubi.',
             },
-          ].map((c) => (
-            <div key={c.title} className="rounded-xl border bg-white p-6">
+          ].map((c, i) => (
+            <div
+              key={c.title}
+              data-animate="card"
+              style={stagger(i)}
+              className="rounded-xl border bg-white p-6 transition duration-300 hover:-translate-y-1 hover:shadow-lg hover:scale-[1.01]"
+            >
               <div className="text-lg font-medium">{c.title}</div>
               <p className="mt-2 text-gray-600">{c.text}</p>
             </div>
@@ -81,7 +103,7 @@ export default function AusbildungCheckPage() {
       </section>
 
       {/* Process */}
-      <section className="border-t bg-white">
+      <section data-animate="section" className="border-t bg-white">
         <div className="mx-auto max-w-6xl px-6 py-14">
           <h2 className="text-2xl font-semibold">Ablauf</h2>
           <ol className="mt-6 grid gap-6 md:grid-cols-3">
@@ -101,8 +123,13 @@ export default function AusbildungCheckPage() {
                 t: 'Bewertung & Siegel',
                 d: 'Prüfbericht + Siegel mit QR-Verifikation. Optional: Veröffentlichung der Ergebnisse.',
               },
-            ].map((s) => (
-              <li key={s.n} className="rounded-xl border p-6">
+            ].map((s, i) => (
+              <li
+                key={s.n}
+                data-animate="card"
+                style={stagger(i)}
+                className="rounded-xl border p-6 transition duration-300 hover:-translate-y-1 hover:shadow-lg hover:scale-[1.01]"
+              >
                 <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 text-sm font-semibold text-white">
                   {s.n}
                 </div>
@@ -114,7 +141,7 @@ export default function AusbildungCheckPage() {
           <div className="mt-8">
             <Link
               href="/pakete"
-              className="rounded-lg bg-black px-5 py-3 text-white hover:bg-gray-900"
+              className="rounded-lg bg-black px-5 py-3 text-white hover:bg-gray-900 transition duration-200 hover:scale-[1.01]"
             >
               Pakete ansehen
             </Link>
@@ -123,7 +150,7 @@ export default function AusbildungCheckPage() {
       </section>
 
       {/* FAQ placeholder */}
-      <section className="mx-auto max-w-6xl px-6 py-14">
+      <section data-animate="section" className="mx-auto max-w-6xl px-6 py-14">
         <h2 className="text-2xl font-semibold">FAQ</h2>
         <div className="mt-6 space-y-4">
           {[
@@ -139,8 +166,13 @@ export default function AusbildungCheckPage() {
               q: 'Welche Kosten fallen an?',
               a: 'Entsprechend Ihres Pakets (Basic/Premium oder Lifetime). Die Prüfkosten sind inklusive.',
             },
-          ].map((f) => (
-            <div key={f.q} className="rounded-xl border bg-white p-5">
+          ].map((f, i) => (
+            <div
+              key={f.q}
+              data-animate="card"
+              style={stagger(i)}
+              className="rounded-xl border bg-white p-5 transition duration-300 hover:-translate-y-1 hover:shadow-md hover:scale-[1.01]"
+            >
               <div className="font-medium">{f.q}</div>
               <p className="mt-1 text-gray-600">{f.a}</p>
             </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { usePrecheckEligibility } from "@/hooks/usePrecheckEligibility";
@@ -21,10 +22,12 @@ const plans = [
 function Reveal({
   children,
   delay = 0,
+  duration = 360,
   className = "",
 }: {
   children: React.ReactNode;
   delay?: number;
+  duration?: number;
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
@@ -59,7 +62,7 @@ function Reveal({
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(12px)",
-        transition: `opacity 360ms ease ${delay}ms, transform 360ms ease ${delay}ms`,
+        transition: `opacity ${duration}ms ease ${delay}ms, transform ${duration}ms ease ${delay}ms`,
       }}
     >
       {children}
@@ -156,6 +159,41 @@ export default function Packages() {
                 </div>
               </Reveal>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white">
+        <div className="mx-auto max-w-6xl px-6 py-14">
+          <div className="grid items-center gap-10 md:grid-cols-2">
+            <div className="space-y-6 text-left">
+              <Reveal delay={0}>
+                <h2 className="text-4xl sm:text-6xl font-semibold leading-tight text-slate-900 flex flex-wrap items-center gap-3 sm:gap-4">
+                  <span>Spare mehrere Hundert Euro Werbebudget ein.</span>
+                  <Reveal delay={180} className="inline-flex">
+                    <Image
+                      src="/checkmark.png"
+                      alt="Checkmark"
+                      width={60}
+                      height={60}
+                      className="h-10 w-10 sm:h-[3rem] sm:w-[3rem] object-contain align-middle"
+                    />
+                  </Reveal>
+                </h2>
+              </Reveal>
+              <Reveal delay={300}>
+                <p className="text-3xl sm:text-[2.35rem] font-medium text-slate-900">
+                  Verbrenne nicht unnötig Werbebudget
+                </p>
+              </Reveal>
+            </div>
+            <Reveal delay={420} duration={520} className="flex items-center justify-center md:justify-end h-full">
+              <img
+                src="/cashdrop.jpeg"
+                alt="Cash drop"
+                className="w-full max-w-[421px] sm:max-w-[518px] h-full object-contain"
+              />
+            </Reveal>
           </div>
         </div>
       </section>

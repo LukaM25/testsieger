@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testsieger Check - Professional Edition (Repo Navbar)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: [
+                            "system-ui",
+                            "-apple-system",
+                            "Segoe UI",
+                            "Roboto",
+                            "Oxygen",
+                            "Ubuntu",
+                            "Cantarell",
+                            '"Helvetica Neue"',
+                            "sans-serif",
+                        ],
+                    },
+                    colors: {
+                        brand: {
+                            green: '#0D9488', // Repo Brand Green
+                            dark: '#0a2119', // Professional Dark Green (retained for Hero/Footer backgrounds)
+                            text: '#2e4053', // Repo Text Color
+                            hover: '#0a74da', // Repo Hover Blue
+                            surface: '#f9f9f7', // Alabaster (Professional Surface)
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f9f9f7;
+            color: #2e4053;
+        }
+
+        /* Navbar specific styles to match repo */
+        .nav-search-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+
+<body class="antialiased">
+
+    <!-- Navbar (Replicating app/components/Navbar.tsx) -->
+    <header class="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-200">
+        <div class="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
+            <!-- Logo -->
+            <a href="#" class="flex items-center gap-2">
+                <div
+                    class="grid place-items-center w-8 h-8 rounded-full bg-transparent text-white font-semibold overflow-hidden">
+                    <!-- Placeholder for Logo Image -->
+                    <div
+                        class="h-[26px] w-[26px] bg-brand-green rounded-full flex items-center justify-center text-white text-xs">
+                        T</div>
+                </div>
+                <span class="font-semibold text-[#2e4053]">Deutsches Prüfsiegel Institut</span>
+            </a>
+
+            <div class="flex items-center gap-4">
+                <!-- Search Bar -->
+                <div class="relative hidden md:block">
+                    <div
+                        class="flex items-center gap-3 bg-white border border-gray-200 rounded-full px-4 py-2 w-[352px] shadow-lg">
+                        <i data-lucide="search" class="text-slate-700 w-4 h-4"></i>
+                        <input type="text" placeholder="Suche auf der Seite..."
+                            class="w-full bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400">
+                    </div>
+                </div>
+
+                <!-- Profile Button -->
+                <div class="relative">
+                    <button
+                        class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green">
+                        <i data-lucide="user" class="text-slate-700 w-5 h-5"></i>
+                        <span class="whitespace-nowrap text-sm font-semibold">Anmelden</span>
+                    </button>
+                </div>
+
+                <!-- Menu Button -->
+                <div class="relative">
+                    <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')"
+                        class="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 text-slate-700">
+                        <span class="inline-flex items-center gap-1">
+                            <span class="mr-1 text-sm font-medium">Menü</span>
+                            <i data-lucide="menu" class="w-5 h-5"></i>
+                        </span>
+                    </button>
+
+                    <!-- Dropdown Menu (Hidden by default) -->
+                    <div id="mobile-menu"
+                        class="hidden absolute right-0 top-full mt-2 w-64 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
+                        <nav class="max-h-[60vh] overflow-y-auto text-sm text-gray-700">
+                            <!-- Section 1 -->
+                            <details class="group border-b border-gray-100 first:border-t-0" open>
+                                <summary
+                                    class="flex cursor-pointer items-center justify-between px-4 py-3 text-[11px] font-bold uppercase tracking-[0.36em] text-slate-900 outline-none transition hover:text-brand-green">
+                                    Leistungen
+                                    <span
+                                        class="text-xs transition-transform duration-200 group-open:rotate-180">▾</span>
+                                </summary>
+                                <div class="px-4 pb-2 space-y-1">
+                                    <a href="#"
+                                        class="block px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-gray-50">Übersicht</a>
+                                    <a href="#"
+                                        class="block px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-gray-50">Pakete</a>
+                                    <a href="#"
+                                        class="block px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-gray-50">Produkt
+                                        Test</a>
+                                </div>
+                            </details>
+                            <!-- Section 2 -->
+                            <details class="group border-b border-gray-100">
+                                <summary
+                                    class="flex cursor-pointer items-center justify-between px-4 py-3 text-[11px] font-bold uppercase tracking-[0.36em] text-slate-900 outline-none transition hover:text-brand-green">
+                                    Unternehmen
+                                    <span
+                                        class="text-xs transition-transform duration-200 group-open:rotate-180">▾</span>
+                                </summary>
+                                <div class="px-4 pb-2 space-y-1">
+                                    <a href="#"
+                                        class="block px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-gray-50">Karriere</a>
+                                    <a href="#"
+                                        class="block px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-gray-50">Kontakt</a>
+                                </div>
+                            </details>
+                        </nav>
+                        <div class="border-t border-gray-100 px-4 py-3">
+                            <div class="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 mb-2">
+                                Sprache</div>
+                            <div class="flex gap-2">
+                                <button
+                                    class="flex-1 rounded-lg border border-slate-900 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">🇩🇪
+                                    DE</button>
+                                <button
+                                    class="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">🇬🇧
+                                    EN</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section (Professional Design + Repo Colors) -->
+    <section
+        class="relative overflow-hidden bg-brand-dark text-white min-h-[70vh] lg:min-h-[72vh] flex items-center pt-20">
+        <!-- Background Image Placeholder -->
+        <div class="absolute inset-0 z-0">
+            <div class="absolute inset-0 bg-gradient-to-r from-brand-dark via-brand-dark/90 to-brand-dark/40 z-10">
+            </div>
+            <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+                alt="Professional Background" class="w-full h-full object-cover opacity-40 grayscale mix-blend-overlay">
+        </div>
+
+        <div
+            class="relative z-10 mx-auto grid max-w-6xl gap-8 px-6 py-16 sm:gap-10 sm:py-20 lg:grid-cols-[1.1fr,0.9fr] lg:items-end lg:py-24">
+            <div class="space-y-8">
+                <div class="space-y-4">
+                    <div class="inline-block border-b border-brand-green pb-1 mb-2">
+                        <span class="text-brand-green text-xs uppercase tracking-[0.2em] font-semibold">Offizielles
+                            Prüfinstitut</span>
+                    </div>
+                    <h1 class="text-5xl font-bold leading-tight tracking-tight sm:text-6xl md:text-7xl">
+                        Vertrauen durch <span class="text-brand-green">Prüfung</span>
+                    </h1>
+                </div>
+                <div class="space-y-4 text-base sm:text-lg text-gray-300 max-w-2xl font-normal leading-relaxed">
+                    <p>
+                        Objektive Bewertungen, transparente Verfahren und messbare Qualität – mit einem Siegel, das
+                        Orientierung schafft.
+                    </p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                    <a href="#"
+                        class="flex items-center justify-center px-8 py-4 text-sm font-bold uppercase tracking-wider bg-brand-green text-white hover:bg-teal-600 transition-colors min-w-[200px] rounded-full shadow-lg shadow-teal-900/20">
+                        Produkt testen lassen
+                    </a>
+                    <a href="#"
+                        class="flex items-center justify-center px-8 py-4 text-sm font-bold uppercase tracking-wider border border-white/30 text-white hover:border-brand-green hover:text-brand-green transition-colors rounded-full">
+                        Kostenloser Pre-Check
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Intro Section -->
+    <section class="bg-white border-b border-gray-100">
+        <div class="mx-auto max-w-4xl px-6 py-20 sm:py-24 text-center">
+            <h2 class="text-3xl font-bold tracking-tight sm:text-4xl text-brand-text mb-8">
+                Was macht das <span class="text-brand-green">Prüfsiegel Institut</span> aus?
+            </h2>
+            <div class="w-12 h-px bg-brand-green mx-auto mb-8"></div>
+            <p class="text-lg text-gray-600 leading-loose font-normal">
+                Wir sind eine private Prüfstelle und stehen für <strong class="text-brand-text font-semibold">objektive
+                    Bewertungen</strong>, <strong class="text-brand-text font-semibold">transparente Verfahren</strong>
+                und <strong class="text-brand-text font-semibold">messbare Qualität</strong>. Unser Leitgedanke
+                „Vertrauen durch Prüfung“ ist unser Versprechen.
+            </p>
+        </div>
+    </section>
+
+    <!-- Logos Section -->
+    <section class="bg-brand-surface py-12 border-b border-gray-200">
+        <div class="mx-auto max-w-6xl px-6">
+            <p class="text-center text-xs uppercase tracking-widest text-gray-400 mb-8 font-semibold">Bekannt aus</p>
+            <div
+                class="flex flex-wrap items-center justify-center gap-x-16 gap-y-8 opacity-50 grayscale hover:grayscale-0 transition-all duration-700">
+                <div class="h-8 w-32 bg-brand-text/20"></div>
+                <div class="h-8 w-32 bg-brand-text/20"></div>
+                <div class="h-8 w-32 bg-brand-text/20"></div>
+                <div class="h-8 w-32 bg-brand-text/20"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Expertise Section -->
+    <section class="bg-white py-20 sm:py-24">
+        <div class="mx-auto max-w-6xl px-6">
+            <div class="flex items-end justify-between mb-16">
+                <h2 class="text-4xl font-bold text-brand-text">Unsere Expertise</h2>
+                <div class="hidden sm:block h-px bg-gray-200 w-1/3 mb-2"></div>
+            </div>
+
+            <!-- Block 1 -->
+            <div class="grid items-center gap-12 md:grid-cols-2 mb-24">
+                <div class="order-1">
+                    <span class="text-brand-green text-xs uppercase tracking-widest mb-2 block font-semibold">Für
+                        Unternehmen</span>
+                    <h3 class="text-3xl font-bold text-brand-text mb-6">Produkt Tests</h3>
+                    <p class="text-gray-600 leading-relaxed font-normal mb-8">
+                        Wir prüfen nicht nur – wir vergleichen, hinterfragen und liefern klare Ergebnisse, auf die
+                        Einkauf und Produktteams bauen können. Wir machen transparent, was andere verschweigen:
+                        Qualität, Sicherheit und Alltagstauglichkeit.
+                    </p>
+                    <a href="#"
+                        class="group inline-flex items-center text-sm font-bold text-brand-green uppercase tracking-wider hover:text-brand-text transition-colors">
+                        Mehr erfahren
+                        <i data-lucide="arrow-right"
+                            class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                    </a>
+                </div>
+                <div class="order-2 relative aspect-[4/3] overflow-hidden bg-gray-100 shadow-xl rounded-lg">
+                    <img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=1770&q=80"
+                        alt="Product Testing"
+                        class="object-cover w-full h-full grayscale hover:grayscale-0 transition-all duration-700">
+                    <div class="absolute inset-0 border-4 border-white/10"></div>
+                </div>
+            </div>
+
+            <!-- Block 2 (Reversed) -->
+            <div class="grid items-center gap-12 md:grid-cols-2">
+                <div class="order-2 md:order-1 relative aspect-[4/3] overflow-hidden bg-gray-100 shadow-xl rounded-lg">
+                    <img src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1784&q=80"
+                        alt="Training Assessment"
+                        class="object-cover w-full h-full grayscale hover:grayscale-0 transition-all duration-700">
+                    <div class="absolute inset-0 border-4 border-white/10"></div>
+                </div>
+                <div class="order-1 md:order-2">
+                    <span class="text-brand-green text-xs uppercase tracking-widest mb-2 block font-semibold">Für
+                        Ausbildung</span>
+                    <h3 class="text-3xl font-bold text-brand-text mb-6">Betriebsbewertung</h3>
+                    <p class="text-gray-600 leading-relaxed font-normal mb-8">
+                        Wir bewerten Ausbildungsplätze transparent und strukturiert. Mit unserem Siegel zählen Betriebe
+                        zu den besten Ausbildungsstellen – für kluge Entscheidungen von Azubis.
+                    </p>
+                    <a href="#"
+                        class="group inline-flex items-center text-sm font-bold text-brand-green uppercase tracking-wider hover:text-brand-text transition-colors">
+                        Mehr erfahren
+                        <i data-lucide="arrow-right"
+                            class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Verfahren Section -->
+    <section class="bg-brand-surface border-t border-gray-200 py-20 sm:py-24">
+        <div class="mx-auto max-w-6xl px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold text-brand-text sm:text-4xl">Unsere Prüfverfahren</h2>
+                <p class="mt-4 text-gray-500 font-normal">Transparenz schafft Vertrauen.</p>
+            </div>
+
+            <div class="grid gap-8 md:grid-cols-2">
+                <!-- Card 1 -->
+                <div
+                    class="bg-white p-10 shadow-sm border-t-2 border-brand-green hover:shadow-md transition-shadow rounded-xl">
+                    <h3 class="text-xl font-bold text-brand-text mb-4">Produkte</h3>
+                    <p class="text-gray-600 leading-relaxed font-normal mb-8">
+                        Jedes Produkt durchläuft einen strukturierten Testprozess: Wir prüfen Qualität, Funktionalität
+                        und Alltagstauglichkeit unter realistischen Bedingungen. So schaffen wir Transparenz und helfen
+                        Verbrauchern, fundierte Entscheidungen zu treffen.
+                    </p>
+                    <a href="#"
+                        class="text-xs font-bold text-brand-green uppercase tracking-widest hover:text-brand-text transition-colors">
+                        Details ansehen
+                    </a>
+                </div>
+
+                <!-- Card 2 -->
+                <div
+                    class="bg-white p-10 shadow-sm border-t-2 border-brand-green hover:shadow-md transition-shadow rounded-xl">
+                    <h3 class="text-xl font-bold text-brand-text mb-4">Ausbildungsplätze</h3>
+                    <p class="text-gray-600 leading-relaxed font-normal mb-8">
+                        Auch Ausbildungsbetriebe unterziehen wir einem klar definierten Prüfverfahren. Wir bewerten
+                        Ausbildungs­konzepte, Praxisnähe und Betreuung, um jungen Menschen verlässliche Orientierung für
+                        ihre Zukunft zu geben.
+                    </p>
+                    <a href="#"
+                        class="text-xs font-bold text-brand-green uppercase tracking-widest hover:text-brand-text transition-colors">
+                        Details ansehen
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-brand-dark text-white py-16 border-t border-white/5">
+        <div class="mx-auto max-w-6xl px-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-12">
+                <div class="col-span-1 md:col-span-2">
+                    <span class="text-xl font-bold tracking-wide block mb-6">Testsieger<span
+                            class="text-brand-green font-normal">Check</span></span>
+                    <p class="text-gray-400 font-light max-w-xs leading-relaxed text-sm">
+                        Der moderne Standard für B2B-Verifizierung und Compliance.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-brand-green text-xs uppercase tracking-widest mb-6 font-bold">Produkte</h4>
+                    <ul class="space-y-3 font-light text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Produkt Tests</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Ausbildungs Check</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-brand-green text-xs uppercase tracking-widest mb-6 font-bold">Unternehmen</h4>
+                    <ul class="space-y-3 font-light text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Über uns</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Kontakt</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Impressum</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-16 pt-8 border-t border-white/5 text-xs text-gray-500 text-center uppercase tracking-widest">
+                &copy; 2024 TestsiegerCheck. Alle Rechte vorbehalten.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>

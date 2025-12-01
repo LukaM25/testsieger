@@ -554,7 +554,7 @@ export default function Navbar() {
           <div className="relative" ref={profileRef}>
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-400"
+              className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green"
               onClick={() => setProfileOpen((value) => !value)}
               aria-expanded={profileOpen}
               aria-label={profileUser ? `Profil öffnen (${profileUser.name})` : 'Kundenkonto öffnen'}
@@ -723,7 +723,7 @@ export default function Navbar() {
                     className="group border-b border-gray-100 first:border-t-0"
                     role="list"
                   >
-                    <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-[11px] font-bold uppercase tracking-[0.36em] text-slate-900 outline-none transition hover:text-[#0a74da]">
+                    <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-[11px] font-bold uppercase tracking-[0.36em] text-slate-900 outline-none transition hover:text-brand-green">
                       {t(section.labelKey, section.labelKey)}
                       <span className="text-xs transition-transform duration-200 group-open:rotate-180">▾</span>
                     </summary>

@@ -1,3 +1,5 @@
+import './globals.css';
+import '@/tailwind-input.css';
 import Navbar from "./components/Navbar";
 import Footer from "@/components/home/Footer";
 import type { Metadata } from "next";
@@ -19,7 +21,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={locale} className="no-js">
       <head>
-        <link rel="stylesheet" href="/styles/tailwind.css" />
+        
         <link rel="stylesheet" href="/styles/animations.css" />
       </head>
       <body className="font-sans antialiased text-gray-900 bg-white">

@@ -16,7 +16,7 @@ export const placeholderProducts: PlaceholderContent[] = [
     tagline: 'Messbare Servicequalität vom Erstkontakt bis zur Loyalität.',
     summary:
       'Ein strukturierter Prüfpfad, der aufzeigt, wie konsistent Ihr Team Kunden begeistert – inklusive Touchpoint-Analyse, Mystery Checks und Handlungsempfehlungen.',
-    heroImage: '/images/placeholders/hero-fallback.svg',
+    heroImage: '/placeholder/service.png',
     highlights: [
       {
         title: 'Touchpoint Radar',
@@ -60,7 +60,7 @@ export const placeholderProducts: PlaceholderContent[] = [
     tagline: 'Digitale Abläufe, die reibungslos funktionieren und skaliert werden können.',
     summary:
       'Bewertet digitale End-to-End-Prozesse, UX-Flows und Automatisierungsgrad. Ideal für Teams, die wachsende Nachfrage stabil bedienen wollen.',
-    heroImage: '/images/placeholders/hero-fallback.svg',
+    heroImage: '/placeholder/digital.png',
     highlights: [
       {
         title: 'Systeminventur',
@@ -104,7 +104,7 @@ export const placeholderProducts: PlaceholderContent[] = [
     tagline: 'Nachhaltigkeit messbar machen und glaubwürdig kommunizieren.',
     summary:
       'Ein pragmatischer Nachhaltigkeits-Review entlang Ihrer Lieferkette, Energie- und Sozialstandards mit Kommunikationsleitfaden.',
-    heroImage: '/images/placeholders/hero-fallback.svg',
+    heroImage: '/placeholder/sustain.png',
     highlights: [
       {
         title: 'Impact Screening',

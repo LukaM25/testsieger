@@ -35,7 +35,7 @@ const testOptions: TestOption[] = [
   {
     id: "priority",
     title: { de: "Produkttest Priority", en: "Product test priority" },
-    price: { de: "318,00 € zzgl. MwSt. (254 € + 64 €)", en: "€318 plus VAT (€254 + €64)" },
+    price: { de: "(254 € + 64 €) zzgl. MwSt.", en: "(€254 + €64) plus VAT" },
     gross: { de: "Brutto: 378,42 €", en: "Gross: €378.42" },
     timeline: { de: "4–7 Werktage nach Erhalt", en: "4–7 business days after receipt" },
   },
@@ -171,7 +171,22 @@ export default function PrecheckPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const hasProduct = Boolean(productStatus?.id);
     const isCoarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+
+    // clear any existing timer when dependencies change
+    if (heroTimer.current) {
+      clearTimeout(heroTimer.current);
+      heroTimer.current = null;
+    }
+
+    // If no logged-in product context, keep loading forever
+    if (!hasProduct) {
+      setHeroStage("loading");
+      setHeroSeen(false);
+      return;
+    }
+
     const hasSeen = sessionStorage.getItem("precheckHeroSeen") === "1";
 
     if (isCoarse) {
@@ -190,25 +205,14 @@ export default function PrecheckPage() {
     setHeroSeen(false);
     heroTimer.current = setTimeout(() => {
       setHeroStage("done");
+      setHeroSeen(true);
       sessionStorage.setItem("precheckHeroSeen", "1");
-    }, 7000);
-
-    const onFocus = (e: FocusEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target) return;
-      if (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) {
-        if (heroTimer.current) clearTimeout(heroTimer.current);
-        setHeroStage("done");
-        sessionStorage.setItem("precheckHeroSeen", "1");
-      }
-    };
-    window.addEventListener("focusin", onFocus);
+    }, 3000);
 
     return () => {
       if (heroTimer.current) clearTimeout(heroTimer.current);
-      window.removeEventListener("focusin", onFocus);
     };
-  }, []);
+  }, [productStatus]);
 
   useEffect(() => {
     if (heroStage !== "loading") {
@@ -254,9 +258,15 @@ export default function PrecheckPage() {
                     {tr("Produkt jetzt an uns senden.", "Send your product to us now.")}
                   </p>
                   <p className="text-base md:text-lg text-slate-600 leading-relaxed">
+                    <strong>
+                      {tr(
+                        "Hierfür fällt einmalig eine Testgebühr in Höhe von 254,00€ an.",
+                        "A one-time test fee of €254 is due."
+                      )}
+                    </strong>{" "}
                     {tr(
-                      "Hierfür fällt einmalig eine Testgebühr in Höhe von 254,00 € an. Nach Bezahlung senden wir eine E-Mail mit Rechnung und Versandadresse.",
-                      "A one-time test fee of €254 is due. After payment we will email your invoice and the shipping address."
+                      "Nach Bezahlung senden wir eine E-Mail mit Rechnung und Versandadresse.",
+                      "After payment we will email your invoice and the shipping address."
                     )}
                   </p>
                 </div>
