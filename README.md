@@ -1,146 +1,103 @@
+# Testsieger Check / Prüfsiegel Zentrum UG
 
-# Testsieger Check – MVP
+End-to-end Next.js 16 app for handling product pre-checks, payments, licensing, PDF/QR certificate generation, and customer verification. Built with Prisma/Postgres, Stripe Checkout, Nodemailer, Puppeteer-based PDFs, and Tailwind.
 
-Next.js 14 + Prisma + Neon (Postgres) + Stripe + PDFMonkey + Tailwind
+## Features
+- Pre-check flow: creates user + product, generates a PDF invoice, sends confirmation, and tracks status until payment.
+- Payments: Stripe Checkout for base fee (standard/priority) and for license plans (Basic/Premium subscriptions, Lifetime one-time).
+- Customer portal: login/register, dashboard with products, orders, and certificate links; licensing overview at `/lizenzen`.
+- Certificates & verification: generates report PDFs + QR codes, stores assets, emails customers; public verification via `/verify/:id|seal` and `/lizenzen?q=<certificateId>`.
+- Admin console: password-gated (`ADMIN_PASSWORD`) to list products, mark payment/status, upload reports, or trigger the internal certificate engine.
+- PDFs & assets: Puppeteer template in `templates/certificate.hbs`, uploads saved to `public/uploads` and QR codes to `public/qr`.
+- Tooling: Storybook, Vitest, Tailwind, 21st.dev toolbar in development.
 
-## 1) Prereqs
-- Node 18+
-- Stripe account (test mode), create 3 Prices (BASIC, PREMIUM subscriptions; LIFETIME one-time)
-- PDFMonkey account + one template that works with the payload described below
-- Neon DB (copy pooled connection string)
+## Stack
+- Next.js 16 (App Router), React 18, TypeScript, Tailwind
+- Prisma + Postgres (Neon-ready)
+- Stripe Checkout
+- Nodemailer SMTP
+- Puppeteer/Chromium + Handlebars templates, `pdf-lib` for invoices, `qrcode` + `sharp` for seals
+- Vitest + Testing Library; Storybook 10
 
-## 2) Configure env
+## Project layout
+- `app/` – routes (precheck, dashboard, verify, lizenzen, admin, marketing pages) and API routes (`api/precheck`, `api/payment`, `api/webhook`, `api/admin/*`, `api/certificates`, etc.)
+- `lib/` – auth/session helpers, email, invoice PDF, completion pipeline, Prisma, stripe, seal generation
+- `templates/` – Handlebars certificate template
+- `public/` – static assets plus generated `uploads/` and `qr/`
+- `prisma/` – schema and migrations
+- `scripts/` – Playwright capture helpers, search index script
+- `stories/` – Storybook examples
+- `tests/` – Vitest sample
 
-## 3) Install & migrate
+## Prerequisites
+- Node.js 18+
+- Postgres database (`DATABASE_URL`)
+- Stripe account with 6 price IDs (base fees + 3 plans) and webhook secret
+- SMTP credentials for transactional mail
 
-## 4) Stripe webhook (local)
+## Environment variables (`.env.local`)
+```
+DATABASE_URL=
+JWT_SECRET=
 
-## 5) Mark review complete (admin)
+# Base URLs
+APP_URL=https://your-domain.tld
+NEXT_PUBLIC_BASE_URL=https://your-domain.tld
+NEXT_PUBLIC_APP_URL=https://your-domain.tld   # used by emailService.js
 
-Generates PDF via PDFMonkey, creates QR that links to `/testergebnisse?productId=<PRODUCT_ID>`, stores both, and flips status to COMPLETED.
+# Stripe
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_PRICE_PRECHECK_STANDARD=
+STRIPE_PRICE_PRECHECK_PRIORITY=
+STRIPE_PRICE_BASIC=
+STRIPE_PRICE_PREMIUM=
+STRIPE_PRICE_LIFETIME=
 
-## PDFMonkey template expectations
+# SMTP
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+MAIL_FROM=pruefsiegel@your-domain.tld
 
-`lib/completion.ts` now sends a structured payload that mirrors the Pre-Check fields:
-
-```json
-{
-  "product": {
-    "id": "...",
-    "name": "...",
-    "brand": "...",
-    "code": "...",
-    "specs": "...",
-    "size": "...",
-    "made_in": "...",
-    "material": "..."
-  },
-  "user": {
-    "name": "...",
-    "company": "...",
-    "email": "...",
-    "address": "..."
-  },
-  "standard": "Prüfsiegel Zentrum UG Standard 2025",
-  "date": "YYYY-MM-DD",
-  "seal_number": "...",
-  "verify_url": "...",
-  "qr_data": "data:image/png;base64,..."
-}
+# Admin
+ADMIN_PASSWORD=
+ADMIN_DB_BYPASS=false   # optional: true to bypass DB read in admin list
 ```
 
-Use Liquid lookups such as `{{ product.name }}`, `{{ user.company }}`, `{{ verify_url }}` and embed the QR with `<img src="{{ qr_data }}" alt="QR-Code" />`. The standard/date/seal fields are provided for your layout, and you can expand the payload here if your template requires additional variables.
+## Setup
+1. Install deps: `npm install`
+2. Generate Prisma client: `npx prisma generate`
+3. Run migrations: `npx prisma migrate dev --name init`
+4. Start dev server: `npm run dev` (http://localhost:3000)
+5. (Optional) Storybook: `npm run storybook`
+6. Tests: `npm test`
 
-The `/testergebnisse` page now respects a `productId` query parameter: if a certificate exists for that product it renders a verification card with the Siegelnummer, links to the PDF, and the option to dive deeper via `/verify/{seal_number}`. Point the QR (and `verify_url`) to `{{ verify_url }}` from the payload so the scanned QR automatically loads the customer-specific block.
+## Payment & webhook
+- Base-fee checkout: `/api/precheck/pay` uses `STRIPE_PRICE_PRECHECK_STANDARD|PRIORITY`.
+- License checkout: `/api/payment` uses `STRIPE_PRICE_BASIC|PREMIUM|LIFETIME`.
+- Webhook: point Stripe to `/api/webhook` (e.g., `stripe listen --forward-to http://localhost:3000/api/webhook`). It marks orders paid and triggers completion.
 
-### Suggested PDFMonkey template structure
+## Certificates & emails
+- Completion pipeline (`lib/completion.ts`, `app/api/certificates`) renders `templates/certificate.hbs` via Puppeteer, writes PDF/QR to `public/uploads` and `public/qr`, updates `Certificate`, and emails via `sendCompletionEmail`.
+- Admin “upload” route can accept a PDF and generate QR/seal + email.
+- emailService-based engine (`emailService.js` / `pdfGenerator.js`) is available for the admin “complete” endpoint.
+- If SMTP is not configured, mails are skipped with a console warning.
 
-Here’s a basic Liquid + HTML scaffold that matches the payload and includes the QR:
+## Admin usage
+- Login at `/admin` with `ADMIN_PASSWORD`.
+- Actions include: list products, set payment/status, receive goods, upload report to create certificate, trigger internal certificate engine, or mark completion manually.
+- Admin routes require the admin session cookie (`admin_session`).
 
-```liquid
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <style>
-      body { font-family: 'Inter', system-ui, sans-serif; color: #111; padding: 40px; }
-      .badge { display: inline-flex; padding: 4px 12px; border-radius: 999px; background: #111; color: white; font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; }
-      .grid { display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
-      .card { border: 1px solid #e5e7eb; border-radius: 24px; padding: 24px; }
-      .qr { width: 150px; height: 150px; object-fit: contain; }
-    </style>
-  </head>
-  <body>
-    <span class="badge">Prüfsiegel Zentrum UG</span>
-    <h1>{{ product.name }}</h1>
-    <p class="lead">
-      Marke: <strong>{{ product.brand }}</strong><br />
-      Kodex: {{ product.code }} • Material: {{ product.material }} • Maße: {{ product.size }}
-    </p>
-    <div class="grid">
-      <div class="card">
-        <h2>Kunde</h2>
-        <p><strong>{{ user.name }}</strong><br />{{ user.company }}<br />{{ user.address }}<br /><a href="mailto:{{ user.email }}">{{ user.email }}</a></p>
-      </div>
-      <div class="card">
-        <h2>Prüfstandards</h2>
-        <p>{{ standard }}</p>
-        <p><strong>Siegelnummer:</strong> {{ seal_number }}</p>
-        <p><strong>Datum:</strong> {{ date }}</p>
-        <p><strong>Produkt-ID:</strong> {{ product.id }}</p>
-      </div>
-      <div class="card">
-        <h2>QR-Code</h2>
-        <img class="qr" src="{{ qr_data }}" alt="QR-Code zur Verifikation" />
-        <p><a href="{{ verify_url }}">{{ verify_url }}</a></p>
-      </div>
-    </div>
-    <footer style="margin-top: 40px; font-size: 0.8rem; color: #475569;">
-      <p>Prüfergebnis: {{ product.specs }}</p>
-    </footer>
-  </body>
-</html>
-```
+## Deployment notes
+- Vercel-ready; ensure `postinstall` runs `prisma generate`.
+- Configure all env vars in the hosting platform.
+- Public asset generation currently writes to `public/uploads` and `public/qr`; swap to S3 if you need durable storage/CDN.
+- Set webhook URL to `https://<your-domain>/api/webhook`.
 
-### qr_data handling
-
-`lib/completion.ts` already generates a base64 `qr_data` image from the customer’s `verify_url`. When scanned, that QR currently points to `<your-domain>/testergebnisse?productId=<PRODUCT_ID>` so the customer is taken straight to the testergebnisse overview with the `productId` query filled. Make sure your PDFMonkey template renders it exactly as shown above (`<img src="{{ qr_data }}" ... />`); no further QR support is needed on their side.
-
-## 6) Deploy to Vercel
-- Push repo to GitHub → import on Vercel
-- Add env vars in Vercel Project Settings
-- Stripe webhook: `https://<your-domain>/api/webhook`
-- PDFMonkey template & API key
-- `NEXT_PUBLIC_BASE_URL` to your domain
-- Build command runs `prisma generate`; run `npx prisma migrate deploy` if using migrations
-
-## Notes
-- PDFMonkey `download_url` is short-lived; for production, proxy or store a copy.
-- Admin route is protected by `x-admin-secret` (replace with real admin auth later).
-
-## Development — 21st.dev toolbar
-
-This project integrates the 21st.dev (21st-extension) developer toolbar in development to allow selecting UI elements in the browser and sending context to AI agents for code edits.
-
-Quick notes:
-
-- Packages installed (dev): `@21st-extension/toolbar-next` and `@21st-extension/react`. If you need to add them locally, run:
-
-```bash
-npm install --save-dev @21st-extension/toolbar-next @21st-extension/react
-```
-
-- Workspace VS Code extension recommendation is added at `.vscode/extensions.json` and recommends `21st.21st-extension`.
-
-- How to use:
-	1. Start the dev server: `npm run dev`.
-	2. Open the app in your browser (default: `http://localhost:3000`).
-	3. The toolbar is injected into the root layout during development and should appear once on initial page load. It runs client-side only and is not included in production builds.
-
-- Where it's wired:
-	- The toolbar component is injected in `app/layout.tsx` using a client-only dynamic import. If you want to change plugins or config, edit that file.
-
-- Opt-out / customization:
-	- The toolbar is enabled when `process.env.NODE_ENV === 'development'`. To opt out temporarily you can modify that guard in `app/layout.tsx` or set a custom environment flag and check it there.
-
-If you'd like the integration refactored to a separate Next.js client component (ESM-only, lint-friendly) I can make that change next.
+## Troubleshooting
+- Missing SMTP vars → emails skipped.
+- Missing Stripe price IDs/webhook secret → checkout/webhook fails.
+- Puppeteer on Vercel uses `@sparticuz/chromium`; local uses full `puppeteer`.
+- `ADMIN_DB_BYPASS=true` lets the admin product list render even if the DB is unreachable (returns empty list with a warning).
