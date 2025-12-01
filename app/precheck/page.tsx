@@ -233,7 +233,7 @@ export default function PrecheckPage() {
   // Removed auto-scroll to avoid disrupting mobile keyboards
 
   return (
-    <main className="bg-white text-slate-900 overflow-hidden font-sans">
+    <main className="text-slate-900 overflow-hidden font-sans" style={{ backgroundColor: '#EEF4ED' }}>
       <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_20%_10%,#e0f2fe_0%,transparent_50%),radial-gradient(140%_90%_at_80%_-10%,#eef2ff_0%,transparent_55%)]" />
 

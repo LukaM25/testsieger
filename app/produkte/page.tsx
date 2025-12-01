@@ -11,7 +11,7 @@ export const metadata = {
 
 export default function ProductsOverviewPage() {
   return (
-    <main className="bg-gray-50 text-gray-900">
+    <main className="text-gray-900" style={{ backgroundColor: '#EEF4ED' }}>
       <section data-animate="section" className="relative overflow-hidden bg-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-20 md:flex-row md:items-center">
           <div className="md:w-1/2">

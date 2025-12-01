@@ -27,7 +27,7 @@ export default function Verfahren() {
       more: 'MEHR ERFAHREN',
     };
   return (
-    <section data-animate="section" className="bg-brand-surface border-t border-gray-200 py-20 sm:py-24">
+    <section data-animate="section" className="border-t border-gray-200 py-20 sm:py-24" style={{ backgroundColor: '#f3f4f6' }}>
       <div className="mx-auto max-w-6xl px-6">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold text-brand-text sm:text-4xl">
@@ -48,7 +48,7 @@ export default function Verfahren() {
               {copy.productsBody}
             </p>
             <Link
-              href="/produkte/produkt-test"
+              href="/produkte/produkt-test#unser-pruefverfahren"
               className="text-xs font-bold text-brand-green uppercase tracking-widest hover:text-brand-text transition-colors"
             >
               Details ansehen

@@ -33,7 +33,7 @@ export default function Footer() {
   return (
     <footer
       className="text-white py-16 border-t border-white/5"
-      style={{ backgroundColor: '#0f1b14' }}
+      style={{ backgroundColor: '#0B2545' }}
     >
       <div className="mx-auto max-w-6xl px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">

@@ -118,7 +118,7 @@ export default function Packages() {
   };
 
   return (
-    <main className="bg-white text-slate-900">
+    <main className="text-slate-900" style={{ backgroundColor: '#EEF4ED' }}>
       <section className="relative overflow-hidden border-b border-slate-200">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_15%_10%,#e0f2fe_0%,transparent_45%),radial-gradient(120%_80%_at_85%_0%,#e2e8f0_0%,transparent_50%)]" />
         <div className="relative mx-auto max-w-6xl px-6 py-16 space-y-10">

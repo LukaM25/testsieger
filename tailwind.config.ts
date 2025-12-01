@@ -28,13 +28,13 @@ const config: Config = {
       },
       colors: {
         brand: {
-          green: '#0D9488', // Existing
-          dark: '#0a2119', // Oxford Green
-          primary: '#133d32', // Deep Green
-          secondary: '#3f6256', // Slate Green
-          accent: '#c5a065', // Muted Gold
-          surface: '#f9f9f7', // Alabaster
-          text: '#2e4053', // Dark Blue-Grey
+          green: '#1E6091', // Trust Blue (primary buttons/links)
+          dark: '#0B2545', // Oxford Blue (nav/footer/headings)
+          primary: '#134074', // Sapphire Blue (secondary elements)
+          secondary: '#8DA9C4', // Clarified Sky (accents/borders)
+          accent: '#134074', // Reuse Sapphire for accents
+          surface: '#EEF4ED', // Vapor Blue backgrounds
+          text: '#0B2545', // Primary text
           gray: '#e5e7eb',
         },
       },

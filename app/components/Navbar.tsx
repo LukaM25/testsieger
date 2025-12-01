@@ -55,6 +55,7 @@ export default function Navbar() {
   const [index, setIndex] = useState<SearchEntry[]>([]);
   const fuseRef = useRef<Fuse<SearchEntry> | null>(null);
   const pathname = usePathname();
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Search state
   const [query, setQuery] = useState("");
@@ -457,7 +458,7 @@ export default function Navbar() {
 
   return (
     <header className="relative w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 overflow-visible">
-      <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
+      <div className="max-w-7xl mx-auto flex items-center justify-between px-3 sm:px-6 py-3 gap-3">
         {/* Logo */}
         <a href="/" className="flex items-center gap-2">
           <div className="grid place-items-center w-8 h-8 rounded-full bg-transparent text-white font-semibold overflow-hidden">
@@ -466,9 +467,28 @@ export default function Navbar() {
           <span className="font-semibold text-[#2e4053]">Deutsches Prüfsiegel Institut</span>
         </a>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           {/* Always-open search bubble */}
           <div className="relative" ref={inputRef as any}>
+            <div className="flex items-center sm:hidden">
+              <button
+                type="button"
+                aria-label={t('search.aria', 'Suche')}
+                onClick={() => {
+                  setSearchOpen((v) => {
+                    const next = !v;
+                    if (next) {
+                      setTimeout(() => inputRef.current?.focus(), 50);
+                    }
+                    return next;
+                  });
+                  setShowResults(false);
+                }}
+                className="p-2 rounded-full border border-gray-200 text-slate-700 shadow-sm"
+              >
+                <Search size={18} />
+              </button>
+            </div>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -476,9 +496,11 @@ export default function Navbar() {
                   router.push(results[0].item.href);
                 }
               }}
-              className="flex items-center"
+              className={`${
+                searchOpen ? 'flex' : 'hidden'
+              } sm:flex items-center mt-2 sm:mt-0`}
             >
-              <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-full px-4 py-2 w-[352px] shadow-lg">
+              <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-full px-3 sm:px-4 py-2 w-[240px] sm:w-[352px] shadow-lg">
                 <Search size={18} className="text-slate-700" />
                 <input
                   ref={inputRef}
@@ -516,7 +538,7 @@ export default function Navbar() {
                       setActive(-1);
                       inputRef.current?.focus();
                     }}
-                    className="ml-2 p-1 rounded-full hover:bg-gray-100"
+                    className="ml-1 sm:ml-2 p-1 rounded-full hover:bg-gray-100"
                   >
                     <X size={14} className="text-slate-500" />
                   </button>
@@ -525,7 +547,7 @@ export default function Navbar() {
             </form>
 
               {showResults && (
-              <div className="absolute left-0 mt-2 w-[352px] bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
+              <div className="absolute left-0 mt-2 w-[240px] sm:w-[352px] bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
                 <ul className="max-h-56 overflow-auto">
                   {results.map((r, i) => {
                     const isActive = i === active;

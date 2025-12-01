@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { stagger } from "@/lib/animation";
 import PrecheckForm from "@/components/precheck/PrecheckForm";
 import Counter from "@/components/Counter";
@@ -75,12 +76,15 @@ const phasesQa = {
 };
 
 export default function ProduktTestPage() {
+  const searchParams = useSearchParams();
   const { locale } = useLocale();
   const tr = (de: string, en: string) => (locale === 'en' ? en : de);
   const [showPrecheck, setShowPrecheck] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const precheckSectionRef = useRef<HTMLElement | null>(null);
   const previewRef = useRef<HTMLElement | null>(null);
+  const procedureTopRef = useRef<HTMLDivElement | null>(null);
+  const procedureDetailRef = useRef<HTMLDivElement | null>(null);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [contentMaxHeight, setContentMaxHeight] = useState<string>('0px');
   const [heroAnim, setHeroAnim] = useState(false);
@@ -159,8 +163,10 @@ export default function ProduktTestPage() {
   }, []);
 
   const scrollToPrecheck = () => {
-    if (isCoarsePointer) return; // avoid any programmatic scroll on touch to prevent keyboard blur
     precheckSectionRef.current?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
+  };
+  const scrollToProcedure = () => {
+    procedureTopRef.current?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
   };
 
   const goPrevSlide = () => {
@@ -202,6 +208,24 @@ export default function ProduktTestPage() {
     }, 3200);
     return () => clearInterval(id);
   }, [isCoarsePointer, prefersReducedMotion]);
+
+  useEffect(() => {
+    const hash = typeof window !== 'undefined' ? window.location.hash : '';
+    const openParam = searchParams?.get('section');
+    const shouldOpen = hash === '#unser-pruefverfahren' || hash === '#pruefverfahren-pdf' || openParam === 'procedure';
+
+    if (shouldOpen) {
+      requestAnimationFrame(() => {
+        scrollToProcedure();
+        if (procedureDetailRef.current) {
+          procedureDetailRef.current.classList.add('ring-2', 'ring-[#134074]', 'shadow-2xl', 'transition', 'duration-500');
+          setTimeout(() => {
+            procedureDetailRef.current?.classList.remove('ring-2', 'ring-[#134074]', 'shadow-2xl', 'transition', 'duration-500');
+          }, 1800);
+        }
+      });
+    }
+  }, [searchParams, prefersReducedMotion]);
 
   return (
     <main className="bg-white text-slate-900">
@@ -338,8 +362,8 @@ export default function ProduktTestPage() {
             type="button"
             onClick={() => setShowPrecheck((s) => !s)}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowPrecheck((s) => !s); }}
-            className="relative flex w-full flex-col items-center gap-2 rounded-full px-14 py-6 text-center text-white shadow-[0_18px_40px_-16px_rgba(132,169,140,0.55),0_10px_20px_-12px_rgba(15,23,42,0.35)] transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_22px_48px_-14px_rgba(132,169,140,0.55),0_12px_24px_-12px_rgba(15,23,42,0.35)] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#84A98C] bg-[linear-gradient(135deg,_#84A98C,_#6f8c77)]"
-            style={{ background: 'linear-gradient(135deg, #84A98C, #6f8c77)' }}
+            className="relative flex w-full flex-col items-center gap-2 rounded-full px-14 py-6 text-center text-white shadow-[0_18px_40px_-16px_rgba(30,96,145,0.5),0_10px_20px_-12px_rgba(11,37,69,0.35)] transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_22px_48px_-14px_rgba(30,96,145,0.5),0_12px_24px_-12px_rgba(11,37,69,0.35)] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1E6091] bg-[linear-gradient(135deg,_#1E6091,_#134074)]"
+            style={{ background: 'linear-gradient(135deg, #1E6091, #134074)' }}
             aria-expanded={showPrecheck}
             aria-controls="precheck-content"
           >
@@ -425,7 +449,7 @@ export default function ProduktTestPage() {
           {/* Exclusivität */}
           <div
             className="flex flex-col items-center justify-center rounded-2xl p-8 text-center"
-            style={{ backgroundColor: "#84A98C" }}
+            style={{ backgroundColor: "#134074" }}
           >
             <div className="text-5xl font-bold text-white">
               <Counter start={0} end={1} duration={1000} />
@@ -438,7 +462,7 @@ export default function ProduktTestPage() {
           {/* Ranking Top */}
           <div
             className="flex flex-col items-center justify-center rounded-2xl p-8 text-center"
-            style={{ backgroundColor: "#84A98C" }}
+            style={{ backgroundColor: "#134074" }}
           >
             <div className="text-5xl font-bold text-white">
               <Counter start={1} end={10} duration={1500} />
@@ -451,7 +475,7 @@ export default function ProduktTestPage() {
           {/* Klienten */}
           <div
             className="flex flex-col items-center justify-center rounded-2xl p-8 text-center"
-            style={{ backgroundColor: "#84A98C" }}
+            style={{ backgroundColor: "#134074" }}
           >
             <div className="text-5xl font-bold text-white">
               <Counter start={0} end={233} duration={2000} />
@@ -464,7 +488,7 @@ export default function ProduktTestPage() {
           {/* Siegel vergaben */}
           <div
             className="flex flex-col items-center justify-center rounded-2xl p-8 text-center"
-            style={{ backgroundColor: "#84A98C" }}
+            style={{ backgroundColor: "#134074" }}
           >
             <div className="text-5xl font-bold text-white">
               <Counter start={47} end={477} duration={2500} />
@@ -572,7 +596,7 @@ export default function ProduktTestPage() {
 
       {/* Prüfverfahren and FAQ */}
       <section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="grid gap-8">
+        <div className="grid gap-8" id="unser-pruefverfahren" ref={procedureTopRef}>
           <div className="grid gap-6 rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-lg">
             <h2 className="text-2xl font-semibold">{tr('Unser Prüfverfahren', 'Our testing procedure')}</h2>
             <div className="grid gap-4 sm:grid-cols-3">
@@ -594,6 +618,7 @@ export default function ProduktTestPage() {
 
         <div
           id="pruefverfahren-pdf"
+          ref={procedureDetailRef}
           className="mt-12 grid gap-8 rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-lg"
         >
           <div className="space-y-4">
@@ -662,16 +687,16 @@ export default function ProduktTestPage() {
             )}
           </p>
           <p className="text-sm font-semibold text-slate-800">
-            {tr(
-              'Hinweis: Zertifikat und Siegel werden nur bis zu einem Testergebnis von 85% ausgestellt.',
-              'Note: Certificate and seal are issued only up to a test result of 85%.'
-            )}
-          </p>
+              {tr(
+                'Hinweis: Zertifikat und Siegel werden nur bis zu einem Testergebnis von 85% ausgestellt.',
+                'Note: Certificate and seal are issued only up to a test result of 85%.'
+              )}
+            </p>
 
           <div className="flex justify-start">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
               <a
-                href="https://drive.google.com/open?id=14xhZ55uU5_bGZWxH9jKca0Mp-CEaGbDi"
+                href="/verfahrenpdf/Pru%CC%88fkriterien%20o%CC%88ffentlich.pdf"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-lg transition hover:bg-black"

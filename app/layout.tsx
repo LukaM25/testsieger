@@ -24,7 +24,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         
         <link rel="stylesheet" href="/styles/animations.css" />
       </head>
-      <body className="font-sans antialiased text-gray-900 bg-white">
+      <body className="font-sans antialiased text-gray-900" style={{ backgroundColor: '#EEF4ED' }}>
         <LocaleProvider initialLocale={locale}>
           <Navbar />
           <main className="min-h-[80vh]">{children}</main>
