@@ -37,7 +37,7 @@ export default function AusbildungCheckPage() {
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
-                href="/precheck"
+                href="/produkte/produkt-test"
                 className="rounded-lg bg-white/95 px-5 py-3 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-white"
               >
                 Jetzt kostenloser Pre-Check
