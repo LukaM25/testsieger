@@ -46,14 +46,17 @@ async function generateSealNumber() {
   throw new Error("SEAL_GENERATION_FAILED");
 }
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await requireAdmin();
   } catch {
     return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
   }
 
-  const { id: productId } = params;
+  const { id: productId } = await params;
+  if (!productId) {
+    return NextResponse.json({ error: "MISSING_PRODUCT_ID" }, { status: 400 });
+  }
   const body = await req.json().catch(() => ({} as Record<string, unknown>));
   const message = typeof body.message === "string" ? body.message.slice(0, 1000) : undefined;
 
