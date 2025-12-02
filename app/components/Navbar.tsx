@@ -274,16 +274,23 @@ export default function Navbar() {
 
     const t = setTimeout(() => {
       const q = query.trim();
+      const lower = q.toLowerCase();
       let scored: Array<{ item: SearchEntry; matches?: Fuse.FuseResultMatch[] }> = [];
       if (fuseRef.current && q.length > 0) {
-  const res = (fuseRef.current.search(q) as any) as Array<{
+        const res = (fuseRef.current.search(q) as any) as Array<{
           item: SearchEntry;
           matches?: Fuse.FuseResultMatch[];
         }>;
-  scored = res.slice(0, 8).map((r) => ({ item: r.item, matches: r.matches }));
+        scored = res.slice(0, 8).map((r) => ({ item: r.item, matches: r.matches }));
       } else if (q.length > 0) {
         scored = index
-          .filter((e) => e.label.toLowerCase().includes(q.toLowerCase()) || (e.keywords || []).some((k) => k.toLowerCase().includes(q.toLowerCase())))
+          .filter((e) => {
+            const hasTextHit =
+              e.label.toLowerCase().includes(lower) ||
+              (e.excerpt || '').toLowerCase().includes(lower);
+            const hasKeywordHit = (e.keywords || []).some((k) => k.toLowerCase().includes(lower));
+            return hasTextHit || hasKeywordHit;
+          })
           .slice(0, 8)
           .map((item) => ({ item }));
       }
@@ -293,7 +300,7 @@ export default function Navbar() {
     }, 180);
 
     return () => clearTimeout(t);
-  }, [query]);
+  }, [query, index]);
 
   // Load the search index once
   useEffect(() => {
@@ -319,11 +326,13 @@ export default function Navbar() {
     }
     fuseRef.current = new Fuse(index, {
       keys: [
-        { name: 'label', weight: 0.7 },
-        { name: 'keywords', weight: 0.3 },
+        { name: 'label', weight: 0.6 },
+        { name: 'excerpt', weight: 0.3 },
+        { name: 'keywords', weight: 0.1 },
       ],
       includeScore: true,
-      threshold: 0.4,
+      includeMatches: true,
+      threshold: 0.35,
       ignoreLocation: true,
     });
   }, [index]);

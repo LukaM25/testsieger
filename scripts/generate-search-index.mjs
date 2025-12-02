@@ -18,18 +18,100 @@ function walk(dir) {
   return entries;
 }
 
+function toTitle(slug) {
+  const normalized = (slug || '').replace(/\/$/, '');
+  const clean = normalized.replace(/\[(.+?)\]/g, '$1').split(/[\\/]/).filter(Boolean).pop() || '';
+  if (!clean) return 'Home';
+  return clean
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function normalizeCopy(value) {
+  if (!value) return '';
+  const translation = value.match(/tr\(\s*['"`]([^'"`]+)['"`]\s*,\s*['"`]([^'"`]+)['"`]\s*\)/i);
+  if (translation) {
+    return translation[1].trim();
+  }
+  return value.replace(/[{}]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function extractMetadata(src) {
+  const metaBlock = src.match(/export const metadata\s*=\s*{([\s\S]*?)}/m);
+  const metaBody = metaBlock ? metaBlock[1] : '';
+  const title = (metaBody.match(/title\s*:\s*['"`]([^'"`]+)['"`]/) || [])[1];
+  const description = (metaBody.match(/description\s*:\s*['"`]([^'"`]+)['"`]/) || [])[1];
+  return {
+    title: title ? title.trim() : undefined,
+    description: description ? description.trim() : undefined,
+  };
+}
+
+function extractHeadings(src) {
+  const normalizeHeading = (raw) => {
+    const cleaned = normalizeCopy(raw);
+    if (!cleaned) return '';
+    const looksLikeCode = /^[a-z][a-z0-9]*[A-Z][a-zA-Z0-9]*$/.test(cleaned);
+    return looksLikeCode ? '' : cleaned;
+  };
+
+  const matches = [...src.matchAll(/<h([1-6])[^>]*>([^<]+)<\/h\1>/gi)];
+  return matches
+    .map((m) => normalizeHeading(m[2]))
+    .filter(Boolean);
+}
+
 function extract(file) {
   const src = fs.readFileSync(file, 'utf8');
-  // try to extract a title from an exported const or H1 comment
-  const titleMatch = src.match(/<h1[^>]*>([^<]+)<\/h1>/i) || src.match(/export const title\s*=\s*['"]([^'"]+)['"]/i);
-  const title = titleMatch ? titleMatch[1].trim() : path.basename(path.dirname(file));
-  // take first text chunk as excerpt
-  const text = src.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 400);
-  // build href from file path relative to app
   const rel = path.relative(appDir, file);
-  const href = '/' + rel.replace(/page\.(tsx|jsx|mdx?)$/, '').replace(/index\/$/, '').replace(/\\/g, '/');
-  const keywords = Array.from(new Set((title + ' ' + text).toLowerCase().split(/[^a-z0-9äöüß]+/).filter(Boolean))).slice(0, 20);
-  return { label: title, href, keywords };
+  const slugPath = rel.replace(/page\.(tsx|jsx|mdx?)$/, '').replace(/index\/$/, '').replace(/\\/g, '/');
+  const href = '/' + slugPath;
+
+  const headings = extractHeadings(src);
+  const { title: metaTitle, description: metaDescription } = extractMetadata(src);
+  const explicitTitle = (src.match(/export const title\s*=\s*['"`]([^'"`]+)['"`]/i) || [])[1];
+  const label = metaTitle || headings[0] || explicitTitle || toTitle(slugPath);
+
+  // Remove obvious code to keep keywords human readable
+  const exportIdx = src.indexOf('export default function');
+  const searchStart = exportIdx >= 0 ? exportIdx : 0;
+  const jsxStart = src.indexOf('<', searchStart);
+  const contentPortion = jsxStart >= 0 ? src.slice(jsxStart) : src;
+  const withoutImports = contentPortion.replace(/import[\s\S]*?;(\s|$)/g, ' ');
+  const withoutMetadata = withoutImports.replace(/export const metadata\s*=\s*{[\s\S]*?};?/g, ' ');
+
+  const textNodes = [...withoutMetadata.matchAll(/>([^<]+)</g)]
+    .map((m) => normalizeCopy(m[1]))
+    .filter(Boolean)
+    .join(' ');
+  const textContent = textNodes.replace(/\s+/g, ' ').trim();
+
+  const firstParagraph = (contentPortion.match(/<p[^>]*>([\s\S]*?)<\/p>/i) || [])[1];
+  const paragraphText = firstParagraph ? normalizeCopy(firstParagraph.replace(/<[^>]+>/g, ' ')) : '';
+
+  const excerptSource = metaDescription || paragraphText || textContent;
+  const excerpt = excerptSource.slice(0, 240);
+
+  const keywordSource = [
+    label,
+    metaDescription,
+    headings.join(' '),
+    paragraphText,
+    textContent,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  const keywords = Array.from(
+    new Set(
+      keywordSource
+        .split(/[^a-z0-9äöüß]+/i)
+        .filter(Boolean)
+    )
+  ).slice(0, 40);
+
+  return { label, href, keywords, excerpt };
 }
 
 function main() {
