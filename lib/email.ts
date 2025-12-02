@@ -244,7 +244,7 @@ export async function sendPrecheckPaymentSuccess(opts: {
   await sendEmail({
     from: `Pruefsiegel Zentrum UG – Zahlung <${FROM_EMAIL}>`,
     to,
-    subject: 'Prüfung bestanden – Zahlung eingegangen',
+    subject: 'Pre-Check – Zahlung eingegangen',
     html,
     attachments: receiptPdf
       ? [
@@ -269,9 +269,6 @@ export async function sendProductReceivedEmail(opts: {
       <p>Hallo ${escapeHtml(name)},</p>
       <p>Wir haben Ihr Produkt <strong>${escapeHtml(productName)}</strong> erhalten. Die Analyse startet in Kürze.</p>
       <p style="margin-top:12px;">Danke für Ihr Vertrauen.</p>
-      <hr style="border:none;border-top:1px solid #e5e7eb;margin:18px 0;" />
-      <p><strong>EN:</strong> We have received your product <strong>${escapeHtml(productName)}</strong>. Analysis will start shortly.</p>
-      <p style="margin-top:12px;">Thank you for your trust.</p>
       <p style="margin-top:16px;">Prüfsiegel Zentrum UG</p>
     </div>
   `;
