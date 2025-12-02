@@ -14,6 +14,9 @@ export default function Verfahren() {
       trainingTitle: 'Training positions',
       trainingBody:
         'We also evaluate training companies with a clear, defined process. We assess training concepts, practical relevance, and mentoring to give young people reliable guidance for their future.',
+      playgroundTitle: 'Playground safety',
+      playgroundBody:
+        'Playgrounds are inspected per DIN EN 1176/1177 with documented findings and clear actions so operators improve safety and legal certainty.',
       more: 'LEARN MORE',
     }
     : {
@@ -24,6 +27,9 @@ export default function Verfahren() {
       trainingTitle: 'Ausbildungsplätze',
       trainingBody:
         'Auch Ausbildungsbetriebe unterziehen wir einem klar definierten Prüfverfahren. Wir bewerten Ausbildungs­konzepte, Praxisnähe und Betreuung, um jungen Menschen verlässliche Orientierung für ihre Zukunft zu geben.',
+      playgroundTitle: 'Spielplatz Sicherheit',
+      playgroundBody:
+        'Spielplätze prüfen wir nach DIN EN 1176/1177 mit dokumentierten Befunden und klaren Maßnahmen, damit Betreiber Sicherheit und Rechtssicherheit erhöhen.',
       more: 'MEHR ERFAHREN',
     };
   return (
@@ -38,7 +44,7 @@ export default function Verfahren() {
           </p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2">
+        <div className="grid gap-8 md:grid-cols-3">
           {/* Card 1 */}
           <div className="bg-white p-10 shadow-sm border-t-2 border-brand-secondary hover:shadow-md transition-shadow rounded-xl">
             <h3 className="text-xl font-bold text-brand-text mb-4">
@@ -65,6 +71,22 @@ export default function Verfahren() {
             </p>
             <Link
               href="/produkte/ausbildung-check"
+              className="text-xs font-bold text-brand-green uppercase tracking-widest hover:text-brand-text transition-colors"
+            >
+              Details ansehen
+            </Link>
+          </div>
+
+          {/* Card 3 */}
+          <div className="bg-white p-10 shadow-sm border-t-2 border-brand-green hover:shadow-md transition-shadow rounded-xl">
+            <h3 className="text-xl font-bold text-brand-text mb-4">
+              {copy.playgroundTitle}
+            </h3>
+            <p className="text-gray-600 leading-relaxed font-normal mb-8">
+              {copy.playgroundBody}
+            </p>
+            <Link
+              href="/produkte/spielplatz-sicherheit"
               className="text-xs font-bold text-brand-green uppercase tracking-widest hover:text-brand-text transition-colors"
             >
               Details ansehen

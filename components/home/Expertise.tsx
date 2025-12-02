@@ -100,6 +100,7 @@ export default function Expertise() {
             </Link>
           </div>
         </div>
+
       </div>
     </section>
   );

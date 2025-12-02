@@ -130,6 +130,20 @@ export default function ProduktTestPage() {
     return () => clearTimeout(t);
   }, []);
 
+  // If deep-linked to precheck, open the accordion and scroll into view
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const shouldOpen = searchParams?.get('precheck') === 'open' || window.location.hash === '#precheck';
+    if (!shouldOpen) return;
+    setShowPrecheck(true);
+    if (prefersReducedMotion) return;
+    // allow layout to settle before scrolling for smoother positioning; slightly slower for a calmer feel
+    const t = setTimeout(() => {
+      precheckSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 450);
+    return () => clearTimeout(t);
+  }, [searchParams, prefersReducedMotion]);
+
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
     const coarseQuery = window.matchMedia('(pointer: coarse)');

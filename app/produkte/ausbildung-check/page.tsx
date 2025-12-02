@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function AusbildungCheckPage() {
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-white">
       {/* Hero */}
       <section className="relative overflow-hidden bg-slate-950 text-white min-h-[70vh] lg:min-h-[80vh] flex items-end">
         <div data-animate="hero-image" className="absolute inset-0 isolate">
@@ -53,130 +53,192 @@ export default function AusbildungCheckPage() {
         </div>
       </section>
 
-      {/* What we check */}
-      <section data-animate="section" className="mx-auto max-w-6xl px-6 py-14">
-        <h2 className="text-2xl font-semibold">Was wird geprüft?</h2>
-        <div className="mt-6 grid gap-6 md:grid-cols-3">
-          {[
-            {
-              title: 'Praxisnähe & Ausbildungsplan',
-              text:
-                'Gibt es einen strukturierten Plan je Ausbildungsjahr? Wie gut ist die Verzahnung von Theorie und Praxis?',
-            },
-            {
-              title: 'Betreuung & Feedback',
-              text:
-                'Ansprechpersonen, Mentoring, Feedback-Zyklen und dokumentierte Lernfortschritte.',
-            },
-            {
-              title: 'Erfolgsquote & Übernahme',
-              text:
-                'Bestehensquoten, Anteil der Übernahmen, Entwicklungsperspektiven nach Abschluss.',
-            },
-            {
-              title: 'Arbeitsschutz & Organisation',
-              text:
-                'Einhaltung gesetzlicher Vorgaben, Jugendarbeitsschutz, Arbeitszeiten, Schichtmodelle.',
-            },
-            {
-              title: 'Ausstattung & Lernumgebung',
-              text:
-                'Arbeitsmittel, Software/Tools, Lernräume, Zugang zu Übungsmaterial.',
-            },
-            {
-              title: 'Transparenz & Kommunikation',
-              text:
-                'Onboarding, Info-Materialien, regelmäßige Abstimmungen zwischen Betrieb/Schule/Azubi.',
-            },
-          ].map((c, i) => (
-            <div
-              key={c.title}
-              data-animate="card"
-              style={stagger(i)}
-              className="rounded-xl border bg-white p-6 transition duration-300 hover:-translate-y-1 hover:shadow-lg hover:scale-[1.01]"
-            >
-              <div className="text-lg font-medium">{c.title}</div>
-              <p className="mt-2 text-gray-600">{c.text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Philosophie & Hintergrund */}
+      <section data-animate="section" className="mx-auto max-w-6xl px-6 py-16">
+        <div className="space-y-8">
+          <div className="space-y-4">
+            <h2 className="text-3xl font-semibold text-brand-text">Philosophie &amp; Hintergrund des Siegels</h2>
+            <p className="text-gray-700 leading-relaxed italic">
+              Der Ausbildungs-Check ist ein Wegweiser für angehende Auszubildende. Er macht sichtbar, welche Betriebe nicht nur fachlich stark sind, sondern auch ein strukturiertes, menschliches und klar geführtes Ausbildungsumfeld bieten.
+            </p>
+          </div>
 
-      {/* Process */}
-      <section data-animate="section" className="border-t bg-white">
-        <div className="mx-auto max-w-6xl px-6 py-14">
-          <h2 className="text-2xl font-semibold">Ablauf</h2>
-          <ol className="mt-6 grid gap-6 md:grid-cols-3">
-            {[
-              {
-                n: '1',
-                t: 'Pre-Check (0 €)',
-                d: 'Betrieb meldet sich an und liefert Basisdaten (Dauer: 3–5 Minuten).',
-              },
-              {
-                n: '2',
-                t: 'Dokumenten-Review',
-                d: 'Ausbildungspläne, Nachweise, Feedback-Vorlagen. Rückfragen bei Bedarf.',
-              },
-              {
-                n: '3',
-                t: 'Bewertung & Siegel',
-                d: 'Prüfbericht + Siegel mit QR-Verifikation. Optional: Veröffentlichung der Ergebnisse.',
-              },
-            ].map((s, i) => (
-              <li
-                key={s.n}
-                data-animate="card"
-                style={stagger(i)}
-                className="rounded-xl border p-6 transition duration-300 hover:-translate-y-1 hover:shadow-lg hover:scale-[1.01]"
-              >
-                <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 text-sm font-semibold text-white">
-                  {s.n}
-                </div>
-                <div className="text-lg font-medium">{s.t}</div>
-                <p className="mt-1 text-gray-600">{s.d}</p>
-              </li>
-            ))}
-          </ol>
-          <div className="mt-8">
-            <Link
-              href="/pakete"
-              className="rounded-lg bg-black px-5 py-3 text-white hover:bg-gray-900 transition duration-200 hover:scale-[1.01]"
-            >
-              Pakete ansehen
-            </Link>
+          <div className="grid gap-10 lg:grid-cols-2 lg:items-center lg:gap-14">
+            <ul className="space-y-4 text-gray-800 text-lg">
+              {[
+                { title: 'Wertschätzender Umgang', icon: '/ausbildung_assets/umgang.PNG' },
+                { title: 'Transparente Abläufe', icon: '/ausbildung_assets/transparente_ablaufe.PNG' },
+                { title: 'Saubere Einführung', icon: '/ausbildung_assets/saubere_efinfurung.PNG' },
+                { title: 'Struktur', icon: '/ausbildung_assets/struktur.PNG' },
+              ].map((item, i) => (
+                <li
+                  key={item.title}
+                  data-animate="card"
+                  style={stagger(i)}
+                  className="flex items-center gap-4 text-base"
+                >
+                  <img src={item.icon} alt={item.title} className="h-10 w-10 object-contain shrink-0" />
+                  <span>{item.title}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="relative">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-gray-100 shadow-md" data-animate="card" style={stagger(0)}>
+                <img
+                  src="/ausbildung_assets/roadmap_ausbildung.PNG"
+                  alt="Ausbildungs-Check Roadmap"
+                  className="h-full w-full object-contain"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* FAQ placeholder */}
-      <section data-animate="section" className="mx-auto max-w-6xl px-6 py-14">
-        <h2 className="text-2xl font-semibold">FAQ</h2>
-        <div className="mt-6 space-y-4">
-          {[
-            {
-              q: 'Wie lange dauert die Prüfung?',
-              a: 'Regulär bis zu 21 Werktage nach Eingang der Unterlagen. Priority-Option 7 Werktage verfügbar.',
-            },
-            {
-              q: 'Ist der Bericht öffentlich?',
-              a: 'Optional. Das Siegel enthält einen QR-Code, der auf eine Verifikationsseite verweist.',
-            },
-            {
-              q: 'Welche Kosten fallen an?',
-              a: 'Entsprechend Ihres Pakets (Basic/Premium oder Lifetime). Die Prüfkosten sind inklusive.',
-            },
-          ].map((f, i) => (
-            <div
-              key={f.q}
-              data-animate="card"
-              style={stagger(i)}
-              className="rounded-xl border bg-white p-5 transition duration-300 hover:-translate-y-1 hover:shadow-md hover:scale-[1.01]"
-            >
-              <div className="font-medium">{f.q}</div>
-              <p className="mt-1 text-gray-600">{f.a}</p>
+      {/* Vorteile */}
+      <section data-animate="section" className="border-t border-gray-100 bg-white">
+        <div className="mx-auto max-w-6xl px-6 py-16 space-y-4">
+          <h2 className="text-3xl font-semibold text-brand-text">Ihr Vorteil als Zertifizierte Top Ausbilder</h2>
+          <p className="text-gray-700">
+            Unser Prüfsiegel signalisiert auf Ihrer Karriere-Seite, in Stellenanzeigen und auf Social Media sofort:
+          </p>
+          <p className="font-semibold italic text-gray-800">Hier wird Ausbildung und Einstieg ins Berufsleben gelebt.</p>
+
+          <div className="mt-8 space-y-6">
+            {[
+              { title: 'Sichtbarkeit', icon: '/ausbildung_assets/sichtbarkeit.PNG' },
+              { title: 'Wettbewerbsvorteil', icon: '/ausbildung_assets/wettbewerbsvorteil.PNG' },
+              { title: 'Vertrauen', icon: '/ausbildung_assets/vertrauen_badge.PNG' },
+            ].map((item, i) => (
+              <div
+                key={item.title}
+                data-animate="card"
+                style={stagger(i)}
+                className="flex w-full max-w-xl items-center justify-between gap-6 sm:gap-10 mx-auto px-5 py-4 text-left"
+              >
+                <div className="flex items-center gap-4">
+                  <img
+                    src={item.icon}
+                    alt={item.title}
+                    style={{ width: 120, height: 120 }}
+                    className="object-contain"
+                  />
+                  <span className="text-[70px] font-semibold text-brand-text leading-tight">{item.title}</span>
+                </div>
+                <img
+                  src="/checkmark.png"
+                  alt="Check"
+                  style={{ width: 44, height: 44 }}
+                  className="object-contain opacity-100"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Ablauf */}
+      <section data-animate="section" className="border-t border-gray-100 bg-white">
+        <div className="mx-auto max-w-6xl px-6 py-16">
+          <h2 className="text-3xl font-semibold text-brand-text">Ablauf</h2>
+          <div className="mt-8 flex flex-col gap-6">
+            <div className="flex flex-wrap items-center justify-center gap-7">
+              {[
+                { label: 'Kostenloser Pre-Check', src: '/images/ablauf/1free.PNG' },
+                { label: 'Betriebsbegehung', src: '/ausbildung_assets/betriebsgehnung.PNG' },
+                { label: 'Lizenzplan auswählen', src: '/images/ablauf/3liefer.PNG' },
+                { label: 'Testergebnis & Siegel erhalten', src: '/images/ablauf/4testergebnis.PNG' },
+              ].map((step, i) => (
+                <div key={step.label} className="flex items-center gap-5">
+                  <div
+                    data-animate="card"
+                    style={stagger(i)}
+                    className="flex w-52 flex-col items-center rounded-xl bg-white px-7 py-6"
+                  >
+                    <img src={step.src} alt={step.label} className="h-24 w-24 object-contain" />
+                    <span className="mt-3 text-[12px] font-semibold uppercase tracking-wide text-gray-800 text-center leading-tight">
+                      {step.label}
+                    </span>
+                  </div>
+                  {i < 3 && (
+                    <div className="flex h-full items-center justify-center px-1 self-stretch" aria-hidden>
+                      <span className="text-3xl font-semibold text-gray-500 flex items-center h-full">→</span>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-          ))}
+            <div className="flex justify-center">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-900 text-white text-xl font-semibold shadow-sm" aria-hidden>
+                ↓
+              </div>
+            </div>
+            <div className="flex justify-center">
+              <div
+                className="inline-flex items-center justify-center rounded-full border border-gray-200 px-10 py-[28px] text-xl font-semibold text-gray-800"
+                style={{ transform: 'scale(1.05)', marginTop: '0.5rem' }}
+              >
+                Listung unter Top Ausbildungsbetriebe nach Berufsgruppe auf DPI
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Bild */}
+      <section data-animate="section" className="border-t border-gray-100 bg-white">
+        <div className="mx-auto max-w-6xl px-6 py-12">
+          <div className="overflow-hidden rounded-xl shadow-md" data-animate="card" style={stagger(0)}>
+            <img
+              src="/images/expertise_training.jpeg"
+              alt="Ausbildungsteam bei der Arbeit"
+              className="h-full w-full object-cover"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Lizenzplan */}
+      <section data-animate="section" className="border-t border-gray-100 bg-white">
+        <div className="mx-auto max-w-6xl px-6 py-16">
+          <h2 className="text-3xl font-semibold text-brand-text">Lizenzplan</h2>
+          <p className="mt-3 text-gray-700">Kosten fallen erst nach Besichtigung der Ausbildungsstelle an</p>
+
+          <div className="mt-8 flex flex-col items-center gap-4">
+            <div
+              data-animate="card"
+              style={stagger(0)}
+              className="w-full max-w-xl rounded-3xl border border-slate-200 bg-white/90 px-10 py-8 text-center shadow-[0_18px_50px_-35px_rgba(15,23,42,0.35)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_22px_60px_-34px_rgba(15,23,42,0.4)]"
+            >
+              <p className="text-base font-medium text-gray-800">Grundgebühr für Anreise &amp; Begehung</p>
+              <p className="text-lg font-semibold text-gray-900">344€ zzgl Mwst</p>
+            </div>
+            <div className="text-3xl font-semibold text-gray-700">+</div>
+            <div
+              data-animate="card"
+              style={stagger(1)}
+              className="w-full max-w-xl rounded-3xl border border-slate-200 bg-white/90 px-10 py-8 text-center shadow-[0_18px_50px_-35px_rgba(15,23,42,0.35)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_22px_60px_-34px_rgba(15,23,42,0.4)]"
+            >
+              <p className="text-base font-medium text-gray-800">Lizenznutzung Siegelvergabe, Prüfbericht, DPI Listing</p>
+              <p className="text-lg font-semibold text-gray-900">1,22€/ Tag zzgl Mwst</p>
+            </div>
+          </div>
+
+          <div className="mt-10 flex flex-wrap gap-3">
+            <Link
+              href="/produkte/produkt-test?precheck=open#precheck"
+              className="grid place-items-center rounded-full bg-black px-10 py-4 text-base font-semibold text-white shadow-lg transition duration-200 hover:bg-gray-900 hover:shadow-xl text-center"
+            >
+              Zum Kostenloser Pre-Check
+            </Link>
+            <Link
+              href="/kontakt"
+              className="rounded-full border border-gray-300 px-6 py-3 text-base font-semibold text-gray-800 shadow-sm transition duration-200 hover:bg-gray-50 hover:shadow-md"
+            >
+              Kontakt aufnehmen
+            </Link>
+          </div>
         </div>
       </section>
     </main>
