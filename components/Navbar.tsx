@@ -17,26 +17,19 @@ type NavSection = {
 const navigation: (NavItem | NavSection)[] = [
   { label: "Start", href: "/" },
   {
-    label: "Produkte",
-    items: [
-      { label: "Übersicht", href: "/produkte" },
-      { label: "Ausbildung-Check", href: "/produkte/ausbildung-check" },
-    ],
-  },
-  {
     label: "Leistungen",
     items: [
-      { label: "Lizenzpläne", href: "/pakete" },
-      { label: "Prüfverfahren", href: "/verfahren" },
-      { label: "Lizenzverwaltung", href: "/lizenzen" },
+      { label: "Übersicht", href: "/produkte" },
+      { label: "Produkt Test", href: "/produkte/produkt-test" },
+      { label: "Ausbildungs Check", href: "/produkte/ausbildung-check" },
+      { label: "Spielplatz Sicherheit", href: "/produkte/spielplatz-sicherheit" },
     ],
   },
   {
-    label: "Service",
+    label: "Lizenzen",
     items: [
-      { label: "Pakete", href: "/pakete" },
+      { label: "Lizenzpläne", href: "/pakete" },
       { label: "Lizenzverwaltung", href: "/lizenzen" },
-      { label: "Kundenportal", href: "/dashboard" },
     ],
   },
   {

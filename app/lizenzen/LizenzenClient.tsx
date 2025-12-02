@@ -111,7 +111,7 @@ export default function LizenzenClient({ products }: { products: any[] }) {
                     <div>
                       <h4 className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Zertifikat</h4>
                       <div className="text-slate-700 space-y-1">
-                        <p>Status: <span className="text-green-600 font-bold">Gültig & Geprüft</span></p>
+                        <p>Status: <span className="text-brand-primary font-bold">Gültig & Geprüft</span></p>
                         <p>Ausgestellt: {new Date(product.certificate?.createdAt).toLocaleDateString('de-DE')}</p>
                       </div>
                     </div>

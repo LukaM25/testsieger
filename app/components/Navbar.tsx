@@ -24,10 +24,15 @@ const sections: NavSection[] = [
     labelKey: "nav.services",
     items: [
       { labelKey: "nav.overview", href: "/produkte" },
-      { labelKey: "nav.plans", href: "/pakete" },
       { labelKey: "nav.productTest", href: "/produkte/produkt-test" },
       { labelKey: "nav.trainingCheck", href: "/produkte/ausbildung-check" },
       { labelKey: "nav.playgroundSafety", href: "/produkte/spielplatz-sicherheit" },
+    ],
+  },
+  {
+    labelKey: "nav.licenses",
+    items: [
+      { labelKey: "nav.plans", href: "/pakete" },
       { labelKey: "nav.licensing", href: "/lizenzen" },
     ],
   },

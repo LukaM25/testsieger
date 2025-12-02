@@ -14,6 +14,7 @@ const shared: Record<Locale, Messages> = {
   de: {
     'nav.services': 'Leistungen',
     'nav.overview': 'Übersicht',
+    'nav.licenses': 'Lizenzen',
     'nav.plans': 'Lizenzpläne',
     'nav.productTest': 'Produkt Test',
     'nav.trainingCheck': 'Ausbildungs Check',
@@ -55,6 +56,7 @@ const shared: Record<Locale, Messages> = {
   en: {
     'nav.services': 'Services',
     'nav.overview': 'Overview',
+    'nav.licenses': 'Licenses',
     'nav.plans': 'License plans',
     'nav.productTest': 'Product Test',
     'nav.trainingCheck': 'Training Check',
