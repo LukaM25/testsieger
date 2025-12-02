@@ -12,3 +12,5 @@ coverage
 storybook-static
 .output
 .webm
+.env.local
+.env
