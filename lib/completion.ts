@@ -1,9 +1,9 @@
 import path from 'path';
-import { promises as fs } from 'fs';
 import QRCode from 'qrcode';
 import { prisma } from '@/lib/prisma';
 import { sendCompletionEmail } from '@/lib/email';
 import { generateCertificatePdf } from '@/pdfGenerator';
+import { uploadToS3, s3PublicUrl } from '@/lib/s3';
 
 const APP_URL = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
 
@@ -81,31 +81,27 @@ export async function completeProduct(productId: string, message?: string): Prom
     domain: APP_URL,
   });
 
-  const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-  const qrDir = path.join(process.cwd(), 'public', 'qr');
-  await fs.mkdir(uploadsDir, { recursive: true });
-  await fs.mkdir(qrDir, { recursive: true });
+  // Upload assets to S3 instead of local filesystem
+  const pdfKey = `uploads/REPORT_${seal}.pdf`;
+  const qrKey = `qr/${seal}.png`;
+  await uploadToS3({ key: pdfKey, body: pdfBuffer, contentType: 'application/pdf' });
+  await uploadToS3({ key: qrKey, body: qrBuffer, contentType: 'image/png' });
 
-  const pdfRel = `/uploads/REPORT_${seal}.pdf`;
-  const pdfAbs = path.join(uploadsDir, `REPORT_${seal}.pdf`);
-  await fs.writeFile(pdfAbs, pdfBuffer);
-
-  const qrRel = `/qr/${seal}.png`;
-  const qrAbs = path.join(qrDir, `${seal}.png`);
-  await fs.writeFile(qrAbs, qrBuffer);
+  const pdfUrl = s3PublicUrl(pdfKey);
+  const qrUrl = s3PublicUrl(qrKey);
 
   const cert = await prisma.certificate.upsert({
     where: { productId: product.id },
     update: {
-      pdfUrl: pdfRel,
-      qrUrl: qrRel,
+      pdfUrl,
+      qrUrl,
       seal_number: seal,
       externalReferenceId: null,
     },
     create: {
       productId: product.id,
-      pdfUrl: pdfRel,
-      qrUrl: qrRel,
+      pdfUrl,
+      qrUrl,
       seal_number: seal,
       externalReferenceId: null,
     },
@@ -121,8 +117,8 @@ export async function completeProduct(productId: string, message?: string): Prom
     name: product.user.name,
     productName: product.name,
     verifyUrl,
-    pdfUrl: pdfRel,
-    qrUrl: qrRel,
+    pdfUrl,
+    qrUrl,
     pdfBuffer,
     documentId: undefined,
     message,
@@ -131,8 +127,8 @@ export async function completeProduct(productId: string, message?: string): Prom
   return {
     verifyUrl,
     certId: cert.id,
-    pdfUrl: pdfRel,
-    qrUrl: qrRel,
+    pdfUrl,
+    qrUrl,
     seal,
   };
 }

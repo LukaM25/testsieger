@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import fs from "fs/promises";
 import path from "path";
-import { promises as fs } from "fs";
+
+import { NextResponse } from "next/server";
 import Papa from "papaparse";
 import QRCode from "qrcode";
 
@@ -9,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { generateCertificatePdf } from "@/pdfGenerator";
 import { generateSeal } from "@/lib/seal";
 import { sendCertificateAndSealEmail } from "@/lib/email";
+import { uploadToS3, s3PublicUrl } from "@/lib/s3";
 
 const SHEET_LINK = "https://docs.google.com/spreadsheets/d/1uwauj30aZ4KpwSHBL3Yi6yB85H_OQypI5ogKuR82KFk/edit?usp=sharing";
 const APP_URL = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
@@ -123,18 +125,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       domain: APP_URL,
     });
 
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    const qrDir = path.join(process.cwd(), "public", "qr");
-    await fs.mkdir(uploadsDir, { recursive: true });
-    await fs.mkdir(qrDir, { recursive: true });
-
-    const pdfRel = `/uploads/REPORT_${seal}.pdf`;
-    const pdfAbs = path.join(uploadsDir, `REPORT_${seal}.pdf`);
-    await fs.writeFile(pdfAbs, pdfBuffer);
-
-    const qrRel = `/qr/${seal}.png`;
-    const qrAbs = path.join(qrDir, `${seal}.png`);
-    await fs.writeFile(qrAbs, qrBuffer);
+    const pdfKey = `uploads/REPORT_${seal}.pdf`;
+    const qrKey = `qr/${seal}.png`;
+    await uploadToS3({ key: pdfKey, body: pdfBuffer, contentType: "application/pdf" });
+    await uploadToS3({ key: qrKey, body: qrBuffer, contentType: "image/png" });
+    const pdfUrl = s3PublicUrl(pdfKey);
+    const qrUrl = s3PublicUrl(qrKey);
 
     const sealPath = await generateSeal({
       product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
@@ -147,8 +143,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const cert = await prisma.certificate.upsert({
       where: { productId: product.id },
       update: {
-        pdfUrl: pdfRel,
-        qrUrl: qrRel,
+        pdfUrl,
+        qrUrl,
         seal_number: seal,
         externalReferenceId: null,
         ratingScore,
@@ -157,8 +153,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       },
       create: {
         productId: product.id,
-        pdfUrl: pdfRel,
-        qrUrl: qrRel,
+        pdfUrl,
+        qrUrl,
         seal_number: seal,
         externalReferenceId: null,
         ratingScore,
@@ -192,7 +188,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({
       ok: true,
       certificateId: cert.id,
-      pdfUrl: pdfRel,
+      pdfUrl,
       sealUrl: sealPath,
       ratingScore,
       ratingLabel,

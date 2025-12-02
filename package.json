@@ -12,15 +12,18 @@
     "postinstall": "prisma generate",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "test": "vitest"
+    "test": "vitest",
+    "aws:whoami": "node scripts/check-aws-sts.js"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.926.0",
+    "@aws-sdk/client-s3": "^3.940.0",
+    "@aws-sdk/client-sts": "^3.940.0",
     "@dataconnect/generated": "file:src/dataconnect-generated",
     "@hookform/resolvers": "^5.2.2",
     "@plasmicapp/query": "^0.1.81",
     "@prisma/client": "5.22.0",
     "@sparticuz/chromium": "^141.0.0",
+    "aws-sdk": "^2.1692.0",
     "bcryptjs": "^2.4.3",
     "handlebars": "^4.7.8",
     "jose": "^5.9.3",
