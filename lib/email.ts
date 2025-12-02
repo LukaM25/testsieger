@@ -48,28 +48,24 @@ export async function sendPrecheckConfirmation(opts: {
   const licenseAnchor = `${appUrl.replace(/\/$/, '')}/precheck#license-plans`;
 
   const html = `
-    <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height:1.6; color:#111">
+    <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.65;color:#0f172a">
       <p>Hallo ${escapeHtml(name || '')},</p>
-      <p>Ihr Pre-Check für <strong>${escapeHtml(productName)}</strong> ist eingegangen.</p>
-      <p>Bitte bezahlen Sie jetzt die Grundgebühr (254 € zzgl. 19 % MwSt. = 302,26 €), damit wir Versandadresse und Rechnung bereitstellen.</p>
+      <p>Ihr Pre-Check für <strong>${escapeHtml(productName)}</strong> ist erfolgreich eingegangen. Wir prüfen die Angaben und bereiten alles für den Versand vor.</p>
+      <p>Bitte begleichen Sie jetzt die Grundgebühr (254 € zzgl. 19 % MwSt. = 302,26 €), damit wir Ihnen sofort Rechnung und Versandanschrift bereitstellen können.</p>
       <p style="margin:16px 0 8px;">
         <a href="${checkoutAnchor}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">Grundgebühr bezahlen</a>
       </p>
-      <p style="font-size:13px;color:#444;margin-top:12px;">Sobald die Zahlung erfolgt ist, können Sie hier den Lizenzplan wählen:</p>
+      <p style="font-size:13px;color:#475569;margin-top:12px;">Nach Zahlung wählen Sie Ihren Lizenzplan und erhalten Ihr Versandlabel direkt im Portal.</p>
       <p>
         <a href="${licenseAnchor}" style="display:inline-block;padding:10px 16px;border-radius:10px;background:#111827;color:#fff;text-decoration:none;font-weight:600;">Lizenzplan auswählen</a>
       </p>
-      ${shippingAddress ? `<p style="font-size:13px;color:#444;margin-top:12px;">Vorläufige Versandadresse: ${escapeHtml(shippingAddress)}</p>` : ''}
-      <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;" />
-      <p style="color:#111;margin:0;"><strong>EN:</strong> Your pre-check for <strong>${escapeHtml(productName)}</strong> has been received. Please pay the base fee (254 € + 19% VAT = 302.26 €) so we can provide the shipping address and invoice.</p>
-      <p style="margin:12px 0 8px;">
-        <a href="${checkoutAnchor}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">Pay base fee</a>
-      </p>
-      <p style="font-size:13px;color:#444;margin-top:12px;">After payment, choose your license plan:</p>
-      <p>
-        <a href="${licenseAnchor}" style="display:inline-block;padding:10px 16px;border-radius:10px;background:#111827;color:#fff;text-decoration:none;font-weight:600;">Select license plan</a>
-      </p>
-      <p style="margin-top:18px;">Danke!<br/>Prüfsiegel Zentrum UG</p>
+      ${shippingAddress ? `<p style="font-size:13px;color:#475569;margin-top:12px;">Vorläufige Versandadresse: ${escapeHtml(shippingAddress)}</p>` : ''}
+      <ul style="margin:16px 0;padding-left:20px;font-size:13px;color:#475569;">
+        <li>Beleg im Anhang, falls verfügbar.</li>
+        <li>Versand erst nach Zahlungseingang.</li>
+        <li>Updates erhalten Sie per E-Mail.</li>
+      </ul>
+      <p style="margin-top:18px;">Danke für Ihr Vertrauen.<br/>Prüfsiegel Zentrum UG</p>
     </div>
   `;
 
@@ -113,21 +109,24 @@ export async function sendCompletionEmail(opts: {
     : undefined;
 
   const html = `
-    <div style="font-family:system-ui,Arial;line-height:1.6;color:#111">
+    <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
       <p>Hallo ${escapeHtml(name)},</p>
-      <p>die Prüfung Ihres Produkts <strong>${escapeHtml(productName)}</strong> ist abgeschlossen.</p>
-      <p style="margin:0.75rem 0;">
-        Die Ergebnisse finden Sie im angehängten Prüfbericht oder über die Verifikationsseite:
-        <br />
+      <p>die Prüfung Ihres Produkts <strong>${escapeHtml(productName)}</strong> wurde erfolgreich abgeschlossen.</p>
+      <p style="margin:12px 0;">
+        Die Ergebnisse finden Sie im angehängten Prüfbericht oder über die Verifikationsseite:<br />
         <a href="${verifyUrl}" style="color:#1d4ed8;font-weight:600;">${verifyUrl}</a>
       </p>
-      <p>
-        Ihr Prüfbericht: <a href="${pdfUrl}" style="color:#1d4ed8;font-weight:600;">Download</a><br />
+      <p style="margin:12px 0;">
+        Prüfbericht: <a href="${pdfUrl}" style="color:#1d4ed8;font-weight:600;">Download</a><br />
         QR-Code: <a href="${qrUrl}" style="color:#1d4ed8;font-weight:600;">Download</a>
       </p>
-      ${documentId ? `<p>PDFMonkey-Dokument-ID: <code>${escapeHtml(documentId)}</code></p>` : ''}
+      ${documentId ? `<p style="font-size:13px;color:#475569;">Dokument-ID: <code>${escapeHtml(documentId)}</code></p>` : ''}
       ${renderNote(message)}
-      <p>Danke!<br />Prüfsiegel Zentrum UG</p>
+      <ul style="margin:16px 0;padding-left:20px;font-size:13px;color:#475569;">
+        <li>Siegel und QR-Code sind ab sofort nutzbar.</li>
+        <li>Für Änderungen an Einsatzorten oder Ansprechpartnern nutzen Sie bitte das Kundenportal.</li>
+      </ul>
+      <p style="margin-top:18px;">Vielen Dank für die Zusammenarbeit.<br />Prüfsiegel Zentrum UG</p>
     </div>
   `;
 
@@ -167,17 +166,17 @@ export async function sendCertificateAndSealEmail(opts: {
   }
 
   const html = `
-    <div style="font-family:system-ui,Arial;line-height:1.6;color:#111">
+    <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
       <p>Hallo ${escapeHtml(name)},</p>
-      <p>Ihr Prüfbericht und das Siegel für <strong>${escapeHtml(productName)}</strong> stehen bereit.</p>
-      <p>
-        Verifikation: <a href="${verifyUrl}" style="color:#1d4ed8;font-weight:600;">${verifyUrl}</a>
-      </p>
-      <p style="margin:12px 0;">Im Anhang finden Sie den Prüfbericht (PDF) und das Siegel (PNG).</p>
+      <p>Prüfbericht und Siegel für <strong>${escapeHtml(productName)}</strong> stehen bereit.</p>
+      <p>Verifikation: <a href="${verifyUrl}" style="color:#1d4ed8;font-weight:600;">${verifyUrl}</a></p>
+      <p style="margin:12px 0;">Im Anhang finden Sie den Prüfbericht (PDF) und das Siegel (PNG). Bitte nutzen Sie den QR-Code und die Siegelgrafik gemäß Ihren vereinbarten Einsatzorten.</p>
       ${renderNote(message)}
-      <hr style="border:none;border-top:1px solid #e5e7eb;margin:18px 0;" />
-      <p><strong>EN:</strong> Your report and seal for <strong>${escapeHtml(productName)}</strong> are ready. Verification link: <a href="${verifyUrl}" style="color:#1d4ed8;font-weight:600;">${verifyUrl}</a>.</p>
-      <p style="margin-top:18px;">Danke!<br/>Prüfsiegel Zentrum UG</p>
+      <ul style="margin:16px 0;padding-left:20px;font-size:13px;color:#475569;">
+        <li>Bei Fragen zur Platzierung oder Farben melden Sie sich jederzeit.</li>
+        <li>Änderungen an Siegel- oder Einsatzdaten erfolgen über das Kundenportal.</li>
+      </ul>
+      <p style="margin-top:18px;">Danke für Ihr Vertrauen.<br/>Prüfsiegel Zentrum UG</p>
     </div>
   `;
 
@@ -198,13 +197,12 @@ export async function sendFailureNotification(opts: {
 }) {
   const { to, name, productName, reason } = opts;
   const html = `
-    <div style="font-family:system-ui,Arial">
+    <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
       <p>Hallo ${escapeHtml(name)},</p>
-      <p>bei der Prüfung Ihres Produkts <strong>${escapeHtml(productName)}</strong> fehlen noch einige Informationen.</p>
+      <p>für Ihr Produkt <strong>${escapeHtml(productName)}</strong> benötigen wir weitere Informationen, bevor wir die Prüfung abschließen können.</p>
       <p><strong>Grund:</strong> ${escapeHtml(reason)}</p>
-      <p>Bitte senden Sie uns die fehlenden Angaben, damit wir fortfahren können.</p>
-      <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0;" />
-      <p><strong>EN:</strong> We need more information for <strong>${escapeHtml(productName)}</strong>.<br/>Reason: ${escapeHtml(reason)}<br/>Please send the missing details so we can proceed.</p>
+      <p>Bitte senden Sie uns die fehlenden Angaben oder Dokumente, damit wir fortfahren können. Bei Rückfragen helfen wir gern.</p>
+      <p style="margin-top:18px;">Prüfsiegel Zentrum UG</p>
     </div>
   `;
   await sendEmail({
@@ -226,23 +224,19 @@ export async function sendPrecheckPaymentSuccess(opts: {
   const appUrl = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://pruefsiegelzentrum.vercel.app';
   const licenseAnchor = `${appUrl.replace(/\/$/, '')}/precheck#license-plans`;
   const html = `
-    <div style="font-family:system-ui,Arial;line-height:1.6;color:#111">
+    <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
       <p>Hallo ${escapeHtml(name)},</p>
-      <p>Zahlungseingang für <strong>${escapeHtml(productName)}</strong> bestätigt. Vielen Dank!</p>
-      ${shippingAddress ? `<p style="font-size:13px;color:#444;">Versandadresse: ${escapeHtml(shippingAddress)}</p>` : ''}
-      <p style="margin:14px 0 10px;">Lassen Sie uns jetzt den Lizenzplan wählen und das Siegel erhalten:</p>
+      <p>der Zahlungseingang für <strong>${escapeHtml(productName)}</strong> ist bestätigt. Vielen Dank!</p>
+      ${shippingAddress ? `<p style="font-size:13px;color:#475569;">Versandadresse: ${escapeHtml(shippingAddress)}</p>` : ''}
+      <p style="margin:14px 0 10px;">Wählen Sie jetzt Ihren Lizenzplan und erhalten Sie Ihr Versandlabel sowie alle Siegel-Assets:</p>
       <p>
         <a href="${licenseAnchor}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">Lizenzplan auswählen</a>
       </p>
-      <p style="margin-top:14px;font-size:13px;color:#444;">Die Quittung befindet sich im Anhang.</p>
-      <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;" />
-      <p><strong>EN:</strong> Payment received for <strong>${escapeHtml(productName)}</strong>. Thank you!</p>
-      ${shippingAddress ? `<p style="font-size:13px;color:#444;">Shipping address: ${escapeHtml(shippingAddress)}</p>` : ''}
-      <p style="margin:12px 0 10px;">Choose your license plan next:</p>
-      <p>
-        <a href="${licenseAnchor}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">Select license plan</a>
-      </p>
-      <p style="margin-top:14px;font-size:13px;color:#444;">Receipt is attached.</p>
+      <p style="margin-top:14px;font-size:13px;color:#475569;">Die Quittung finden Sie im Anhang.</p>
+      <ul style="margin:16px 0;padding-left:20px;font-size:13px;color:#475569;">
+        <li>Nach Planwahl erhalten Sie Zugang zu Siegelgrafiken und Prüfbericht.</li>
+        <li>Änderungen an Adresse oder Ansprechpartner bitte per Antwort auf diese E-Mail.</li>
+      </ul>
       <p style="margin-top:18px;">Prüfsiegel Zentrum UG</p>
     </div>
   `;

@@ -3,450 +3,465 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Product Certificate</title>
+  <title>Product Certificate | Prüfsiegel Zentrum</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600&display=swap');
+    /* Import Professional Fonts: Playfair for elegance, Inter for technical readability */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+
     :root {
-      --bg: #0c1224;
-      --card: rgba(255, 255, 255, 0.05);
-      --panel: rgba(255, 255, 255, 0.08);
-      --text: #e7ecf5;
-      --muted: #9db1d0;
-      --line: rgba(255, 255, 255, 0.12);
-      --accent: #74f0ed;
-      --accent-2: #8b6cff;
-      --pill: #15213a;
+      /* Palette: Clean, Trustworthy, Serious */
+      --bg-body: #f1f4f9;
+      --bg-paper: #ffffff;
+      
+      --text-main: #1e293b;   /* Slate 800 */
+      --text-muted: #64748b;  /* Slate 500 */
+      --text-label: #475569;  /* Slate 600 */
+      
+      --brand-primary: #0f172a; /* Slate 900 - distinct and strong */
+      --brand-accent: #2563eb;  /* Royal Blue - Trust */
+      --gold-accent: #d97706;   /* Subtle Gold for 'Seal' feel */
+      
+      --line: #e2e8f0;
+      --line-strong: #cbd5e1;
+      
+      --status-pending-bg: #fff7ed;
+      --status-pending-text: #c2410c;
+      --status-verified-bg: #eff6ff;
+      --status-verified-text: #1e40af;
     }
+
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
-      font-family: 'Manrope', system-ui, -apple-system, sans-serif;
-      color: var(--text);
-      background: radial-gradient(140% 140% at 10% 20%, rgba(116, 240, 237, 0.15), transparent 40%),
-                  radial-gradient(120% 120% at 80% 0%, rgba(139, 108, 255, 0.18), transparent 35%),
-                  var(--bg);
-      padding: 40px 32px;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: var(--text-main);
+      background: var(--bg-body);
+      padding: 40px 20px;
+      line-height: 1.5;
     }
+
     .page {
-      max-width: 960px;
+      max-width: 900px;
       margin: 0 auto;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
-      border: 1px solid var(--line);
-      border-radius: 28px;
+      background: var(--bg-paper);
+      /* Subtle border mimicking high-quality stationery */
+      border: 1px solid var(--line-strong);
+      border-radius: 4px; /* Sharp, professional corners */
+      position: relative;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 
+                  0 10px 15px -3px rgba(0, 0, 0, 0.05);
       overflow: hidden;
-      position: relative;
-      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.45);
     }
-    .page::before, .page::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
+
+    /* Top Decorative Bar (Official Feel) */
+    .top-bar {
+      height: 8px;
+      width: 100%;
+      background: linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-accent) 100%);
     }
-    .page::before {
-      background: radial-gradient(240px at 8% 12%, rgba(116, 240, 237, 0.08), transparent),
-                  radial-gradient(200px at 90% 18%, rgba(139, 108, 255, 0.1), transparent);
-    }
-    .page::after {
-      background: linear-gradient(120deg, rgba(255, 255, 255, 0.12), transparent 40%, rgba(255, 255, 255, 0.08) 70%, transparent);
-      mix-blend-mode: screen;
-      opacity: 0.35;
-    }
+
     .frame {
-      position: relative;
-      padding: 40px 44px 48px;
+      padding: 48px 56px;
     }
+
+    /* Header Section */
     header {
       display: flex;
-      align-items: flex-start;
       justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 28px;
+      align-items: flex-start;
+      border-bottom: 2px solid var(--line);
+      padding-bottom: 32px;
+      margin-bottom: 32px;
     }
-    .brand {
-      font-family: 'Space Grotesk', 'Manrope', system-ui, sans-serif;
-      letter-spacing: -0.03em;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .brand .orb {
-      width: 42px;
-      height: 42px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #74f0ed, #8b6cff);
-      box-shadow: 0 10px 30px rgba(139, 108, 255, 0.35);
-    }
-    .brand .name {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-    .headline {
+
+    .brand-block {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      margin-top: 4px;
+      gap: 4px;
     }
-    .headline .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      letter-spacing: 0.08em;
+
+    .brand-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-muted);
       text-transform: uppercase;
-      color: var(--muted);
+      letter-spacing: 0.1em;
     }
-    .headline .eyebrow::before {
-      content: '';
-      width: 34px;
-      height: 2px;
-      border-radius: 99px;
-      background: linear-gradient(90deg, #74f0ed, #8b6cff);
-    }
-    .headline h1 {
-      margin: 0;
-      font-size: 32px;
+
+    .document-title h1 {
+      font-family: 'Playfair Display', serif; /* Serif for Authority */
+      font-size: 36px;
+      margin: 8px 0 0 0;
+      color: var(--brand-primary);
       line-height: 1.1;
-      font-weight: 700;
-      color: #f7fbff;
-      letter-spacing: -0.02em;
     }
-    .chips {
+
+    .meta-tags {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 8px;
-    }
-    .chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: var(--pill);
-      color: var(--muted);
-      border: 1px solid var(--line);
-      font-size: 12px;
-      letter-spacing: 0.01em;
-    }
-    .chip strong { color: #f0f4ff; font-weight: 700; }
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 18px;
-      margin-bottom: 18px;
-    }
-    .panel h3 {
-      margin: 0 0 10px;
-      font-family: 'Space Grotesk', 'Manrope', system-ui, sans-serif;
-      font-size: 14px;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .stat-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
+      margin-top: 16px;
     }
-    .stat {
-      padding: 14px;
-      border-radius: 14px;
-      background: var(--card);
+
+    .tag {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 4px;
+      background: #f8fafc;
       border: 1px solid var(--line);
+      color: var(--text-label);
     }
-    .stat .label {
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      font-size: 11px;
-      color: var(--muted);
-      margin-bottom: 6px;
+    
+    .logo-placeholder {
+      width: 64px;
+      height: 64px;
+      background: var(--brand-primary);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 24px;
+      flex-shrink: 0;
     }
-    .stat .value {
-      font-weight: 700;
-      font-size: 14px;
-      color: #f3f7ff;
-      letter-spacing: -0.01em;
-    }
-    .columns {
+
+    /* Main Grid Layout */
+    .content-grid {
       display: grid;
       grid-template-columns: 2fr 1fr;
-      gap: 18px;
-      margin-top: 4px;
+      gap: 40px;
     }
-    .card {
-      padding: 18px;
-      border-radius: 18px;
-      background: var(--card);
-      border: 1px solid var(--line);
-      position: relative;
-      overflow: hidden;
-    }
-    .card h2 {
-      margin: 0 0 10px;
-      font-size: 16px;
-      letter-spacing: -0.01em;
-      font-weight: 700;
-      color: #f7fbff;
-    }
-    .card p {
-      margin: 0;
-      font-size: 13px;
-      line-height: 1.55;
-      color: var(--muted);
-    }
-    .list {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-      margin-top: 12px;
-    }
-    .list .item {
-      padding: 12px;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px dashed var(--line);
-    }
-    .item .k {
-      font-size: 11px;
-      color: var(--muted);
-      letter-spacing: 0.05em;
+
+    .section-title {
+      font-size: 12px;
       text-transform: uppercase;
-      margin-bottom: 4px;
-    }
-    .item .v {
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
       font-weight: 700;
-      color: #f1f5ff;
-      font-size: 13px;
-      letter-spacing: -0.01em;
-    }
-    .qr-block {
+      margin-bottom: 16px;
       display: flex;
-      gap: 14px;
       align-items: center;
-      margin-top: 10px;
+      gap: 8px;
     }
-    .qr {
-      width: 110px;
-      height: 110px;
-      border-radius: 12px;
-      padding: 8px;
-      background: #0b1830;
+    
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+    }
+
+    /* Identity Table */
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 32px;
+    }
+
+    .info-table td {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+    }
+
+    .info-table .label {
+      color: var(--text-muted);
+      width: 40%;
+      font-weight: 500;
+    }
+
+    .info-table .value {
+      color: var(--brand-primary);
+      font-weight: 600;
+      text-align: right;
+    }
+
+    /* Narrative Text */
+    .narrative-box {
+      background: #f8fafc;
       border: 1px solid var(--line);
-      display: grid;
-      place-items: center;
+      padding: 24px;
+      border-radius: 6px;
+      font-size: 14px;
+      color: var(--text-label);
+      line-height: 1.6;
     }
-    .qr img {
+    
+    .narrative-box h2 {
+      margin-top: 0;
+      font-size: 16px;
+      color: var(--brand-primary);
+    }
+
+    /* Sidebar / Status Card */
+    .status-card {
+      background: #ffffff;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      padding: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+
+    .seal-number {
+      font-family: 'Space Mono', monospace; /* Monospace for technical code feel */
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px dashed var(--line);
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      border-radius: 4px;
+      background: var(--status-verified-bg);
+      color: var(--status-verified-text);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 14px;
+      letter-spacing: 0.05em;
+      margin-bottom: 24px;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .qr-container {
+      background: white;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      width: 100%;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .qr-container img {
       width: 100%;
       height: 100%;
       object-fit: contain;
+      mix-blend-mode: multiply; /* Ensures QR blends with paper */
     }
-    .badge-row {
+
+    .owner-info {
+      margin-top: 32px;
+    }
+    
+    .owner-item {
+      margin-bottom: 12px;
+    }
+    
+    .owner-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+    
+    .owner-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--brand-primary);
+    }
+
+    /* Badges Row */
+    .trust-badges {
       display: flex;
-      gap: 10px;
+      gap: 12px;
+      margin-top: 24px;
       flex-wrap: wrap;
-      margin-top: 12px;
     }
-    .badge {
-      padding: 8px 12px;
-      border-radius: 12px;
-      background: rgba(116, 240, 237, 0.08);
-      border: 1px solid rgba(116, 240, 237, 0.3);
-      color: #b4f7f5;
-      font-weight: 700;
-      letter-spacing: 0.01em;
-      font-size: 12px;
+
+    .trust-badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--brand-accent);
+      background: transparent;
+      padding: 4px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
+    
+    .trust-badge::before {
+      content: '✓';
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      background: var(--brand-accent);
+      color: white;
+      border-radius: 50%;
+      font-size: 9px;
+    }
+
     footer {
-      margin-top: 22px;
-      padding-top: 16px;
+      margin-top: 48px;
+      padding-top: 24px;
       border-top: 1px solid var(--line);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      color: var(--muted);
       font-size: 12px;
+      color: var(--text-muted);
     }
-    .pill-link {
-      color: #f2f6ff;
+
+    .verify-btn {
       text-decoration: none;
-      padding: 8px 12px;
-      border-radius: 10px;
-      background: linear-gradient(120deg, rgba(116, 240, 237, 0.14), rgba(139, 108, 255, 0.18));
-      border: 1px solid var(--line);
-      font-weight: 600;
-      letter-spacing: 0.01em;
+      background: var(--brand-primary);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 4px;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    
+    .verify-btn:hover {
+      background: #334155;
     }
   </style>
 </head>
 <body>
   <div class="page">
+    <div class="top-bar"></div>
     <div class="frame">
+      
       <header>
-        <div class="brand">
-          <div class="orb"></div>
-          <div class="name">Product Certificate</div>
-        </div>
-        <div class="headline">
-          <div class="eyebrow">Verified Product Snapshot</div>
-          <h1>{{ name | default: "Product Name" }}</h1>
-          <div class="chips">
-            <span class="chip"><strong>Brand</strong> {{ brand | default: "—" }}</span>
-            <span class="chip"><strong>Category</strong> {{ category | default: "—" }}</span>
-            <span class="chip"><strong>SKU / Code</strong> {{ code | default: "—" }}</span>
+        <div class="brand-block">
+          <div class="brand-name">Prüfsiegel Zentrum</div>
+          <div class="document-title">
+            <h1>{{ name | default: "Product Certification" }}</h1>
+          </div>
+          <div class="meta-tags">
+            <span class="tag">Brand: {{ brand | default: "—" }}</span>
+            <span class="tag">SKU: {{ code | default: "—" }}</span>
+            <span class="tag">Cat: {{ category | default: "—" }}</span>
           </div>
         </div>
+        <div class="logo-placeholder">PZ</div>
       </header>
 
-      <div class="panel">
-        <h3>Product Identity</h3>
-        <div class="stat-grid">
-          <div class="stat">
-            <div class="label">Product ID</div>
-            <div class="value">{{ id | default: "—" }}</div>
-          </div>
-          <div class="stat">
-            <div class="label">Size</div>
-            <div class="value">{{ size | default: "—" }}</div>
-          </div>
-          <div class="stat">
-            <div class="label">Material</div>
-            <div class="value">{{ material | default: "—" }}</div>
-          </div>
-          <div class="stat">
-            <div class="label">Made In</div>
-            <div class="value">{{ madeIn | default: "—" }}</div>
-          </div>
-          <div class="stat">
-            <div class="label">Specs</div>
-            <div class="value">{{ specs | default: "—" }}</div>
-          </div>
-          <div class="stat">
-            <div class="label">Created</div>
-            <div class="value">{{ createdAt | date: "%Y-%m-%d" | default: "—" }}</div>
-          </div>
-        </div>
-      </div>
+      <div class="content-grid">
+        <div class="main-col">
+          
+          <div class="section-title">Verified Specifications</div>
+          <table class="info-table">
+            <tr>
+              <td class="label">Product ID</td>
+              <td class="value">{{ id | default: "—" }}</td>
+            </tr>
+            <tr>
+              <td class="label">Material Composition</td>
+              <td class="value">{{ material | default: "—" }}</td>
+            </tr>
+            <tr>
+              <td class="label">Dimensions / Size</td>
+              <td class="value">{{ size | default: "—" }}</td>
+            </tr>
+            <tr>
+              <td class="label">Origin</td>
+              <td class="value">{{ madeIn | default: "—" }}</td>
+            </tr>
+            <tr>
+              <td class="label">Registration Date</td>
+              <td class="value">{{ createdAt | date: "%Y-%m-%d" | default: "—" }}</td>
+            </tr>
+          </table>
 
-      <div class="columns">
-        <div class="card">
-          <h2>Status &amp; Certification</h2>
-          <div class="list">
-            <div class="item">
-              <div class="k">Status</div>
-              <div class="v">{{ status | default: "Pending" }}</div>
-            </div>
-            <div class="item">
-              <div class="k">Admin Progress</div>
-              <div class="v">{{ adminProgress | default: "—" }}</div>
-            </div>
-            <div class="item">
-              <div class="k">Payment</div>
-              <div class="v">{{ paymentStatus | default: "—" }}</div>
-            </div>
-            <div class="item">
-              <div class="k">Seal Number</div>
-              <div class="v">
-                {% if certificate and certificate.seal_number %}
-                  {{ certificate.seal_number }}
-                {% elsif seal_number %}
-                  {{ seal_number }}
-                {% else %}
-                  Pending allocation
-                {% endif %}
-              </div>
-            </div>
-            <div class="item">
-              <div class="k">Template Document ID</div>
-              <div class="v">
-                {% if certificate and certificate.pdfmonkeyDocumentId %}
-                  {{ certificate.pdfmonkeyDocumentId }}
-                {% elsif pdfmonkeyDocumentId %}
-                  {{ pdfmonkeyDocumentId }}
-                {% else %}
-                  —
-                {% endif %}
-              </div>
-            </div>
-            <div class="item">
-              <div class="k">Report URL</div>
-              <div class="v">
-                {% assign report_link = verify_url | default: certificate.qrUrl | default: certificate.pdfUrl | default: "" %}
-                {% if report_link != "" %}
-                  {{ report_link }}
-                {% else %}
-                  Not published yet
-                {% endif %}
-              </div>
-            </div>
+          <div class="narrative-box">
+            <h2>Technical Narrative</h2>
+            <p>
+              {{ specs | default: "No detailed technical specifications have been provided for this snapshot. Please refer to the full audit report for complete documentation." | newline_to_br }}
+            </p>
           </div>
-          <div class="badge-row">
-            <div class="badge">Trusted QA</div>
-            <div class="badge">Automated Audit Trail</div>
-            <div class="badge">Secure QR Verification</div>
+          
+          <div class="trust-badges">
+            <div class="trust-badge">Verified Source</div>
+            <div class="trust-badge">Immutable Audit Trail</div>
+            <div class="trust-badge">QA Standard Checked</div>
           </div>
         </div>
 
-        <div class="card">
-          <h2>Responsible Owner</h2>
-          <p>{{ user.name | default: "—" }}</p>
-          <div class="list" style="grid-template-columns: 1fr;">
-            <div class="item">
-              <div class="k">Company</div>
-              <div class="v">{{ user.company | default: "—" }}</div>
-            </div>
-            <div class="item">
-              <div class="k">Email</div>
-              <div class="v">{{ user.email | default: "—" }}</div>
-            </div>
-            <div class="item">
-              <div class="k">Address</div>
-              <div class="v">{{ user.address | default: "—" | newline_to_br }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top: 18px;">
-        <h2>Product Narrative</h2>
-        <p>
-          {{ specs | default: "Technical specifications to be supplied." | newline_to_br }}
-        </p>
-        <div class="qr-block">
-          <div class="qr">
-            {% assign qr_src = qr_data | default: certificate.qrUrl | default: qrUrl | default: "" %}
-            {% if qr_src != "" %}
-              <img src="{{ qr_src }}" alt="QR code" />
-            {% else %}
-              <div style="font-size:11px; color: var(--muted); text-align:center;">QR pending</div>
-            {% endif %}
-          </div>
-          <div>
-            <div class="k" style="margin-bottom:6px;">Verify instantly</div>
-            <div class="v" style="font-size:13px; color:#f2f6ff;">
-              {% if qr_src != "" %}
-                Scan the QR code to open the live verification page.
+        <div class="sidebar-col">
+          <div class="status-card">
+            <div class="seal-number">
+              SEAL: 
+              {% if certificate and certificate.seal_number %}
+                {{ certificate.seal_number }}
+              {% elsif seal_number %}
+                {{ seal_number }}
               {% else %}
-                A verification QR will be attached once the report is finalized.
+                PENDING
               {% endif %}
             </div>
+            
+            <div class="status-badge">
+              {{ status | default: "PENDING" }}
+            </div>
+
+            <div class="qr-container">
+              {% assign qr_src = qr_data | default: certificate.qrUrl | default: qrUrl | default: "" %}
+              {% if qr_src != "" %}
+                <img src="{{ qr_src }}" alt="QR Verification Code" />
+              {% else %}
+                <span style="font-size:10px; color:var(--text-muted); text-align: center;">QR Code<br>Generated upon approval</span>
+              {% endif %}
+            </div>
+            
+            <div style="font-size: 11px; color: var(--text-muted); text-align: center; line-height: 1.4;">
+              Scan to view the live<br>verification report.
+            </div>
           </div>
+
+          <div class="owner-info">
+            <div class="section-title" style="margin-bottom: 12px;">Registered To</div>
+            <div class="owner-item">
+              <div class="owner-label">Entity / Name</div>
+              <div class="owner-value">{{ user.name | default: "—" }}</div>
+            </div>
+            <div class="owner-item">
+              <div class="owner-label">Company</div>
+              <div class="owner-value">{{ user.company | default: "—" }}</div>
+            </div>
+            <div class="owner-item">
+              <div class="owner-label">Address</div>
+              <div class="owner-value" style="font-weight:400;">{{ user.address | default: "—" | newline_to_br }}</div>
+            </div>
+          </div>
+
         </div>
       </div>
 
       <footer>
-        <span>Generated {{ date | default: createdAt | date: "%Y-%m-%d" }}</span>
+        <div>
+          <strong>Document ID:</strong> 
+          {% if certificate and certificate.pdfmonkeyDocumentId %}
+            {{ certificate.pdfmonkeyDocumentId }}
+          {% elsif pdfmonkeyDocumentId %}
+            {{ pdfmonkeyDocumentId }}
+          {% else %}
+            —
+          {% endif %}
+          <span style="margin: 0 8px; color: var(--line-strong);">|</span>
+          Generated on {{ date | default: createdAt | date: "%Y-%m-%d" }}
+        </div>
+        
         {% assign link = verify_url | default: certificate.pdfUrl | default: certificate.qrUrl | default: "" %}
         {% if link != "" %}
-          <a class="pill-link" href="{{ link }}">Open online report</a>
+          <a class="verify-btn" href="{{ link }}" target="_blank">Open Digital Report</a>
         {% else %}
-          <span style="color: var(--muted);">Report link pending</span>
+          <span style="font-size: 11px; font-style: italic;">Report link pending</span>
         {% endif %}
       </footer>
+
     </div>
   </div>
 </body>

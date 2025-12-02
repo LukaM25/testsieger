@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from '@/components/LocaleProvider';
+import { forwardRef } from 'react';
 
 const Schema = z.object({
   name: z.string().min(2),
@@ -77,12 +78,16 @@ export default function PrecheckForm() {
     }
   };
 
-  const Input = (props: any) => (
-    <input
-      {...props}
-      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-800"
-    />
+  const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
+    (props, ref) => (
+      <input
+        ref={ref}
+        {...props}
+        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-800"
+      />
+    )
   );
+  Input.displayName = 'Input';
 
   const Label = ({ children }: { children: React.ReactNode }) => (
     <label className="text-sm font-medium text-gray-800">{children}</label>
@@ -95,56 +100,56 @@ export default function PrecheckForm() {
     <div className="mx-auto max-w-3xl px-4 py-10">
       <h1 className="mb-6 text-3xl font-semibold">{tr('Pre-Check (0 €)', 'Pre-check (0 €)')}</h1>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" autoComplete="on">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
             <Label>{tr('Name', 'Name')}</Label>
-            <Input {...register('name')} placeholder={tr('Max Mustermann', 'John Doe')} />
+            <Input {...register('name')} placeholder={tr('Max Mustermann', 'John Doe')} autoComplete="given-name" />
             <Error msg={errors.name?.message} />
           </div>
           <div>
             <Label>{tr('Firma (optional)', 'Company (optional)')}</Label>
-            <Input {...register('company')} placeholder={tr('Ihre Firma GmbH', 'Your company LLC')} />
+            <Input {...register('company')} placeholder={tr('Ihre Firma GmbH', 'Your company LLC')} autoComplete="organization" />
           </div>
           <div>
             <Label>{tr('E-Mail', 'Email')}</Label>
-            <Input {...register('email')} type="email" placeholder="name@domain.tld" />
+            <Input {...register('email')} type="email" placeholder="name@domain.tld" autoComplete="email" />
             <Error msg={errors.email?.message} />
           </div>
           <div>
             <Label>{tr('Passwort', 'Password')}</Label>
-            <Input {...register('password')} type="password" placeholder="••••••••" />
+            <Input {...register('password')} type="password" placeholder="••••••••" autoComplete="new-password" />
             <Error msg={errors.password?.message} />
           </div>
           <div className="md:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <Label>{tr('Straße', 'Street')}</Label>
-              <Input {...register('addressStreet')} placeholder={tr('Musterstraße', 'Example Street')} />
+              <Input {...register('addressStreet')} placeholder={tr('Musterstraße', 'Example Street')} autoComplete="address-line1" />
               <Error msg={errors.addressStreet?.message} />
             </div>
             <div>
-              <Label>{tr('Hausnummer', 'House number')}</Label>
-              <Input {...register('addressNumber')} placeholder="12a" />
+            <Label>{tr('Hausnummer', 'House number')}</Label>
+            <Input {...register('addressNumber')} placeholder="12a" autoComplete="address-line1" />
               <Error msg={errors.addressNumber?.message} />
             </div>
             <div>
               <Label>{tr('PLZ', 'ZIP')}</Label>
-              <Input {...register('addressPostal')} placeholder="12345" />
+              <Input {...register('addressPostal')} placeholder="12345" autoComplete="postal-code" />
               <Error msg={errors.addressPostal?.message} />
             </div>
             <div>
               <Label>{tr('Ort', 'City')}</Label>
-              <Input {...register('addressCity')} placeholder={tr('Berlin', 'City')} />
+              <Input {...register('addressCity')} placeholder={tr('Berlin', 'City')} autoComplete="address-level2" />
               <Error msg={errors.addressCity?.message} />
             </div>
             <div>
               <Label>{tr('Land', 'Country')}</Label>
-              <Input {...register('addressCountry')} placeholder={tr('Deutschland', 'Country')} />
+              <Input {...register('addressCountry')} placeholder={tr('Deutschland', 'Country')} autoComplete="country-name" />
               <Error msg={errors.addressCountry?.message} />
             </div>
             <div>
-              <Label>{tr('Adresszusatz (optional)', 'Address line 2 (optional)')}</Label>
-              <Input {...register('addressLine2')} placeholder={tr('c/o, Etage, etc.', 'c/o, floor, etc.')} />
+            <Label>{tr('Adresszusatz (optional)', 'Address line 2 (optional)')}</Label>
+            <Input {...register('addressLine2')} placeholder={tr('c/o, Etage, etc.', 'c/o, floor, etc.')} autoComplete="address-line2" />
               <Error msg={errors.addressLine2?.message} />
             </div>
           </div>

@@ -3,145 +3,368 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Product Certificate</title>
+  <title>Product Certificate | Prüfsiegel Zentrum</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600&display=swap');
-    @page { size: A4; margin: 0; } /* CRITICAL FOR PDF GENERATION */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+    @page { size: A4; margin: 0; }
+
     :root {
-      --bg: #0c1224;
-      --card: rgba(255, 255, 255, 0.05);
-      --panel: rgba(255, 255, 255, 0.08);
-      --text: #e7ecf5;
-      --muted: #9db1d0;
-      --line: rgba(255, 255, 255, 0.12);
-      --accent: #74f0ed;
-      --accent-2: #8b6cff;
-      --pill: #15213a;
+      --bg-body: #f1f4f9;
+      --bg-paper: #ffffff;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --text-label: #475569;
+      --brand-primary: #0f172a;
+      --brand-accent: #2563eb;
+      --gold-accent: #d97706;
+      --line: #e2e8f0;
+      --line-strong: #cbd5e1;
+      --status-pending-bg: #fff7ed;
+      --status-pending-text: #c2410c;
+      --status-verified-bg: #eff6ff;
+      --status-verified-text: #1e40af;
     }
+
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
-      font-family: 'Manrope', system-ui, -apple-system, sans-serif;
-      color: var(--text);
-      background: radial-gradient(140% 140% at 10% 20%, rgba(116, 240, 237, 0.15), transparent 40%),
-                  radial-gradient(120% 120% at 80% 0%, rgba(139, 108, 255, 0.18), transparent 35%),
-                  var(--bg);
-      padding: 40px 32px;
-      -webkit-print-color-adjust: exact; 
-      print-color-adjust: exact; 
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: var(--text-main);
+      background: var(--bg-body);
+      padding: 40px 20px;
+      line-height: 1.5;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
+
     .page {
-      max-width: 960px;
+      max-width: 900px;
       margin: 0 auto;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
-      border: 1px solid var(--line);
-      border-radius: 28px;
-      overflow: hidden;
+      background: var(--bg-paper);
+      border: 1px solid var(--line-strong);
+      border-radius: 4px;
       position: relative;
-      height: 1050px; /* Force A4 Height */
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+      min-height: 1180px;
     }
-    .frame { padding: 40px 44px 48px; }
-    header { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
-    .brand { display: flex; align-items: center; gap: 12px; }
-    .brand .orb { width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, #74f0ed, #8b6cff); }
-    .brand .name { font-size: 14px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
-    .headline h1 { margin: 0; font-size: 32px; font-weight: 700; color: #f7fbff; }
-    .chips { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-    .chip { padding: 8px 12px; border-radius: 99px; background: var(--pill); color: var(--muted); border: 1px solid var(--line); font-size: 12px; }
-    .chip strong { color: #f0f4ff; font-weight: 700; }
-    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 18px; margin-bottom: 18px; }
-    .panel h3 { margin: 0 0 10px; font-size: 14px; text-transform: uppercase; color: var(--muted); }
-    .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .stat { padding: 14px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); }
-    .stat .label { font-size: 11px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; }
-    .stat .value { font-weight: 700; font-size: 14px; color: #f3f7ff; }
-    .columns { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; margin-top: 4px; }
-    .card { padding: 18px; border-radius: 18px; background: var(--card); border: 1px solid var(--line); }
-    .card h2 { margin: 0 0 10px; font-size: 16px; font-weight: 700; color: #f7fbff; }
-    .list { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-    .item { padding: 12px; border-radius: 14px; background: rgba(255,255,255,0.04); border: 1px dashed var(--line); }
-    .item .k { font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
-    .item .v { font-weight: 700; color: #f1f5ff; font-size: 13px; word-break: break-word; }
-    .qr-block { display: flex; gap: 14px; align-items: center; margin-top: 10px; }
-    .qr { width: 110px; height: 110px; border-radius: 12px; padding: 8px; background: #fff; display: grid; place-items: center; }
-    .qr img { width: 100%; height: 100%; object-fit: contain; }
-    footer { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; }
+
+    .top-bar {
+      height: 8px;
+      width: 100%;
+      background: linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-accent) 100%);
+    }
+
+    .frame { padding: 48px 56px; }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid var(--line);
+      padding-bottom: 32px;
+      margin-bottom: 32px;
+      gap: 24px;
+    }
+
+    .brand-block { display: flex; flex-direction: column; gap: 4px; }
+    .brand-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .document-title h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 36px;
+      margin: 8px 0 0 0;
+      color: var(--brand-primary);
+      line-height: 1.1;
+    }
+
+    .meta-tags { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+    .tag {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 4px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      color: var(--text-label);
+    }
+
+    .logo-placeholder {
+      width: 64px;
+      height: 64px;
+      background: var(--brand-primary);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 40px; }
+
+    .section-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+    .info-table { width: 100%; border-collapse: collapse; margin-bottom: 32px; }
+    .info-table td {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+    }
+    .info-table .label { color: var(--text-muted); width: 40%; font-weight: 500; }
+    .info-table .value { color: var(--brand-primary); font-weight: 600; text-align: right; }
+
+    .narrative-box {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      padding: 24px;
+      border-radius: 6px;
+      font-size: 14px;
+      color: var(--text-label);
+      line-height: 1.6;
+    }
+    .narrative-box h2 { margin-top: 0; font-size: 16px; color: var(--brand-primary); }
+
+    .status-card {
+      background: #ffffff;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      padding: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+
+    .seal-number {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px dashed var(--line);
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      border-radius: 4px;
+      background: var(--status-verified-bg);
+      color: var(--status-verified-text);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 14px;
+      letter-spacing: 0.05em;
+      margin-bottom: 24px;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .qr-container {
+      background: white;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      width: 100%;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    .qr-container img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+
+    .owner-info { margin-top: 32px; }
+    .owner-item { margin-bottom: 12px; }
+    .owner-label { font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px; }
+    .owner-value { font-size: 13px; font-weight: 600; color: var(--brand-primary); }
+
+    .trust-badges { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+    .trust-badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--brand-accent);
+      background: transparent;
+      padding: 4px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .trust-badge::before {
+      content: '✓';
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      background: var(--brand-accent);
+      color: white;
+      border-radius: 50%;
+      font-size: 9px;
+    }
+
+    footer {
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .verify-btn {
+      text-decoration: none;
+      background: var(--brand-primary);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 4px;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .verify-btn:hover { background: #334155; }
   </style>
 </head>
 <body>
   <div class="page">
+    <div class="top-bar"></div>
     <div class="frame">
       <header>
-        <div class="brand">
-          <div class="orb"></div>
-          <div class="name">Product Certificate</div>
-        </div>
-        <div class="headline">
-          <div style="font-size:12px; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Verified Product Snapshot</div>
-          <h1>{{default name "Product Name"}}</h1>
-          <div class="chips">
-            <span class="chip"><strong>Brand</strong> {{default brand "—"}}</span>
-            <span class="chip"><strong>Category</strong> {{default category "—"}}</span>
-            <span class="chip"><strong>SKU</strong> {{default code "—"}}</span>
+        <div class="brand-block">
+          <div class="brand-name">Prüfsiegel Zentrum</div>
+          <div class="document-title">
+            <h1>{{default name "Product Certification"}}</h1>
+          </div>
+          <div class="meta-tags">
+            <span class="tag">Brand: {{default brand "—"}}</span>
+            <span class="tag">SKU: {{default code "—"}}</span>
+            <span class="tag">Cat: {{default category "—"}}</span>
           </div>
         </div>
+        <div class="logo-placeholder">PZ</div>
       </header>
 
-      <div class="panel">
-        <h3>Product Identity</h3>
-        <div class="stat-grid">
-          <div class="stat"><div class="label">ID</div><div class="value">{{default id "—"}}</div></div>
-          <div class="stat"><div class="label">Size</div><div class="value">{{default size "—"}}</div></div>
-          <div class="stat"><div class="label">Material</div><div class="value">{{default material "—"}}</div></div>
-          <div class="stat"><div class="label">Made In</div><div class="value">{{default madeIn "—"}}</div></div>
-          <div class="stat"><div class="label">Specs</div><div class="value">{{default specs "—"}}</div></div>
-          <div class="stat"><div class="label">Date</div><div class="value">{{date createdAt}}</div></div>
-        </div>
-      </div>
+      <div class="content-grid">
+        <div class="main-col">
+          <div class="section-title">Verified Specifications</div>
+          <table class="info-table">
+            <tr><td class="label">Product ID</td><td class="value">{{default id "—"}}</td></tr>
+            <tr><td class="label">Material Composition</td><td class="value">{{default material "—"}}</td></tr>
+            <tr><td class="label">Dimensions / Size</td><td class="value">{{default size "—"}}</td></tr>
+            <tr><td class="label">Origin</td><td class="value">{{default madeIn "—"}}</td></tr>
+            <tr><td class="label">Registration Date</td><td class="value">{{date createdAt}}</td></tr>
+          </table>
 
-      <div class="columns">
-        <div class="card">
-          <h2>Status &amp; Certification</h2>
-          <div class="list">
-            <div class="item"><div class="k">Status</div><div class="v">{{default status "Pending"}}</div></div>
-            <div class="item"><div class="k">Payment</div><div class="v">{{default paymentStatus "—"}}</div></div>
-            <div class="item"><div class="k">Seal #</div><div class="v">{{default seal_number "Pending allocation"}}</div></div>
-            <div class="item"><div class="k">Ref ID</div><div class="v">{{default externalReferenceId "—"}}</div></div>
+          <div class="narrative-box">
+            <h2>Technical Narrative</h2>
+            <p>
+              {{default specs "No detailed technical specifications have been provided for this snapshot. Please refer to the full audit report for complete documentation."}}
+            </p>
+          </div>
+
+          <div class="trust-badges">
+            <div class="trust-badge">Verified Source</div>
+            <div class="trust-badge">Immutable Audit Trail</div>
+            <div class="trust-badge">QA Standard Checked</div>
           </div>
         </div>
 
-        <div class="card">
-          <h2>Responsible Owner</h2>
-          <div class="list" style="grid-template-columns: 1fr;">
-            <div class="item"><div class="k">Company</div><div class="v">{{default user.company "—"}}</div></div>
-            <div class="item"><div class="k">Email</div><div class="v">{{default user.email "—"}}</div></div>
-          </div>
-        </div>
-      </div>
+        <div class="sidebar-col">
+          <div class="status-card">
+            <div class="seal-number">
+              SEAL:
+              {{#if certificate.seal_number}}
+                {{certificate.seal_number}}
+              {{else if seal_number}}
+                {{seal_number}}
+              {{else}}
+                PENDING
+              {{/if}}
+            </div>
 
-      <div class="card" style="margin-top: 18px;">
-        <h2>Digital Verification</h2>
-        <div class="qr-block">
-          <div class="qr">
-            {{#if qrUrl}}
-              <img src="{{qrUrl}}" alt="QR Code" />
-            {{else}}
-              <span style="color:#000; font-size:10px;">No QR</span>
-            {{/if}}
+            <div class="status-badge">
+              {{default status "PENDING"}}
+            </div>
+
+            <div class="qr-container">
+              {{#if certificate.qrUrl}}
+                <img src="{{certificate.qrUrl}}" alt="QR Verification Code" />
+              {{else if qrUrl}}
+                <img src="{{qrUrl}}" alt="QR Verification Code" />
+              {{else}}
+                <span style="font-size:10px; color:var(--text-muted); text-align: center;">QR Code<br>Generated upon approval</span>
+              {{/if}}
+            </div>
+
+            <div style="font-size: 11px; color: var(--text-muted); text-align: center; line-height: 1.4;">
+              Scan to view the live<br>verification report.
+            </div>
           </div>
-          <div>
-            <div class="k" style="margin-bottom:6px;">Scan to Verify</div>
-            <div class="v" style="font-size:13px; color:#f2f6ff;">
-              This certificate is digitally signed. Scan to verify authenticity.
+
+          <div class="owner-info">
+            <div class="section-title" style="margin-bottom: 12px;">Registered To</div>
+            <div class="owner-item">
+              <div class="owner-label">Entity / Name</div>
+              <div class="owner-value">{{default user.name "—"}}</div>
+            </div>
+            <div class="owner-item">
+              <div class="owner-label">Company</div>
+              <div class="owner-value">{{default user.company "—"}}</div>
+            </div>
+            <div class="owner-item">
+              <div class="owner-label">Address</div>
+              <div class="owner-value" style="font-weight:400;">{{default user.address "—"}}</div>
             </div>
           </div>
         </div>
       </div>
 
       <footer>
-        <span>Generated via Internal Engine v2</span>
-        <span>{{date createdAt}}</span>
+        <div>
+          <strong>Document ID:</strong>
+          {{#if certificate.pdfmonkeyDocumentId}}
+            {{certificate.pdfmonkeyDocumentId}}
+          {{else if pdfmonkeyDocumentId}}
+            {{pdfmonkeyDocumentId}}
+          {{else}}
+            —
+          {{/if}}
+          <span style="margin: 0 8px; color: var(--line-strong);">|</span>
+          Generated on {{date createdAt}}
+        </div>
+
+        {{#if certificate.pdfUrl}}
+          <a class="verify-btn" href="{{certificate.pdfUrl}}" target="_blank">Open Digital Report</a>
+        {{else if certificate.qrUrl}}
+          <a class="verify-btn" href="{{certificate.qrUrl}}" target="_blank">Open Digital Report</a>
+        {{else if verify_url}}
+          <a class="verify-btn" href="{{verify_url}}" target="_blank">Open Digital Report</a>
+        {{else}}
+          <span style="font-size: 11px; font-style: italic;">Report link pending</span>
+        {{/if}}
       </footer>
+
     </div>
   </div>
 </body>

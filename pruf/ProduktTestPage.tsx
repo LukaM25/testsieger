@@ -216,12 +216,13 @@ export default function ProduktTestPage() {
   };
 
   useEffect(() => {
-    if (isCoarsePointer || prefersReducedMotion) return; // avoid background updates for touch/reduced motion
+    // Pause carousel rotations when touch, reduced motion, or the precheck form is open to avoid layout churn that can blur inputs.
+    if (isCoarsePointer || prefersReducedMotion || showPrecheck) return;
     const id = setInterval(() => {
       setCarouselIndex((prev) => (prev + 1) % carouselImages.length);
     }, 3200);
     return () => clearInterval(id);
-  }, [isCoarsePointer, prefersReducedMotion]);
+  }, [isCoarsePointer, prefersReducedMotion, showPrecheck]);
 
   useEffect(() => {
     const hash = typeof window !== 'undefined' ? window.location.hash : '';
