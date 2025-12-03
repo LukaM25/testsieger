@@ -17,18 +17,7 @@ model User {
   company      String?
   orders       Order[]
   products     Product[]
-  passwordResetTokens PasswordResetToken[]
 }
-
-model PasswordResetToken {
-  id        String   @id @default(cuid())
-  userId    String
-  tokenHash String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-}
-
 
 model Product {
   id          String        @id @default(cuid())
@@ -46,7 +35,6 @@ model Product {
   paymentStatus PaymentStatus @default(UNPAID)
   createdAt   DateTime      @default(now())
   certificate Certificate?
-  license     License?
   orders      Order[]
   user        User          @relation(fields: [userId], references: [id])
 }
@@ -63,7 +51,6 @@ model Order {
   paidAt          DateTime?
   product         Product   @relation(fields: [productId], references: [id])
   user            User      @relation(fields: [userId], references: [id])
-  license         License?
 }
 
 model Certificate {
@@ -81,29 +68,6 @@ model Certificate {
   snapshotData        Json?    // Added via SQL
   lastSentAt          DateTime? // Added via SQL
   status              String   @default("PENDING") // Added via SQL
-
-  license             License?
-}
-
-model License {
-  id            String         @id @default(cuid())
-  productId     String         @unique
-  certificateId String?        @unique
-  orderId       String?        @unique
-  plan          Plan
-  status        LicenseStatus  @default(PENDING)
-  licenseCode   String         @unique
-  stripePriceId String?
-  stripeSubId   String?
-  paidAt        DateTime?
-  startsAt      DateTime
-  expiresAt     DateTime?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-
-  product       Product        @relation(fields: [productId], references: [id])
-  certificate   Certificate?   @relation(fields: [certificateId], references: [id])
-  order         Order?         @relation(fields: [orderId], references: [id])
 }
 
 enum ProductStatus {
@@ -132,11 +96,4 @@ enum Plan {
   BASIC
   PREMIUM
   LIFETIME
-}
-
-enum LicenseStatus {
-  PENDING
-  ACTIVE
-  EXPIRED
-  CANCELED
 }
