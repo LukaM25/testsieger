@@ -1,7 +1,17 @@
 import { Pool } from 'pg';
 import nodemailer from 'nodemailer';
 import QRCode from 'qrcode'; // <--- NEW IMPORT
+import { readFile } from 'fs/promises';
+import path from 'path';
 import { generateCertificatePdf } from './pdfGenerator'; 
+
+const SHEET_LINK = process.env.RATING_SHEET_LINK || "https://docs.google.com/spreadsheets/d/1uwauj30aZ4KpwSHBL3Yi6yB85H_OQypI5ogKuR82KFk/edit?usp=sharing";
+
+function toCsvLink(link) {
+  if (link.includes("/export?format=csv")) return link;
+  const base = link.split("/edit", 1)[0];
+  return `${base}/export?format=csv`;
+}
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -45,7 +55,8 @@ export async function processAndSendCertificate(certificateId, userEmail, messag
           u.name AS user_name,
           u.company,
           u.email,
-          u.address
+          u.address,
+          c."sealUrl" as "sealUrl"
         FROM "Certificate" c
         JOIN "Product" p ON c."productId" = p.id
         JOIN "User" u ON p."userId" = u.id
@@ -63,6 +74,17 @@ export async function processAndSendCertificate(certificateId, userEmail, messag
     // 2. Generate QR Code Image (Base64)
 const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/lizenzen?q=${record.product_id}`;
     const qrImageData = await QRCode.toDataURL(verificationLink);
+    const qrBuffer = Buffer.from(qrImageData.split(',')[1], 'base64');
+    let sealBuffer = qrBuffer; // fallback seal attachment
+    const sealUrl = record.sealUrl || `/uploads/seals/seal_${record.product_id}.png`;
+    if (sealUrl) {
+      try {
+        const sealPath = path.join(process.cwd(), 'public', sealUrl.replace(/^\//, ''));
+        sealBuffer = await readFile(sealPath);
+      } catch (err) {
+        console.warn('SEAL_READ_FAIL', err);
+      }
+    }
 
     // 3. Prepare Context
     const dataContext = {
@@ -93,6 +115,18 @@ const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/lizenzen?q=${record
     console.log('Generating PDF Buffer...');
     const pdfBuffer = await generateCertificatePdf(dataContext);
 
+    // 4b. Fetch CSV (best-effort)
+    let csvBuffer = null;
+    try {
+      const res = await fetch(toCsvLink(SHEET_LINK));
+      if (res.ok) {
+        const csv = await res.text();
+        csvBuffer = Buffer.from(csv, 'utf-8');
+      }
+    } catch (err) {
+      console.warn('RATING_CSV_FETCH_FAIL', err);
+    }
+
     // 5. Send Email
     console.log(`Sending email to ${userEmail}...`);
     const note = formatNote(message);
@@ -104,7 +138,7 @@ const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/lizenzen?q=${record
       html: `
         <p>Dear ${record.user_name},</p>
         <p>Your product <strong>${record.name}</strong> has been successfully verified.</p>
-        <p>Please find your official certificate attached.</p>
+        <p>Please find your official certificate and supporting files attached.</p>
         ${note}
       `,
       attachments: [
@@ -113,6 +147,20 @@ const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/lizenzen?q=${record
           content: pdfBuffer,
           contentType: 'application/pdf',
         },
+        {
+          filename: `Seal_${record.brand}.png`,
+          content: sealBuffer,
+          contentType: 'image/png',
+        },
+        ...(csvBuffer
+          ? [
+              {
+                filename: `Rating_${record.brand}.csv`,
+                content: csvBuffer,
+                contentType: 'text/csv',
+              },
+            ]
+          : []),
       ],
     });
 

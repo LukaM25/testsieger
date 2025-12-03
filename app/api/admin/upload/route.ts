@@ -5,6 +5,7 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import QRCode from 'qrcode';
 import { sendCompletionEmail } from '@/lib/email';
+import { generateSeal as generateSealImage } from '@/lib/seal';
 
 export async function POST(req: Request) {
   try {
@@ -65,6 +66,31 @@ export async function POST(req: Request) {
       },
     });
 
+    // Generate seal image and store path
+    let sealUrl: string | null = null;
+    let sealBuffer: Buffer | undefined;
+    try {
+      sealUrl = await generateSealImage({
+        product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
+        certificateId: cert.id,
+        ratingScore: cert.ratingScore ?? 'PASS',
+        ratingLabel: cert.ratingLabel ?? 'PASS',
+        appUrl: process.env.APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
+      });
+      const sealAbs = path.join(process.cwd(), 'public', sealUrl.replace(/^\//, ''));
+      sealBuffer = await fs.readFile(sealAbs);
+    } catch (err) {
+      console.warn('SEAL_GENERATION_FAILED', err);
+    }
+    if (!sealBuffer) {
+      throw new Error('SEAL_MISSING');
+    }
+
+    await prisma.certificate.update({
+      where: { id: cert.id },
+      data: { sealUrl },
+    });
+
     // Mark product as COMPLETED
     await prisma.product.update({
       where: { id: product.id },
@@ -72,6 +98,7 @@ export async function POST(req: Request) {
     });
 
     // Email customer with links
+
     await sendCompletionEmail({
       to: product.user.email,
       name: product.user.name,
@@ -80,6 +107,8 @@ export async function POST(req: Request) {
       pdfUrl: pdfRel,
       qrUrl: qrRel,
       message: typeof message === 'string' ? message.slice(0, 1000) : undefined,
+      sealNumber: seal,
+      sealBuffer,
     }).catch(e => console.error('Email error', e));
 
     return NextResponse.json({ ok: true, verifyUrl, certId: cert.id });

@@ -84,9 +84,9 @@ export default function AusbildungCheckPage() {
             </ul>
 
             <div className="relative">
-              <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-gray-100 shadow-md" data-animate="card" style={stagger(0)}>
+              <div className="relative aspect-video overflow-hidden rounded-xl bg-gray-100 shadow-md" data-animate="card" style={stagger(0)}>
                 <img
-                  src="/ausbildung_assets/roadmap_ausbildung.PNG"
+                  src="/ausbildung_assets/roadmap_ausbildung.jpeg"
                   alt="Ausbildungs-Check Roadmap"
                   className="h-full w-full object-contain"
                 />
@@ -115,21 +115,21 @@ export default function AusbildungCheckPage() {
                 key={item.title}
                 data-animate="card"
                 style={stagger(i)}
-                className="flex w-full max-w-xl items-center justify-between gap-6 sm:gap-10 mx-auto px-5 py-4 text-left"
+                className="flex w-full max-w-xl flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 mx-auto px-5 py-4 text-left rounded-xl bg-white shadow-sm shadow-brand-dark/5"
               >
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 sm:gap-5">
                   <img
                     src={item.icon}
                     alt={item.title}
-                    style={{ width: 120, height: 120 }}
-                    className="object-contain"
+                    style={{ width: 110, height: 110 }}
+                    className="object-contain shrink-0"
                   />
-                  <span className="text-[70px] font-semibold text-brand-text leading-tight">{item.title}</span>
+                  <span className="text-2xl sm:text-3xl font-semibold text-brand-text leading-tight">{item.title}</span>
                 </div>
                 <img
                   src="/checkmark.png"
                   alt="Check"
-                  style={{ width: 44, height: 44 }}
+                  style={{ width: 32, height: 32 }}
                   className="object-contain opacity-100"
                 />
               </div>

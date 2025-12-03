@@ -41,6 +41,7 @@ export async function GET() {
       include: {
         user: true,
         certificate: true,
+        license: true,
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -75,6 +76,19 @@ export async function GET() {
             ratingScore: product.certificate.ratingScore,
             ratingLabel: product.certificate.ratingLabel,
             sealUrl: product.certificate.sealUrl,
+          }
+        : null,
+      license: product.license
+        ? {
+            id: product.license.id,
+            plan: product.license.plan,
+            status: product.license.status,
+            licenseCode: product.license.licenseCode,
+            startsAt: product.license.startsAt.toISOString(),
+            expiresAt: product.license.expiresAt ? product.license.expiresAt.toISOString() : null,
+            paidAt: product.license.paidAt ? product.license.paidAt.toISOString() : null,
+            stripeSubId: product.license.stripeSubId,
+            stripePriceId: product.license.stripePriceId,
           }
         : null,
     }));

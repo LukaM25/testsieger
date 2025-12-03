@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { normalizeLocale } from '@/lib/i18n';
 import LizenzenClient from './LizenzenClient';
+import { ensureSignedS3Url } from '@/lib/s3';
 
 export const metadata = {
   title: 'Lizenzverwaltung & Testergebnisse – Prüfsiegel Zentrum UG',
@@ -125,18 +126,17 @@ const managementHighlights = [
 ];
 
 type Props = {
-  searchParams: {
-    productId?: string;
-  };
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export default async function LizenzenPage({ searchParams }: Props) {
   const locale = normalizeLocale((await cookies()).get('lang')?.value || 'de');
   const tr = (de: string, en: string) => (locale === 'en' ? en : de);
-  const productId = searchParams?.productId;
+  const rawParams = await searchParams;
+  const productId = Array.isArray(rawParams.productId) ? rawParams.productId[0] : rawParams.productId;
 
   // 1. Fetch Valid Data from DB
-  const products = await prisma.product.findMany({
+  const productsRaw = await prisma.product.findMany({
     where: {
       status: { in: ['COMPLETED', 'IN_REVIEW', 'PAID'] }, 
       certificate: { isNot: null }
@@ -148,12 +148,24 @@ export default async function LizenzenPage({ searchParams }: Props) {
     orderBy: { createdAt: 'desc' }
   });
 
-  const certificate = productId
+  const products = await Promise.all(
+    productsRaw.map(async (product) =>
+      product.certificate
+        ? { ...product, certificate: { ...product.certificate, pdfUrl: await ensureSignedS3Url(product.certificate.pdfUrl) } }
+        : product
+    )
+  );
+
+  const certificateRaw = productId
     ? await prisma.certificate.findFirst({
         where: { productId },
         include: { product: { include: { user: true } } },
       })
     : null;
+  const certificate = certificateRaw
+    ? { ...certificateRaw, pdfUrl: await ensureSignedS3Url(certificateRaw.pdfUrl) }
+    : null;
+  const hasPdf = Boolean(certificate?.pdfUrl);
 
   return (
     <div className="bg-white text-brand-text">
@@ -342,17 +354,27 @@ export default async function LizenzenPage({ searchParams }: Props) {
                 </div>
                 <div className="space-y-2 rounded-2xl border border-gray-100 bg-[#F0F6FA] p-5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-brand-primary">{tr('Aktionen', 'Actions')}</p>
-                  <Link
-                    href={certificate.pdfUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-dark"
-                  >
-                    {tr('Prüfbericht herunterladen', 'Download report')}
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </Link>
+                  {hasPdf ? (
+                    <Link
+                      href={`/api/certificates/${certificate.productId}/download`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-dark"
+                    >
+                      {tr('Prüfbericht herunterladen', 'Download report')}
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled
+                      className="inline-flex items-center gap-2 rounded-lg bg-gray-200 px-4 py-2 text-xs font-semibold text-gray-500 shadow-sm cursor-not-allowed"
+                    >
+                      {tr('Prüfbericht noch nicht verfügbar', 'Report not available yet')}
+                    </button>
+                  )}
                   <Link
                     href={`/verify/${certificate.seal_number}`}
                     className="inline-flex items-center gap-2 rounded-lg border border-brand-primary/30 px-4 py-2 text-xs font-semibold text-brand-dark transition hover:-translate-y-0.5 hover:border-brand-primary hover:text-brand-primary"

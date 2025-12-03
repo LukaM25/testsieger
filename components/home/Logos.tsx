@@ -2,9 +2,11 @@
 
 import Image from 'next/image';
 
-const logos: { src: string; alt: string }[] = [
-  { src: '/images/logos/Edengardenslogo.png', alt: 'Eden Gardens logo' },
-  { src: '/images/logos/mypawslogo.png', alt: 'My Paws logo' },
+type Logo = { src: string; alt: string; size?: 'large' | 'larger' };
+
+const logos: Logo[] = [
+  { src: '/images/logos/Edengardenslogo.png', alt: 'Eden Gardens logo', size: 'large' },
+  { src: '/images/logos/mypawslogo.png', alt: 'My Paws logo', size: 'larger' },
   { src: '/images/logos/row-1-column-1.png', alt: 'Partner logo 1' },
   { src: '/images/logos/row-1-column-2.png', alt: 'Partner logo 2' },
   { src: '/images/logos/row-1-column-3.png', alt: 'Partner logo 3' },
@@ -34,7 +36,13 @@ export default function Logos() {
                   alt={l.alt}
                   width={220}
                   height={80}
-                  className="h-14 w-auto flex-shrink-0"
+                  className={`h-16 w-auto flex-shrink-0 ${
+                    l.size === 'larger'
+                      ? 'scale-[1.265]'
+                      : l.size === 'large'
+                        ? 'scale-[1.15]'
+                        : 'scale-90'
+                  }`}
                 />
               ))}
             </div>

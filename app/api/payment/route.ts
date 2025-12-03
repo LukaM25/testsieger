@@ -23,13 +23,38 @@ export async function POST(req: Request) {
   const priceId = PLAN_PRICE[plan];
   if (!priceId) return NextResponse.json({ error: 'Plan ungültig' }, { status: 400 });
 
-  const stripeSession = await stripe.checkout.sessions.create({
-    mode: plan === 'LIFETIME' ? 'payment' : 'subscription',
-    line_items: [{ price: priceId, quantity: 1 }],
-    client_reference_id: `${session.userId}:${product.id}:${plan}`,
-    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
-    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/pakete`,
-  });
+  // Look up price to decide mode; Stripe will error if subscription mode is used with a one-time price.
+  let checkoutMode: 'payment' | 'subscription' = plan === 'LIFETIME' ? 'payment' : 'subscription';
+  let priceAmountCents: number | null = null;
+  try {
+    const price = await stripe.prices.retrieve(priceId);
+    if (!price.recurring) {
+      checkoutMode = 'payment';
+    }
+    if (typeof price.unit_amount === 'number') {
+      priceAmountCents = price.unit_amount;
+    }
+  } catch (err) {
+    console.error('STRIPE_PRICE_LOOKUP_ERROR', err);
+    return NextResponse.json({ error: 'Preis konnte nicht geladen werden' }, { status: 500 });
+  }
+
+  const stripeSession = await stripe.checkout.sessions.create(
+    {
+      mode: checkoutMode,
+      line_items: [{ price: priceId, quantity: 1 }],
+      client_reference_id: `${session.userId}:${product.id}:${plan}`,
+      metadata: {
+        productId: product.id,
+        userId: session.userId,
+        plan,
+        priceCents: priceAmountCents ?? null,
+      },
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/pakete`,
+    },
+    { maxNetworkRetries: 2 }
+  );
 
   await prisma.order.create({
     data: {

@@ -5,7 +5,6 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { setSession } from '@/lib/cookies';
 import { sendPrecheckConfirmation } from '@/lib/email';
-import { generateInvoicePdf } from '@/lib/invoice';
 import { getSession } from '@/lib/cookies';
 
 const PrecheckSchema = z.object({
@@ -98,22 +97,11 @@ export async function POST(req: Request) {
     });
 
     // 3) Prepare invoice PDF
-    const invoicePdf = await generateInvoicePdf({
-      customerName: data.name,
-      customerEmail: data.email,
-      address: data.address,
-      productName: product.name,
-      amountCents: 25400,
-      invoiceNumber: `PC-${product.id.slice(0, 8)}`,
-    });
-
     // 4) Send confirmation email (fire and forget)
     sendPrecheckConfirmation({
       to: data.email,
       name: data.name,
       productName: product.name,
-      invoicePdf,
-      shippingAddress: data.address,
     }).catch(() => { /* avoid blocking */ });
 
     // 5) Set session & respond with redirect to precheck overview

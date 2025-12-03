@@ -18,7 +18,7 @@ const shared: Record<Locale, Messages> = {
     'nav.plans': 'Lizenzpläne',
     'nav.productTest': 'Produkt Test',
     'nav.trainingCheck': 'Ausbildungs Check',
-    'nav.playgroundSafety': 'Spielplatz Sicherheit',
+    'nav.playgroundSafety': 'Spielplatz Prüfungen DIN EN',
     'nav.licensing': 'Lizenzverwaltung',
     'nav.company': 'Unternehmen',
     'nav.careers': 'Karriere',

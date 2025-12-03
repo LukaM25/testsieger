@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,13 +69,30 @@ export default function LoginPage() {
           className="mb-3 w-full rounded-md border px-3 py-2"
         />
 
-        <input
-          type="password"
-          placeholder="Passwort"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="mb-4 w-full rounded-md border px-3 py-2"
-        />
+        <div className="mb-4">
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Passwort"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-md border px-3 py-2 pr-12"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute inset-y-0 right-2 flex items-center px-2 text-gray-500"
+              aria-label={showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+        </div>
+        <div className="mb-4 text-right">
+          <a href="/reset-password" className="text-sm text-blue-700 hover:underline">
+            Passwort vergessen?
+          </a>
+        </div>
         <p className="text-xs text-gray-500 mb-3">
           Admin? Tragen Sie im E-Mail-Feld exakt „Admin“ (Groß-/Kleinschreibung wird ignoriert) und Ihr Admin-Passwort ein.
         </p>

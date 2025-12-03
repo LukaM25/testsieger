@@ -6,6 +6,10 @@ const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefi
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 const FROM_EMAIL = process.env.MAIL_FROM ?? 'pruefsiegel@lucidstar.de';
+const SHIPPING_ADDRESS_BLOCK = `Prüfsiegel Zentrum UG (haftungsbeschränkt)
+Musterstraße 12
+6020 Innsbruck
+Österreich`;
 
 const transporter = SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS
   ? nodemailer.createTransport({
@@ -39,32 +43,20 @@ export async function sendPrecheckConfirmation(opts: {
   to: string;
   name: string;
   productName: string;
-  invoicePdf?: Buffer;
-  shippingAddress?: string;
 }) {
-  const { to, name, productName, invoicePdf, shippingAddress } = opts;
+  const { to, name, productName } = opts;
   const appUrl = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://pruefsiegelzentrum.vercel.app';
   const checkoutAnchor = `${appUrl.replace(/\/$/, '')}/precheck#checkout-options`;
-  const licenseAnchor = `${appUrl.replace(/\/$/, '')}/precheck#license-plans`;
 
   const html = `
     <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.65;color:#0f172a">
       <p>Hallo ${escapeHtml(name || '')},</p>
-      <p>Ihr Pre-Check für <strong>${escapeHtml(productName)}</strong> ist erfolgreich eingegangen. Wir prüfen die Angaben und bereiten alles für den Versand vor.</p>
-      <p>Bitte begleichen Sie jetzt die Grundgebühr (254 € zzgl. 19 % MwSt. = 302,26 €), damit wir Ihnen sofort Rechnung und Versandanschrift bereitstellen können.</p>
+      <p>vielen Dank, dass Sie unseren Service gewählt haben. Ihr Pre-Check für <strong>${escapeHtml(productName)}</strong> ist eingegangen.</p>
+      <p>Bitte begleichen Sie jetzt die Grundgebühr (254 € zzgl. 19 % MwSt. = 302,26 €), damit wir Ihnen umgehend Rechnung und Versandanschrift bereitstellen können.</p>
       <p style="margin:16px 0 8px;">
         <a href="${checkoutAnchor}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">Grundgebühr bezahlen</a>
       </p>
-      <p style="font-size:13px;color:#475569;margin-top:12px;">Nach Zahlung wählen Sie Ihren Lizenzplan und erhalten Ihr Versandlabel direkt im Portal.</p>
-      <p>
-        <a href="${licenseAnchor}" style="display:inline-block;padding:10px 16px;border-radius:10px;background:#111827;color:#fff;text-decoration:none;font-weight:600;">Lizenzplan auswählen</a>
-      </p>
-      ${shippingAddress ? `<p style="font-size:13px;color:#475569;margin-top:12px;">Vorläufige Versandadresse: ${escapeHtml(shippingAddress)}</p>` : ''}
-      <ul style="margin:16px 0;padding-left:20px;font-size:13px;color:#475569;">
-        <li>Beleg im Anhang, falls verfügbar.</li>
-        <li>Versand erst nach Zahlungseingang.</li>
-        <li>Updates erhalten Sie per E-Mail.</li>
-      </ul>
+      <p style="margin-top:18px;font-size:13px;color:#475569;">Sobald der Zahlungseingang vorliegt, senden wir Ihnen die Rechnung und die Versandadresse.</p>
       <p style="margin-top:18px;">Danke für Ihr Vertrauen.<br/>Prüfsiegel Zentrum UG</p>
     </div>
   `;
@@ -74,15 +66,6 @@ export async function sendPrecheckConfirmation(opts: {
     to,
     subject: 'Pre-Check eingegangen – Grundgebühr jetzt bezahlen',
     html,
-    attachments: invoicePdf
-      ? [
-          {
-            filename: `Rechnung-${productName}.pdf`,
-            content: invoicePdf,
-            contentType: 'application/pdf',
-          },
-        ]
-      : undefined,
   });
 }
 
@@ -96,34 +79,80 @@ export async function sendCompletionEmail(opts: {
   pdfBuffer?: Buffer;
   documentId?: string;
   message?: string;
+  sealNumber?: string;
+  invoiceUrl?: string;
+  csvBuffer?: Buffer | null;
+  sealBuffer?: Buffer | null;
+  invoiceBuffer?: Buffer | null;
 }) {
-  const { to, name, productName, verifyUrl, pdfUrl, qrUrl, pdfBuffer, documentId, message } = opts;
-  const attachments = pdfBuffer
-    ? [
-        {
-          filename: `${productName}-Prüfbericht.pdf`,
-          content: pdfBuffer,
-          contentType: 'application/pdf',
-        },
-      ]
-    : undefined;
+  const {
+    to,
+    name,
+    productName,
+    verifyUrl,
+    pdfUrl,
+    qrUrl,
+    pdfBuffer,
+    documentId,
+    message,
+    sealNumber,
+    invoiceUrl,
+    csvBuffer,
+    sealBuffer,
+    invoiceBuffer,
+  } = opts;
+  const attachments: Attachment[] = [];
+  if (pdfBuffer) {
+    attachments.push({
+      filename: `${productName}-Prüfbericht.pdf`,
+      content: pdfBuffer,
+      contentType: 'application/pdf',
+    });
+  }
+  if (csvBuffer) {
+    attachments.push({
+      filename: `${productName}-Bewertung.csv`,
+      content: csvBuffer,
+      contentType: 'text/csv',
+    });
+  }
+  if (sealBuffer) {
+    attachments.push({
+      filename: `${productName}-Siegel.png`,
+      content: sealBuffer,
+      contentType: 'image/png',
+    });
+  }
+  if (invoiceBuffer) {
+    attachments.push({
+      filename: `${productName}-Rechnung.pdf`,
+      content: invoiceBuffer,
+      contentType: 'application/pdf',
+    });
+  }
 
   const html = `
     <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
       <p>Hallo ${escapeHtml(name)},</p>
-      <p>die Prüfung Ihres Produkts <strong>${escapeHtml(productName)}</strong> wurde erfolgreich abgeschlossen.</p>
+      <p>die Prüfung Ihres Produkts <strong>${escapeHtml(productName)}</strong> wurde erfolgreich abgeschlossen (Bestanden).</p>
+      <p style="margin:12px 0;">Im Folgenden finden Sie Ihr finales Paket mit Prüfbericht, Zertifikat/Verifikation, Zusammenfassung und Rechnungsangaben.</p>
       <p style="margin:12px 0;">
-        Die Ergebnisse finden Sie im angehängten Prüfbericht oder über die Verifikationsseite:<br />
+        <strong>Verifikation / Zertifikat:</strong><br />
         <a href="${verifyUrl}" style="color:#1d4ed8;font-weight:600;">${verifyUrl}</a>
       </p>
       <p style="margin:12px 0;">
-        Prüfbericht: <a href="${pdfUrl}" style="color:#1d4ed8;font-weight:600;">Download</a><br />
-        QR-Code: <a href="${qrUrl}" style="color:#1d4ed8;font-weight:600;">Download</a>
+        <strong>Prüfbericht:</strong> <a href="${pdfUrl}" style="color:#1d4ed8;font-weight:600;">Download</a><br />
+        <strong>QR-Code / Badge:</strong> <a href="${qrUrl}" style="color:#1d4ed8;font-weight:600;">Download</a>
       </p>
+      ${sealNumber ? `<p style="font-size:13px;color:#475569;">Siegel/Badge-ID: <code>${escapeHtml(sealNumber)}</code></p>` : ''}
       ${documentId ? `<p style="font-size:13px;color:#475569;">Dokument-ID: <code>${escapeHtml(documentId)}</code></p>` : ''}
+      <p style="margin:12px 0;font-size:13px;color:#475569;">
+        Rechnung: ${invoiceUrl ? `<a href="${invoiceUrl}" style="color:#1d4ed8;font-weight:600;">Abrufen</a>` : 'liegt in Ihrem Kundenkonto bereit.'}
+      </p>
       ${renderNote(message)}
       <ul style="margin:16px 0;padding-left:20px;font-size:13px;color:#475569;">
-        <li>Siegel und QR-Code sind ab sofort nutzbar.</li>
+        <li>Siegel/Badge und QR-Code sind ab sofort nutzbar.</li>
+        <li>Der Prüfbericht fasst Testergebnis und Bewertung zusammen.</li>
         <li>Für Änderungen an Einsatzorten oder Ansprechpartnern nutzen Sie bitte das Kundenportal.</li>
       </ul>
       <p style="margin-top:18px;">Vielen Dank für die Zusammenarbeit.<br />Prüfsiegel Zentrum UG</p>
@@ -135,7 +164,7 @@ export async function sendCompletionEmail(opts: {
     to,
     subject: `Prüfung abgeschlossen – ${productName}`,
     html,
-    attachments,
+    attachments: attachments.length ? attachments : undefined,
   });
 }
 
@@ -221,21 +250,16 @@ export async function sendPrecheckPaymentSuccess(opts: {
   shippingAddress?: string | null;
 }) {
   const { to, name, productName, receiptPdf, shippingAddress } = opts;
-  const appUrl = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://pruefsiegelzentrum.vercel.app';
-  const licenseAnchor = `${appUrl.replace(/\/$/, '')}/precheck#license-plans`;
+  const address = shippingAddress?.trim() || SHIPPING_ADDRESS_BLOCK;
   const html = `
     <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
       <p>Hallo ${escapeHtml(name)},</p>
-      <p>der Zahlungseingang für <strong>${escapeHtml(productName)}</strong> ist bestätigt. Vielen Dank!</p>
-      ${shippingAddress ? `<p style="font-size:13px;color:#475569;">Versandadresse: ${escapeHtml(shippingAddress)}</p>` : ''}
-      <p style="margin:14px 0 10px;">Wählen Sie jetzt Ihren Lizenzplan und erhalten Sie Ihr Versandlabel sowie alle Siegel-Assets:</p>
-      <p>
-        <a href="${licenseAnchor}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">Lizenzplan auswählen</a>
-      </p>
-      <p style="margin-top:14px;font-size:13px;color:#475569;">Die Quittung finden Sie im Anhang.</p>
+      <p>der Zahlungseingang für <strong>${escapeHtml(productName)}</strong> (Grundgebühr) ist bestätigt. Vielen Dank!</p>
+      <p style="margin:12px 0;font-size:13px;color:#475569;white-space:pre-line;">Versandadresse:<br/>${escapeHtml(address)}</p>
+      <p style="margin-top:14px;font-size:13px;color:#475569;">Die Rechnung/Quittung finden Sie im Anhang.</p>
       <ul style="margin:16px 0;padding-left:20px;font-size:13px;color:#475569;">
-        <li>Nach Planwahl erhalten Sie Zugang zu Siegelgrafiken und Prüfbericht.</li>
-        <li>Änderungen an Adresse oder Ansprechpartner bitte per Antwort auf diese E-Mail.</li>
+        <li>Bitte senden Sie Ihr Produkt an die oben genannte Adresse.</li>
+        <li>Bei Rückfragen erreichen Sie uns jederzeit per Antwort auf diese E-Mail.</li>
       </ul>
       <p style="margin-top:18px;">Prüfsiegel Zentrum UG</p>
     </div>
@@ -255,6 +279,39 @@ export async function sendPrecheckPaymentSuccess(opts: {
           },
         ]
       : undefined,
+  });
+}
+
+export async function sendPassAndLicenseRequest(opts: {
+  to: string;
+  name: string;
+  productName: string;
+  licenseUrl?: string;
+}) {
+  const { to, name, productName, licenseUrl } = opts;
+  const appUrl = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://pruefsiegelzentrum.vercel.app';
+  const plansLink = (licenseUrl || `${appUrl.replace(/\/$/, '')}/produkte`).replace(/\/$/, '');
+  const html = `
+    <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
+      <p>Hallo ${escapeHtml(name)},</p>
+      <p>Ihr Produkt <strong>${escapeHtml(productName)}</strong> hat den Test bestanden. Vielen Dank für Ihr Vertrauen!</p>
+      <p style="margin:12px 0;">Bitte wählen Sie jetzt Ihren Lizenzplan, damit wir Ihr Siegel final aktivieren können.</p>
+      <p>
+        <a href="${plansLink}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">Zu den Lizenzplänen</a>
+      </p>
+      <ul style="margin:16px 0;padding-left:20px;font-size:13px;color:#475569;">
+        <li>Nach Planwahl erhalten Sie automatisch das finale Paket per E-Mail.</li>
+        <li>Siegel bleibt bis dahin vorgemerkt, aber noch nicht endgültig freigeschaltet.</li>
+      </ul>
+      <p style="margin-top:18px;">Danke für Ihr Vertrauen.<br/>Prüfsiegel Zentrum UG</p>
+    </div>
+  `;
+
+  await sendEmail({
+    from: `Pruefsiegel Zentrum UG – Test bestanden <${FROM_EMAIL}>`,
+    to,
+    subject: `Test bestanden – Lizenzplan für ${productName} wählen`,
+    html,
   });
 }
 
@@ -281,13 +338,36 @@ export async function sendProductReceivedEmail(opts: {
   });
 }
 
+export async function sendPasswordResetEmail(opts: { to: string; name?: string | null; resetUrl: string }) {
+  const { to, name, resetUrl } = opts;
+  const safeName = escapeHtml(name || '');
+  const html = `
+    <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
+      <p>Hallo${safeName ? ' ' + safeName : ''},</p>
+      <p>du hast einen Link zum Zurücksetzen deines Passworts angefordert. Falls das nicht von dir stammt, kannst du diese E-Mail ignorieren.</p>
+      <p style="margin:16px 0;">
+        <a href="${resetUrl}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">Passwort jetzt zurücksetzen</a>
+      </p>
+      <p style="font-size:13px;color:#475569;">Der Link ist 60 Minuten gültig.</p>
+      <p style="margin-top:18px;">Prüfsiegel Zentrum UG</p>
+    </div>
+  `;
+
+  await sendEmail({
+    from: `Pruefsiegel Zentrum UG – Konto <${FROM_EMAIL}>`,
+    to,
+    subject: 'Passwort zurücksetzen',
+    html,
+  });
+}
+
 function renderNote(message?: string) {
   const trimmed = (message || '').trim();
   if (!trimmed) return '';
   const safe = escapeHtml(trimmed).replace(/\n/g, '<br />');
   return `
     <div style="margin:14px 0;padding:12px;border:1px solid #e5e7eb;border-radius:10px;background:#f8fafc;">
-      <p style="margin:0 0 6px;font-weight:700;">Note from the Prüfsiegel Team:</p>
+      <p style="margin:0 0 6px;font-weight:700;">Evaluation / Zusammenfassung:</p>
       <p style="margin:0;color:#0f172a;">${safe}</p>
     </div>
   `;

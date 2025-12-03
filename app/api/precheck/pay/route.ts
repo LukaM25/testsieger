@@ -38,6 +38,11 @@ export async function POST(req: Request) {
     mode: 'payment',
     customer_email: product.user.email,
     client_reference_id: `${session.userId}:${product.id}:${opt === 'priority' ? 'PRECHECK_PRIORITY' : 'PRECHECK_FEE'}`,
+    metadata: {
+      productId: product.id,
+      userId: session.userId,
+      plan: opt === 'priority' ? 'PRECHECK_PRIORITY' : 'PRECHECK_FEE',
+    },
     line_items: [
       {
         price: priceId,

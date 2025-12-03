@@ -15,7 +15,7 @@ export default function Sicherheit() {
     }
     : {
       eyebrow: 'Für Sicherheit',
-      title: 'Geprüfte Spielplatz Sicherheit',
+      title: 'Zertifizierte Spielplatzsicherheit',
       body: 'Wir liefern vollumfängliche Spielplatzprüfungen nach DIN EN 1176/1177 - zuverlässig, normkonform und auditready. Mit unserem Prüfprozess sichern Betreiber ihre Anlagen rechtssicher ab und erhöhen die Betriebssicherheit.',
       cta: 'Mehr erfahren',
     };

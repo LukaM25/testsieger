@@ -8,7 +8,7 @@ export default function Footer() {
     ? {
       title: 'German Seal Institute',
       tagline: 'The modern standard for B2B verification and compliance.',
-      products: 'Products',
+      products: 'Leistungen',
       company: 'Company',
       productTest: 'Product Tests',
       trainingCheck: 'Training Check',
@@ -21,11 +21,11 @@ export default function Footer() {
     : {
       title: 'Deutsches Prüf­siegel Institut',
       tagline: 'Der moderne Standard für B2B-Verifizierung und Compliance.',
-      products: 'Produkte',
+      products: 'Leistungen',
       company: 'Unternehmen',
       productTest: 'Produkt Tests',
       trainingCheck: 'Ausbildungs Check',
-      playgroundSafety: 'Spielplatz Sicherheit',
+      playgroundSafety: 'Spielplatz Prüfungen DIN EN',
       about: 'Über uns',
       contact: 'Kontakt',
       imprint: 'Impressum',

@@ -92,22 +92,34 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     const verifyUrl = `${APP_URL.replace(/\/$/, "")}/lizenzen?q=${encodeURIComponent(certificateId)}`;
     const qrBuffer = await QRCode.toBuffer(verifyUrl, { margin: 1, width: 512 });
+    const qrDataUrl = `data:image/png;base64,${qrBuffer.toString("base64")}`;
 
-    const pdfBuffer = await generateCertificatePdf({
-      product: {
-        id: product.id,
-        name: product.name,
-        brand: product.brand,
-        category: product.category ?? null,
-        code: product.code ?? null,
-        specs: product.specs ?? null,
-        size: product.size ?? null,
-        madeIn: product.madeIn ?? null,
-        material: product.material ?? null,
-        status: product.status,
-        adminProgress: product.adminProgress,
-        paymentStatus: product.paymentStatus,
-        createdAt: product.createdAt.toISOString(),
+    const pdfKey = `uploads/REPORT_${seal}.pdf`;
+    const qrKey = `qr/${seal}.png`;
+    const pdfUrl = s3PublicUrl(pdfKey);
+    const qrUrl = s3PublicUrl(qrKey);
+
+    const pdfData = {
+      id: product.id,
+      name: product.name,
+      brand: product.brand,
+      category: product.category ?? null,
+      code: product.code ?? null,
+      specs: product.specs ?? null,
+      size: product.size ?? null,
+      madeIn: product.madeIn ?? null,
+      material: product.material ?? null,
+      createdAt: product.createdAt.toISOString(),
+      status: product.status ?? product.adminProgress ?? 'PENDING',
+      seal_number: seal,
+      certificateId,
+      verify_url: verifyUrl,
+      qrUrl: qrDataUrl,
+      certificate: {
+        seal_number: seal,
+        pdfUrl,
+        qrUrl, // stored location
+        externalReferenceId: certificateRecord.externalReferenceId ?? undefined,
       },
       user: {
         name: product.user.name,
@@ -115,22 +127,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         address: product.user.address ?? null,
         company: product.user.company ?? null,
       },
-      certificate: {
-        seal_number: seal,
-        pdfUrl: certificateRecord.pdfUrl ?? undefined,
-        qrUrl: certificateRecord.qrUrl ?? undefined,
-        externalReferenceId: certificateRecord.externalReferenceId ?? undefined,
-      },
-      certificateId,
-      domain: APP_URL,
-    });
+    };
 
-    const pdfKey = `uploads/REPORT_${seal}.pdf`;
-    const qrKey = `qr/${seal}.png`;
+    const pdfBuffer = await generateCertificatePdf(pdfData);
+
     await uploadToS3({ key: pdfKey, body: pdfBuffer, contentType: "application/pdf" });
     await uploadToS3({ key: qrKey, body: qrBuffer, contentType: "image/png" });
-    const pdfUrl = s3PublicUrl(pdfKey);
-    const qrUrl = s3PublicUrl(qrKey);
 
     const sealPath = await generateSeal({
       product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },

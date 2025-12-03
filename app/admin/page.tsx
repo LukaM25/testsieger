@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useCertificateActions } from '@/hooks/useCertificateActions';
 import { CertificatePreviewModal } from '@/components/CertificatePreviewModal';
 
@@ -51,6 +51,17 @@ type AdminProduct = {
     ratingScore?: string | null;
     ratingLabel?: string | null;
     sealUrl?: string | null;
+  } | null;
+  license?: {
+    id: string;
+    plan: string;
+    status: string;
+    licenseCode?: string | null;
+    startsAt?: string | null;
+    expiresAt?: string | null;
+    paidAt?: string | null;
+    stripeSubId?: string | null;
+    stripePriceId?: string | null;
   } | null;
 };
 
@@ -206,14 +217,27 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="bg-slate-50 min-h-screen p-6">
+    <div className="min-h-screen bg-slate-950/5 p-6">
       <div className="mx-auto max-w-6xl space-y-6">
-        <header className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h1 className="text-3xl font-bold text-slate-900">Prüfung verwalten</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Internal Engine Active. Preview certificates before sending.
-          </p>
-          <div className="mt-4 grid gap-3 md:grid-cols-[1.4fr,1fr,1fr,auto] items-center">
+        <header className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-lg shadow-slate-900/5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-500">Admin Control</p>
+              <h1 className="text-3xl font-bold text-slate-900">Zertifikats-Workflow steuern</h1>
+              <p className="mt-2 text-sm text-slate-600">
+                Suche, filtere, aktualisiere Status und verschicke Zertifikate mit klar beschrifteten Aktionen.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={fetchProducts}
+              className="rounded-xl border border-slate-200 bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-black"
+            >
+              Liste aktualisieren / Refresh list
+            </button>
+          </div>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-[1.4fr,1fr,1fr,auto] items-center">
             <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 shadow-inner">
               <input
                 value={search}
@@ -251,10 +275,11 @@ export default function AdminPage() {
               }}
               className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
-              Filter zurücksetzen / Reset
+              Filter zurücksetzen / Reset filters
             </button>
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
+
+          <div className="mt-4 flex flex-wrap gap-2">
             {Object.entries(statusCounts).length === 0 ? (
               <span className="text-xs text-slate-500">Keine Treffer / No matches</span>
             ) : (
@@ -278,7 +303,10 @@ export default function AdminPage() {
         ) : (
           Object.entries(grouped).map(([date, entries]) => (
             <section key={date} className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-xl font-semibold">{date}</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-slate-900">{date}</h2>
+                <span className="text-xs uppercase tracking-[0.3em] text-slate-500">Batch: {entries.length}</span>
+              </div>
               {entries.map((product) => (
                 <AdminProductRow
                   key={product.id}
@@ -287,7 +315,6 @@ export default function AdminPage() {
                     fetchProducts();
                     setMessage(`Status für ${product.name} aktualisiert.`);
                   }}
-                  // UPDATED: Pass the flexible ID handler
                   onPreview={(id) => onPreviewClick(id)}
                   isPreviewLoading={isPreviewLoading && activePreviewId === (product.certificate?.id || 'temp')}
                 />
@@ -298,10 +325,9 @@ export default function AdminPage() {
         {message && <p className="text-sm text-green-700">{message}</p>}
       </div>
 
-      {/* The Modal */}
       <CertificatePreviewModal 
         isOpen={!!previewUrl}
-        onClose={() => window.location.reload()} // Reload to clear state/blobs cleanly
+        onClose={() => window.location.reload()}
         pdfUrl={previewUrl}
         productName="Admin Preview"
       />
@@ -338,7 +364,6 @@ function AdminProductRow({
     (product.paymentStatus as PaymentStatusOption) || 'UNPAID'
   );
   const [autoSent, setAutoSent] = useState(false);
-  
   useEffect(() => {
     setPaymentStatusValue((product.paymentStatus as PaymentStatusOption) || 'UNPAID');
   }, [product.paymentStatus]);
@@ -347,18 +372,30 @@ function AdminProductRow({
   const [paymentStatusMessage, setPaymentStatusMessage] = useState<string | null>(null);
   const [localMessage, setLocalMessage] = useState<string | null>(null);
   const [genLoading, setGenLoading] = useState(false);
-  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
+  const [licenseSaving, setLicenseSaving] = useState(false);
+
+  const [licensePlan, setLicensePlan] = useState<string>(product.license?.plan || 'BASIC');
+  const [licenseStatus, setLicenseStatus] = useState<string>(product.license?.status || 'PENDING');
+  const [licenseCode, setLicenseCode] = useState<string>(product.license?.licenseCode || '');
+  const [licenseStart, setLicenseStart] = useState<string>(
+    product.license?.startsAt ? product.license.startsAt.slice(0, 10) : ''
+  );
+  const [licenseEnd, setLicenseEnd] = useState<string>(
+    product.license?.expiresAt ? product.license.expiresAt.slice(0, 10) : ''
+  );
+  const expiresInDays = useMemo(() => {
+    if (!product.license?.expiresAt) return null;
+    const diff = new Date(product.license.expiresAt).getTime() - Date.now();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  }, [product.license?.expiresAt]);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setStatusMenuOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    setLicensePlan(product.license?.plan || 'BASIC');
+    setLicenseStatus(product.license?.status || 'PENDING');
+    setLicenseCode(product.license?.licenseCode || '');
+    setLicenseStart(product.license?.startsAt ? product.license.startsAt.slice(0, 10) : '');
+    setLicenseEnd(product.license?.expiresAt ? product.license.expiresAt.slice(0, 10) : '');
+  }, [product.license]);
 
   // NEW: Smart Preview Handler (Stops the Reload loop)
   const handleSmartPreview = async () => {
@@ -422,6 +459,37 @@ function AdminProductRow({
       setLocalMessage('Aktualisierung fehlgeschlagen.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveLicense = async () => {
+    setLicenseSaving(true);
+    setLocalMessage(null);
+    try {
+      const res = await fetch('/api/admin/license', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: product.id,
+          plan: licensePlan,
+          status: licenseStatus,
+          licenseCode: licenseCode || undefined,
+          startsAt: licenseStart || undefined,
+          expiresAt: licensePlan === 'LIFETIME' ? null : licenseEnd || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setLocalMessage(data.error || 'Lizenz konnte nicht gespeichert werden.');
+        return;
+      }
+      setLocalMessage('Lizenz gespeichert.');
+      onUpdated();
+    } catch (err) {
+      console.error(err);
+      setLocalMessage('Fehler beim Speichern der Lizenz.');
+    } finally {
+      setLicenseSaving(false);
     }
   };
 
@@ -537,189 +605,316 @@ function AdminProductRow({
 
   return (
     <article className="relative rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <button
-          type="button"
-          onClick={() => setExpanded((prev) => !prev)}
-          className="text-left text-slate-900 md:flex-1"
-        >
-          <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-lg font-semibold text-slate-900">{product.name}</span>
               <span className="text-sm text-slate-500">{product.brand}</span>
-              <span className="text-xs text-slate-400">
-                {new Date(product.createdAt).toLocaleTimeString('de-DE')}
-              </span>
+              <span className="text-xs text-slate-400">{new Date(product.createdAt).toLocaleTimeString('de-DE')}</span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <div className="relative" ref={menuRef}>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setStatusMenuOpen((o) => !o);
-                  }}
-                  className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ring-1 ${STATUS_TONE[product.status] ?? 'bg-slate-100 text-slate-700 ring-slate-200'}`}
-                  aria-haspopup="true"
-                  aria-expanded={statusMenuOpen}
-                >
-                  {statusLabel(product.status)} ▾
-                </button>
-                {statusMenuOpen && (
-                  <div className="absolute left-0 z-20 mt-2 w-64 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
-                    <div className="text-sm font-semibold text-slate-900">{product.name}</div>
-                    <div className="mt-2 flex flex-col gap-2">
-                      <a
-                        href={product.certificate?.pdfUrl || '#'}
-                        target={product.certificate?.pdfUrl ? '_blank' : undefined}
-                        rel="noreferrer"
-                        className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                          product.certificate?.pdfUrl
-                            ? 'bg-slate-900 text-white hover:bg-black'
-                            : 'bg-slate-100 text-slate-500 cursor-not-allowed'
-                        }`}
-                        onClick={(e) => {
-                          if (!product.certificate?.pdfUrl) e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                      >
-                        Zertifikat öffnen / Open certificate
-                      </a>
-                      <a
-                        href={product.certificate?.sealUrl || '#'}
-                        target={product.certificate?.sealUrl ? '_blank' : undefined}
-                        rel="noreferrer"
-                        className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                          product.certificate?.sealUrl
-                            ? 'bg-amber-600 text-white hover:bg-amber-700'
-                            : 'bg-slate-100 text-slate-500 cursor-not-allowed'
-                        }`}
-                        onClick={(e) => {
-                          if (!product.certificate?.sealUrl) e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                      >
-                        Siegel öffnen / Open seal
-                      </a>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <span
-                className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ring-1 ${PAYMENT_TONE[paymentStatusValue] ?? 'bg-slate-100 text-slate-700 ring-slate-200'}`}
-              >
-                Zahlung: {paymentStatusValue === 'PAID' ? 'Bezahlt / Paid' : paymentStatusValue === 'MANUAL' ? 'Manuell / Manual' : 'Offen / Unpaid'}
+              <span className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ring-1 ${STATUS_TONE[product.status] ?? 'bg-slate-100 text-slate-700 ring-slate-200'}`}>
+                Status: {statusLabel(product.status)}
               </span>
+              <span className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ring-1 ${PAYMENT_TONE[paymentStatusValue] ?? 'bg-slate-100 text-slate-700 ring-slate-200'}`}>
+                Zahlung: {paymentStatusValue === 'PAID' ? 'Bezahlt' : paymentStatusValue === 'MANUAL' ? 'Manuell' : 'Offen'}
+              </span>
+              {product.license ? (
+                <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-700 ring-1 ring-blue-100">
+                  Lizenz: {product.license.plan} · {product.license.status}
+                  {product.license.expiresAt
+                    ? ` · gültig bis ${new Date(product.license.expiresAt).toLocaleDateString('de-DE')}`
+                    : ' · Lifetime'}
+                  {typeof expiresInDays === 'number' ? ` · ${expiresInDays} Tage` : ''}
+                </span>
+              ) : null}
               {product.certificate?.ratingScore && product.certificate?.ratingLabel && (
                 <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700 ring-1 ring-emerald-100">
                   {product.certificate.ratingScore} · {product.certificate.ratingLabel}
                 </span>
               )}
+              {product.certificate?.seal_number && (
+                <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-700 ring-1 ring-slate-200">
+                  Siegel: {product.certificate.seal_number}
+                </span>
+              )}
             </div>
           </div>
-        </button>
-          
-        <div className="flex flex-col gap-2 md:flex-row md:items-center">
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value as StatusOption)}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs uppercase tracking-[0.2em]"
-          >
-            {STATUS_OPTIONS.map((status) => (
-              <option
-                key={status.value}
-                value={status.value}
-                disabled={status.value === 'PRECHECK'}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setExpanded((prev) => !prev)}
+              className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700 transition hover:bg-slate-50"
+            >
+              {expanded ? 'Details ausblenden / Hide details' : 'Details anzeigen / Show details'}
+            </button>
+          </div>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-900">Workflow-Schritte</h3>
+              <span className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Update & Versand</span>
+            </div>
+            <div className="mt-3 flex flex-col gap-2">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-600">Status setzen</label>
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value as StatusOption)}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em]"
               >
-                {status.label}
-              </option>
-            ))}
-          </select>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              disabled={loading}
-              onClick={handleUpdate}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition disabled:opacity-70"
-            >
-              {loading ? '...' : 'Update / Aktualisieren'}
-            </button>
-
-            {/* PREVIEW BUTTON */}
-            <button
-              type="button"
-              onClick={handleSmartPreview}
-              disabled={isPreviewLoading}
-              className="rounded-lg border border-blue-600 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-blue-600 transition hover:bg-blue-50 disabled:opacity-50"
-            >
-              {isPreviewLoading ? 'Lade...' : 'Vorschau / Preview'}
-            </button>
-
-            {/* SEND BUTTON */}
-            {selectedStatus === 'PASS' && (
+                {STATUS_OPTIONS.map((status) => (
+                  <option key={status.value} value={status.value} disabled={status.value === 'PRECHECK'}>
+                    {status.label}
+                  </option>
+                ))}
+              </select>
               <button
                 type="button"
-                disabled={sendLoading || !canSendCertificate}
+                disabled={loading}
+                onClick={handleUpdate}
+                className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-black disabled:opacity-70"
+              >
+                {loading ? 'Status wird gespeichert…' : 'Status speichern / Save status'}
+              </button>
+
+              <button
+                type="button"
+                disabled={sendLoading || !canSendCertificate || selectedStatus !== 'PASS'}
                 onClick={() => handleSendCertificate()}
-                className="rounded-lg border border-emerald-600 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 transition hover:bg-emerald-50 disabled:opacity-70"
+                className="rounded-lg border border-emerald-600 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-70"
               >
                 {sendLoading
-                  ? 'Sendet...'
-                  : canSendCertificate
-                    ? 'Zertifikat senden / Send cert'
-                    : 'Warten auf Zahlung / Wait for payment'}
+                  ? 'Zertifikat wird gesendet…'
+                  : selectedStatus !== 'PASS'
+                    ? 'Erst auf PASS setzen'
+                    : canSendCertificate
+                      ? 'Zertifikat per E-Mail senden'
+                      : 'Warten auf Zahlung'}
               </button>
-            )}
 
-            {product.certificate?.pdfUrl && (
-              <a
-                href={product.certificate.pdfUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-lg border border-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-900 transition hover:bg-slate-50"
-              >
-                PDF Bericht / PDF Report
-              </a>
-            )}
-            <a
-              href={`/api/admin/products/${product.id}/rating-sheet`}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700 transition hover:bg-slate-50"
-            >
-              Rating CSV / Bewertung CSV
-            </a>
-            {product.certificate?.sealUrl && (
-              <a
-                href={product.certificate.sealUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-lg border border-amber-600 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-700 transition hover:bg-amber-50"
-              >
-                Siegel / Seal
-              </a>
-            )}
-            <a
-              href={sheetUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700 transition hover:bg-slate-50"
-            >
-              Rating Sheet / Bewertungsblatt
-            </a>
             <button
               type="button"
               disabled={genLoading}
               onClick={handleGenerateWithRating}
               className="rounded-lg border border-amber-700 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-800 transition hover:bg-amber-50 disabled:opacity-70"
             >
-              {genLoading ? 'Erstellt…' : 'Cert & Siegel / Certificate & Seal'}
+              {genLoading ? 'Erstelle Zertifikat & Siegel…' : 'Zertifikat & Siegel generieren und per E-Mail senden'}
             </button>
+            <button
+              type="button"
+              disabled={sendLoading}
+              onClick={async () => {
+                setSendLoading(true);
+                setLocalMessage(null);
+                try {
+                  const res = await fetch('/api/admin/complete-license', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ productId: product.id }),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                      setLocalMessage(data.error || 'Senden fehlgeschlagen.');
+                    } else {
+                      setLocalMessage('Completion-Email mit allen Dateien gesendet.');
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    setLocalMessage('Senden fehlgeschlagen.');
+                  } finally {
+                    setSendLoading(false);
+                    onUpdated();
+                  }
+                }}
+              className="rounded-lg border border-emerald-800 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-800 transition hover:bg-emerald-50 disabled:opacity-70"
+            >
+              {sendLoading ? 'Sende…' : 'Completion – Send all Files'}
+            </button>
+            </div>
           </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-900">Assets & Downloads</h3>
+              <span className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Links</span>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <a
+                href={product.certificate?.pdfUrl ? `/api/certificates/${product.id}/download` : '#'}
+                target={product.certificate?.pdfUrl ? '_blank' : undefined}
+                rel="noreferrer"
+                className={`inline-flex items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition ${
+                  product.certificate?.pdfUrl
+                    ? 'border border-slate-900 text-slate-900 hover:bg-slate-50'
+                    : 'border border-slate-200 text-slate-400 cursor-not-allowed'
+                }`}
+                onClick={(e) => {
+                  if (!product.certificate?.pdfUrl) e.preventDefault();
+                }}
+              >
+                Generiertes PDF öffnen
+              </a>
+              <a
+                href={product.certificate?.sealUrl || '#'}
+                target={product.certificate?.sealUrl ? '_blank' : undefined}
+                rel="noreferrer"
+                className={`inline-flex items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition ${
+                  product.certificate?.sealUrl
+                    ? 'border border-amber-700 text-amber-800 hover:bg-amber-50'
+                    : 'border border-slate-200 text-slate-400 cursor-not-allowed'
+                }`}
+                onClick={(e) => {
+                  if (!product.certificate?.sealUrl) e.preventDefault();
+                }}
+              >
+                Siegel öffnen
+              </a>
+              <a
+                href={`/api/admin/products/${product.id}/rating-sheet`}
+                className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-800 transition hover:bg-slate-50"
+              >
+                Rating CSV herunterladen
+              </a>
+              <a
+                href={sheetUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-800 transition hover:bg-slate-50"
+              >
+                Bewertungsblatt öffnen
+              </a>
+              {product.license?.licenseCode && (
+                <div className="col-span-2 flex flex-col rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
+                  <span>Lizenzcode</span>
+                  <span className="font-mono text-[11px] normal-case text-slate-900">{product.license.licenseCode}</span>
+                  {product.license.expiresAt ? (
+                    <span className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
+                      gültig bis {new Date(product.license.expiresAt).toLocaleDateString('de-DE')}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] uppercase tracking-[0.18em] text-slate-500">Lifetime</span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-600">Payment Status setzen</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={paymentStatusValue}
+                  onChange={(e) => setPaymentStatusValue(e.target.value as PaymentStatusOption)}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"
+                >
+                  {PAYMENT_STATUS_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={paymentStatusLoading}
+                  onClick={handlePaymentStatusChange}
+                  className="rounded-lg border border-slate-900 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-900 transition hover:bg-slate-50 disabled:opacity-70"
+                >
+                  {paymentStatusLoading ? 'Speichere…' : 'Zahlstatus speichern'}
+                </button>
+              </div>
+              {paymentStatusMessage && <p className="text-xs text-slate-500">{paymentStatusMessage}</p>}
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-2 rounded-lg border border-slate-200 bg-white p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-600">Lizenz verwalten</span>
+                {product.license?.stripeSubId && (
+                  <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-500">
+                    StripeSub: {product.license.stripeSubId}
+                  </span>
+                )}
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <label className="flex flex-col gap-1 text-xs font-semibold text-slate-700">
+                  Plan
+                  <select
+                    value={licensePlan}
+                    onChange={(e) => setLicensePlan(e.target.value)}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"
+                  >
+                    <option value="BASIC">BASIC</option>
+                    <option value="PREMIUM">PREMIUM</option>
+                    <option value="LIFETIME">LIFETIME</option>
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-semibold text-slate-700">
+                  Status
+                  <select
+                    value={licenseStatus}
+                    onChange={(e) => setLicenseStatus(e.target.value)}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"
+                  >
+                    <option value="PENDING">PENDING</option>
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="EXPIRED">EXPIRED</option>
+                    <option value="CANCELED">CANCELED</option>
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-semibold text-slate-700">
+                  Start
+                  <input
+                    type="date"
+                    value={licenseStart}
+                    onChange={(e) => setLicenseStart(e.target.value)}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-semibold text-slate-700">
+                  Ablauf
+                  <input
+                    type="date"
+                    value={licensePlan === 'LIFETIME' ? '' : licenseEnd}
+                    onChange={(e) => setLicenseEnd(e.target.value)}
+                    disabled={licensePlan === 'LIFETIME'}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold disabled:opacity-70"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-semibold text-slate-700 sm:col-span-2">
+                  Lizenzcode
+                  <input
+                    type="text"
+                    value={licenseCode}
+                    onChange={(e) => setLicenseCode(e.target.value)}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"
+                  />
+                </label>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  disabled={licenseSaving}
+                  onClick={handleSaveLicense}
+                  className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-emerald-800 disabled:opacity-70"
+                >
+                  {licenseSaving ? 'Speichere Lizenz…' : 'Lizenz speichern'}
+                </button>
+                {product.license?.expiresAt && (
+                  <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                    {expiresInDays != null ? `${expiresInDays} Tage übrig` : ''}
+                  </span>
+                )}
+              </div>
+            </div>
         </div>
 
-        <div className="mt-3">
-          <label className="block text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-slate-600 mb-1">
-            Notiz vom Prüfsiegel Team / Note from the Prüfsiegel Team (optional)
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <label className="block text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-slate-600 mb-2">
+            Notiz an den Kunden (optional) / Customer note
           </label>
           <textarea
             value={teamNote}
@@ -727,56 +922,38 @@ function AdminProductRow({
             rows={2}
             maxLength={1000}
             placeholder="Kurze Nachricht für den Kunden (wird in die E-Mail eingefügt) / Short note for the customer"
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-inner focus:border-slate-400 focus:outline-none"
+            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 shadow-inner focus:border-slate-400 focus:outline-none"
           />
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-          <span className="font-semibold uppercase tracking-[0.3em] text-slate-500">Payment Status / Zahlungsstatus</span>
-          <select
-            value={paymentStatusValue}
-            onChange={(e) => setPaymentStatusValue(e.target.value as PaymentStatusOption)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold"
-          >
-            {PAYMENT_STATUS_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
+        {selectedStatus === 'FAIL' && (
+          <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
+            <label className="block text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-rose-700 mb-2">
+              Grund für Ablehnung / Rejection reason
+            </label>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Grund für Ablehnung / benötigte Infos · Reason for rejection / needed info"
+              className="w-full rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs text-rose-900"
+              rows={2}
+            />
+          </div>
+        )}
+
+        {expanded && (
+          <div className="grid gap-3 rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
+            {detailFields.map(([label, value]) => (
+              <div key={label} className="flex flex-col border-b border-slate-200 pb-2 last:border-b-0 last:pb-0">
+                <span className="text-[0.65rem] uppercase tracking-[0.3em] text-slate-500">{label}</span>
+                <span className="text-sm font-semibold text-slate-900">{value || '—'}</span>
+              </div>
             ))}
-          </select>
-          <button
-            type="button"
-            disabled={paymentStatusLoading}
-            onClick={handlePaymentStatusChange}
-            className="rounded-lg border border-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-900 transition disabled:opacity-70"
-          >
-            {paymentStatusLoading ? '...' : 'Confirm / Bestätigen'}
-          </button>
-        </div>
-        {paymentStatusMessage && <p className="mt-1 text-xs text-slate-500">{paymentStatusMessage}</p>}
+          </div>
+        )}
+
+        {localMessage && <p className="text-xs text-slate-500">{localMessage}</p>}
       </div>
-
-      {selectedStatus === 'FAIL' && (
-        <textarea
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="Grund für Ablehnung / benötigte Infos · Reason for rejection / needed info"
-          className="mt-3 w-full rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-900"
-          rows={2}
-        />
-      )}
-
-      {expanded && (
-        <div className="mt-4 grid gap-3 rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
-          {detailFields.map(([label, value]) => (
-            <div key={label} className="flex flex-col border-b border-slate-200 pb-2 last:border-b-0 last:pb-0">
-              <span className="text-[0.65rem] uppercase tracking-[0.3em] text-slate-500">{label}</span>
-              <span className="text-sm font-semibold text-slate-900">{value || '—'}</span>
-            </div>
-          ))}
-        </div>
-      )}
-      {localMessage && <p className="mt-3 text-xs text-slate-500">{localMessage}</p>}
     </article>
   );
 }

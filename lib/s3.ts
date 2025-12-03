@@ -1,4 +1,5 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
@@ -31,4 +32,39 @@ export function s3PublicUrl(key: string) {
   if (!region) throw new Error('Missing AWS_REGION env');
   // Virtual-hosted–style URL
   return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
+}
+
+export async function signedS3Url(key: string, expiresInSeconds = 60 * 30) {
+  const bucket = process.env.S3_BUCKET || process.env.AWS_S3_BUCKET_NAME;
+  if (!bucket) throw new Error('Missing S3 bucket env (S3_BUCKET or AWS_S3_BUCKET_NAME)');
+  const region = process.env.AWS_REGION;
+  if (!region) throw new Error('Missing AWS_REGION env');
+  return getSignedUrl(
+    s3,
+    new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+    }),
+    { expiresIn: expiresInSeconds }
+  );
+}
+
+export async function ensureSignedS3Url(url?: string | null, expiresInSeconds = 60 * 30) {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.searchParams.has('X-Amz-Signature')) return url;
+
+    const bucket = process.env.S3_BUCKET || process.env.AWS_S3_BUCKET_NAME;
+    const region = process.env.AWS_REGION;
+    if (!bucket || !region) return url;
+
+    const expectedHost = `${bucket}.s3.${region}.amazonaws.com`;
+    if (parsed.hostname !== expectedHost) return url;
+
+    const key = decodeURIComponent(parsed.pathname.replace(/^\//, ''));
+    return signedS3Url(key, expiresInSeconds);
+  } catch {
+    return url;
+  }
 }

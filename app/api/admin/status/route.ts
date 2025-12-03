@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 import { ProductStatus } from '@prisma/client';
 import { isAdminAuthed } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
-import { sendFailureNotification, sendProductReceivedEmail } from '@/lib/email';
+import { sendFailureNotification, sendProductReceivedEmail, sendPassAndLicenseRequest } from '@/lib/email';
+import { generateCertificatePdf } from '@/pdfGenerator';
+import { fetchRatingCsv } from '@/lib/ratingSheet';
 
 export const runtime = 'nodejs';
 
@@ -21,7 +23,7 @@ export async function POST(req: Request) {
 
   const product = await prisma.product.findUnique({
     where: { id: productId },
-    include: { user: true },
+    include: { user: true, certificate: true },
   });
   if (!product) return NextResponse.json({ error: 'PRODUCT_NOT_FOUND' }, { status: 404 });
 
@@ -51,7 +53,27 @@ export async function POST(req: Request) {
       name: product.user.name,
       productName: product.name,
     }).catch((err) => console.error('RECEIVED_EMAIL_ERROR', err));
+  } else if (status === 'PASS') {
+    try {
+      await sendPassAndLicenseRequest({
+        to: product.user.email,
+        name: product.user.name,
+        productName: product.name,
+      });
+    } catch (err) {
+      console.error('PASS_EMAIL_ERROR', err);
+    }
   }
 
   return NextResponse.json({ ok: true, status });
+}
+
+async function generateSealNumber() {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const part = Math.random().toString(36).slice(2, 8).toUpperCase();
+    const seal = `PS-${new Date().getFullYear()}-${part}`;
+    const exists = await prisma.certificate.findUnique({ where: { seal_number: seal } }).catch(() => null);
+    if (!exists) return seal;
+  }
+  throw new Error('SEAL_GENERATION_FAILED');
 }

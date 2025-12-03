@@ -7,27 +7,34 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from '@/components/LocaleProvider';
 import { forwardRef } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 
-const Schema = z.object({
-  name: z.string().min(2),
-  company: z.string().optional(),
-  email: z.string().email(),
-  addressStreet: z.string().min(2),
-  addressNumber: z.string().min(1),
-  addressPostal: z.string().min(3),
-  addressCity: z.string().min(2),
-  addressCountry: z.string().min(2),
-  addressLine2: z.string().optional(),
-  password: z.string().min(8),
-  productName: z.string().min(2),
-  brand: z.string().min(1),
-  category: z.string().optional(),
-  code: z.string().optional(),
-  specs: z.string().optional(),
-  size: z.string().optional(),
-  madeIn: z.string().optional(),
-  material: z.string().optional(),
-});
+const Schema = z
+  .object({
+    name: z.string().min(2),
+    company: z.string().optional(),
+    email: z.string().email(),
+    addressStreet: z.string().min(2),
+    addressNumber: z.string().min(1),
+    addressPostal: z.string().min(3),
+    addressCity: z.string().min(2),
+    addressCountry: z.string().min(2),
+    addressLine2: z.string().optional(),
+    password: z.string().min(8),
+    confirmPassword: z.string().min(8),
+    productName: z.string().min(2),
+    brand: z.string().min(1),
+    category: z.string().optional(),
+    code: z.string().optional(),
+    specs: z.string().optional(),
+    size: z.string().optional(),
+    madeIn: z.string().optional(),
+    material: z.string().optional(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ['confirmPassword'],
+    message: 'Passwörter stimmen nicht überein',
+  });
 
 type FormValues = z.infer<typeof Schema>;
 
@@ -35,6 +42,8 @@ export default function PrecheckForm() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const { locale } = useLocale();
   const tr = (de: string, en: string) => (locale === 'en' ? en : de);
 
@@ -43,11 +52,12 @@ export default function PrecheckForm() {
   });
 
   const onSubmit = async (values: FormValues) => {
+    const { confirmPassword, ...rest } = values;
     const addressParts = [
-      `${values.addressStreet} ${values.addressNumber}`.trim(),
-      values.addressLine2?.trim(),
-      `${values.addressPostal} ${values.addressCity}`.trim(),
-      values.addressCountry.trim(),
+      `${rest.addressStreet} ${rest.addressNumber}`.trim(),
+      rest.addressLine2?.trim(),
+      `${rest.addressPostal} ${rest.addressCity}`.trim(),
+      rest.addressCountry.trim(),
     ].filter(Boolean);
     const address = addressParts.join(', ');
 
@@ -57,7 +67,7 @@ export default function PrecheckForm() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        ...values,
+        ...rest,
         address,
       }),
     });
@@ -83,7 +93,7 @@ export default function PrecheckForm() {
       <input
         ref={ref}
         {...props}
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-800"
+        className={`w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-800 ${props.className ?? ''}`}
       />
     )
   );
@@ -118,8 +128,45 @@ export default function PrecheckForm() {
           </div>
           <div>
             <Label>{tr('Passwort', 'Password')}</Label>
-            <Input {...register('password')} type="password" placeholder="••••••••" autoComplete="new-password" />
+            <div className="relative">
+              <Input
+                {...register('password')}
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                autoComplete="new-password"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute inset-y-0 right-2 flex items-center px-2 text-gray-500"
+                aria-label={showPassword ? tr('Passwort verbergen', 'Hide password') : tr('Passwort anzeigen', 'Show password')}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
             <Error msg={errors.password?.message} />
+          </div>
+          <div>
+            <Label>{tr('Passwort wiederholen', 'Confirm password')}</Label>
+            <div className="relative">
+              <Input
+                {...register('confirmPassword')}
+                type={showConfirm ? 'text' : 'password'}
+                placeholder="••••••••"
+                autoComplete="new-password"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm((v) => !v)}
+                className="absolute inset-y-0 right-2 flex items-center px-2 text-gray-500"
+                aria-label={showConfirm ? tr('Passwort verbergen', 'Hide password') : tr('Passwort anzeigen', 'Show password')}
+              >
+                {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            <Error msg={errors.confirmPassword?.message} />
           </div>
           <div className="md:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>

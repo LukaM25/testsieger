@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useState, useEffect, useRef, useCallback, type ReactNode, type FormEvent } from "react";
 import Fuse from 'fuse.js';
 import { useRouter, usePathname } from "next/navigation";
-import { Menu, X, Search, User } from "lucide-react";
+import { Menu, X, Search, User, Eye, EyeOff } from "lucide-react";
 import { useLocale } from "@/components/LocaleProvider";
 
 type NavItem = {
@@ -81,9 +81,12 @@ export default function Navbar() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
-  const [registerData, setRegisterData] = useState({ name: '', email: '', password: '' });
+  const [registerData, setRegisterData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerError, setRegisterError] = useState<string | null>(null);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showRegisterConfirm, setShowRegisterConfirm] = useState(false);
   const loadProfile = useCallback(async () => {
     try {
       const res = await fetch('/api/auth/me');
@@ -236,10 +239,19 @@ export default function Navbar() {
     setRegisterError(null);
     setRegisterLoading(true);
     try {
+      if (registerData.password !== registerData.confirmPassword) {
+        setRegisterError('Passwörter stimmen nicht überein');
+        setRegisterLoading(false);
+        return;
+      }
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(registerData),
+        body: JSON.stringify({
+          name: registerData.name,
+          email: registerData.email,
+          password: registerData.password,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -248,7 +260,7 @@ export default function Navbar() {
       const user = await loadProfile();
       setProfileUser(user);
       setShowRegister(false);
-      setRegisterData({ name: '', email: '', password: '' });
+      setRegisterData({ name: '', email: '', password: '', confirmPassword: '' });
       setProfileOpen(true);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Registrierung fehlgeschlagen';
@@ -665,15 +677,44 @@ export default function Navbar() {
                       autoComplete="email"
                       required
                     />
-                    <input
-                      type="password"
-                      placeholder={t('profile.password')}
-                      value={registerData.password}
-                      onChange={(e) => setRegisterData((s) => ({ ...s, password: e.target.value }))}
-                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                      autoComplete="new-password"
-                      required
-                    />
+                    <div className="relative">
+                      <input
+                        type={showRegisterPassword ? 'text' : 'password'}
+                        placeholder={t('profile.password')}
+                        value={registerData.password}
+                        onChange={(e) => setRegisterData((s) => ({ ...s, password: e.target.value }))}
+                        className="w-full rounded-xl border border-gray-200 px-3 py-2 pr-12 text-sm"
+                        autoComplete="new-password"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowRegisterPassword((v) => !v)}
+                        className="absolute inset-y-0 right-2 flex items-center px-2 text-gray-500"
+                        aria-label={showRegisterPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}
+                      >
+                        {showRegisterPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showRegisterConfirm ? 'text' : 'password'}
+                        placeholder={t('profile.confirmPassword', 'Passwort wiederholen')}
+                        value={registerData.confirmPassword}
+                        onChange={(e) => setRegisterData((s) => ({ ...s, confirmPassword: e.target.value }))}
+                        className="w-full rounded-xl border border-gray-200 px-3 py-2 pr-12 text-sm"
+                        autoComplete="new-password"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowRegisterConfirm((v) => !v)}
+                        className="absolute inset-y-0 right-2 flex items-center px-2 text-gray-500"
+                        aria-label={showRegisterConfirm ? 'Passwort verbergen' : 'Passwort anzeigen'}
+                      >
+                        {showRegisterConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
                     {registerError && <p className="text-xs text-rose-600">{registerError}</p>}
                     <button
                       type="submit"
@@ -703,15 +744,25 @@ export default function Navbar() {
                       autoComplete="username"
                       required
                     />
-                    <input
-                      type="password"
-                      placeholder={t('profile.password')}
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                      autoComplete="current-password"
-                      required
-                    />
+                    <div className="relative">
+                      <input
+                        type={showLoginPassword ? 'text' : 'password'}
+                        placeholder={t('profile.password')}
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-3 py-2 pr-12 text-sm"
+                        autoComplete="current-password"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginPassword((v) => !v)}
+                        className="absolute inset-y-0 right-2 flex items-center px-2 text-gray-500"
+                        aria-label={showLoginPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}
+                      >
+                        {showLoginPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
                     {loginError && <p className="text-xs text-rose-600">{loginError}</p>}
                     <button
                       type="submit"
@@ -720,6 +771,11 @@ export default function Navbar() {
                     >
                       {loginLoading ? t('profile.loginChecking') : t('profile.loginButton')}
                     </button>
+                    <p className="text-xs text-slate-500 text-right">
+                      <Link href="/reset-password" className="font-semibold text-slate-900 underline">
+                        Passwort vergessen?
+                      </Link>
+                    </p>
                     <p className="text-xs text-slate-500">
                       {t('profile.classicLogin')}{' '}
                       <Link href="/login" className="font-semibold text-slate-900 underline">{t('nav.login')}</Link>

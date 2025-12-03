@@ -1,9 +1,14 @@
-import path from 'path';
 import QRCode from 'qrcode';
+import path from 'path';
+import fs from 'fs/promises';
 import { prisma } from '@/lib/prisma';
 import { sendCompletionEmail } from '@/lib/email';
 import { generateCertificatePdf } from '@/pdfGenerator';
 import { uploadToS3, s3PublicUrl } from '@/lib/s3';
+import { generateInvoicePdf } from '@/lib/invoiceBuilder';
+import { InvoiceLine } from '@/lib/invoiceBuilder';
+import { fetchRatingCsv } from '@/lib/ratingSheet';
+import { generateSeal as generateSealImage } from '@/lib/seal';
 
 const APP_URL = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
 
@@ -32,10 +37,10 @@ export type CompletionResult = {
 export async function completeProduct(productId: string, message?: string): Promise<CompletionResult> {
   const product = await prisma.product.findUnique({
     where: { id: productId },
-    include: { user: true, certificate: true },
+    include: { user: true, certificate: true, orders: true, license: true },
   });
   if (!product) throw new CompletionError('PRODUCT_NOT_FOUND', 404);
-  if (!['PAID', 'IN_REVIEW'].includes(product.status)) {
+  if (!['PAID', 'IN_REVIEW', 'COMPLETED'].includes(product.status)) {
     throw new CompletionError('INVALID_STATUS', 400);
   }
 
@@ -84,13 +89,13 @@ export async function completeProduct(productId: string, message?: string): Prom
   // Upload assets to S3 instead of local filesystem
   const pdfKey = `uploads/REPORT_${seal}.pdf`;
   const qrKey = `qr/${seal}.png`;
-  await uploadToS3({ key: pdfKey, body: pdfBuffer, contentType: 'application/pdf' });
-  await uploadToS3({ key: qrKey, body: qrBuffer, contentType: 'image/png' });
+    await uploadToS3({ key: pdfKey, body: pdfBuffer, contentType: 'application/pdf' });
+    await uploadToS3({ key: qrKey, body: qrBuffer, contentType: 'image/png' });
 
-  const pdfUrl = s3PublicUrl(pdfKey);
-  const qrUrl = s3PublicUrl(qrKey);
+    const pdfUrl = s3PublicUrl(pdfKey);
+    const qrUrl = s3PublicUrl(qrKey);
 
-  const cert = await prisma.certificate.upsert({
+  let cert = await prisma.certificate.upsert({
     where: { productId: product.id },
     update: {
       pdfUrl,
@@ -107,10 +112,79 @@ export async function completeProduct(productId: string, message?: string): Prom
     },
   });
 
+  // Ensure seal image exists and load it
+  let sealBuffer: Buffer | undefined;
+  let sealUrl = cert.sealUrl || product.certificate?.sealUrl || null;
+  if (!sealUrl) {
+    try {
+      const generatedSealPath = await generateSealImage({
+        product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
+        certificateId: cert.id,
+        ratingScore: cert.ratingScore ?? 'PASS',
+        ratingLabel: cert.ratingLabel ?? 'PASS',
+        appUrl: APP_URL,
+      });
+      sealUrl = generatedSealPath;
+      cert = await prisma.certificate.update({
+        where: { id: cert.id },
+        data: { sealUrl: generatedSealPath },
+      });
+    } catch (err) {
+      console.warn('SEAL_GENERATION_FAILED', err);
+    }
+  }
+  if (sealUrl) {
+    try {
+      const sealPath = path.join(process.cwd(), 'public', sealUrl.replace(/^\//, ''));
+      sealBuffer = await fs.readFile(sealPath);
+    } catch (err) {
+      console.warn('SEAL_BUFFER_LOAD_FAILED', { sealUrl, err });
+    }
+  }
+  if (!sealBuffer) {
+    throw new CompletionError('SEAL_MISSING', 500);
+  }
+
   await prisma.product.update({
     where: { id: product.id },
     data: { status: 'COMPLETED', adminProgress: 'PASS' },
   });
+
+  // Build invoice lines (best-effort)
+  const invoiceLines: InvoiceLine[] = [];
+  if (product.paymentStatus !== 'UNPAID') {
+    invoiceLines.push({
+      label: 'Grundgebühr',
+      amountCents: 25400,
+    });
+  }
+  product.orders
+    .filter((o) => o.paidAt && o.plan)
+    .forEach((o) => {
+      if (typeof o.priceCents === 'number' && o.priceCents > 0) {
+        invoiceLines.push({
+          label: `Lizenz ${o.plan}`,
+          amountCents: o.priceCents,
+        });
+      }
+    });
+
+  let invoiceBuffer: Buffer | undefined;
+  if (invoiceLines.length) {
+    try {
+      invoiceBuffer = await generateInvoicePdf({
+        invoiceNumber: `INV-${product.id.slice(0, 8)}`,
+        customerName: product.user.name,
+        customerEmail: product.user.email,
+        customerAddress: product.user.address ?? null,
+        productName: product.name,
+        lines: invoiceLines,
+        currency: 'EUR',
+      });
+    } catch (err) {
+      console.error('INVOICE_GENERATION_ERROR', err);
+    }
+  }
 
   await sendCompletionEmail({
     to: product.user.email,
@@ -122,6 +196,10 @@ export async function completeProduct(productId: string, message?: string): Prom
     pdfBuffer,
     documentId: undefined,
     message,
+    sealNumber: seal,
+    csvBuffer: await fetchRatingCsv(product.id, product.name),
+    sealBuffer,
+    invoiceBuffer,
   });
 
   return {
