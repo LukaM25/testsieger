@@ -52,17 +52,23 @@ export async function signedS3Url(key: string, expiresInSeconds = 60 * 30) {
 export async function ensureSignedS3Url(url?: string | null, expiresInSeconds = 60 * 30) {
   if (!url) return null;
   try {
-    const parsed = new URL(url);
-    if (parsed.searchParams.has('X-Amz-Signature')) return url;
-
     const bucket = process.env.S3_BUCKET || process.env.AWS_S3_BUCKET_NAME;
     const region = process.env.AWS_REGION;
     if (!bucket || !region) return url;
 
-    const expectedHost = `${bucket}.s3.${region}.amazonaws.com`;
-    if (parsed.hostname !== expectedHost) return url;
+    const parsed = new URL(url);
+    const virtualHost = `${bucket}.s3.${region}.amazonaws.com`;
+    const legacyVirtualHost = `${bucket}.s3.amazonaws.com`;
+    const pathStyleHost = `s3.${region}.amazonaws.com`;
 
-    const key = decodeURIComponent(parsed.pathname.replace(/^\//, ''));
+    let key: string | null = null;
+    if (parsed.hostname === virtualHost || parsed.hostname === legacyVirtualHost) {
+      key = decodeURIComponent(parsed.pathname.replace(/^\//, ''));
+    } else if (parsed.hostname === pathStyleHost && parsed.pathname.startsWith(`/${bucket}/`)) {
+      key = decodeURIComponent(parsed.pathname.replace(new RegExp(`^/${bucket}/`), ''));
+    }
+
+    if (!key) return url;
     return signedS3Url(key, expiresInSeconds);
   } catch {
     return url;
