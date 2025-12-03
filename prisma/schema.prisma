@@ -17,6 +17,7 @@ model User {
   company      String?
   orders       Order[]
   products     Product[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Product {
@@ -93,6 +94,17 @@ model License {
   product       Product       @relation(fields: [productId], references: [id])
   certificate   Certificate?  @relation(fields: [certificateId], references: [id])
   order         Order?        @relation(fields: [orderId], references: [id])
+}
+
+model PasswordResetToken {
+  id         String   @id @default(cuid())
+  userId     String
+  tokenHash  String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([expiresAt])
 }
 
 enum ProductStatus {
