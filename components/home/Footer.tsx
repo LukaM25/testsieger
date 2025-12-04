@@ -19,7 +19,7 @@ export default function Footer() {
       rights: 'All rights reserved',
     }
     : {
-      title: 'Deutsches Prüf­siegel Institut',
+      title: 'DPI Deutsches Prüfsiegel Institut',
       tagline: 'Der moderne Standard für B2B-Verifizierung und Compliance.',
       products: 'Leistungen',
       company: 'Unternehmen',
@@ -41,7 +41,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           <div className="col-span-1 md:col-span-2">
             <span className="text-xl font-bold tracking-wide block mb-6">
-              Testsieger<span className="text-brand-green font-normal">Check</span>
+              DPI<span className="text-brand-green font-normal"> Deutsches Prüfsiegel Institut</span>
             </span>
             <p className="text-gray-400 font-light max-w-xs leading-relaxed text-sm">
               {copy.tagline}

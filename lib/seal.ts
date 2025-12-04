@@ -9,6 +9,7 @@ type SealInput = {
   ratingScore: string;
   ratingLabel: string;
   appUrl: string;
+  licenseDate?: Date | null;
   templatePath?: string;
   outputDir?: string;
 };
@@ -16,23 +17,50 @@ type SealInput = {
 const REF_WIDTH = 1780;
 const REF_HEIGHT = 2048;
 
+// Fonts configuration
 const FONTS = {
-  ratingScore: { size: 160, weight: 700, color: "#000000" },
-  ratingLabel: { size: 80, weight: 700, color: "#000000" },
-  body: { size: 40, weight: 400, color: "#000000" },
-  bodyMuted: { size: 40, weight: 400, color: "#7f7f7f" },
-  smallMuted: { size: 28, weight: 400, color: "#7f7f7f" },
+  // Gold bar
+  ratingScore: { size: 430, weight: 900, color: "#000000" },
+  ratingLabel: { size: 115, weight: 900, color: "#000000" },
+
+  // Main white box values (Produkt/Marke)
+  body: { size: 78, weight: 700, color: "#000000" },
+
+  // Meta data
+  metaData: { size: 42, weight: 600, color: "#7F7F7F" },
+
+  // Footer URL
+  smallMuted: { size: 32, weight: 400, color: "#9B9B9B" },
 };
 
-const DEFAULT_TEMPLATE = path.join(process.cwd(), "public", "template", "template_siegel.png");
-const DEFAULT_OUTPUT_DIR = path.join(process.cwd(), "public", "uploads", "seals");
+const DEFAULT_TEMPLATE = path.join(
+  process.cwd(),
+  "public",
+  "template",
+  "template_siegel.png"
+);
+const DEFAULT_OUTPUT_DIR = path.join(
+  process.cwd(),
+  "public",
+  "uploads",
+  "seals"
+);
 
 function formatTestDate(date: Date) {
   try {
-    return new Intl.DateTimeFormat("de-DE", { month: "2-digit", year: "2-digit" }).format(date);
+    return new Intl.DateTimeFormat("de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(date);
   } catch {
     return "";
   }
+}
+
+function shorten(input: string | null | undefined, max = 28) {
+  if (!input) return "";
+  return input.length > max ? `${input.slice(0, max)}...` : input;
 }
 
 function makeSvgText({
@@ -45,6 +73,8 @@ function makeSvgText({
   align = "left",
   width,
   height,
+  stretch = false,
+  letterSpacing = 0,
 }: {
   text: string;
   x: number;
@@ -55,16 +85,39 @@ function makeSvgText({
   align?: "left" | "center";
   width: number;
   height: number;
+  stretch?: boolean;
+  letterSpacing?: number;
 }) {
   const anchor = align === "center" ? "middle" : "start";
-  const anchorX = align === "center" ? width / 2 : x;
+
+  // Scaling logic for "tall" look
+  const scaleY = stretch ? 1.3 : 1;
+  const adjustedY = stretch ? y / scaleY : y;
+  const transform = stretch ? `transform="scale(1, ${scaleY})"` : "";
+
+  // If centering, use the provided X (which might include an offset) as the center point
+  const anchorX = align === "center" ? x : x; 
+
   return Buffer.from(
     `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
       <style>
-        .t { font-family: 'Inter', 'Arial', sans-serif; }
+        .t { font-family: 'Arial', 'Helvetica', sans-serif; }
       </style>
-      <text x="${anchorX}" y="${y}" text-anchor="${anchor}" class="t" font-size="${fontSize}" font-weight="${fontWeight}" fill="${color}">
-        ${text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}
+      <text 
+        x="${anchorX}" 
+        y="${adjustedY}" 
+        ${transform} 
+        text-anchor="${anchor}" 
+        class="t" 
+        font-size="${fontSize}" 
+        font-weight="${fontWeight}" 
+        fill="${color}"
+        letter-spacing="${letterSpacing}"
+      >
+        ${text
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")}
       </text>
     </svg>`
   );
@@ -76,6 +129,7 @@ export async function generateSeal({
   ratingScore,
   ratingLabel,
   appUrl,
+  licenseDate = null,
   templatePath = DEFAULT_TEMPLATE,
   outputDir = DEFAULT_OUTPUT_DIR,
 }: SealInput) {
@@ -83,32 +137,63 @@ export async function generateSeal({
   const canvasWidth = templateMeta.width ?? REF_WIDTH;
   const canvasHeight = templateMeta.height ?? REF_HEIGHT;
 
-  // Scale coordinates relative to reference template dimensions
   const scaleX = canvasWidth / REF_WIDTH;
   const scaleY = canvasHeight / REF_HEIGHT;
+
+  // --- FINAL COORDINATES V9 ---
   const COORDS = {
-    ratingScoreY: Math.round(920 * scaleY),
-    ratingLabelY: Math.round(1060 * scaleY),
-    productPos: { x: Math.round(820 * scaleX), y: Math.round(1415 * scaleY) },
-    brandPos: { x: Math.round(820 * scaleX), y: Math.round(1475 * scaleY) },
-    testDatePos: { x: Math.round(430 * scaleX), y: Math.round(1575 * scaleY) },
-    tcCodePos: { x: Math.round(1000 * scaleX), y: Math.round(1575 * scaleY) },
-    dpiLinePos: { x: Math.round(430 * scaleX), y: Math.round(1665 * scaleY) },
-    reportUrlPos: { x: Math.round(430 * scaleX), y: Math.round(1740 * scaleY) },
-    qr: { x: Math.round(1180 * scaleX), y: Math.round(1480 * scaleY), size: Math.round(300 * scaleX) },
+    // Gold Band (Unchanged)
+    ratingScoreY: Math.round(1090 * scaleY), 
+    ratingLabelY: Math.round(1225 * scaleY),
+
+    // White Box Values
+    productValue: {
+      x: Math.round(550 * scaleX),
+      y: Math.round(1465 * scaleY), // Moved DOWN 5px (was 1460)
+    },
+    brandValue: {
+      x: Math.round(499 * scaleX), // Moved RIGHT by ~2% (was 450)
+      y: Math.round(1572 * scaleY), // Moved UP by ~2% (was 1580)
+    },
+
+    // Meta Row (Unchanged)
+    testDateValue: {
+      x: Math.round(462 * scaleX),
+      y: Math.round(1673 * scaleY),
+    },
+    // TC Code (Unchanged)
+    tcCodeValue: {
+      x: Math.round(710 * scaleX),
+      y: Math.round(1715 * scaleY),
+    },
+
+    // Bottom URL (Unchanged)
+    reportUrlValue: {
+      x: Math.round(410 * scaleX),
+      y: Math.round(1880 * scaleY),
+    },
+
+    // QR Code (Unchanged)
+    qr: {
+      x: Math.round(1180 * scaleX),
+      y: Math.round(1420 * scaleY),
+      size: Math.round(320 * scaleX),
+    },
   };
+
   const reportUrl = `${appUrl.replace(/\/$/, "")}/lizenzen?q=${certificateId}`;
 
-  // Use the original template buffer with alpha
   const templateBuffer = await sharp(templatePath).ensureAlpha().toBuffer();
-
   const composites: sharp.OverlayOptions[] = [];
 
-  // Rating center aligned
+  // --- 1. RATING (Gold Bar) ---
+  const ratingCenterX = (canvasWidth / 2) - Math.round(40 * scaleX);
+  const displayScore = ratingScore.replace(".", ",");
+
   composites.push({
     input: makeSvgText({
-      text: ratingScore,
-      x: 0,
+      text: displayScore,
+      x: ratingCenterX,
       y: COORDS.ratingScoreY,
       fontSize: FONTS.ratingScore.size,
       fontWeight: FONTS.ratingScore.weight,
@@ -116,12 +201,15 @@ export async function generateSeal({
       align: "center",
       width: canvasWidth,
       height: canvasHeight,
+      stretch: true,
+      letterSpacing: -15,
     }),
   });
+
   composites.push({
     input: makeSvgText({
       text: ratingLabel.toUpperCase(),
-      x: 0,
+      x: ratingCenterX,
       y: COORDS.ratingLabelY,
       fontSize: FONTS.ratingLabel.size,
       fontWeight: FONTS.ratingLabel.weight,
@@ -129,83 +217,76 @@ export async function generateSeal({
       align: "center",
       width: canvasWidth,
       height: canvasHeight,
+      stretch: true,
+      letterSpacing: -2,
     }),
   });
 
-  // Product + brand
+  // --- 2. PRODUCT DETAILS ---
   composites.push({
     input: makeSvgText({
-      text: product.name,
-      x: COORDS.productPos.x,
-      y: COORDS.productPos.y,
+      text: shorten(product.name, 28),
+      x: COORDS.productValue.x,
+      y: COORDS.productValue.y,
       fontSize: FONTS.body.size,
       fontWeight: FONTS.body.weight,
       color: FONTS.body.color,
       width: canvasWidth,
       height: canvasHeight,
+      stretch: true,
     }),
   });
+
   composites.push({
     input: makeSvgText({
-      text: product.brand ?? "",
-      x: COORDS.brandPos.x,
-      y: COORDS.brandPos.y,
+      text: product.brand ? shorten(product.brand, 28) : "",
+      x: COORDS.brandValue.x,
+      y: COORDS.brandValue.y,
       fontSize: FONTS.body.size,
       fontWeight: FONTS.body.weight,
       color: FONTS.body.color,
       width: canvasWidth,
       height: canvasHeight,
+      stretch: true,
     }),
   });
 
-  // Dates and metadata
-  const testDate = formatTestDate(product.createdAt);
+  // --- 3. META DATA ---
+  const testDate = formatTestDate(licenseDate ?? product.createdAt);
   if (testDate) {
     composites.push({
       input: makeSvgText({
         text: testDate,
-        x: COORDS.testDatePos.x,
-        y: COORDS.testDatePos.y,
-        fontSize: FONTS.body.size,
-        fontWeight: FONTS.body.weight,
-        color: FONTS.bodyMuted.color,
+        x: COORDS.testDateValue.x,
+        y: COORDS.testDateValue.y,
+        fontSize: FONTS.metaData.size,
+        fontWeight: FONTS.metaData.weight,
+        color: FONTS.metaData.color,
         width: canvasWidth,
         height: canvasHeight,
       }),
     });
   }
 
-  // TC code placeholder (blank)
   composites.push({
     input: makeSvgText({
-      text: "",
-      x: COORDS.tcCodePos.x,
-      y: COORDS.tcCodePos.y,
-      fontSize: FONTS.body.size,
-      fontWeight: FONTS.body.weight,
-      color: FONTS.bodyMuted.color,
+      text: certificateId || "",
+      x: COORDS.tcCodeValue.x,
+      y: COORDS.tcCodeValue.y,
+      fontSize: FONTS.metaData.size,
+      fontWeight: FONTS.metaData.weight,
+      color: FONTS.metaData.color,
       width: canvasWidth,
       height: canvasHeight,
     }),
   });
 
+  // --- 4. FOOTER URL ---
   composites.push({
     input: makeSvgText({
-      text: "Nach DPI Standart geprüft",
-      x: COORDS.dpiLinePos.x,
-      y: COORDS.dpiLinePos.y,
-      fontSize: FONTS.body.size,
-      fontWeight: FONTS.body.weight,
-      color: FONTS.bodyMuted.color,
-      width: canvasWidth,
-      height: canvasHeight,
-    }),
-  });
-  composites.push({
-    input: makeSvgText({
-      text: reportUrl,
-      x: COORDS.reportUrlPos.x,
-      y: COORDS.reportUrlPos.y,
+      text: shorten(reportUrl, 60),
+      x: COORDS.reportUrlValue.x,
+      y: COORDS.reportUrlValue.y,
       fontSize: FONTS.smallMuted.size,
       fontWeight: FONTS.smallMuted.weight,
       color: FONTS.smallMuted.color,
@@ -214,11 +295,24 @@ export async function generateSeal({
     }),
   });
 
-  // QR code
-  const qrSize = Math.max(32, Math.min(COORDS.qr.size, canvasWidth, canvasHeight));
+  // --- 5. QR CODE ---
+  const qrSize = Math.max(
+    32,
+    Math.min(COORDS.qr.size, canvasWidth, canvasHeight)
+  );
+
+  const qrBuffer = await QRCode.toBuffer(reportUrl, {
+    margin: 1,
+    width: qrSize,
+    color: {
+      dark: "#000000",
+      light: "#FFFFFF",
+    },
+  });
+
   const qrX = Math.min(Math.max(0, COORDS.qr.x), canvasWidth - qrSize);
   const qrY = Math.min(Math.max(0, COORDS.qr.y), canvasHeight - qrSize);
-  const qrBuffer = await QRCode.toBuffer(reportUrl, { margin: 0, width: qrSize });
+
   composites.push({
     input: qrBuffer,
     top: qrY,
@@ -228,7 +322,10 @@ export async function generateSeal({
   const outFile = path.join(outputDir, `seal_${product.id}.png`);
   await fs.mkdir(outputDir, { recursive: true });
 
-  const final = await sharp(templateBuffer).composite(composites).png().toBuffer();
+  const final = await sharp(templateBuffer)
+    .composite(composites)
+    .png()
+    .toBuffer();
 
   await fs.writeFile(outFile, final);
   const rel = outFile.split(`${path.sep}public${path.sep}`)[1] || outFile;

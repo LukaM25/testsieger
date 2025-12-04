@@ -125,6 +125,7 @@ export async function completeProduct(productId: string, message?: string): Prom
         ratingScore: cert.ratingScore ?? 'PASS',
         ratingLabel: cert.ratingLabel ?? 'PASS',
         appUrl: APP_URL,
+        licenseDate: product.license?.startsAt ?? product.license?.paidAt ?? product.license?.createdAt ?? null,
       });
       sealUrl = generatedSealPath;
       cert = await prisma.certificate.update({

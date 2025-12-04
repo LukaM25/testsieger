@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Plan } from "@prisma/client";
 
 const PLAN_PRICE: Record<string, string> = {
   BASIC: process.env.STRIPE_PRICE_BASIC!,
@@ -20,11 +21,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Produkt nicht gefunden' }, { status: 404 });
   }
 
-  const priceId = PLAN_PRICE[plan];
-  if (!priceId) return NextResponse.json({ error: 'Plan ungültig' }, { status: 400 });
+  const normalizedPlan = typeof plan === 'string' ? plan.toUpperCase() : '';
+  const allowedPlans: Plan[] = [Plan.BASIC, Plan.PREMIUM, Plan.LIFETIME];
+  const selectedPlan = allowedPlans.find((p) => p === normalizedPlan);
+  if (!selectedPlan) {
+    return NextResponse.json({ error: `Plan ungültig: ${plan}` }, { status: 400 });
+  }
+
+  const priceId = PLAN_PRICE[selectedPlan];
+  if (!priceId) {
+    return NextResponse.json({ error: `Plan nicht konfiguriert (${selectedPlan}). Bitte STRIPE_PRICE_${selectedPlan} setzen.` }, { status: 500 });
+  }
 
   // Look up price to decide mode; Stripe will error if subscription mode is used with a one-time price.
-  let checkoutMode: 'payment' | 'subscription' = plan === 'LIFETIME' ? 'payment' : 'subscription';
+  let checkoutMode: 'payment' | 'subscription' = selectedPlan === 'LIFETIME' ? 'payment' : 'subscription';
   let priceAmountCents: number | null = null;
   try {
     const price = await stripe.prices.retrieve(priceId);
@@ -39,28 +49,34 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Preis konnte nicht geladen werden' }, { status: 500 });
   }
 
-  const stripeSession = await stripe.checkout.sessions.create(
-    {
-      mode: checkoutMode,
-      line_items: [{ price: priceId, quantity: 1 }],
-      client_reference_id: `${session.userId}:${product.id}:${plan}`,
-      metadata: {
-        productId: product.id,
-        userId: session.userId,
-        plan,
-        priceCents: priceAmountCents ?? null,
+  let stripeSession;
+  try {
+    stripeSession = await stripe.checkout.sessions.create(
+      {
+        mode: checkoutMode,
+        line_items: [{ price: priceId, quantity: 1 }],
+        client_reference_id: `${session.userId}:${product.id}:${selectedPlan}`,
+        metadata: {
+          productId: product.id,
+          userId: session.userId,
+          plan: selectedPlan,
+          priceCents: priceAmountCents ?? null,
+        },
+        success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
+        cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/pakete`,
       },
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/pakete`,
-    },
-    { maxNetworkRetries: 2 }
-  );
+      { maxNetworkRetries: 2 }
+    );
+  } catch (err) {
+    console.error('STRIPE_CHECKOUT_CREATE_ERROR', err);
+    return NextResponse.json({ error: 'Stripe Checkout konnte nicht erstellt werden' }, { status: 500 });
+  }
 
   await prisma.order.create({
     data: {
       userId: session.userId,
       productId: product.id,
-      plan,
+      plan: selectedPlan,
       priceCents: 0,
       stripeSessionId: stripeSession.id,
     },

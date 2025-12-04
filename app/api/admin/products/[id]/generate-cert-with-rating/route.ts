@@ -61,6 +61,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
   const body = await req.json().catch(() => ({} as Record<string, unknown>));
   const message = typeof body.message === "string" ? body.message.slice(0, 1000) : undefined;
+  const sendEmail = body?.sendEmail !== false;
 
   try {
     const rows = await fetchSheet();
@@ -78,7 +79,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     const product = await prisma.product.findUnique({
       where: { id: productId },
-      include: { user: true, certificate: true },
+      include: { user: true, certificate: true, license: true },
     });
     if (!product) return NextResponse.json({ error: "PRODUCT_NOT_FOUND" }, { status: 404 });
 
@@ -140,6 +141,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       ratingScore,
       ratingLabel,
       appUrl: APP_URL,
+      licenseDate: product.license?.startsAt ?? product.license?.paidAt ?? product.license?.createdAt ?? null,
     });
 
     const cert = await prisma.certificate.upsert({
@@ -170,21 +172,23 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       data: { status: "COMPLETED", adminProgress: "PASS" },
     });
 
-    // Email customer with PDF + seal attachments
-    try {
-      const sealAbs = path.join(process.cwd(), "public", sealPath.replace(/^\//, ""));
-      const sealBuffer = await fs.readFile(sealAbs);
-      await sendCertificateAndSealEmail({
-        to: product.user.email,
-        name: product.user.name,
-        productName: product.name,
-        verifyUrl,
-        pdfBuffer,
-        sealBuffer,
-        message,
-      });
-    } catch (err) {
-      console.error("CERT_SEAL_EMAIL_ERROR", err);
+    // Email customer with PDF + seal attachments (optional)
+    if (sendEmail) {
+      try {
+        const sealAbs = path.join(process.cwd(), "public", sealPath.replace(/^\//, ""));
+        const sealBuffer = await fs.readFile(sealAbs);
+        await sendCertificateAndSealEmail({
+          to: product.user.email,
+          name: product.user.name,
+          productName: product.name,
+          verifyUrl,
+          pdfBuffer,
+          sealBuffer,
+          message,
+        });
+      } catch (err) {
+        console.error("CERT_SEAL_EMAIL_ERROR", err);
+      }
     }
 
     return NextResponse.json({

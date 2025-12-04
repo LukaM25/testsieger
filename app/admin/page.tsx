@@ -450,7 +450,7 @@ function AdminProductRow({
       }
       setLocalMessage('Status aktualisiert.');
       onUpdated();
-      if (selectedStatus === 'PASS' && canSendCertificate && !autoSent) {
+      if (selectedStatus === 'PASS' && !autoSent) {
         setAutoSent(true);
         await handleSendCertificate({ auto: true });
       }
@@ -493,41 +493,28 @@ function AdminProductRow({
     }
   };
 
-  // Allow sending if payment is PAID/MANUAL and workflow is at least IN_REVIEW or PASS selected
-  const paymentIsCovered =
-    paymentStatusValue === 'PAID' ||
-    paymentStatusValue === 'MANUAL' ||
-    product.paymentStatus === 'PAID' ||
-    product.paymentStatus === 'MANUAL';
-  const workflowReady = product.status === 'IN_REVIEW' || product.status === 'COMPLETED' || selectedStatus === 'PASS';
-  const canSendCertificate = paymentIsCovered && workflowReady;
-  
   const handleSendCertificate = async (opts?: { auto?: boolean }) => {
-    if (!canSendCertificate) {
-      setLocalMessage('Produkt muss mindestens IN_REVIEW sein oder BEZAHLT, bevor das Zertifikat versendet wird.');
-      return;
-    }
     setLocalMessage(null);
     setSendLoading(true);
     try {
-      const res = await fetch('/api/admin/complete', {
+      const res = await fetch(`/api/admin/products/${product.id}/generate-cert-with-rating`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          productId: product.id,
+          sendEmail: false,
           message: teamNote.trim() ? teamNote.trim().slice(0, 1000) : undefined,
         }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setLocalMessage(data.error || 'Zertifikat konnte nicht versendet werden.');
+        setLocalMessage(data.error || 'Zertifikat konnte nicht erstellt werden.');
         return;
       }
-      setLocalMessage(opts?.auto ? 'Zertifikat automatisch versendet (Internal Engine).' : 'Zertifikat versendet (Internal Engine).');
+      setLocalMessage('Zertifikat generiert.');
       onUpdated();
     } catch (err) {
       console.error(err);
-      setLocalMessage('Senden des Zertifikats fehlgeschlagen.');
+      setLocalMessage('Erstellung fehlgeschlagen.');
     } finally {
       setSendLoading(false);
     }
@@ -585,15 +572,16 @@ function AdminProductRow({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          sendEmail: false,
           message: teamNote.trim() ? teamNote.trim().slice(0, 1000) : undefined,
         }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setLocalMessage(data.error || 'Zertifikat/ Siegel konnte nicht erstellt werden.');
+        setLocalMessage(data.error || 'Siegel konnte nicht erstellt werden.');
         return;
       }
-      setLocalMessage('Zertifikat & Siegel erstellt.');
+      setLocalMessage('Siegel generiert.');
       onUpdated();
     } catch (err) {
       console.error(err);
@@ -734,27 +722,26 @@ function AdminProductRow({
 
               <button
                 type="button"
-                disabled={sendLoading || !canSendCertificate || selectedStatus !== 'PASS'}
+                disabled={sendLoading}
                 onClick={() => handleSendCertificate()}
                 className="rounded-lg border border-emerald-600 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-70"
               >
-                {sendLoading
-                  ? 'Zertifikat wird gesendet…'
-                  : selectedStatus !== 'PASS'
-                    ? 'Erst auf PASS setzen'
-                    : canSendCertificate
-                      ? 'Zertifikat per E-Mail senden'
-                      : 'Warten auf Zahlung'}
+                {sendLoading ? 'Zertifikat wird generiert…' : 'Zertifikat generieren'}
               </button>
 
-            <button
-              type="button"
-              disabled={genLoading}
-              onClick={handleGenerateWithRating}
-              className="rounded-lg border border-amber-700 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-800 transition hover:bg-amber-50 disabled:opacity-70"
-            >
-              {genLoading ? 'Erstelle Zertifikat & Siegel…' : 'Zertifikat & Siegel generieren und per E-Mail senden'}
-            </button>
+              <button
+                type="button"
+                disabled={genLoading}
+                onClick={handleGenerateWithRating}
+                className="rounded-lg border border-amber-700 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-800 transition hover:bg-amber-50 disabled:opacity-70"
+              >
+                {genLoading ? 'Siegel wird generiert…' : 'Siegel generieren'}
+              </button>
+
+              <p className="text-xs text-slate-500">
+                Hinweis: Der Versand an den Kunden erfolgt erst über die Aktion &ldquo;Completion – Send all Files&rdquo;.
+              </p>
+
             <button
               type="button"
               disabled={sendLoading}

@@ -252,15 +252,27 @@ export default function ProduktTestPage() {
               <Image src="/tclogo.png" alt="TC Logo" width={525} height={138} className="mb-4 h-[138px] w-[275px] object-contain" />
             </div>
           </div>
-          <h1 data-animate="hero-title" className="text-3xl font-bold">
-            {tr('Ihr Produkt verdient Vertrauen', 'Your product deserves trust')}
-          </h1>
-          <p data-animate="hero-text" className="text-sm text-slate-600">
-            {tr(
-              'Wir begleiten Sie vom Pre-Check bis zum Siegel – transparent, digital und mit einem klaren Bewertungsrahmen.',
-              'We support you from pre-check to seal – transparent, digital, and with a clear evaluation framework.'
-            )}
-          </p>
+          <div className="flex items-end gap-4">
+            <Image
+              src="/images/iconen/destripe.jpeg"
+              alt="Deutschlandfarben"
+              width={12}
+              height={64}
+              className="h-20 w-auto object-contain self-end"
+              priority
+            />
+            <div className="space-y-3">
+              <h1 data-animate="hero-title" className="text-3xl font-bold">
+                {tr('Ihr Produkt verdient Vertrauen', 'Your product deserves trust')}
+              </h1>
+              <p data-animate="hero-text" className="text-sm text-slate-600">
+                {tr(
+                  'Wir begleiten Sie vom Pre-Check bis zum Siegel – transparent, digital und mit einem klaren Bewertungsrahmen.',
+                  'We support you from pre-check to seal – transparent, digital, and with a clear evaluation framework.'
+                )}
+              </p>
+            </div>
+          </div>
           <div className="flex flex-wrap gap-3">
             <button
               data-animate="hero-cta"

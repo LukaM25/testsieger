@@ -42,6 +42,9 @@ export default function Verfahren() {
           <p className="mt-4 text-gray-500 font-normal">
             Transparenz schafft Vertrauen.
           </p>
+          <p className="mt-4 text-gray-500 font-normal">
+            Nach DPI Standard.
+          </p>
         </div>
 
         <div className="grid gap-8 md:grid-cols-3">
