@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSession } from '@/lib/cookies';
 import { prisma } from '@/lib/prisma';
+import { sendPrecheckConfirmation } from '@/lib/email';
 
 export const runtime = 'nodejs';
 
@@ -41,6 +42,18 @@ export async function POST(req: Request) {
       },
       select: { id: true, name: true },
     });
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { name: true, email: true },
+    });
+    if (user?.email && user?.name) {
+      sendPrecheckConfirmation({
+        to: user.email,
+        name: user.name,
+        productName: product.name,
+      }).catch(() => {});
+    }
 
     return NextResponse.json({ ok: true, product });
   } catch (err: any) {

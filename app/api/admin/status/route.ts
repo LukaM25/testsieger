@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { ProductStatus } from '@prisma/client';
 import { isAdminAuthed } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
-import { sendFailureNotification, sendProductReceivedEmail, sendPassAndLicenseRequest } from '@/lib/email';
+import { sendFailureNotification, sendProductReceivedEmail, sendPassAndLicenseRequest, sendCompletionReadyEmail } from '@/lib/email';
 import { generateCertificatePdf } from '@/pdfGenerator';
 import { fetchRatingCsv } from '@/lib/ratingSheet';
 
@@ -53,6 +53,14 @@ export async function POST(req: Request) {
       name: product.user.name,
       productName: product.name,
     }).catch((err) => console.error('RECEIVED_EMAIL_ERROR', err));
+  } else if (status === 'COMPLETION') {
+    const csvBuffer = await fetchRatingCsv(product.id, product.name);
+    await sendCompletionReadyEmail({
+      to: product.user.email,
+      name: product.user.name,
+      productName: product.name,
+      csvBuffer,
+    }).catch((err) => console.error('COMPLETION_EMAIL_ERROR', err));
   } else if (status === 'PASS') {
     try {
       await sendPassAndLicenseRequest({

@@ -11,7 +11,7 @@ export default async function DashboardPage() {
     where: { id: session.userId },
     include: {
       products: {
-        include: { certificate: true },
+        include: { certificate: true, license: true },
         orderBy: { createdAt: 'desc' },
       },
       orders: { include: { product: true }, orderBy: { createdAt: 'desc' } },

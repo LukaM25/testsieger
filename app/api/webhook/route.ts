@@ -2,9 +2,10 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
-import { sendPrecheckPaymentSuccess } from "@/lib/email";
+import { sendPrecheckPaymentSuccess, sendLicenseActivatedEmail } from "@/lib/email";
 import { completeProduct, CompletionError } from '@/lib/completion';
 import { Plan } from "@prisma/client";
+import { fetchRatingCsv } from "@/lib/ratingSheet";
 
 export const runtime = "nodejs"; // ensure Node runtime for raw body
 
@@ -94,6 +95,26 @@ export async function POST(req: Request) {
             stripePriceId,
           },
         });
+        if (licensePlan && !['PRECHECK_FEE', 'PRECHECK_PRIORITY'].includes(licensePlan as string)) {
+          const productFull = await prisma.product.findUnique({
+            where: { id: productId },
+            include: { user: true, certificate: true },
+          });
+          const ratingCsv = await fetchRatingCsv(productId, productFull?.name ?? null);
+          if (productFull?.user) {
+            await sendLicenseActivatedEmail({
+              to: productFull.user.email,
+              name: productFull.user.name,
+              productName: productFull.name,
+              certificateId: productFull.certificate?.id ?? null,
+              pdfUrl: productFull.certificate?.pdfUrl ?? null,
+              qrUrl: productFull.certificate?.qrUrl ?? null,
+              sealUrl: productFull.certificate?.sealUrl ?? null,
+              sealNumber: productFull.certificate?.seal_number ?? null,
+              ratingCsv,
+            }).catch((err) => console.error('LICENSE_ACTIVATED_EMAIL_ERROR', err));
+          }
+        }
       } catch (err: any) {
         if (err instanceof CompletionError) {
           if (err.code === 'PDF_NOT_READY_YET') {
@@ -121,13 +142,31 @@ export async function POST(req: Request) {
         where: { id: productId },
         include: { user: true },
       });
+
+      let receiptPdf: Buffer | undefined;
+      if (typeof (cs as any).invoice === 'string') {
+        try {
+          const invoice = await stripe.invoices.retrieve((cs as any).invoice as string);
+          const pdfUrl = (invoice as any).invoice_pdf as string | null | undefined;
+          if (pdfUrl) {
+            const res = await fetch(pdfUrl);
+            if (res.ok) {
+              const arr = await res.arrayBuffer();
+              receiptPdf = Buffer.from(arr);
+            }
+          }
+        } catch (err) {
+          console.warn('INVOICE_PDF_FETCH_FAIL', err);
+        }
+      }
+
       if (product?.user) {
         await sendPrecheckPaymentSuccess({
           to: product.user.email,
           name: product.user.name,
           productName: product.name,
-          shippingAddress: null,
-          receiptPdf: undefined,
+          processNumber: product.id,
+          receiptPdf,
         }).catch((err) => {
           console.error('PRECHECK_PAYMENT_EMAIL_ERROR', err);
         });

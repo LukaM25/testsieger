@@ -22,6 +22,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
           createdAt: typeof p.createdAt === "string" ? p.createdAt : p.createdAt?.toISOString?.() ?? undefined,
           brand: p.brand ?? null,
           certificate: p.certificate ? { id: p.certificate.id, pdfUrl: p.certificate.pdfUrl ?? null } : null,
+          license: p.license ? { status: p.license.status, plan: p.license.plan ?? null } : null,
         })
       ),
     [user.products]
@@ -34,6 +35,10 @@ export default function DashboardClient({ user }: DashboardClientProps) {
   const [showSubmit, setShowSubmit] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [licenseSelections, setLicenseSelections] = useState<Record<string, string>>({});
+  const [licensePaying, setLicensePaying] = useState<string | null>(null);
+  const [baseFeeSelections, setBaseFeeSelections] = useState<Record<string, string>>({});
+  const [baseFeePaying, setBaseFeePaying] = useState<string | null>(null);
   const [newProduct, setNewProduct] = useState({
     productName: "",
     brand: "",
@@ -127,6 +132,56 @@ export default function DashboardClient({ user }: DashboardClientProps) {
       window.open(data.receiptUrl as string, "_blank", "noopener,noreferrer");
     } catch {
       alert("Beleg konnte nicht geladen werden.");
+    }
+  };
+
+  const handleBaseFeePay = async (productId: string, option: string) => {
+    setBaseFeePaying(productId);
+    try {
+      const res = await fetch("/api/precheck/pay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, option }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.url) {
+        alert(data.error || "Grundgebühr konnte nicht gestartet werden.");
+        return;
+      }
+      if (data?.alreadyPaid) {
+        alert("Grundgebühr bereits bezahlt.");
+        return;
+      }
+      window.location.href = data.url as string;
+    } catch {
+      alert("Grundgebühr konnte nicht gestartet werden.");
+    } finally {
+      setBaseFeePaying(null);
+    }
+  };
+
+  const handleLicensePay = async (productId: string, plan: string) => {
+    if (!plan) {
+      alert("Bitte Lizenzplan auswählen.");
+      return;
+    }
+    setLicensePaying(productId);
+    try {
+      const res = await fetch("/api/payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan, productId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.url) {
+        alert(data.error || "Zahlung konnte nicht gestartet werden.");
+        return;
+      }
+      window.location.href = data.url as string;
+    } catch {
+      alert("Zahlung konnte nicht gestartet werden.");
+    } finally {
+      setLicensePaying(null);
     }
   };
 
@@ -234,6 +289,88 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
                     Status: {p.status}
                   </span>
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  {["PAID", "MANUAL"].includes(p.paymentStatus) ? (
+                    <span className="text-xs font-semibold text-emerald-700">Grundgebühr bezahlt</span>
+                  ) : (
+                    <>
+                      <select
+                        className="rounded-lg border border-slate-200 px-3 py-2 text-xs"
+                        value={baseFeeSelections[p.id] || "standard"}
+                        onChange={(e) => setBaseFeeSelections((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                        disabled={baseFeePaying === p.id}
+                      >
+                        <option value="standard">Grundgebühr (Standard)</option>
+                        <option value="priority">Priority</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => handleBaseFeePay(p.id, baseFeeSelections[p.id] || "standard")}
+                        disabled={baseFeePaying === p.id}
+                        className={`rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition ${
+                          baseFeePaying === p.id ? "bg-slate-300 text-slate-600" : "bg-slate-900 text-white hover:bg-black"
+                        }`}
+                      >
+                        {baseFeePaying === p.id ? "Starte Zahlung…" : "Grundgebühr zahlen"}
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <select
+                    className="rounded-lg border border-slate-200 px-3 py-2 text-xs"
+                    value={licenseSelections[p.id] || p.license?.plan || "BASIC"}
+                    onChange={(e) => setLicenseSelections((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                    disabled={
+                      licensePaying === p.id ||
+                      p.license?.status === "ACTIVE" ||
+                      !["PAID", "MANUAL"].includes(p.paymentStatus)
+                    }
+                  >
+                    <option value="BASIC">Basic</option>
+                    <option value="PREMIUM">Premium</option>
+                    <option value="LIFETIME">Lifetime</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => handleLicensePay(p.id, licenseSelections[p.id] || p.license?.plan || "BASIC")}
+                    disabled={
+                      licensePaying === p.id ||
+                      p.license?.status === "ACTIVE" ||
+                      !["PAID", "MANUAL"].includes(p.paymentStatus)
+                    }
+                    className={`rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition ${
+                      p.license?.status === "ACTIVE"
+                        ? "bg-emerald-100 text-emerald-700 cursor-not-allowed"
+                        : ["PAID", "MANUAL"].includes(p.paymentStatus)
+                        ? "bg-slate-900 text-white hover:bg-black"
+                        : "bg-slate-200 text-slate-500 cursor-not-allowed"
+                    }`}
+                  >
+                    {p.license?.status === "ACTIVE"
+                      ? "Lizenz aktiv"
+                      : licensePaying === p.id
+                      ? "Starte Zahlung…"
+                      : ["PAID", "MANUAL"].includes(p.paymentStatus)
+                      ? p.license?.status === "EXPIRED"
+                        ? "Lizenz verlängern"
+                        : "Lizenzplan zahlen"
+                      : "Grundgebühr zuerst zahlen"}
+                  </button>
+                  {p.license?.status === "ACTIVE" && (
+                    <span className="text-xs font-semibold text-emerald-700">
+                      Aktivierter Plan: {p.license?.plan || "—"}
+                    </span>
+                  )}
+                  {p.license?.status === "EXPIRED" && (
+                    <span className="text-xs font-semibold text-amber-600">Lizenz abgelaufen – bitte neu buchen.</span>
+                  )}
+                  {!["PAID", "MANUAL"].includes(p.paymentStatus) && (
+                    <span className="text-xs text-amber-600">Bitte zuerst Grundgebühr bezahlen.</span>
+                  )}
                 </div>
 
                 {p.certificate ? (

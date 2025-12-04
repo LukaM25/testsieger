@@ -603,6 +603,20 @@ function AdminProductRow({
     }
   };
 
+  const flowSteps: { key: StatusOption; label: string }[] = [
+    { key: 'PRECHECK', label: 'Pre-Check' },
+    { key: 'RECEIVED', label: 'Eingang' },
+    { key: 'ANALYSIS', label: 'Analyse' },
+    { key: 'COMPLETION', label: 'Abschluss' },
+    { key: 'PASS', label: 'Bestanden' },
+    { key: 'FAIL', label: 'Nicht bestanden' },
+  ];
+  const currentKey = (product.adminProgress as StatusOption) || (product.status as StatusOption);
+  const currentIdx = Math.max(
+    0,
+    flowSteps.findIndex((s) => s.key === currentKey),
+  );
+
   return (
     <article className="relative rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-3">
@@ -640,6 +654,7 @@ function AdminProductRow({
                 </span>
               )}
             </div>
+
           </div>
           <div className="flex gap-2">
             <button
@@ -652,7 +667,44 @@ function AdminProductRow({
           </div>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-900">Flow</h3>
+              <span className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Phasen</span>
+            </div>
+            <div className="mt-3 grid gap-2">
+              {flowSteps.map((step, idx) => {
+                const state = idx < currentIdx ? 'done' : idx === currentIdx ? 'current' : 'upcoming';
+                const style =
+                  state === 'done'
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                    : state === 'current'
+                      ? 'bg-blue-50 text-blue-700 border border-blue-100'
+                      : 'bg-white text-slate-500 border border-slate-200';
+                return (
+                  <div
+                    key={step.key}
+                    className={`flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold ${style}`}
+                  >
+                    <span
+                      className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${
+                        state === 'done'
+                          ? 'bg-emerald-600 text-white'
+                          : state === 'current'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {idx + 1}
+                    </span>
+                    <span>{step.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-slate-900">Workflow-Schritte</h3>
@@ -827,104 +879,108 @@ function AdminProductRow({
                 </button>
               </div>
               {paymentStatusMessage && <p className="text-xs text-slate-500">{paymentStatusMessage}</p>}
-              </div>
             </div>
+          </div>
+        </div>
 
-            <div className="mt-4 space-y-2 rounded-lg border border-slate-200 bg-white p-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-600">Lizenz verwalten</span>
-                {product.license?.stripeSubId && (
-                  <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-500">
-                    StripeSub: {product.license.stripeSubId}
-                  </span>
-                )}
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <label className="flex flex-col gap-1 text-xs font-semibold text-slate-700">
-                  Plan
-                  <select
-                    value={licensePlan}
-                    onChange={(e) => setLicensePlan(e.target.value)}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"
-                  >
-                    <option value="BASIC">BASIC</option>
-                    <option value="PREMIUM">PREMIUM</option>
-                    <option value="LIFETIME">LIFETIME</option>
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-xs font-semibold text-slate-700">
-                  Status
-                  <select
-                    value={licenseStatus}
-                    onChange={(e) => setLicenseStatus(e.target.value)}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"
-                  >
-                    <option value="PENDING">PENDING</option>
-                    <option value="ACTIVE">ACTIVE</option>
-                    <option value="EXPIRED">EXPIRED</option>
-                    <option value="CANCELED">CANCELED</option>
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-xs font-semibold text-slate-700">
-                  Start
-                  <input
-                    type="date"
-                    value={licenseStart}
-                    onChange={(e) => setLicenseStart(e.target.value)}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-xs font-semibold text-slate-700">
-                  Ablauf
-                  <input
-                    type="date"
-                    value={licensePlan === 'LIFETIME' ? '' : licenseEnd}
-                    onChange={(e) => setLicenseEnd(e.target.value)}
-                    disabled={licensePlan === 'LIFETIME'}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold disabled:opacity-70"
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-xs font-semibold text-slate-700 sm:col-span-2">
-                  Lizenzcode
-                  <input
-                    type="text"
-                    value={licenseCode}
-                    onChange={(e) => setLicenseCode(e.target.value)}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"
-                  />
-                </label>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                <button
-                  type="button"
-                  disabled={licenseSaving}
-                  onClick={handleSaveLicense}
-                  className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-emerald-800 disabled:opacity-70"
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-600">Lizenz verwalten</span>
+              {product.license?.stripeSubId && (
+                <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-500">
+                  StripeSub: {product.license.stripeSubId}
+                </span>
+              )}
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <label className="flex flex-col gap-1 text-xs font-semibold text-slate-700">
+                Plan
+                <select
+                  value={licensePlan}
+                  onChange={(e) => setLicensePlan(e.target.value)}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"
                 >
-                  {licenseSaving ? 'Speichere Lizenz…' : 'Lizenz speichern'}
-                </button>
-                {product.license?.expiresAt && (
-                  <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                    {expiresInDays != null ? `${expiresInDays} Tage übrig` : ''}
-                  </span>
-                )}
-              </div>
+                  <option value="BASIC">BASIC</option>
+                  <option value="PREMIUM">PREMIUM</option>
+                  <option value="LIFETIME">LIFETIME</option>
+                </select>
+              </label>
+              <label className="flex flex-col gap-1 text-xs font-semibold text-slate-700">
+                Status
+                <select
+                  value={licenseStatus}
+                  onChange={(e) => setLicenseStatus(e.target.value)}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"
+                >
+                  <option value="PENDING">PENDING</option>
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="EXPIRED">EXPIRED</option>
+                  <option value="CANCELED">CANCELED</option>
+                </select>
+              </label>
+              <label className="flex flex-col gap-1 text-xs font-semibold text-slate-700">
+                Start
+                <input
+                  type="date"
+                  value={licenseStart}
+                  onChange={(e) => setLicenseStart(e.target.value)}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-xs font-semibold text-slate-700">
+                Ablauf
+                <input
+                  type="date"
+                  value={licensePlan === 'LIFETIME' ? '' : licenseEnd}
+                  onChange={(e) => setLicenseEnd(e.target.value)}
+                  disabled={licensePlan === 'LIFETIME'}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold disabled:opacity-70"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-xs font-semibold text-slate-700 sm:col-span-2">
+                Lizenzcode
+                <input
+                  type="text"
+                  value={licenseCode}
+                  onChange={(e) => setLicenseCode(e.target.value)}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"
+                />
+              </label>
             </div>
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <button
+                type="button"
+                disabled={licenseSaving}
+                onClick={handleSaveLicense}
+                className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-emerald-800 disabled:opacity-70"
+              >
+                {licenseSaving ? 'Speichere Lizenz…' : 'Lizenz speichern'}
+              </button>
+              {product.license?.expiresAt && (
+                <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                  {expiresInDays != null ? `${expiresInDays} Tage übrig` : ''}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <label className="block text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-slate-600 mb-2">
+              Notiz an den Kunden (optional) / Customer note
+            </label>
+            <textarea
+              value={teamNote}
+              onChange={(e) => setTeamNote(e.target.value)}
+              rows={2}
+              maxLength={1000}
+              placeholder="Kurze Nachricht für den Kunden (wird in die E-Mail eingefügt) / Short note for the customer"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 shadow-inner focus:border-slate-400 focus:outline-none"
+            />
+          </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <label className="block text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-slate-600 mb-2">
-            Notiz an den Kunden (optional) / Customer note
-          </label>
-          <textarea
-            value={teamNote}
-            onChange={(e) => setTeamNote(e.target.value)}
-            rows={2}
-            maxLength={1000}
-            placeholder="Kurze Nachricht für den Kunden (wird in die E-Mail eingefügt) / Short note for the customer"
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 shadow-inner focus:border-slate-400 focus:outline-none"
-          />
-        </div>
+
 
         {selectedStatus === 'FAIL' && (
           <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">

@@ -1,15 +1,16 @@
 // lib/email.ts
 import nodemailer from 'nodemailer';
+import fs from 'fs/promises';
+import QRCode from 'qrcode';
+import { ensureSignedS3Url } from './s3';
+import { fetchRatingCsv } from './ratingSheet';
 
 const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 const FROM_EMAIL = process.env.MAIL_FROM ?? 'pruefsiegel@lucidstar.de';
-const SHIPPING_ADDRESS_BLOCK = `Prüfsiegel Zentrum UG (haftungsbeschränkt)
-Musterstraße 12
-6020 Innsbruck
-Österreich`;
+const APP_BASE_URL = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://pruefsiegelzentrum.vercel.app';
 
 const transporter = SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS
   ? nodemailer.createTransport({
@@ -39,32 +40,60 @@ async function sendEmail(opts: { to: string; subject: string; html: string; atta
   console.warn('No email provider configured. Email skipped.');
 }
 
+function renderFooter() {
+  const logo = `${APP_BASE_URL.replace(/\/$/, '')}/tclogo.png`;
+  const seal = `${APP_BASE_URL.replace(/\/$/, '')}/siegel.png`;
+  return `
+    <div style="margin-top:28px;padding-top:18px;border-top:1px solid #e2e8f0;display:flex;align-items:center;gap:16px;color:#475569;font-size:12px;">
+      <img src="${logo}" alt="DPI Logo" width="140" height="40" style="display:block;object-fit:contain;" />
+      <img src="${seal}" alt="Prüfsiegel" width="70" height="70" style="display:block;object-fit:contain;" />
+      <div style="line-height:1.4;">
+        Deutsches Prüfsiegel Institut (DPI)<br/>
+        Prüfzentrum – Kundenservice<br/>
+        <a href="${APP_BASE_URL.replace(/\/$/, '')}" style="color:#1d4ed8;text-decoration:none;">${APP_BASE_URL.replace(/\/$/, '')}</a>
+      </div>
+    </div>
+  `;
+}
+
+async function fetchBufferFromUrl(url: string): Promise<Buffer | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const arr = await res.arrayBuffer();
+    return Buffer.from(arr);
+  } catch {
+    return null;
+  }
+}
+
 export async function sendPrecheckConfirmation(opts: {
   to: string;
   name: string;
   productName: string;
 }) {
   const { to, name, productName } = opts;
-  const appUrl = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://pruefsiegelzentrum.vercel.app';
-  const checkoutAnchor = `${appUrl.replace(/\/$/, '')}/precheck#checkout-options`;
+  const checkoutAnchor = `${APP_BASE_URL.replace(/\/$/, '')}/precheck#checkout-options`;
 
   const html = `
     <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.65;color:#0f172a">
-      <p>Hallo ${escapeHtml(name || '')},</p>
-      <p>vielen Dank, dass Sie unseren Service gewählt haben. Ihr Pre-Check für <strong>${escapeHtml(productName)}</strong> ist eingegangen.</p>
-      <p>Bitte begleichen Sie jetzt die Grundgebühr (254 € zzgl. 19 % MwSt. = 302,26 €), damit wir Ihnen umgehend Rechnung und Versandanschrift bereitstellen können.</p>
+      <p>Guten Tag ${escapeHtml(name || '')},</p>
+      <p>Ihr Produkt <strong>${escapeHtml(productName)}</strong> hat den Pre-Check erfolgreich bestanden. Alle relevanten Daten wurden in Echtzeit abgefragt und valide bestätigt. Damit erfüllt Ihr Produkt die Kriterien, um offiziell in den Testsieger Check des Deutschen Prüfsiegel Instituts (DPI) überführt zu werden.</p>
+      <p>Falls die Prüfgebühr für den Testsieger Check noch nicht beglichen wurde, können Sie diese hier direkt auslösen:</p>
       <p style="margin:16px 0 8px;">
-        <a href="${checkoutAnchor}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">Grundgebühr bezahlen</a>
+        <a href="${checkoutAnchor}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">Prüfgebühr jetzt buchen</a>
       </p>
-      <p style="margin-top:18px;font-size:13px;color:#475569;">Sobald der Zahlungseingang vorliegt, senden wir Ihnen die Rechnung und die Versandadresse.</p>
-      <p style="margin-top:18px;">Danke für Ihr Vertrauen.<br/>Prüfsiegel Zentrum UG</p>
+      <p>Sollten Sie bereits bezahlt haben, können Sie diesen Hinweis ignorieren.</p>
+      <p>Nach Zahlung wird Ihr Produkt automatisch in den Prufplan aufgenommen. Sie erhalten anschlieBend die verbindliche Bestatigung inklusive Zeitfenster.</p>
+      <p style="margin-top:18px;">Mit besten Grüßen<br/>Deutsches Prüfsiegel Institut (DPI)</p>
+      ${renderFooter()}
     </div>
   `;
 
   await sendEmail({
     from: `Pruefsiegel Zentrum UG – Pre-Check <${FROM_EMAIL}>`,
     to,
-    subject: 'Pre-Check eingegangen – Grundgebühr jetzt bezahlen',
+    subject: 'Pre-Check bestanden – Prüfgebühr jetzt buchen',
     html,
   });
 }
@@ -156,6 +185,7 @@ export async function sendCompletionEmail(opts: {
         <li>Für Änderungen an Einsatzorten oder Ansprechpartnern nutzen Sie bitte das Kundenportal.</li>
       </ul>
       <p style="margin-top:18px;">Vielen Dank für die Zusammenarbeit.<br />Prüfsiegel Zentrum UG</p>
+      ${renderFooter()}
     </div>
   `;
 
@@ -206,6 +236,7 @@ export async function sendCertificateAndSealEmail(opts: {
         <li>Änderungen an Siegel- oder Einsatzdaten erfolgen über das Kundenportal.</li>
       </ul>
       <p style="margin-top:18px;">Danke für Ihr Vertrauen.<br/>Prüfsiegel Zentrum UG</p>
+      ${renderFooter()}
     </div>
   `;
 
@@ -232,6 +263,7 @@ export async function sendFailureNotification(opts: {
       <p><strong>Grund:</strong> ${escapeHtml(reason)}</p>
       <p>Bitte senden Sie uns die fehlenden Angaben oder Dokumente, damit wir fortfahren können. Bei Rückfragen helfen wir gern.</p>
       <p style="margin-top:18px;">Prüfsiegel Zentrum UG</p>
+      ${renderFooter()}
     </div>
   `;
   await sendEmail({
@@ -246,39 +278,154 @@ export async function sendPrecheckPaymentSuccess(opts: {
   to: string;
   name: string;
   productName: string;
-  receiptPdf?: Buffer;
-  shippingAddress?: string | null;
+  processNumber: string;
+  receiptPdf?: Buffer | null;
 }) {
-  const { to, name, productName, receiptPdf, shippingAddress } = opts;
-  const address = shippingAddress?.trim() || SHIPPING_ADDRESS_BLOCK;
+  const { to, name, productName, processNumber, receiptPdf } = opts;
   const html = `
     <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
-      <p>Hallo ${escapeHtml(name)},</p>
-      <p>der Zahlungseingang für <strong>${escapeHtml(productName)}</strong> (Grundgebühr) ist bestätigt. Vielen Dank!</p>
-      <p style="margin:12px 0;font-size:13px;color:#475569;white-space:pre-line;">Versandadresse:<br/>${escapeHtml(address)}</p>
-      <p style="margin-top:14px;font-size:13px;color:#475569;">Die Rechnung/Quittung finden Sie im Anhang.</p>
-      <ul style="margin:16px 0;padding-left:20px;font-size:13px;color:#475569;">
-        <li>Bitte senden Sie Ihr Produkt an die oben genannte Adresse.</li>
-        <li>Bei Rückfragen erreichen Sie uns jederzeit per Antwort auf diese E-Mail.</li>
-      </ul>
-      <p style="margin-top:18px;">Prüfsiegel Zentrum UG</p>
+      <p>Guten Tag ${escapeHtml(name)},</p>
+      <p>vielen Dank für die Begleichung der Prüfgebühr. Ihr Auftrag für den Testsieger Check des Deutschen Prüfsiegel Instituts (DPI) ist damit offiziell aktiviert.</p>
+      <p>Die Rechnung zu Ihrer Zahlung finden Sie im Anhang dieser E-Mail.</p>
+      <p>Damit wir Ihr Produkt unmittelbar in den Prüfprozess übernehmen können, senden Sie es bitte an folgende Versandadresse:</p>
+      <p style="margin:12px 0;line-height:1.5;font-size:14px;">
+        Deutsches Prüfsiegel Institut (DPI)<br/>
+        Abteilung Produktprüfung<br/>
+        Tölzer Straße 172<br/>
+        83703 Gmund<br/>
+        Adresszusatz: Vorgangsnummer ${escapeHtml(processNumber)} (Betreff)
+      </p>
+      <p>Die Vorgangsnummer ist zwingend erforderlich, damit Ihr Produkt korrekt zugeordnet werden kann.</p>
+      <p>Sobald das Produkt bei uns eingeht, erhalten Sie die Eingangsbestätigung sowie das geplante Prüfzeitfenster. Bei Fragen stehen wir jederzeit zur Verfügung.</p>
+      <p style="margin-top:18px;">Mit besten Grüßen<br/>Deutsches Prüfsiegel Institut (DPI)</p>
+      ${renderFooter()}
     </div>
   `;
 
   await sendEmail({
     from: `Pruefsiegel Zentrum UG – Zahlung <${FROM_EMAIL}>`,
     to,
-    subject: 'Pre-Check – Zahlung eingegangen',
+    subject: `Prüfgebühr bestätigt – Vorgangsnummer ${processNumber}`,
     html,
     attachments: receiptPdf
       ? [
           {
-            filename: `Quittung-${productName}.pdf`,
+            filename: `Rechnung-${productName}.pdf`,
             content: receiptPdf,
             contentType: 'application/pdf',
           },
         ]
       : undefined,
+  });
+}
+
+export async function sendCompletionReadyEmail(opts: {
+  to: string;
+  name: string;
+  productName: string;
+  licenseUrl?: string;
+  csvBuffer?: Buffer | null;
+}) {
+  const { to, name, productName, licenseUrl, csvBuffer } = opts;
+  const plansLink = (licenseUrl || `${APP_BASE_URL.replace(/\/$/, '')}/pakete`).replace(/\/$/, '');
+  const attachments: Attachment[] = [];
+  if (csvBuffer) {
+    attachments.push({
+      filename: 'Rating.csv',
+      content: csvBuffer,
+      contentType: 'text/csv',
+    });
+  }
+
+  const html = `
+    <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
+      <p>Guten Tag ${escapeHtml(name)},</p>
+      <p>gute Nachrichten: Ihr Produkt hat den Testsieger Check erfolgreich bestanden!</p>
+      <p>Das vollständige Prüfergebnis finden Sie im Anhang dieser E-Mail.</p>
+      <p style="margin:14px 0;">Um das Siegel, den Prüfbericht und das Zertifikat offiziell zu aktivieren und nutzen zu dürfen, wählen Sie jetzt Ihren passenden Lizenzplan aus:</p>
+      <p style="margin:16px 0;">
+        <a href="${plansLink}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">Lizenzplan auswählen &amp; Siegel freischalten</a>
+      </p>
+      <p style="margin:12px 0;">Nach Abschluss wird Ihr Produkt automatisch für die Nutzung des Testsieger-Siegels freigegeben.</p>
+      <p style="margin-top:18px;">Mit besten Grüßen<br/>Deutsches Prüfsiegel Institut (DPI)</p>
+      ${renderFooter()}
+    </div>
+  `;
+
+  await sendEmail({
+    from: `Pruefsiegel Zentrum UG – Abschluss <${FROM_EMAIL}>`,
+    to,
+    subject: `Testsieger Check bestanden – ${productName}`,
+    html,
+    attachments: attachments.length ? attachments : undefined,
+  });
+}
+
+export async function sendLicenseActivatedEmail(opts: {
+  to: string;
+  name: string;
+  productName: string;
+  certificateId?: string | null;
+  pdfUrl?: string | null;
+  qrUrl?: string | null;
+  sealUrl?: string | null;
+  sealNumber?: string | null;
+  ratingCsv?: Buffer | null;
+}) {
+  const { to, name, productName, certificateId, pdfUrl, qrUrl, sealUrl, sealNumber, ratingCsv } = opts;
+  const attachments: Attachment[] = [];
+
+  if (pdfUrl) {
+    const signed = await ensureSignedS3Url(pdfUrl).catch(() => pdfUrl);
+    const pdfBuffer = signed ? await fetchBufferFromUrl(signed) : null;
+    if (pdfBuffer) attachments.push({ filename: `${productName}-Zertifikat.pdf`, content: pdfBuffer, contentType: 'application/pdf' });
+  }
+
+  let qrBuffer: Buffer | null = null;
+  if (qrUrl) {
+    const signed = await ensureSignedS3Url(qrUrl).catch(() => qrUrl);
+    qrBuffer = signed ? await fetchBufferFromUrl(signed) : null;
+  }
+  const verifyUrl = certificateId ? `${APP_BASE_URL.replace(/\/$/, '')}/lizenzen?q=${encodeURIComponent(certificateId)}` : null;
+  if (!qrBuffer && verifyUrl) {
+    try { qrBuffer = await QRCode.toBuffer(verifyUrl, { margin: 1, width: 512 }); } catch {}
+  }
+  if (qrBuffer) attachments.push({ filename: `${productName}-QR.png`, content: qrBuffer, contentType: 'image/png' });
+
+  if (sealUrl) {
+    try {
+      const sealPath = sealUrl.startsWith('/') ? `${process.cwd()}/public${sealUrl}` : `${process.cwd()}/public/${sealUrl}`;
+      const sealBuffer = await fs.readFile(sealPath);
+      attachments.push({ filename: `${productName}-Siegel.png`, content: sealBuffer, contentType: 'image/png' });
+    } catch {}
+  }
+
+  if (ratingCsv) {
+    attachments.push({ filename: 'Rating.csv', content: ratingCsv, contentType: 'text/csv' });
+  }
+
+  const html = `
+    <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
+      <p>Guten Tag ${escapeHtml(name)},</p>
+      <p>vielen Dank für die Auswahl und Bezahlung Ihres Lizenzplans. Ihre Lizenz ist jetzt aktiv.</p>
+      <p>Im Anhang finden Sie alle freigegebenen Materialien zu Ihrem erfolgreich bestandenen Testsieger Check:</p>
+      <ul style="margin:12px 0 16px;padding-left:20px;color:#0f172a;">
+        <li>Offizielles Siegel${sealNumber ? ` (ID: ${escapeHtml(sealNumber)})` : ''}</li>
+        <li>Prüfbericht</li>
+        <li>Zertifikat</li>
+      </ul>
+      <p>Sie können diese Unterlagen ab sofort im vereinbarten Rahmen nutzen.</p>
+      <p style="margin-top:18px;">Mit besten Grüßen<br/>Deutsches Prüfsiegel Institut (DPI)</p>
+      ${renderFooter()}
+    </div>
+  `;
+
+  await sendEmail({
+    from: `Pruefsiegel Zentrum UG – Lizenz <${FROM_EMAIL}>`,
+    to,
+    subject: `Lizenz aktiv – ${productName}`,
+    html,
+    attachments: attachments.length ? attachments : undefined,
   });
 }
 
@@ -304,6 +451,7 @@ export async function sendPassAndLicenseRequest(opts: {
         <li>Siegel bleibt bis dahin vorgemerkt, aber noch nicht endgültig freigeschaltet.</li>
       </ul>
       <p style="margin-top:18px;">Danke für Ihr Vertrauen.<br/>Prüfsiegel Zentrum UG</p>
+      ${renderFooter()}
     </div>
   `;
 
@@ -323,17 +471,18 @@ export async function sendProductReceivedEmail(opts: {
   const { to, name, productName } = opts;
   const html = `
     <div style="font-family:system-ui,Arial;line-height:1.6;color:#111">
-      <p>Hallo ${escapeHtml(name)},</p>
-      <p>Wir haben Ihr Produkt <strong>${escapeHtml(productName)}</strong> erhalten. Die Analyse startet in Kürze.</p>
-      <p style="margin-top:12px;">Danke für Ihr Vertrauen.</p>
-      <p style="margin-top:16px;">Prüfsiegel Zentrum UG</p>
+      <p>Guten Tag${name ? ' ' + escapeHtml(name) : ''},</p>
+      <p>Ihr Produkt <strong>${escapeHtml(productName)}</strong> ist bei uns eingetroffen und für den Testsieger Check des DPI registriert. Die Prüfung läuft im vereinbarten Zeitfenster an.</p>
+      <p>Sie erhalten automatisch ein Update, sobald die Analyse abgeschlossen ist.</p>
+      <p style="margin-top:16px;">Mit besten Grüßen<br/>Deutsches Prüfsiegel Institut (DPI)</p>
+      ${renderFooter()}
     </div>
   `;
 
   await sendEmail({
     from: `Pruefsiegel Zentrum UG – Wareneingang <${FROM_EMAIL}>`,
     to,
-    subject: 'Produkt eingegangen – Analyse startet',
+    subject: 'Produkt eingetroffen – Prüfung eingeplant',
     html,
   });
 }
@@ -350,6 +499,7 @@ export async function sendPasswordResetEmail(opts: { to: string; name?: string |
       </p>
       <p style="font-size:13px;color:#475569;">Der Link ist 60 Minuten gültig.</p>
       <p style="margin-top:18px;">Prüfsiegel Zentrum UG</p>
+      ${renderFooter()}
     </div>
   `;
 

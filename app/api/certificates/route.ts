@@ -39,6 +39,7 @@ export async function POST(req: Request) {
 
     const verifyUrl = `${baseDomain.replace(/\/$/, "")}/lizenzen?q=${encodeURIComponent(cert.id)}`;
     const qrBuffer = await QRCode.toBuffer(verifyUrl, { margin: 1, width: 512 });
+    const qrDataUrl = `data:image/png;base64,${qrBuffer.toString("base64")}`;
 
     const uploadsDir = path.join(process.cwd(), "public", "uploads");
     const qrDir = path.join(process.cwd(), "public", "qr");
@@ -75,6 +76,7 @@ export async function POST(req: Request) {
       },
       certificateId: cert.id,
       domain: baseDomain,
+      qrUrl: qrDataUrl,
     });
 
     const pdfRel = `/uploads/REPORT_${seal_number}.pdf`;

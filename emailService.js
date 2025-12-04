@@ -6,6 +6,7 @@ import path from 'path';
 import { generateCertificatePdf } from './pdfGenerator'; 
 
 const SHEET_LINK = process.env.RATING_SHEET_LINK || "https://docs.google.com/spreadsheets/d/1uwauj30aZ4KpwSHBL3Yi6yB85H_OQypI5ogKuR82KFk/edit?usp=sharing";
+const APP_BASE_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://pruefsiegelzentrum.vercel.app";
 
 function toCsvLink(link) {
   if (link.includes("/export?format=csv")) return link;
@@ -140,6 +141,7 @@ const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/lizenzen?q=${record
         <p>Your product <strong>${record.name}</strong> has been successfully verified.</p>
         <p>Please find your official certificate and supporting files attached.</p>
         ${note}
+        ${renderFooter()}
       `,
       attachments: [
         {
@@ -194,4 +196,21 @@ function formatNote(message) {
     <p style="margin:0 0 6px;font-weight:700;">Note from the Prüfsiegel Team:</p>
     <p style="margin:0;color:#0f172a;">${safe}</p>
   </div>`;
+}
+
+function renderFooter() {
+  const base = (APP_BASE_URL || '').replace(/\/$/, '') || 'http://pruefsiegelzentrum.vercel.app';
+  const logo = `${base}/tclogo.png`;
+  const seal = `${base}/siegel.png`;
+  return `
+    <div style="margin-top:28px;padding-top:18px;border-top:1px solid #e2e8f0;display:flex;align-items:center;gap:16px;color:#475569;font-size:12px;">
+      <img src="${logo}" alt="DPI Logo" width="140" height="40" style="display:block;object-fit:contain;" />
+      <img src="${seal}" alt="Prüfsiegel" width="70" height="70" style="display:block;object-fit:contain;" />
+      <div style="line-height:1.4;">
+        Deutsches Prüfsiegel Institut (DPI)<br/>
+        Prüfzentrum – Kundenservice<br/>
+        <a href="${base}" style="color:#1d4ed8;text-decoration:none;">${base}</a>
+      </div>
+    </div>
+  `;
 }

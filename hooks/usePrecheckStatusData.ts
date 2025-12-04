@@ -11,6 +11,7 @@ export type ProductStatusPayload = {
   createdAt?: string;
   brand?: string | null;
   certificate?: { id: string; pdfUrl?: string | null } | null;
+  license?: { status: string; plan?: string | null } | null;
 };
 
 type Options = {

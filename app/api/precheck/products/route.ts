@@ -13,6 +13,7 @@ export async function GET() {
     where: { userId: session.userId },
     include: {
       certificate: true,
+      license: true,
     },
     orderBy: { createdAt: 'desc' },
   });
@@ -31,6 +32,12 @@ export async function GET() {
         ? {
             id: p.certificate.id,
             pdfUrl: p.certificate.pdfUrl,
+          }
+        : null,
+      license: p.license
+        ? {
+            status: p.license.status,
+            plan: p.license.plan,
           }
         : null,
     })),

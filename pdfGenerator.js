@@ -28,7 +28,7 @@ function normalizeCertificateData(data = {}) {
     verifyUrl = `${data.domain.replace(/\/$/, '')}/lizenzen?q=${encodeURIComponent(data.certificateId)}`;
   }
 
-  const qrUrl = data.qrUrl || certificate.qrUrl;
+  const qrUrl = data.qrUrl || data.qrDataUrl || certificate.qrDataUrl || certificate.qrUrl;
 
   return {
     ...data,
@@ -51,7 +51,7 @@ function normalizeCertificateData(data = {}) {
       ...certificate,
       seal_number: certificate.seal_number || data.seal_number,
       pdfUrl: certificate.pdfUrl || data.pdfUrl,
-      qrUrl: certificate.qrUrl || qrUrl,
+      qrUrl: data.qrUrl || data.qrDataUrl || certificate.qrDataUrl || certificate.qrUrl || qrUrl,
       externalReferenceId: certificate.externalReferenceId || data.externalReferenceId,
       pdfmonkeyDocumentId: certificate.pdfmonkeyDocumentId || data.pdfmonkeyDocumentId,
     },

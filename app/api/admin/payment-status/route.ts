@@ -35,7 +35,7 @@ export async function POST(req: Request) {
         to: product.user.email,
         name: product.user.name,
         productName: product.name,
-        shippingAddress: null,
+        processNumber: product.id,
         receiptPdf: undefined,
       });
     } catch (err) {

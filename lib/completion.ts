@@ -53,6 +53,7 @@ export async function completeProduct(productId: string, message?: string): Prom
   const certificateId = certificateRecord.id;
   const verifyUrl = `${APP_URL.replace(/\/$/, '')}/lizenzen?q=${encodeURIComponent(certificateId)}`;
   const qrBuffer = await QRCode.toBuffer(verifyUrl, { margin: 1, width: 512 });
+  const qrDataUrl = `data:image/png;base64,${qrBuffer.toString('base64')}`;
 
   const pdfBuffer = await generateCertificatePdf({
     product: {
@@ -84,6 +85,7 @@ export async function completeProduct(productId: string, message?: string): Prom
     },
     certificateId,
     domain: APP_URL,
+    qrUrl: qrDataUrl,
   });
 
   // Upload assets to S3 instead of local filesystem

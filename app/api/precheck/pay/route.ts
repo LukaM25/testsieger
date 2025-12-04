@@ -12,10 +12,20 @@ export async function POST(req: Request) {
   const { productId, option } = await req.json();
   if (!productId) return NextResponse.json({ error: 'MISSING_PRODUCT_ID' }, { status: 400 });
   const opt = option === 'priority' ? 'priority' : 'standard';
-  const priceId =
-    opt === 'priority'
-      ? process.env.STRIPE_PRICE_PRECHECK_PRIORITY
-      : process.env.STRIPE_PRICE_PRECHECK_STANDARD;
+  const DEFAULT_STANDARD_PRICE = 'price_1SY6z53Ex7yEO9qtNrhwagoQ';
+  const DEFAULT_PRIORITY_PRICE = 'price_1SY72M3Ex7yEO9qtTiZC1LoS';
+  const standardPriceId =
+    process.env.STRIPE_PRICE_PRECHECK_STANDARD ||
+    process.env.NEXT_PUBLIC_STRIPE_PRICE_PRECHECK_STANDARD ||
+    process.env.STRIPE_PRICE_PRECHECK_FEE ||
+    DEFAULT_STANDARD_PRICE;
+  const priorityPriceId =
+    process.env.STRIPE_PRICE_PRECHECK_PRIORITY ||
+    process.env.NEXT_PUBLIC_STRIPE_PRICE_PRECHECK_PRIORITY ||
+    process.env.STRIPE_PRICE_PRECHECK_EXPRESS ||
+    DEFAULT_PRIORITY_PRICE;
+
+  const priceId = opt === 'priority' ? priorityPriceId : standardPriceId;
 
   if (!priceId) {
     return NextResponse.json({ error: 'PRICE_NOT_CONFIGURED' }, { status: 500 });
