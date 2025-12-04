@@ -85,6 +85,8 @@ export default function ProduktTestPage() {
   const previewRef = useRef<HTMLElement | null>(null);
   const procedureTopRef = useRef<HTMLDivElement | null>(null);
   const procedureDetailRef = useRef<HTMLDivElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const hasPlayedVideoRef = useRef(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [contentMaxHeight, setContentMaxHeight] = useState<string>('0px');
   const [heroAnim, setHeroAnim] = useState(false);
@@ -241,6 +243,27 @@ export default function ProduktTestPage() {
       });
     }
   }, [searchParams, prefersReducedMotion]);
+
+  useEffect(() => {
+    const videoEl = videoRef.current;
+    if (!videoEl || typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') return;
+    videoEl.muted = true;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && !hasPlayedVideoRef.current) {
+          videoEl.play().catch(() => {});
+          hasPlayedVideoRef.current = true;
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.45 }
+    );
+
+    observer.observe(videoEl);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <main className="bg-white text-slate-900">
@@ -531,14 +554,18 @@ export default function ProduktTestPage() {
       <section id="pakete" className="mx-auto max-w-6xl px-6 py-16">
         <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
           <div className="flex justify-center">
-            <Image
-              src="/lampen.png"
-              alt="Lampe"
+            <video
+              ref={videoRef}
+              src="/kocher.mp4"
+              className="rounded-xl object-cover shadow-lg max-w-full"
               width={700}
               height={440}
-              className="rounded-xl object-cover shadow-lg max-w-full"
-              priority
-            />
+              muted
+              playsInline
+              preload="metadata"
+            >
+              {tr('Ihr Browser unterstützt das Video-Tag nicht.', 'Your browser does not support the video tag.')}
+            </video>
           </div>
           <div className="w-full max-w-xl lg:ml-4 flex justify-center lg:justify-start">
             <h2
