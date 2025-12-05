@@ -45,6 +45,12 @@ export default function ProductPayButton({ productId, status, paymentStatus, for
           : "bg-slate-900 text-white hover:bg-black"
       }`}
     >
+      {loading && (
+        <svg className="mr-2 h-3.5 w-3.5 animate-spin text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle className="opacity-30" cx="12" cy="12" r="10" />
+          <path className="opacity-80" d="M4 12a8 8 0 018-8" />
+        </svg>
+      )}
       {paid ? "Bereits bezahlt" : loading ? "Starte Zahlung…" : "Testgebühr zahlen"}
     </button>
   );

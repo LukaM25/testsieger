@@ -1,14 +1,15 @@
 import QRCode from 'qrcode';
-import path from 'path';
-import fs from 'fs/promises';
 import { prisma } from '@/lib/prisma';
 import { sendCompletionEmail } from '@/lib/email';
 import { generateCertificatePdf } from '@/pdfGenerator';
 import { generateInvoicePdf } from '@/lib/invoiceBuilder';
 import { InvoiceLine } from '@/lib/invoiceBuilder';
 import { fetchRatingCsv } from '@/lib/ratingSheet';
-import { generateSeal as generateSealImage } from '@/lib/seal';
+import { generateSealForS3 } from '@/lib/seal';
 import { storeCertificateAssets } from '@/lib/certificateAssets';
+import { CompletionJob, CompletionJobStatus, AssetType } from '@prisma/client';
+import { saveBufferToS3, signedUrlForKey } from '@/lib/storage';
+import { sendLicenseActivatedEmail } from '@/lib/email';
 
 const APP_URL = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
 
@@ -35,6 +36,85 @@ export type CompletionResult = {
  * Creates the certificate PDF, stores the assets, marks the product completed and emails the customer.
  */
 export async function completeProduct(productId: string, message?: string): Promise<CompletionResult> {
+  return runCompletion(productId, message);
+}
+
+/**
+ * Enqueue a completion job for asynchronous processing without running heavy work immediately.
+ */
+export async function enqueueCompletionJob(
+  productId: string,
+  // message is accepted for future compatibility; currently not persisted on the job
+  message?: string | null,
+): Promise<CompletionJob> {
+  void message;
+  const existing = await prisma.completionJob.findFirst({
+    where: {
+      productId,
+      status: { in: [CompletionJobStatus.PENDING, CompletionJobStatus.RUNNING] },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+  if (existing) return existing;
+
+  return prisma.completionJob.create({
+    data: {
+      productId,
+      certificateId: null,
+      status: CompletionJobStatus.PENDING,
+      attempts: 0,
+      lastError: null,
+    },
+  });
+}
+
+/**
+ * Process a single completion job by id. Moves the job to RUNNING, executes the completion pipeline,
+ * and updates status to COMPLETED or FAILED accordingly.
+ */
+export async function processCompletionJob(jobId: string): Promise<CompletionResult> {
+  const job = await prisma.completionJob.findUnique({ where: { id: jobId } });
+  if (!job) {
+    throw new CompletionError('JOB_NOT_FOUND', 404);
+  }
+  if (job.status !== CompletionJobStatus.PENDING && job.status !== CompletionJobStatus.FAILED) {
+    throw new CompletionError('JOB_NOT_PROCESSABLE', 400, { status: job.status });
+  }
+
+  const running = await prisma.completionJob.update({
+    where: { id: jobId },
+    data: {
+      status: CompletionJobStatus.RUNNING,
+      attempts: job.attempts + 1,
+      lastError: null,
+    },
+  });
+
+  try {
+    const result = await runCompletion(running.productId);
+    await syncLicenseAfterCompletion(running.productId, result);
+    await prisma.completionJob.update({
+      where: { id: jobId },
+      data: {
+        status: CompletionJobStatus.COMPLETED,
+        lastError: null,
+        certificateId: result.certId,
+      },
+    });
+    return result;
+  } catch (err: any) {
+    await prisma.completionJob.update({
+      where: { id: jobId },
+      data: {
+        status: CompletionJobStatus.FAILED,
+        lastError: stringifyError(err),
+      },
+    });
+    throw err;
+  }
+}
+
+async function runCompletion(productId: string, message?: string): Promise<CompletionResult> {
   const product = await prisma.product.findUnique({
     where: { id: productId },
     include: { user: true, certificate: true, orders: true, license: true },
@@ -52,7 +132,11 @@ export async function completeProduct(productId: string, message?: string): Prom
     }));
   const certificateId = certificateRecord.id;
   const verifyUrl = `${APP_URL.replace(/\/$/, '')}/lizenzen?q=${encodeURIComponent(certificateId)}`;
-  const qrBuffer = await QRCode.toBuffer(verifyUrl, { margin: 1, width: 512 });
+  const qrBuffer = await QRCode.toBuffer(verifyUrl, {
+    margin: 1,
+    width: 512,
+    color: { dark: '#000000', light: '#0000' }, // transparent background
+  });
   const qrDataUrl = `data:image/png;base64,${qrBuffer.toString('base64')}`;
 
   const pdfBuffer = await generateCertificatePdf({
@@ -114,12 +198,12 @@ export async function completeProduct(productId: string, message?: string): Prom
     },
   });
 
-  // Ensure seal image exists and load it
+  // Ensure seal image exists and load it (S3-backed)
   let sealBuffer: Buffer | undefined;
   let sealUrl = cert.sealUrl || product.certificate?.sealUrl || null;
   if (!sealUrl) {
     try {
-      const generatedSealPath = await generateSealImage({
+      const seal = await generateSealForS3({
         product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
         certificateId: cert.id,
         ratingScore: cert.ratingScore ?? 'PASS',
@@ -127,25 +211,84 @@ export async function completeProduct(productId: string, message?: string): Prom
         appUrl: APP_URL,
         licenseDate: product.license?.startsAt ?? product.license?.paidAt ?? product.license?.createdAt ?? null,
       });
-      sealUrl = generatedSealPath;
+      await saveBufferToS3({ key: seal.key, body: seal.buffer, contentType: 'image/png' });
+      sealUrl = seal.key;
+      sealBuffer = seal.buffer;
+      await prisma.asset.upsert({
+        where: { key: seal.key },
+        update: {
+          type: AssetType.SEAL_IMAGE,
+          contentType: 'image/png',
+          sizeBytes: seal.buffer.length,
+          certificateId: cert.id,
+          productId: product.id,
+          userId: product.userId,
+        },
+        create: {
+          key: seal.key,
+          type: AssetType.SEAL_IMAGE,
+          contentType: 'image/png',
+          sizeBytes: seal.buffer.length,
+          certificateId: cert.id,
+          productId: product.id,
+          userId: product.userId,
+        },
+      });
       cert = await prisma.certificate.update({
         where: { id: cert.id },
-        data: { sealUrl: generatedSealPath },
+        data: { sealUrl },
       });
     } catch (err) {
       console.warn('SEAL_GENERATION_FAILED', err);
     }
   }
-  if (sealUrl) {
-    try {
-      const sealPath = path.join(process.cwd(), 'public', sealUrl.replace(/^\//, ''));
-      sealBuffer = await fs.readFile(sealPath);
-    } catch (err) {
-      console.warn('SEAL_BUFFER_LOAD_FAILED', { sealUrl, err });
+  if (sealUrl && !sealBuffer) {
+    sealBuffer = await fetchSealBufferFromS3(sealUrl) ?? undefined;
+    if (!sealBuffer) {
+      // Fallback: regenerate and upload if the existing seal is missing/inaccessible
+      try {
+        const seal = await generateSealForS3({
+          product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
+          certificateId: cert.id,
+          ratingScore: cert.ratingScore ?? 'PASS',
+          ratingLabel: cert.ratingLabel ?? 'PASS',
+          appUrl: APP_URL,
+          licenseDate: product.license?.startsAt ?? product.license?.paidAt ?? product.license?.createdAt ?? null,
+        });
+        await saveBufferToS3({ key: seal.key, body: seal.buffer, contentType: 'image/png' });
+        sealUrl = seal.key;
+        sealBuffer = seal.buffer;
+        await prisma.asset.upsert({
+          where: { key: seal.key },
+          update: {
+            type: AssetType.SEAL_IMAGE,
+            contentType: 'image/png',
+            sizeBytes: seal.buffer.length,
+            certificateId: cert.id,
+            productId: product.id,
+            userId: product.userId,
+          },
+          create: {
+            key: seal.key,
+            type: AssetType.SEAL_IMAGE,
+            contentType: 'image/png',
+            sizeBytes: seal.buffer.length,
+            certificateId: cert.id,
+            productId: product.id,
+            userId: product.userId,
+          },
+        });
+        await prisma.certificate.update({
+          where: { id: cert.id },
+          data: { sealUrl },
+        });
+      } catch (err) {
+        console.warn('SEAL_REGENERATE_FAILED', { sealUrl, err });
+      }
     }
   }
   if (!sealBuffer) {
-    throw new CompletionError('SEAL_MISSING', 500);
+    throw new CompletionError('SEAL_MISSING', 500, { sealUrl });
   }
 
   await prisma.product.update({
@@ -214,6 +357,20 @@ export async function completeProduct(productId: string, message?: string): Prom
   };
 }
 
+async function fetchSealBufferFromS3(sealUrl: string) {
+  try {
+    const isHttp = /^https?:\/\//i.test(sealUrl);
+    const url = isHttp ? sealUrl : await signedUrlForKey(sealUrl);
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const arr = await res.arrayBuffer();
+    return Buffer.from(arr);
+  } catch (err) {
+    console.warn('SEAL_FETCH_FAILED', { sealUrl, err });
+    return null;
+  }
+}
+
 async function generateSeal() {
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const part = Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -222,4 +379,58 @@ async function generateSeal() {
     if (!exists) return seal;
   }
   throw new CompletionError('SEAL_GENERATION_FAILED', 500);
+}
+
+function stringifyError(err: any) {
+  if (!err) return 'Unknown error';
+  if (typeof err === 'string') return err.slice(0, 500);
+  if (err instanceof Error) return err.message.slice(0, 500);
+  try {
+    return JSON.stringify(err).slice(0, 500);
+  } catch {
+    return String(err).slice(0, 500);
+  }
+}
+
+async function syncLicenseAfterCompletion(productId: string, result: CompletionResult) {
+  const existingLicense = await prisma.license.findUnique({ where: { productId } });
+  if (!existingLicense) {
+    console.warn('SYNC_LICENSE_NO_LICENSE', { productId });
+    return;
+  }
+
+  const now = new Date();
+  await prisma.license.update({
+    where: { productId },
+    data: {
+      status: 'ACTIVE',
+      licenseCode: result.seal,
+      certificateId: result.certId,
+      startsAt: existingLicense.startsAt ?? now,
+      paidAt: existingLicense.paidAt ?? now,
+    },
+  });
+
+  try {
+    const productFull = await prisma.product.findUnique({
+      where: { id: productId },
+      include: { user: true, certificate: true },
+    });
+    if (productFull?.user && productFull.certificate) {
+      const ratingCsv = await fetchRatingCsv(productId, productFull.name ?? null);
+      await sendLicenseActivatedEmail({
+        to: productFull.user.email,
+        name: productFull.user.name,
+        productName: productFull.name,
+        certificateId: productFull.certificate.id,
+        pdfUrl: productFull.certificate.pdfUrl,
+        qrUrl: productFull.certificate.qrUrl,
+        sealUrl: productFull.certificate.sealUrl,
+        sealNumber: productFull.certificate.seal_number,
+        ratingCsv,
+      });
+    }
+  } catch (err) {
+    console.error('SYNC_LICENSE_EMAIL_FAILED', { productId, error: err });
+  }
 }

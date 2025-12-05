@@ -498,52 +498,48 @@ export default function ProduktTestPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Exclusivität */}
           <div
-            className="flex flex-col items-center justify-center rounded-2xl p-8 text-center"
-            style={{ backgroundColor: "#134074" }}
+            className="flex flex-col items-center justify-center rounded-2xl bg-white p-8 text-center text-slate-900"
           >
-            <div className="text-5xl font-bold text-white">
+            <div className="text-5xl font-bold">
               <Counter start={0} end={1} duration={1000} />
             </div>
-            <div className="mt-2 text-sm font-medium uppercase tracking-wide text-slate-100">
+            <div className="mt-2 text-sm font-medium uppercase tracking-wide">
               {tr('Exclusivität', 'Exclusivity')}
             </div>
           </div>
 
           {/* Ranking Top */}
           <div
-            className="flex flex-col items-center justify-center rounded-2xl p-8 text-center"
-            style={{ backgroundColor: "#134074" }}
+            className="flex flex-col items-center justify-center rounded-2xl bg-white p-8 text-center text-slate-900"
           >
-            <div className="text-5xl font-bold text-white">
+            <div className="text-5xl font-bold">
               <Counter start={1} end={10} duration={1500} />
             </div>
-            <div className="mt-2 text-sm font-medium uppercase tracking-wide text-slate-100">
+            <div className="mt-2 text-sm font-medium uppercase tracking-wide">
               {tr('Ranking Top', 'Top ranking')}
             </div>
           </div>
 
           {/* Klienten */}
           <div
-            className="flex flex-col items-center justify-center rounded-2xl p-8 text-center"
-            style={{ backgroundColor: "#134074" }}
+            className="flex flex-col items-center justify-center rounded-2xl bg-white p-8 text-center text-slate-900"
           >
-            <div className="text-5xl font-bold text-white">
+            <div className="text-5xl font-bold">
               <Counter start={0} end={233} duration={2000} />
             </div>
-            <div className="mt-2 text-sm font-medium uppercase tracking-wide text-slate-100">
+            <div className="mt-2 text-sm font-medium uppercase tracking-wide">
               {tr('Klienten', 'Clients')}
             </div>
           </div>
 
           {/* Siegel vergaben */}
           <div
-            className="flex flex-col items-center justify-center rounded-2xl p-8 text-center"
-            style={{ backgroundColor: "#134074" }}
+            className="flex flex-col items-center justify-center rounded-2xl bg-white p-8 text-center text-slate-900"
           >
-            <div className="text-5xl font-bold text-white">
+            <div className="text-5xl font-bold">
               <Counter start={47} end={477} duration={2500} />
             </div>
-            <div className="mt-2 text-sm font-medium uppercase tracking-wide text-slate-100">
+            <div className="mt-2 text-sm font-medium uppercase tracking-wide">
               {tr('Siegel vergaben', 'Seals awarded')}
             </div>
           </div>

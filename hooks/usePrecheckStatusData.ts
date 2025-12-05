@@ -10,7 +10,7 @@ export type ProductStatusPayload = {
   status: string;
   createdAt?: string;
   brand?: string | null;
-  certificate?: { id: string; pdfUrl?: string | null } | null;
+  certificate?: { id: string; pdfUrl?: string | null; status?: string | null; sealUrl?: string | null } | null;
   license?: { status: string; plan?: string | null } | null;
 };
 

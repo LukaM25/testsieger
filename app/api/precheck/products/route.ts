@@ -13,9 +13,18 @@ export async function GET() {
 
   const products = await prisma.product.findMany({
     where: { userId: session.userId },
-    include: {
-      certificate: true,
-      license: true,
+    select: {
+      id: true,
+      name: true,
+      brand: true,
+      status: true,
+      adminProgress: true,
+      paymentStatus: true,
+      createdAt: true,
+      certificate: {
+        select: { id: true, pdfUrl: true, qrUrl: true },
+      },
+      license: { select: { status: true, plan: true } },
     },
     orderBy: { createdAt: 'desc' },
   });

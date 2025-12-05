@@ -40,10 +40,47 @@ export async function GET() {
 
   try {
     const products = await prisma.product.findMany({
-      include: {
-        user: true,
-        certificate: true,
-        license: true,
+      select: {
+        id: true,
+        name: true,
+        brand: true,
+        category: true,
+        code: true,
+        specs: true,
+        size: true,
+        madeIn: true,
+        material: true,
+        status: true,
+        adminProgress: true,
+        paymentStatus: true,
+        createdAt: true,
+        user: { select: { name: true, company: true, email: true, address: true } },
+        certificate: {
+          select: {
+            id: true,
+            pdfUrl: true,
+            reportUrl: true,
+            qrUrl: true,
+            seal_number: true,
+            externalReferenceId: true,
+            ratingScore: true,
+            ratingLabel: true,
+            sealUrl: true,
+          },
+        },
+        license: {
+          select: {
+            id: true,
+            plan: true,
+            status: true,
+            licenseCode: true,
+            startsAt: true,
+            expiresAt: true,
+            paidAt: true,
+            stripeSubId: true,
+            stripePriceId: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });

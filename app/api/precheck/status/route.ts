@@ -16,10 +16,26 @@ export async function GET(req: Request) {
   const product = productId
     ? await prisma.product.findFirst({
         where: { id: productId, userId: session.userId },
+        select: {
+          id: true,
+          name: true,
+          paymentStatus: true,
+          adminProgress: true,
+          status: true,
+          createdAt: true,
+        },
       })
     : await prisma.product.findFirst({
         where: { userId: session.userId },
         orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          name: true,
+          paymentStatus: true,
+          adminProgress: true,
+          status: true,
+          createdAt: true,
+        },
       });
 
   if (!product) return NextResponse.json({ ok: true, product: null, licensePaid: false });

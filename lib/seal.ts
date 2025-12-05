@@ -46,6 +46,11 @@ const DEFAULT_OUTPUT_DIR = path.join(
   "seals"
 );
 
+export type GeneratedSeal = {
+  buffer: Buffer;
+  key: string; // logical storage key for S3
+};
+
 function formatTestDate(date: Date) {
   try {
     return new Intl.DateTimeFormat("de-DE", {
@@ -123,7 +128,7 @@ function makeSvgText({
   );
 }
 
-export async function generateSeal({
+export async function generateSealForS3({
   product,
   certificateId,
   ratingScore,
@@ -131,8 +136,7 @@ export async function generateSeal({
   appUrl,
   licenseDate = null,
   templatePath = DEFAULT_TEMPLATE,
-  outputDir = DEFAULT_OUTPUT_DIR,
-}: SealInput) {
+}: SealInput): Promise<GeneratedSeal> {
   const templateMeta = await sharp(templatePath).metadata();
   const canvasWidth = templateMeta.width ?? REF_WIDTH;
   const canvasHeight = templateMeta.height ?? REF_HEIGHT;
@@ -306,7 +310,7 @@ export async function generateSeal({
     width: qrSize,
     color: {
       dark: "#000000",
-      light: "#FFFFFF",
+      light: "#0000", // transparent background
     },
   });
 
@@ -319,15 +323,40 @@ export async function generateSeal({
     left: qrX,
   });
 
-  const outFile = path.join(outputDir, `seal_${product.id}.png`);
-  await fs.mkdir(outputDir, { recursive: true });
-
-  const final = await sharp(templateBuffer)
+  const finalBuffer = await sharp(templateBuffer)
     .composite(composites)
     .png()
     .toBuffer();
 
-  await fs.writeFile(outFile, final);
+  const key = `seals/${product.id}-${certificateId}.png`;
+  return { buffer: finalBuffer, key };
+}
+
+export async function generateSeal({
+  product,
+  certificateId,
+  ratingScore,
+  ratingLabel,
+  appUrl,
+  licenseDate = null,
+  templatePath = DEFAULT_TEMPLATE,
+  outputDir = DEFAULT_OUTPUT_DIR,
+}: SealInput) {
+  // TODO: remove once all callers migrate to generateSealForS3
+  const { buffer, key } = await generateSealForS3({
+    product,
+    certificateId,
+    ratingScore,
+    ratingLabel,
+    appUrl,
+    licenseDate,
+    templatePath,
+  });
+
+  const fileName = path.basename(key);
+  const outFile = path.join(outputDir, fileName);
+  await fs.mkdir(outputDir, { recursive: true });
+  await fs.writeFile(outFile, buffer);
   const rel = outFile.split(`${path.sep}public${path.sep}`)[1] || outFile;
   const normalized = rel.replace(/\\/g, "/");
   return normalized.startsWith("/") ? normalized : `/${normalized}`;

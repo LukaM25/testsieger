@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { isAdminAuthed } from '@/lib/admin';
-import { completeProduct, CompletionError } from '@/lib/completion';
+import { enqueueCompletionJob, processCompletionJob, CompletionError } from '@/lib/completion';
 
 export const runtime = 'nodejs';
 
@@ -12,8 +12,9 @@ export async function POST(req: Request) {
   if (!productId) return NextResponse.json({ error: 'MISSING_PRODUCT_ID' }, { status: 400 });
 
   try {
-    const result = await completeProduct(productId);
-    return NextResponse.json({ ok: true, result });
+    const job = await enqueueCompletionJob(productId);
+    const result = await processCompletionJob(job.id);
+    return NextResponse.json({ ok: true, result, jobId: job.id });
   } catch (err: any) {
     if (err instanceof CompletionError) {
       return NextResponse.json({ error: err.code, payload: err.payload }, { status: err.status || 400 });

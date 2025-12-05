@@ -3,6 +3,7 @@
 import { useLocale } from "@/components/LocaleProvider";
 import ProductPayButton from "@/app/dashboard/ProductPayButton";
 import { usePrecheckStatusData, ProductStatusPayload } from "@/hooks/usePrecheckStatusData";
+import { useProductStatusPoll } from "@/hooks/useProductStatusPoll";
 
 type Props = {
   state: ReturnType<typeof usePrecheckStatusData>;
@@ -102,27 +103,40 @@ export function PrecheckStatusCard({ state, className = "" }: Props) {
             <span className="text-xs text-slate-500">{products.length || 0} {tr("Produkte", "products")}</span>
           </div>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            {products.map((p) => {
-              const checked = selectedProductId === p.id;
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => setSelectedProductId(checked ? "" : p.id)}
-                  className={`flex w-full flex-col items-start rounded-xl border px-3 py-2 text-left transition ${
-                    checked ? "border-blue-500 bg-white shadow-sm" : "border-slate-200 bg-white hover:border-slate-300"
-                  }`}
-                >
-                  <div className="flex w-full items-center justify-between">
-                    <span className="text-sm font-semibold text-slate-900">{p.name}</span>
-                    <span className={`text-[11px] font-semibold uppercase tracking-[0.16em] ${checked ? "text-blue-600" : "text-slate-500"}`}>
-                      {p.adminProgress}
-                    </span>
+            {productsLoading
+              ? Array.from({ length: 4 }).map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="h-[68px] w-full animate-pulse rounded-xl border border-slate-200 bg-white px-3 py-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="h-3 w-24 rounded bg-slate-200" />
+                      <div className="h-3 w-12 rounded bg-slate-200" />
+                    </div>
+                    <div className="mt-2 h-3 w-32 rounded bg-slate-200" />
                   </div>
-                  <span className="text-xs text-slate-500">{p.brand || "—"}</span>
-                </button>
-              );
-            })}
+                ))
+              : products.map((p) => {
+                  const checked = selectedProductId === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setSelectedProductId(checked ? "" : p.id)}
+                      className={`flex w-full flex-col items-start rounded-xl border px-3 py-2 text-left transition ${
+                        checked ? "border-blue-500 bg-white shadow-sm" : "border-slate-200 bg-white hover:border-slate-300"
+                      }`}
+                    >
+                      <div className="flex w-full items-center justify-between">
+                        <span className="text-sm font-semibold text-slate-900">{p.name}</span>
+                        <span className={`text-[11px] font-semibold uppercase tracking-[0.16em] ${checked ? "text-blue-600" : "text-slate-500"}`}>
+                          {p.adminProgress}
+                        </span>
+                      </div>
+                      <span className="text-xs text-slate-500">{p.brand || "—"}</span>
+                    </button>
+                  );
+                })}
             {!productsLoading && products.length === 0 && (
               <p className="text-sm text-slate-600">
                 {tr("Bitte melden oder Pre-Check starten, um Produkte zu sehen.", "Sign in or submit a pre-check to see your products.")}
@@ -146,20 +160,12 @@ export function PrecheckStatusCard({ state, className = "" }: Props) {
                 paymentStatus={productStatus.paymentStatus}
                 forceEnabled
               />
-              {productStatus.certificate?.pdfUrl ? (
-                <a
-                  href={productStatus.certificate.pdfUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50"
-                >
-                  {tr("Zertifikat ansehen (PDF)", "View certificate (PDF)")}
-                </a>
-              ) : (
-                <span className="inline-flex w-full items-center justify-center rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
-                  {tr("Zertifikat ausstehend", "Certificate pending")}
-                </span>
-              )}
+              <CertificateAction
+                productId={productStatus.id}
+                initialCertificate={productStatus.certificate}
+                status={productStatus.status}
+                tr={tr}
+              />
             </div>
           )}
         </div>
@@ -194,5 +200,47 @@ export function PrecheckStatusCard({ state, className = "" }: Props) {
         </div>
       </div>
     </div>
+  );
+}
+
+type CertificateActionProps = {
+  productId: string;
+  status: string;
+  initialCertificate: ProductStatusPayload["certificate"];
+  tr: (de: string, en: string) => string;
+};
+
+function CertificateAction({ productId, status, initialCertificate, tr }: CertificateActionProps) {
+  const pollingEnabled = status === "PAID";
+  const { data } = useProductStatusPoll(productId, { enabled: pollingEnabled, intervalMs: 8000 });
+
+  const effectivePdf = data?.pdfUrl ?? initialCertificate?.pdfUrl ?? null;
+  const effectiveStatus = data?.certificateStatus ?? null;
+
+  if (effectivePdf) {
+    return (
+      <a
+        href={effectivePdf}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50"
+      >
+        {tr("Zertifikat ansehen (PDF)", "View certificate (PDF)")}
+      </a>
+    );
+  }
+
+  const isGenerating = status === "PAID" && (!effectiveStatus || effectiveStatus === "PENDING");
+
+  return (
+    <span className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+      {isGenerating && (
+        <svg className="h-4 w-4 animate-spin text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle className="opacity-25" cx="12" cy="12" r="10" />
+          <path className="opacity-75" d="M4 12a8 8 0 018-8" />
+        </svg>
+      )}
+      {tr("Zertifikat wird generiert…", "Generating certificate…")}
+    </span>
   );
 }

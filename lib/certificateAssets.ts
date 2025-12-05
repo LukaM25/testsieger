@@ -88,6 +88,34 @@ export async function storeCertificateAssets({
         userId,
       },
     ],
+    skipDuplicates: true,
+  });
+
+  // Refresh hashes/metadata for existing assets in case they already exist
+  await prisma.asset.updateMany({
+    where: { key: pdfKey },
+    data: {
+      type: AssetType.OFFICIAL_PDF,
+      contentType: 'application/pdf',
+      sizeBytes: pdfBuffer.length,
+      sha256: pdfHash,
+      certificateId,
+      productId,
+      userId,
+    },
+  });
+
+  await prisma.asset.updateMany({
+    where: { key: qrKeyStr },
+    data: {
+      type: AssetType.CERTIFICATE_QR,
+      contentType: 'image/png',
+      sizeBytes: qrBuffer.length,
+      sha256: qrHash,
+      certificateId,
+      productId,
+      userId,
+    },
   });
 
   const pdfSigned = await signOrFallback(pdfKey);

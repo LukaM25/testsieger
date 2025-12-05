@@ -22,25 +22,26 @@ model User {
 }
 
 model Product {
-  id            String        @id @default(cuid())
-  userId        String
-  name          String
-  brand         String
-  category      String?
-  code          String?
-  specs         String?
-  size          String?
-  madeIn        String?
-  material      String?
-  status        ProductStatus @default(PRECHECK)
-  adminProgress AdminProgress @default(PRECHECK)
-  paymentStatus PaymentStatus @default(UNPAID)
-  createdAt     DateTime      @default(now())
-  certificate   Certificate?
-  license       License?
-  orders        Order[]
-  assets        Asset[]
-  user          User          @relation(fields: [userId], references: [id])
+  id             String          @id @default(cuid())
+  userId         String
+  name           String
+  brand          String
+  category       String?
+  code           String?
+  specs          String?
+  size           String?
+  madeIn         String?
+  material       String?
+  status         ProductStatus   @default(PRECHECK)
+  adminProgress  AdminProgress   @default(PRECHECK)
+  paymentStatus  PaymentStatus   @default(UNPAID)
+  createdAt      DateTime        @default(now())
+  certificate    Certificate?
+  license        License?
+  orders         Order[]
+  assets         Asset[]
+  completionJobs CompletionJob[]
+  user           User            @relation(fields: [userId], references: [id])
 
   @@index([name])
   @@index([brand])
@@ -146,6 +147,22 @@ model Asset {
   @@index([type])
 }
 
+model CompletionJob {
+  id            String              @id @default(cuid())
+  productId     String
+  certificateId String?
+  status        CompletionJobStatus @default(PENDING)
+  attempts      Int                 @default(0)
+  lastError     String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([productId])
+}
+
 enum ProductStatus {
   PRECHECK
   PAID
@@ -188,4 +205,11 @@ enum AssetType {
   SEAL_IMAGE
   PRODUCT_UPLOAD
   OTHER
+}
+
+enum CompletionJobStatus {
+  PENDING
+  RUNNING
+  FAILED
+  COMPLETED
 }
