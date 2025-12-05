@@ -12,6 +12,7 @@ interface Product {
   certificate: {
     seal_number: string | null;
     pdfUrl: string | null;
+    reportUrl: string | null;
     createdAt: Date;
   } | null;
   user: {
@@ -119,25 +120,47 @@ export default function LizenzenClient({ products }: { products: any[] }) {
 
                   {product.certificate && (
                     <div className="mt-4 pt-3 border-t border-slate-200/50">
-                      {product.certificate.pdfUrl ? (
-                        <a 
-                          href={`/api/certificates/${product.id}/download`}
-                          target="_blank"
-                          className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:underline"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                          Offiziellen Prüfbericht öffnen
-                        </a>
-                      ) : (
-                        <button
-                          type="button"
-                          disabled
-                          className="inline-flex items-center gap-2 text-sm font-medium text-slate-400 cursor-not-allowed"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                          Prüfbericht noch nicht verfügbar
-                        </button>
-                      )}
+                      <div className="flex flex-col gap-2">
+                        {product.certificate.pdfUrl ? (
+                          <a 
+                            href={`/api/certificates/${product.id}/download`}
+                            target="_blank"
+                            className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:underline"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            Offiziellen Prüfbericht öffnen
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled
+                            className="inline-flex items-center gap-2 text-sm font-medium text-slate-400 cursor-not-allowed"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            Prüfbericht noch nicht verfügbar
+                          </button>
+                        )}
+
+                        {product.certificate.reportUrl ? (
+                          <a
+                            href={product.certificate.reportUrl}
+                            target="_blank"
+                            className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 hover:underline"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m0 0l-4-4m4 4l4-4"></path></svg>
+                            Hochgeladener Prüfbericht öffnen
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled
+                            className="inline-flex items-center gap-2 text-sm font-medium text-slate-400 cursor-not-allowed"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m0 0l-4-4m4 4l4-4"></path></svg>
+                            Hochgeladener Prüfbericht fehlt
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

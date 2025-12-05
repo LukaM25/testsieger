@@ -6,6 +6,7 @@ import QRCode from "qrcode";
 import fs from "fs/promises";
 import path from "path";
 import { generateSeal as generateSealImage } from "@/lib/seal";
+import { storeCertificateAssets } from "@/lib/certificateAssets";
 
 export const runtime = "nodejs";
 
@@ -41,11 +42,6 @@ export async function POST(req: Request) {
     const qrBuffer = await QRCode.toBuffer(verifyUrl, { margin: 1, width: 512 });
     const qrDataUrl = `data:image/png;base64,${qrBuffer.toString("base64")}`;
 
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    const qrDir = path.join(process.cwd(), "public", "qr");
-    await fs.mkdir(uploadsDir, { recursive: true });
-    await fs.mkdir(qrDir, { recursive: true });
-
     const pdfBuffer = await generateCertificatePdf({
       product: {
         id: product.id,
@@ -79,13 +75,14 @@ export async function POST(req: Request) {
       qrUrl: qrDataUrl,
     });
 
-    const pdfRel = `/uploads/REPORT_${seal_number}.pdf`;
-    const pdfAbs = path.join(uploadsDir, `REPORT_${seal_number}.pdf`);
-    await fs.writeFile(pdfAbs, pdfBuffer);
-
-    const qrRel = `/qr/${seal_number}.png`;
-    const qrAbs = path.join(qrDir, `${seal_number}.png`);
-    await fs.writeFile(qrAbs, qrBuffer);
+    const { pdfSigned, qrSigned } = await storeCertificateAssets({
+      certificateId: cert.id,
+      productId: product.id,
+      userId: product.userId,
+      sealNumber: seal_number,
+      pdfBuffer,
+      qrBuffer,
+    });
 
     let sealUrl = cert.sealUrl || existingCert?.sealUrl || null;
     if (!sealUrl) {
@@ -105,8 +102,8 @@ export async function POST(req: Request) {
     await prisma.certificate.update({
       where: { id: cert.id },
       data: {
-        pdfUrl: pdfRel,
-        qrUrl: qrRel,
+        pdfUrl: pdfSigned,
+        qrUrl: qrSigned,
         seal_number,
         externalReferenceId: null,
         sealUrl,
@@ -131,8 +128,8 @@ export async function POST(req: Request) {
       name: product.user.name,
       productName: product.name,
       verifyUrl,
-      pdfUrl: pdfRel,
-      qrUrl: qrRel,
+      pdfUrl: pdfSigned,
+      qrUrl: qrSigned,
       pdfBuffer,
       documentId: undefined,
       message: typeof message === 'string' ? message.slice(0, 1000) : undefined,
@@ -144,8 +141,8 @@ export async function POST(req: Request) {
       success: true,
       certificateId: cert.id,
       seal: seal_number,
-      pdfUrl: pdfRel,
-      qrUrl: qrRel,
+      pdfUrl: pdfSigned,
+      qrUrl: qrSigned,
       verifyUrl,
     });
   } catch (e: any) {

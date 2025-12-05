@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import QRCode from "qrcode";
 
 import { prisma } from "@/lib/prisma";
-import { uploadToS3, s3PublicUrl, ensureSignedS3Url } from "@/lib/s3";
+import { ensureSignedS3Url } from "@/lib/s3";
 import { generateCertificatePdf } from "@/pdfGenerator";
+import { storeCertificateAssets, getCertificateAssetLinks } from "@/lib/certificateAssets";
 
 const APP_URL = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 
@@ -34,18 +35,19 @@ async function ensurePdfForProduct(productId: string, forceRegenerate: boolean) 
     }));
   const certificateId = certificateRecord.id;
 
-  if (certificateRecord.pdfUrl && !forceRegenerate) {
-    return await ensureSignedS3Url(certificateRecord.pdfUrl);
+  if (!forceRegenerate) {
+    const assets = await getCertificateAssetLinks(certificateId);
+    if (assets.OFFICIAL_PDF) return assets.OFFICIAL_PDF;
+    if (certificateRecord.pdfUrl) {
+      return await ensureSignedS3Url(certificateRecord.pdfUrl);
+    }
   }
 
   const verifyUrl = `${APP_URL.replace(/\/$/, "")}/lizenzen?q=${encodeURIComponent(certificateId)}`;
   const qrBuffer = await QRCode.toBuffer(verifyUrl, { margin: 1, width: 512 });
   const qrDataUrl = `data:image/png;base64,${qrBuffer.toString("base64")}`;
-
-  const pdfKey = `uploads/REPORT_${seal}.pdf`;
-  const qrKey = `qr/${seal}.png`;
-  const pdfUrl = s3PublicUrl(pdfKey);
-  const qrUrl = s3PublicUrl(qrKey);
+  const existingPdfUrl = certificateRecord.pdfUrl ?? undefined;
+  const existingQrUrl = certificateRecord.qrUrl ?? undefined;
 
   const pdfData = {
     id: product.id,
@@ -65,8 +67,8 @@ async function ensurePdfForProduct(productId: string, forceRegenerate: boolean) 
     qrUrl: qrDataUrl,
     certificate: {
       seal_number: seal,
-      pdfUrl,
-      qrUrl, // stored location
+      pdfUrl: existingPdfUrl,
+      qrUrl: existingQrUrl, // stored location
       externalReferenceId: certificateRecord.externalReferenceId ?? undefined,
     },
     user: {
@@ -79,15 +81,21 @@ async function ensurePdfForProduct(productId: string, forceRegenerate: boolean) 
 
   const pdfBuffer = await generateCertificatePdf(pdfData);
 
-  await uploadToS3({ key: pdfKey, body: pdfBuffer, contentType: "application/pdf" });
-  await uploadToS3({ key: qrKey, body: qrBuffer, contentType: "image/png" });
+  const { pdfSigned } = await storeCertificateAssets({
+    certificateId,
+    productId: product.id,
+    userId: product.userId,
+    sealNumber: seal,
+    pdfBuffer,
+    qrBuffer,
+  });
 
   await prisma.certificate.update({
     where: { id: certificateId },
-    data: { pdfUrl, qrUrl, seal_number: seal },
+    data: { seal_number: seal },
   });
 
-  return await ensureSignedS3Url(pdfUrl);
+  return pdfSigned;
 }
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -101,7 +109,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
   try {
     const signedUrl = await ensurePdfForProduct(id, forceRegenerate);
-    if (!signedUrl) return NextResponse.json({ error: "Missing certificate PDF" }, { status: 404 });
+    if (!signedUrl || signedUrl === 'SIGNED_URL_UNAVAILABLE') {
+      return NextResponse.json({ error: "Missing certificate PDF" }, { status: 404 });
+    }
     return NextResponse.redirect(signedUrl);
   } catch (err: any) {
     if (err?.message === "NOT_FOUND") return NextResponse.json({ error: "Product not found" }, { status: 404 });

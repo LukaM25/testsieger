@@ -151,7 +151,14 @@ export default async function LizenzenPage({ searchParams }: Props) {
   const products = await Promise.all(
     productsRaw.map(async (product) =>
       product.certificate
-        ? { ...product, certificate: { ...product.certificate, pdfUrl: await ensureSignedS3Url(product.certificate.pdfUrl) } }
+        ? {
+            ...product,
+            certificate: {
+              ...product.certificate,
+              pdfUrl: await ensureSignedS3Url(product.certificate.pdfUrl),
+              reportUrl: await ensureSignedS3Url(product.certificate.reportUrl),
+            },
+          }
         : product
     )
   );
@@ -163,9 +170,14 @@ export default async function LizenzenPage({ searchParams }: Props) {
       })
     : null;
   const certificate = certificateRaw
-    ? { ...certificateRaw, pdfUrl: await ensureSignedS3Url(certificateRaw.pdfUrl) }
+    ? {
+        ...certificateRaw,
+        pdfUrl: await ensureSignedS3Url(certificateRaw.pdfUrl),
+        reportUrl: await ensureSignedS3Url(certificateRaw.reportUrl),
+      }
     : null;
   const hasPdf = Boolean(certificate?.pdfUrl);
+  const hasUploadedReport = Boolean(certificate?.reportUrl);
 
   return (
     <div className="bg-white text-brand-text">
@@ -354,33 +366,55 @@ export default async function LizenzenPage({ searchParams }: Props) {
                 </div>
                 <div className="space-y-2 rounded-2xl border border-gray-100 bg-[#F0F6FA] p-5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-brand-primary">{tr('Aktionen', 'Actions')}</p>
-                  {hasPdf ? (
+                  <div className="flex flex-col gap-2">
+                    {hasPdf ? (
+                      <Link
+                        href={`/api/certificates/${certificate.productId}/download`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-dark"
+                      >
+                        {tr('Prüfbericht herunterladen', 'Download report')}
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        className="inline-flex items-center gap-2 rounded-lg bg-gray-200 px-4 py-2 text-xs font-semibold text-gray-500 shadow-sm cursor-not-allowed"
+                      >
+                        {tr('Prüfbericht noch nicht verfügbar', 'Report not available yet')}
+                      </button>
+                    )}
+
+                    {hasUploadedReport ? (
+                      <Link
+                        href={certificate.reportUrl || '#'}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-700"
+                      >
+                        {tr('Zusätzlicher Prüfbericht (Upload)', 'Additional report (upload)')}
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        className="inline-flex items-center gap-2 rounded-lg bg-gray-200 px-4 py-2 text-xs font-semibold text-gray-500 shadow-sm cursor-not-allowed"
+                      >
+                        {tr('Zusätzlicher Prüfbericht fehlt', 'Additional report not available')}
+                      </button>
+                    )}
+
                     <Link
-                      href={`/api/certificates/${certificate.productId}/download`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-dark"
+                      href={`/verify/${certificate.seal_number}`}
+                      className="inline-flex items-center gap-2 rounded-lg border border-brand-primary/30 px-4 py-2 text-xs font-semibold text-brand-dark transition hover:-translate-y-0.5 hover:border-brand-primary hover:text-brand-primary"
                     >
-                      {tr('Prüfbericht herunterladen', 'Download report')}
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
+                      {tr('Detail-Verifikation', 'Detailed verification')}
                     </Link>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled
-                      className="inline-flex items-center gap-2 rounded-lg bg-gray-200 px-4 py-2 text-xs font-semibold text-gray-500 shadow-sm cursor-not-allowed"
-                    >
-                      {tr('Prüfbericht noch nicht verfügbar', 'Report not available yet')}
-                    </button>
-                  )}
-                  <Link
-                    href={`/verify/${certificate.seal_number}`}
-                    className="inline-flex items-center gap-2 rounded-lg border border-brand-primary/30 px-4 py-2 text-xs font-semibold text-brand-dark transition hover:-translate-y-0.5 hover:border-brand-primary hover:text-brand-primary"
-                  >
-                    {tr('Detail-Verifikation', 'Detailed verification')}
-                  </Link>
+                  </div>
                 </div>
               </div>
             </div>

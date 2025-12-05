@@ -4,11 +4,11 @@ import fs from 'fs/promises';
 import { prisma } from '@/lib/prisma';
 import { sendCompletionEmail } from '@/lib/email';
 import { generateCertificatePdf } from '@/pdfGenerator';
-import { uploadToS3, s3PublicUrl } from '@/lib/s3';
 import { generateInvoicePdf } from '@/lib/invoiceBuilder';
 import { InvoiceLine } from '@/lib/invoiceBuilder';
 import { fetchRatingCsv } from '@/lib/ratingSheet';
 import { generateSeal as generateSealImage } from '@/lib/seal';
+import { storeCertificateAssets } from '@/lib/certificateAssets';
 
 const APP_URL = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
 
@@ -88,27 +88,27 @@ export async function completeProduct(productId: string, message?: string): Prom
     qrUrl: qrDataUrl,
   });
 
-  // Upload assets to S3 instead of local filesystem
-  const pdfKey = `uploads/REPORT_${seal}.pdf`;
-  const qrKey = `qr/${seal}.png`;
-    await uploadToS3({ key: pdfKey, body: pdfBuffer, contentType: 'application/pdf' });
-    await uploadToS3({ key: qrKey, body: qrBuffer, contentType: 'image/png' });
-
-    const pdfUrl = s3PublicUrl(pdfKey);
-    const qrUrl = s3PublicUrl(qrKey);
+  const { pdfSigned, qrSigned } = await storeCertificateAssets({
+    certificateId,
+    productId: product.id,
+    userId: product.userId,
+    sealNumber: seal,
+    pdfBuffer,
+    qrBuffer,
+  });
 
   let cert = await prisma.certificate.upsert({
     where: { productId: product.id },
     update: {
-      pdfUrl,
-      qrUrl,
+      pdfUrl: pdfSigned,
+      qrUrl: qrSigned,
       seal_number: seal,
       externalReferenceId: null,
     },
     create: {
       productId: product.id,
-      pdfUrl,
-      qrUrl,
+      pdfUrl: pdfSigned,
+      qrUrl: qrSigned,
       seal_number: seal,
       externalReferenceId: null,
     },
@@ -194,8 +194,8 @@ export async function completeProduct(productId: string, message?: string): Prom
     name: product.user.name,
     productName: product.name,
     verifyUrl,
-    pdfUrl,
-    qrUrl,
+    pdfUrl: pdfSigned,
+    qrUrl: qrSigned,
     pdfBuffer,
     documentId: undefined,
     message,
@@ -208,8 +208,8 @@ export async function completeProduct(productId: string, message?: string): Prom
   return {
     verifyUrl,
     certId: cert.id,
-    pdfUrl,
-    qrUrl,
+    pdfUrl: pdfSigned,
+    qrUrl: qrSigned,
     seal,
   };
 }

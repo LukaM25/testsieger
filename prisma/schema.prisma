@@ -8,37 +8,43 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  name         String
-  email        String    @unique
-  passwordHash String
-  address      String?
-  createdAt    DateTime  @default(now())
-  company      String?
-  orders       Order[]
-  products     Product[]
+  id                  String               @id @default(cuid())
+  name                String
+  email               String               @unique
+  passwordHash        String
+  address             String?
+  createdAt           DateTime             @default(now())
+  company             String?
+  orders              Order[]
+  products            Product[]
   passwordResetTokens PasswordResetToken[]
+  assets              Asset[]
 }
 
 model Product {
-  id          String        @id @default(cuid())
-  userId      String
-  name        String
-  brand       String
-  category    String?
-  code        String?
-  specs       String?
-  size        String?
-  madeIn      String?
-  material    String?
-  status      ProductStatus @default(PRECHECK)
+  id            String        @id @default(cuid())
+  userId        String
+  name          String
+  brand         String
+  category      String?
+  code          String?
+  specs         String?
+  size          String?
+  madeIn        String?
+  material      String?
+  status        ProductStatus @default(PRECHECK)
   adminProgress AdminProgress @default(PRECHECK)
   paymentStatus PaymentStatus @default(UNPAID)
-  createdAt   DateTime      @default(now())
-  certificate Certificate?
-  license     License?
-  orders      Order[]
-  user        User          @relation(fields: [userId], references: [id])
+  createdAt     DateTime      @default(now())
+  certificate   Certificate?
+  license       License?
+  orders        Order[]
+  assets        Asset[]
+  user          User          @relation(fields: [userId], references: [id])
+
+  @@index([name])
+  @@index([brand])
+  @@index([category])
 }
 
 model Order {
@@ -57,22 +63,26 @@ model Order {
 }
 
 model Certificate {
-  id                  String   @id @default(cuid())
-  productId           String   @unique
+  id                  String    @id @default(cuid())
+  productId           String    @unique
   pdfUrl              String
   qrUrl               String
-  createdAt           DateTime @default(now())
-  seal_number         String   @unique @default(uuid())
-  externalReferenceId String?  @unique
+  reportUrl           String?
+  createdAt           DateTime  @default(now())
+  seal_number         String    @unique @default(uuid())
+  externalReferenceId String?   @unique
   ratingScore         String?
   ratingLabel         String?
   sealUrl             String?
-  product             Product  @relation(fields: [productId], references: [id])
-  snapshotData        Json?    // Added via SQL
+  product             Product   @relation(fields: [productId], references: [id])
+  snapshotData        Json? // Added via SQL
   lastSentAt          DateTime? // Added via SQL
-  status              String   @default("PENDING") // Added via SQL
+  status              String    @default("PENDING") // Added via SQL
+  assets              Asset[]
 
-  license             License?
+  license License?
+
+  @@index([seal_number])
 }
 
 model License {
@@ -91,20 +101,49 @@ model License {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  product       Product       @relation(fields: [productId], references: [id])
-  certificate   Certificate?  @relation(fields: [certificateId], references: [id])
-  order         Order?        @relation(fields: [orderId], references: [id])
+  product     Product      @relation(fields: [productId], references: [id])
+  certificate Certificate? @relation(fields: [certificateId], references: [id])
+  order       Order?       @relation(fields: [orderId], references: [id])
+  assets      Asset[]
 }
 
 model PasswordResetToken {
-  id         String   @id @default(cuid())
-  userId     String
-  tokenHash  String
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  user       User     @relation(fields: [userId], references: [id])
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([expiresAt])
+}
+
+model Asset {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  type        AssetType
+  key         String    @unique
+  contentType String
+  sizeBytes   Int?
+  sha256      String? // optional integrity field
+
+  userId        String?
+  productId     String?
+  certificateId String?
+  licenseId     String?
+
+  user        User?        @relation(fields: [userId], references: [id])
+  product     Product?     @relation(fields: [productId], references: [id])
+  certificate Certificate? @relation(fields: [certificateId], references: [id])
+  license     License?     @relation(fields: [licenseId], references: [id])
+
+  @@index([userId])
+  @@index([productId])
+  @@index([certificateId])
+  @@index([licenseId])
+  @@index([type])
 }
 
 enum ProductStatus {
@@ -140,4 +179,13 @@ enum LicenseStatus {
   ACTIVE
   EXPIRED
   CANCELED
+}
+
+enum AssetType {
+  OFFICIAL_PDF
+  UPLOADED_PDF
+  CERTIFICATE_QR
+  SEAL_IMAGE
+  PRODUCT_UPLOAD
+  OTHER
 }

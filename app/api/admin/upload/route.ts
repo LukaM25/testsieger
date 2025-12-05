@@ -1,11 +1,27 @@
 import { NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/admin';
-import { prisma } from '@/lib/prisma';
 import path from 'path';
 import { promises as fs } from 'fs';
+import crypto from 'crypto';
 import QRCode from 'qrcode';
+import { AssetType } from '@prisma/client';
+
+import { requireAdmin } from '@/lib/admin';
+import { prisma } from '@/lib/prisma';
 import { sendCompletionEmail } from '@/lib/email';
 import { generateSeal as generateSealImage } from '@/lib/seal';
+import { saveBufferToS3, signedUrlForKey, MAX_UPLOAD_BYTES } from '@/lib/storage';
+import { uploadedPdfKey, qrKey } from '@/lib/assetKeys';
+
+const SIGNED_URL_FALLBACK = 'SIGNED_URL_UNAVAILABLE';
+
+async function signOrFallback(key: string) {
+  try {
+    return await signedUrlForKey(key);
+  } catch (err) {
+    console.error('SIGNED_URL_FAILED', { key, error: err });
+    return SIGNED_URL_FALLBACK;
+  }
+}
 
 export async function POST(req: Request) {
   try {
@@ -22,6 +38,9 @@ export async function POST(req: Request) {
     if (file.type !== 'application/pdf') {
       return NextResponse.json({ error: 'Report must be a PDF' }, { status: 400 });
     }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      return NextResponse.json({ error: 'Report too large' }, { status: 400 });
+    }
 
     // fetch product + user
     const product = await prisma.product.findUnique({
@@ -34,35 +53,84 @@ export async function POST(req: Request) {
     // generate seal number
     const seal = await generateSeal();
 
-    // paths (local dev). For prod, replace with S3 uploads.
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-    const qrDir = path.join(process.cwd(), 'public', 'qr');
-    await fs.mkdir(uploadsDir, { recursive: true });
-    await fs.mkdir(qrDir, { recursive: true });
-
     const arrayBuf = await file.arrayBuffer();
     const buff = Buffer.from(arrayBuf);
-    const pdfRel = `/uploads/REPORT_${seal}.pdf`;
-    const pdfAbs = path.join(uploadsDir, `REPORT_${seal}.pdf`);
-    await fs.writeFile(pdfAbs, buff);
+    if (buff.length > MAX_UPLOAD_BYTES) {
+      return NextResponse.json({ error: 'Report too large' }, { status: 400 });
+    }
 
-    // Create verify URL (public page)
-    const verifyUrl = `${process.env.APP_URL}/verify/${seal}`;
-
-    // Generate QR png -> save
-    const qrPng = await QRCode.toBuffer(verifyUrl, { margin: 1, width: 512 });
-    const qrRel = `/qr/${seal}.png`;
-    const qrAbs = path.join(qrDir, `${seal}.png`);
-    await fs.writeFile(qrAbs, qrPng);
-
-    // Create certificate row
+    // Create certificate row early to link assets
     const cert = await prisma.certificate.create({
       data: {
         productId: product.id,
-        pdfUrl: pdfRel,
-        qrUrl: qrRel,
+        pdfUrl: '',
+        qrUrl: '',
         seal_number: seal,
-        // pdfmonkeyDocumentId: (optional later)
+      },
+    });
+
+    const baseDomain =
+      process.env.NEXT_PUBLIC_BASE_URL || process.env.APP_URL || 'http://localhost:3000';
+    const verifyUrl = `${baseDomain.replace(/\/$/, '')}/lizenzen?q=${encodeURIComponent(cert.id)}`;
+
+    // Generate QR png -> save
+    const qrPng = await QRCode.toBuffer(verifyUrl, { margin: 1, width: 512 });
+
+    const fileName = file.name?.toString() || 'report.pdf';
+    const ext = (fileName.split('.').pop() || 'pdf').toLowerCase().replace(/[^a-z0-9]/g, '') || 'pdf';
+    const pdfKey = uploadedPdfKey(seal, ext);
+    const qrKeyStr = qrKey(seal);
+
+    await saveBufferToS3({
+      key: pdfKey,
+      body: buff,
+      contentType: file.type,
+    });
+
+    await saveBufferToS3({
+      key: qrKeyStr,
+      body: qrPng,
+      contentType: 'image/png',
+    });
+
+    const pdfHash = crypto.createHash('sha256').update(buff).digest('hex');
+    const qrHash = crypto.createHash('sha256').update(qrPng).digest('hex');
+
+    await prisma.asset.createMany({
+      data: [
+        {
+          type: AssetType.UPLOADED_PDF,
+          key: pdfKey,
+          contentType: file.type,
+          sizeBytes: buff.length,
+          sha256: pdfHash,
+          certificateId: cert.id,
+          productId: product.id,
+          userId: product.userId,
+        },
+        {
+          type: AssetType.CERTIFICATE_QR,
+          key: qrKeyStr,
+          contentType: 'image/png',
+          sizeBytes: qrPng.length,
+          sha256: qrHash,
+          certificateId: cert.id,
+          productId: product.id,
+          userId: product.userId,
+        },
+      ],
+    });
+
+    const pdfSigned = await signOrFallback(pdfKey);
+    const qrSigned = await signOrFallback(qrKeyStr);
+
+    // Update certificate row with signed URLs for compatibility
+    await prisma.certificate.update({
+      where: { id: cert.id },
+      data: {
+        pdfUrl: pdfSigned,
+        qrUrl: qrSigned,
+        reportUrl: pdfSigned,
       },
     });
 
@@ -104,14 +172,14 @@ export async function POST(req: Request) {
       name: product.user.name,
       productName: product.name,
       verifyUrl,
-      pdfUrl: pdfRel,
-      qrUrl: qrRel,
+      pdfUrl: pdfSigned,
+      qrUrl: qrSigned,
       message: typeof message === 'string' ? message.slice(0, 1000) : undefined,
       sealNumber: seal,
       sealBuffer,
     }).catch(e => console.error('Email error', e));
 
-    return NextResponse.json({ ok: true, verifyUrl, certId: cert.id });
+    return NextResponse.json({ ok: true, verifyUrl, certId: cert.id, pdfUrl: pdfSigned });
   } catch (e: any) {
     if (e?.message === 'UNAUTHORIZED_ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

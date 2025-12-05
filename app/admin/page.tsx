@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCertificateActions } from '@/hooks/useCertificateActions';
 import { CertificatePreviewModal } from '@/components/CertificatePreviewModal';
 
@@ -51,6 +51,7 @@ type AdminProduct = {
     ratingScore?: string | null;
     ratingLabel?: string | null;
     sealUrl?: string | null;
+    reportUrl?: string | null;
   } | null;
   license?: {
     id: string;
@@ -383,6 +384,10 @@ function AdminProductRow({
   const [licenseEnd, setLicenseEnd] = useState<string>(
     product.license?.expiresAt ? product.license.expiresAt.slice(0, 10) : ''
   );
+  const [reportFile, setReportFile] = useState<File | null>(null);
+  const [uploadingReport, setUploadingReport] = useState(false);
+  const [reportMessage, setReportMessage] = useState<string | null>(null);
+  const reportInputRef = useRef<HTMLInputElement | null>(null);
   const expiresInDays = useMemo(() => {
     if (!product.license?.expiresAt) return null;
     const diff = new Date(product.license.expiresAt).getTime() - Date.now();
@@ -396,6 +401,12 @@ function AdminProductRow({
     setLicenseStart(product.license?.startsAt ? product.license.startsAt.slice(0, 10) : '');
     setLicenseEnd(product.license?.expiresAt ? product.license.expiresAt.slice(0, 10) : '');
   }, [product.license]);
+
+  useEffect(() => {
+    setReportMessage(null);
+    setReportFile(null);
+    if (reportInputRef.current) reportInputRef.current.value = '';
+  }, [product.id, product.certificate?.reportUrl, product.certificate?.pdfUrl]);
 
   // NEW: Smart Preview Handler (Stops the Reload loop)
   const handleSmartPreview = async () => {
@@ -591,6 +602,38 @@ function AdminProductRow({
     }
   };
 
+  const handleReportUpload = async () => {
+    if (!reportFile) {
+      setReportMessage('Bitte einen PDF-Prüfbericht auswählen.');
+      return;
+    }
+    setReportMessage(null);
+    setUploadingReport(true);
+    try {
+      const form = new FormData();
+      form.append('report', reportFile);
+      form.append('productId', product.id);
+      const res = await fetch(`/api/admin/products/${product.id}/upload-report`, {
+        method: 'POST',
+        body: form,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setReportMessage(data.error || 'Upload fehlgeschlagen.');
+        return;
+      }
+      setReportMessage('Prüfbericht gespeichert.');
+      setReportFile(null);
+      if (reportInputRef.current) reportInputRef.current.value = '';
+      onUpdated();
+    } catch (err) {
+      console.error(err);
+      setReportMessage('Upload fehlgeschlagen.');
+    } finally {
+      setUploadingReport(false);
+    }
+  };
+
   const flowSteps: { key: StatusOption; label: string }[] = [
     { key: 'PRECHECK', label: 'Pre-Check' },
     { key: 'RECEIVED', label: 'Eingang' },
@@ -780,6 +823,32 @@ function AdminProductRow({
               <h3 className="text-sm font-semibold text-slate-900">Assets & Downloads</h3>
               <span className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Links</span>
             </div>
+            <div className="mt-3 space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-600">Prüfbericht hochladen</span>
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  {product.certificate?.reportUrl ? 'Upload vorhanden' : 'Noch kein Upload'}
+                </span>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <input
+                  ref={reportInputRef}
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => setReportFile(e.target.files?.[0] ?? null)}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-[11px] file:font-semibold file:uppercase file:tracking-[0.18em] file:text-white"
+                />
+                <button
+                  type="button"
+                  onClick={handleReportUpload}
+                  disabled={!reportFile || uploadingReport}
+                  className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-emerald-800 disabled:opacity-70"
+                >
+                  {uploadingReport ? 'Lade hoch...' : 'Prüfbericht hochladen'}
+                </button>
+              </div>
+              {reportMessage && <p className="text-xs text-slate-500">{reportMessage}</p>}
+            </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               <a
                 href={product.certificate?.pdfUrl ? `/api/certificates/${product.id}/download` : '#'}
@@ -794,8 +863,22 @@ function AdminProductRow({
                   if (!product.certificate?.pdfUrl) e.preventDefault();
                 }}
               >
-                Generiertes PDF öffnen
+                Prüfbericht öffnen
               </a>
+              {product.certificate?.reportUrl ? (
+                <a
+                  href={product.certificate.reportUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center rounded-lg border border-emerald-700 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-800 transition hover:bg-emerald-50"
+                >
+                  Hochgeladener Prüfbericht
+                </a>
+              ) : (
+                <div className="inline-flex items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  Kein Upload vorhanden
+                </div>
+              )}
               <a
                 href={product.certificate?.sealUrl || '#'}
                 target={product.certificate?.sealUrl ? '_blank' : undefined}
