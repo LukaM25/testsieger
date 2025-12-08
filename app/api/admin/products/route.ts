@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
-import { isAdminAuthed } from '@/lib/admin';
+import { requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 import { ensureSignedS3Url } from '@/lib/s3';
 import { getCertificateAssetLinks } from '@/lib/certificateAssets';
@@ -8,8 +8,8 @@ import { getCertificateAssetLinks } from '@/lib/certificateAssets';
 export const runtime = 'nodejs';
 
 export async function GET() {
-  const authed = await isAdminAuthed();
-  if (!authed) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+  const admin = await requireAdmin().catch(() => null);
+  if (!admin) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
 
   // Optional bypass for offline dev or unreachable DB
   if (process.env.ADMIN_DB_BYPASS === 'true') {

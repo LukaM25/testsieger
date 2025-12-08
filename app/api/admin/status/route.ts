@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { ProductStatus } from '@prisma/client';
-import { isAdminAuthed } from '@/lib/admin';
+import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 import { sendFailureNotification, sendProductReceivedEmail, sendPassAndLicenseRequest, sendCompletionReadyEmail } from '@/lib/email';
-import { generateCertificatePdf } from '@/pdfGenerator';
 import { fetchRatingCsv } from '@/lib/ratingSheet';
 
 export const runtime = 'nodejs';
@@ -12,8 +11,8 @@ const VALID_STATUSES = ['RECEIVED', 'ANALYSIS', 'COMPLETION', 'PASS', 'FAIL'] as
 type ValidStatus = (typeof VALID_STATUSES)[number];
 
 export async function POST(req: Request) {
-  const authed = await isAdminAuthed();
-  if (!authed) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+  const admin = await requireAdmin().catch(() => null);
+  if (!admin) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
 
   const { productId, status, note } = await req.json();
   if (!productId || !status) return NextResponse.json({ error: 'MISSING_PARAMS' }, { status: 400 });
@@ -36,6 +35,19 @@ export async function POST(req: Request) {
   await prisma.product.update({
     where: { id: product.id },
     data: productUpdate,
+  });
+
+  await logAdminAudit({
+    adminId: admin.id,
+    action: 'PRODUCT_STATUS_UPDATE',
+    entityType: 'Product',
+    entityId: product.id,
+    productId: product.id,
+    payload: {
+      from: product.adminProgress,
+      to: status,
+      note: note?.trim() || null,
+    },
   });
 
   if (status === 'FAIL') {

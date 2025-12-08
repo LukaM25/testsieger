@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { isAdminAuthed } from '@/lib/admin';
+import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { enqueueCompletionJob, processCompletionJob, CompletionError } from '@/lib/completion';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
-  const authed = await isAdminAuthed();
-  if (!authed) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+  const admin = await requireAdmin().catch(() => null);
+  if (!admin) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
 
   const { productId } = await req.json().catch(() => ({}));
   if (!productId) return NextResponse.json({ error: 'MISSING_PRODUCT_ID' }, { status: 400 });
@@ -14,6 +14,14 @@ export async function POST(req: Request) {
   try {
     const job = await enqueueCompletionJob(productId);
     const result = await processCompletionJob(job.id);
+    await logAdminAudit({
+      adminId: admin.id,
+      action: 'COMPLETE_LICENSE',
+      entityType: 'Product',
+      entityId: productId,
+      productId,
+      payload: { jobId: job.id },
+    });
     return NextResponse.json({ ok: true, result, jobId: job.id });
   } catch (err: any) {
     if (err instanceof CompletionError) {

@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import QRCode from 'qrcode';
 import { AssetType } from '@prisma/client';
 
-import { requireAdmin } from '@/lib/admin';
+import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 import { sendCompletionEmail } from '@/lib/email';
 import { generateSeal as generateSealImage } from '@/lib/seal';
@@ -24,8 +24,9 @@ async function signOrFallback(key: string) {
 }
 
 export async function POST(req: Request) {
+  let admin;
   try {
-    await requireAdmin();
+    admin = await requireAdmin();
 
     const form = await req.formData();
     const productId = String(form.get('productId') || '');
@@ -178,6 +179,15 @@ export async function POST(req: Request) {
       sealNumber: seal,
       sealBuffer,
     }).catch(e => console.error('Email error', e));
+
+    await logAdminAudit({
+      adminId: admin.id,
+      action: 'UPLOAD_CERTIFICATE',
+      entityType: 'Product',
+      entityId: product.id,
+      productId: product.id,
+      payload: { certificateId: cert.id, seal },
+    });
 
     return NextResponse.json({ ok: true, verifyUrl, certId: cert.id, pdfUrl: pdfSigned });
   } catch (e: any) {

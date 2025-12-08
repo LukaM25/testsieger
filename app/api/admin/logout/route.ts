@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { clearAdminSession } from "@/lib/admin";
 
 export async function POST() {
-  const jar = await cookies();
-  jar.delete("admin_session");
+  await clearAdminSession();
   return NextResponse.json({ ok: true });
 }

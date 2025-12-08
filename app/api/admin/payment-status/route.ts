@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isAdminAuthed } from '@/lib/admin';
+import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 import { sendPrecheckPaymentSuccess } from '@/lib/email';
 
@@ -9,8 +9,8 @@ const VALID_STATUSES = ['UNPAID', 'PAID', 'MANUAL'] as const;
 type ValidPaymentStatus = (typeof VALID_STATUSES)[number];
 
 export async function POST(req: Request) {
-  const authed = await isAdminAuthed();
-  if (!authed) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+  const admin = await requireAdmin().catch(() => null);
+  if (!admin) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
 
   const { productId, status } = await req.json();
   if (!productId || !status) return NextResponse.json({ error: 'MISSING_PARAMS' }, { status: 400 });
@@ -27,6 +27,15 @@ export async function POST(req: Request) {
   await prisma.product.update({
     where: { id: product.id },
     data: { paymentStatus: status as ValidPaymentStatus },
+  });
+
+  await logAdminAudit({
+    adminId: admin.id,
+    action: 'PAYMENT_STATUS_UPDATE',
+    entityType: 'Product',
+    entityId: product.id,
+    productId: product.id,
+    payload: { from: product.paymentStatus, to: status },
   });
 
   if (['PAID', 'MANUAL'].includes(status as ValidPaymentStatus) && product.user) {

@@ -18,20 +18,6 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      if (email.trim().toLowerCase() === 'admin') {
-        const adminRes = await fetch('/api/admin/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password }),
-        });
-        const adminData = await adminRes.json().catch(() => ({}));
-        if (!adminRes.ok) {
-          throw new Error(adminData.error || 'Admin Login fehlgeschlagen');
-        }
-        router.push('/admin');
-        return;
-      }
-
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -94,7 +80,7 @@ export default function LoginPage() {
           </a>
         </div>
         <p className="text-xs text-gray-500 mb-3">
-          Admin? Tragen Sie im E-Mail-Feld exakt „Admin“ (Groß-/Kleinschreibung wird ignoriert) und Ihr Admin-Passwort ein.
+          Admin? Bitte nutzen Sie den separaten <a href="/admin" className="text-blue-700 underline">Admin Login</a>.
         </p>
 
         {error && <p className="mb-3 text-sm text-red-600">{error}</p>}

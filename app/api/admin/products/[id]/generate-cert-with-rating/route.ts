@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import Papa from "papaparse";
 import QRCode from "qrcode";
 
-import { requireAdmin } from "@/lib/admin";
+import { logAdminAudit, requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { generateCertificatePdf } from "@/pdfGenerator";
 import { generateSeal } from "@/lib/seal";
@@ -49,8 +49,9 @@ async function generateSealNumber() {
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  let admin;
   try {
-    await requireAdmin();
+    admin = await requireAdmin();
   } catch {
     return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
   }
@@ -173,6 +174,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     await prisma.product.update({
       where: { id: product.id },
       data: { status: "COMPLETED", adminProgress: "PASS" },
+    });
+
+    await logAdminAudit({
+      adminId: admin.id,
+      action: "GENERATE_CERT_WITH_RATING",
+      entityType: "Product",
+      entityId: product.id,
+      productId: product.id,
+      payload: { certificateId, ratingScore, ratingLabel, sendEmail },
     });
 
     // Email customer with PDF + seal attachments (optional)

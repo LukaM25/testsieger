@@ -7,7 +7,7 @@ End-to-end Next.js 16 app for handling product pre-checks, payments, licensing, 
 - Payments: Stripe Checkout for base fee (standard/priority) and for license plans (Basic/Premium subscriptions, Lifetime one-time).
 - Customer portal: login/register, dashboard with products, orders, and certificate links; licensing overview at `/lizenzen`.
 - Certificates & verification: generates report PDFs + QR codes, stores assets, emails customers; public verification via `/verify/:id|seal` and `/lizenzen?q=<certificateId>`.
-- Admin console: password-gated (`ADMIN_PASSWORD`) to list products, mark payment/status, upload reports, or trigger the internal certificate engine.
+- Admin console: role-based admins (SUPERADMIN full access) to list products, mark payment/status, upload reports, or trigger the internal certificate engine.
 - PDFs & assets: Puppeteer template in `templates/certificate.hbs`, uploads saved to `public/uploads` and QR codes to `public/qr`.
 - Tooling: Storybook, Vitest, Tailwind, 21st.dev toolbar in development.
 
@@ -62,7 +62,7 @@ SMTP_PASS=
 MAIL_FROM=pruefsiegel@your-domain.tld
 
 # Admin
-ADMIN_PASSWORD=
+ADMIN_JWT_SECRET=       # generate with: openssl rand -hex 32
 ADMIN_DB_BYPASS=false   # optional: true to bypass DB read in admin list
 ```
 
@@ -70,9 +70,10 @@ ADMIN_DB_BYPASS=false   # optional: true to bypass DB read in admin list
 1. Install deps: `npm install`
 2. Generate Prisma client: `npx prisma generate`
 3. Run migrations: `npx prisma migrate dev --name init`
-4. Start dev server: `npm run dev` (http://localhost:3000)
-5. (Optional) Storybook: `npm run storybook`
-6. Tests: `npm test`
+4. Seed a superadmin: `npm run seed:admin -- --email you@example.com --name "You" --password "StrongPass" --role SUPERADMIN`
+5. Start dev server: `npm run dev` (http://localhost:3000)
+6. (Optional) Storybook: `npm run storybook`
+7. Tests: `npm test`
 
 ## Payment & webhook
 - Base-fee checkout: `/api/precheck/pay` uses `STRIPE_PRICE_PRECHECK_STANDARD|PRIORITY`.
@@ -86,9 +87,9 @@ ADMIN_DB_BYPASS=false   # optional: true to bypass DB read in admin list
 - If SMTP is not configured, mails are skipped with a console warning.
 
 ## Admin usage
-- Login at `/admin` with `ADMIN_PASSWORD`.
+- Login at `/admin` with your admin email/password (seeded via `npm run seed:admin`). Only `SUPERADMIN` currently has full access.
 - Actions include: list products, set payment/status, receive goods, upload report to create certificate, trigger internal certificate engine, or mark completion manually.
-- Admin routes require the admin session cookie (`admin_session`).
+- Admin routes require the admin session cookie (`admin_token`) signed with `ADMIN_JWT_SECRET`.
 
 ## Deployment notes
 - Vercel-ready; ensure `postinstall` runs `prisma generate`.

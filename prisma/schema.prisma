@@ -42,6 +42,7 @@ model Product {
   assets         Asset[]
   completionJobs CompletionJob[]
   user           User            @relation(fields: [userId], references: [id])
+  audits         AdminAudit[]
 
   @@index([name])
   @@index([brand])
@@ -147,6 +148,39 @@ model Asset {
   @@index([type])
 }
 
+model Admin {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  name         String
+  passwordHash String
+  role         AdminRole  @default(EDITOR)
+  active       Boolean    @default(true)
+  revokedAt    DateTime?
+  lastLoginAt  DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  audits AdminAudit[]
+}
+
+model AdminAudit {
+  id         String   @id @default(cuid())
+  adminId    String
+  action     String
+  entityType String?
+  entityId   String?
+  productId  String?
+  payload    Json?
+  createdAt  DateTime @default(now())
+
+  admin   Admin   @relation(fields: [adminId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@index([adminId])
+  @@index([productId])
+  @@index([createdAt])
+}
+
 model CompletionJob {
   id            String              @id @default(cuid())
   productId     String
@@ -196,6 +230,12 @@ enum LicenseStatus {
   ACTIVE
   EXPIRED
   CANCELED
+}
+
+enum AdminRole {
+  VIEWER
+  EDITOR
+  SUPERADMIN
 }
 
 enum AssetType {

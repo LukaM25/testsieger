@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { requireAdmin } from '@/lib/admin';
+import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 import { uploadToS3, s3PublicUrl, ensureSignedS3Url } from '@/lib/s3';
 
@@ -17,8 +17,9 @@ async function generateSealNumber() {
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  let admin;
   try {
-    await requireAdmin();
+    admin = await requireAdmin();
   } catch {
     return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
   }
@@ -63,6 +64,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         seal_number: seal,
         reportUrl,
       },
+    });
+
+    await logAdminAudit({
+      adminId: admin.id,
+      action: 'UPLOAD_REPORT',
+      entityType: 'Product',
+      entityId: product.id,
+      productId: product.id,
+      payload: { certificateId, reportUrl },
     });
 
     return NextResponse.json({

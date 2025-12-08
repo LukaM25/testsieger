@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { isAdminAuthed } from '@/lib/admin';
+import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
-  const authed = await isAdminAuthed();
-  if (!authed) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+  const admin = await requireAdmin().catch(() => null);
+  if (!admin) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
 
   const { productId } = await req.json();
   if (!productId) return NextResponse.json({ error: 'MISSING_PRODUCT_ID' }, { status: 400 });
@@ -22,6 +22,15 @@ export async function POST(req: Request) {
   await prisma.product.update({
     where: { id: product.id },
     data: { status: 'IN_REVIEW' },
+  });
+
+  await logAdminAudit({
+    adminId: admin.id,
+    action: 'PRODUCT_RECEIVE',
+    entityType: 'Product',
+    entityId: product.id,
+    productId: product.id,
+    payload: { previousStatus: product.status },
   });
 
   return NextResponse.json({ ok: true, message: 'Produktstatus auf IN_REVIEW gesetzt.' });

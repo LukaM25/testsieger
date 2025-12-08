@@ -103,7 +103,7 @@ export default function Navbar() {
       const res = await fetch('/api/admin/me', { credentials: 'same-origin' });
       if (!res.ok) return false;
       const data = await res.json().catch(() => ({}));
-      return data?.admin === true;
+      return Boolean(data?.admin);
     } catch {
       return false;
     }
@@ -167,18 +167,18 @@ export default function Navbar() {
     setLoginError(null);
     setLoginLoading(true);
     try {
-      if (loginEmail.trim().toLowerCase() === 'admin') {
-        const res = await fetch('/api/admin/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password: loginPassword }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          throw new Error(data.error || 'Admin Login fehlgeschlagen');
-        }
+      // Try admin login first; if it fails, fall back to user login.
+      const adminRes = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+      });
+      const adminData = await adminRes.json().catch(() => ({}));
+      if (adminRes.ok) {
         setAdminAuthed(true);
+        setProfileUser(null);
         setProfileOpen(false);
+        setLoginEmail('');
         setLoginPassword('');
         router.refresh();
         router.push('/admin');
@@ -191,8 +191,9 @@ export default function Navbar() {
         body: JSON.stringify({ email: loginEmail, password: loginPassword }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.error || 'Login fehlgeschlagen');
+      if (!res.ok || !data.ok) {
+        const errorMessage = data.error || adminData?.error || 'Login fehlgeschlagen';
+        throw new Error(errorMessage);
       }
       const user = await loadProfile();
       setProfileUser(user);

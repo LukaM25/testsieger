@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Plan, LicenseStatus } from '@prisma/client';
-import { isAdminAuthed } from '@/lib/admin';
+import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 import { sendLicenseActivatedEmail } from '@/lib/email';
 import { fetchRatingCsv } from '@/lib/ratingSheet';
@@ -14,8 +14,8 @@ const PLAN_DURATIONS: Record<Plan, number | null> = {
 };
 
 export async function POST(req: Request) {
-  const authed = await isAdminAuthed();
-  if (!authed) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+  const admin = await requireAdmin().catch(() => null);
+  if (!admin) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
   const { productId, plan, status, startsAt, expiresAt, licenseCode } = body as {
@@ -81,6 +81,21 @@ export async function POST(req: Request) {
     },
     include: {
       certificate: true,
+    },
+  });
+
+  await logAdminAudit({
+    adminId: admin.id,
+    action: 'LICENSE_UPDATE',
+    entityType: 'License',
+    entityId: license.id,
+    productId: product.id,
+    payload: {
+      plan,
+      status,
+      licenseCode: license.licenseCode,
+      startsAt: startDate.toISOString(),
+      expiresAt: expiresDate ? expiresDate.toISOString() : null,
     },
   });
 

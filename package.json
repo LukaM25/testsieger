@@ -13,7 +13,8 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "test": "vitest",
-    "aws:whoami": "node scripts/check-aws-sts.js"
+    "aws:whoami": "node scripts/check-aws-sts.js",
+    "seed:admin": "node scripts/seed-admin.cjs"
   },
   "dependencies": {
     "pdf-lib": "^1.17.1",
