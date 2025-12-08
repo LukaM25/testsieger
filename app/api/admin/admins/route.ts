@@ -42,7 +42,7 @@ export async function POST(req: Request) {
   const email = normalizeEmail(body.email);
   const name = typeof body.name === 'string' ? body.name.trim() : '';
   const password = typeof body.password === 'string' ? body.password : '';
-  const role = typeof body.role === 'string' ? (body.role.trim().toUpperCase() as AdminRole) : AdminRole.EDITOR;
+  const role = typeof body.role === 'string' ? (body.role.trim().toUpperCase() as AdminRole) : AdminRole.EXAMINER;
 
   if (!email || !name || !password) {
     return NextResponse.json({ error: 'MISSING_FIELDS' }, { status: 400 });

@@ -1,5 +1,5 @@
 // Seed a single admin account.
-// Usage: npm run seed:admin -- --email you@example.com --name "Your Name" --password "StrongPass" [--role SUPERADMIN|EDITOR|VIEWER]
+// Usage: npm run seed:admin -- --email you@example.com --name "Your Name" --password "StrongPass" [--role SUPERADMIN|EXAMINER|VIEWER]
 const bcrypt = require('bcryptjs');
 const { PrismaClient, AdminRole } = require('@prisma/client');
 
@@ -18,7 +18,7 @@ async function main() {
   const roleRaw = (arg('--role') || 'SUPERADMIN').toUpperCase();
 
   if (!emailRaw || !name || !password) {
-    console.error('Usage: npm run seed:admin -- --email you@example.com --name "Your Name" --password "StrongPass" [--role SUPERADMIN|EDITOR|VIEWER]');
+    console.error('Usage: npm run seed:admin -- --email you@example.com --name "Your Name" --password "StrongPass" [--role SUPERADMIN|EXAMINER|VIEWER]');
     process.exit(1);
   }
 

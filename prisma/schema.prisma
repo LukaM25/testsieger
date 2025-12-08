@@ -153,7 +153,7 @@ model Admin {
   email        String     @unique
   name         String
   passwordHash String
-  role         AdminRole  @default(EDITOR)
+  role         AdminRole  @default(EXAMINER)
   active       Boolean    @default(true)
   revokedAt    DateTime?
   lastLoginAt  DateTime?
@@ -234,7 +234,7 @@ enum LicenseStatus {
 
 enum AdminRole {
   VIEWER
-  EDITOR
+  EXAMINER
   SUPERADMIN
 }
 

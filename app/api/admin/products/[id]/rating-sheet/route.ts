@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { AdminRole } from "@prisma/client";
 
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
@@ -16,7 +17,7 @@ export const runtime = "nodejs";
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireAdmin();
+    await requireAdmin(AdminRole.EXAMINER);
   } catch {
     return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
   }

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { Plan, LicenseStatus } from '@prisma/client';
+import { Plan, LicenseStatus, AdminRole } from '@prisma/client';
 import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 import { sendLicenseActivatedEmail } from '@/lib/email';
@@ -14,7 +14,7 @@ const PLAN_DURATIONS: Record<Plan, number | null> = {
 };
 
 export async function POST(req: Request) {
-  const admin = await requireAdmin().catch(() => null);
+  const admin = await requireAdmin(AdminRole.SUPERADMIN).catch(() => null);
   if (!admin) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));

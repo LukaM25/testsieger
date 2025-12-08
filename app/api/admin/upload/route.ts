@@ -3,7 +3,7 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import crypto from 'crypto';
 import QRCode from 'qrcode';
-import { AssetType } from '@prisma/client';
+import { AdminRole, AssetType } from '@prisma/client';
 
 import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
@@ -26,7 +26,7 @@ async function signOrFallback(key: string) {
 export async function POST(req: Request) {
   let admin;
   try {
-    admin = await requireAdmin();
+    admin = await requireAdmin(AdminRole.SUPERADMIN);
 
     const form = await req.formData();
     const productId = String(form.get('productId') || '');

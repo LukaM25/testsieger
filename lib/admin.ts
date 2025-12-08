@@ -8,7 +8,7 @@ const ADMIN_SESSION_MAX_AGE = 60 * 60 * 12; // 12h
 
 const ROLE_RANK: Record<AdminRole, number> = {
   VIEWER: 0,
-  EDITOR: 1,
+  EXAMINER: 1,
   SUPERADMIN: 2,
 };
 

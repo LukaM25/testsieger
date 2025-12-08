@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { AdminRole } from '@prisma/client';
 import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 import { sendPrecheckPaymentSuccess } from '@/lib/email';
@@ -9,7 +10,7 @@ const VALID_STATUSES = ['UNPAID', 'PAID', 'MANUAL'] as const;
 type ValidPaymentStatus = (typeof VALID_STATUSES)[number];
 
 export async function POST(req: Request) {
-  const admin = await requireAdmin().catch(() => null);
+  const admin = await requireAdmin(AdminRole.SUPERADMIN).catch(() => null);
   if (!admin) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
 
   const { productId, status } = await req.json();

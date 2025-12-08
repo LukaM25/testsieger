@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { AdminRole } from '@prisma/client';
 
 import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
@@ -19,7 +20,7 @@ async function generateSealNumber() {
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   let admin;
   try {
-    admin = await requireAdmin();
+    admin = await requireAdmin(AdminRole.SUPERADMIN);
   } catch {
     return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
   }

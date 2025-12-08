@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { Prisma } from '@prisma/client';
+import { Prisma, AdminRole } from '@prisma/client';
 import { requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 import { ensureSignedS3Url } from '@/lib/s3';
@@ -8,8 +8,9 @@ import { getCertificateAssetLinks } from '@/lib/certificateAssets';
 export const runtime = 'nodejs';
 
 export async function GET() {
-  const admin = await requireAdmin().catch(() => null);
+  const admin = await requireAdmin(AdminRole.VIEWER).catch(() => null);
   if (!admin) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+  const isViewerOnly = admin.role === AdminRole.VIEWER;
 
   // Optional bypass for offline dev or unreachable DB
   if (process.env.ADMIN_DB_BYPASS === 'true') {
@@ -87,6 +88,27 @@ export async function GET() {
 
     const payload = await Promise.all(
       products.map(async (product) => {
+        if (isViewerOnly) {
+          return {
+            id: product.id,
+            name: product.name,
+            brand: product.brand,
+            category: product.category,
+            status: product.status,
+            adminProgress: product.adminProgress,
+            paymentStatus: product.paymentStatus,
+            createdAt: product.createdAt.toISOString(),
+            user: {
+              name: product.user.name,
+              company: product.user.company,
+              email: product.user.email,
+              address: product.user.address,
+            },
+            certificate: null,
+            license: null,
+          };
+        }
+
         const assets = product.certificate
           ? await getCertificateAssetLinks(product.certificate.id)
           : null;

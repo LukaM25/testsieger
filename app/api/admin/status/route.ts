@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ProductStatus } from '@prisma/client';
+import { ProductStatus, AdminRole } from '@prisma/client';
 import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 import { sendFailureNotification, sendProductReceivedEmail, sendPassAndLicenseRequest, sendCompletionReadyEmail } from '@/lib/email';
@@ -11,13 +11,18 @@ const VALID_STATUSES = ['RECEIVED', 'ANALYSIS', 'COMPLETION', 'PASS', 'FAIL'] as
 type ValidStatus = (typeof VALID_STATUSES)[number];
 
 export async function POST(req: Request) {
-  const admin = await requireAdmin().catch(() => null);
+  const admin = await requireAdmin(AdminRole.EXAMINER).catch(() => null);
   if (!admin) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
 
   const { productId, status, note } = await req.json();
   if (!productId || !status) return NextResponse.json({ error: 'MISSING_PARAMS' }, { status: 400 });
   if (!VALID_STATUSES.includes(status as ValidStatus)) {
     return NextResponse.json({ error: 'INVALID_STATUS' }, { status: 400 });
+  }
+
+  // EXAMINER cannot finalize PASS/FAIL
+  if (admin.role === AdminRole.EXAMINER && (status === 'PASS' || status === 'FAIL')) {
+    return NextResponse.json({ error: 'FORBIDDEN_STATUS' }, { status: 403 });
   }
 
   const product = await prisma.product.findUnique({

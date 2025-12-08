@@ -70,7 +70,7 @@ type AdminSummary = {
   id: string;
   email: string;
   name: string;
-  role: 'VIEWER' | 'EDITOR' | 'SUPERADMIN';
+  role: 'VIEWER' | 'EXAMINER' | 'SUPERADMIN';
   active: boolean;
   revokedAt?: string | null;
   lastLoginAt?: string | null;
@@ -145,8 +145,15 @@ export default function AdminPage() {
   const [auditsLoading, setAuditsLoading] = useState(false);
   const [auditFilters, setAuditFilters] = useState({ adminId: '', productId: '', action: '' });
   const [superMessage, setSuperMessage] = useState<string | null>(null);
-  const [adminForm, setAdminForm] = useState({ email: '', name: '', password: '', role: 'EDITOR' as AdminSummary['role'] });
+  const [adminForm, setAdminForm] = useState({ email: '', name: '', password: '', role: 'EXAMINER' as AdminSummary['role'] });
   const isSuperAdmin = adminInfo?.role === 'SUPERADMIN';
+  const canUpdateStatus = adminInfo?.role === 'SUPERADMIN' || adminInfo?.role === 'EXAMINER';
+  const canFinalizeStatus = isSuperAdmin;
+  const canManagePayments = isSuperAdmin;
+  const canManageLicense = isSuperAdmin;
+  const canGenerateCert = isSuperAdmin;
+  const canUploadReport = isSuperAdmin;
+  const canSendCompletion = isSuperAdmin;
 
   // Hook Initialization
   const { handlePreview, previewUrl, isLoading: isPreviewLoading } = useCertificateActions();
@@ -225,7 +232,7 @@ export default function AdminPage() {
         setSuperMessage(data?.error || 'Admin konnte nicht angelegt werden.');
         return;
       }
-      setAdminForm({ email: '', name: '', password: '', role: 'EDITOR' });
+      setAdminForm({ email: '', name: '', password: '', role: 'EXAMINER' });
       await fetchAdmins();
       setSuperMessage('Admin angelegt.');
     } catch {
@@ -526,9 +533,9 @@ export default function AdminPage() {
                     onChange={(e) => setAdminForm((f) => ({ ...f, role: e.target.value as AdminSummary['role'] }))}
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
                   >
-                    <option value="VIEWER">Viewer</option>
-                    <option value="EDITOR">Editor</option>
-                    <option value="SUPERADMIN">Superadmin</option>
+                    <option value="VIEWER">ÜBERSICHT / VIEWER</option>
+                    <option value="EXAMINER">PRÜFER / EXAMINER</option>
+                    <option value="SUPERADMIN">SUPERADMIN</option>
                   </select>
                   <button
                     type="button"
@@ -572,9 +579,9 @@ export default function AdminPage() {
                                 onChange={(e) => updateAdmin(adm.id, { role: e.target.value as AdminSummary['role'] })}
                                 className="rounded-lg border border-slate-200 px-2 py-1 text-sm"
                               >
-                                <option value="VIEWER">Viewer</option>
-                                <option value="EDITOR">Editor</option>
-                                <option value="SUPERADMIN">Superadmin</option>
+                                <option value="VIEWER">ÜBERSICHT / VIEWER</option>
+                                <option value="EXAMINER">PRÜFER / EXAMINER</option>
+                                <option value="SUPERADMIN">SUPERADMIN</option>
                               </select>
                             </td>
                             <td className="px-4 py-3">
@@ -699,6 +706,16 @@ export default function AdminPage() {
                   }}
                   onPreview={(id) => onPreviewClick(id)}
                   isPreviewLoading={isPreviewLoading && activePreviewId === (product.certificate?.id || 'temp')}
+                  permissions={{
+                    role: adminInfo?.role || 'VIEWER',
+                    canUpdateStatus,
+                    canFinalizeStatus,
+                    canManagePayments,
+                    canManageLicense,
+                    canGenerateCert,
+                    canUploadReport,
+                    canSendCompletion,
+                  }}
                 />
               ))}
             </section>
@@ -721,13 +738,24 @@ function AdminProductRow({
   product,
   onUpdated,
   onPreview,
-  isPreviewLoading
+  isPreviewLoading,
+  permissions,
 }: {
   product: AdminProduct;
   onUpdated: () => void;
   // UPDATED Type: Now accepts an ID string
   onPreview: (id: string) => void;
   isPreviewLoading: boolean;
+  permissions: {
+    role: 'VIEWER' | 'EXAMINER' | 'SUPERADMIN';
+    canUpdateStatus: boolean;
+    canFinalizeStatus: boolean;
+    canManagePayments: boolean;
+    canManageLicense: boolean;
+    canGenerateCert: boolean;
+    canUploadReport: boolean;
+    canSendCompletion: boolean;
+  };
 }) {
   const [expanded, setExpanded] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<StatusOption>(
@@ -769,6 +797,7 @@ function AdminProductRow({
   const [uploadingReport, setUploadingReport] = useState(false);
   const [reportMessage, setReportMessage] = useState<string | null>(null);
   const reportInputRef = useRef<HTMLInputElement | null>(null);
+  const allowedStatuses = STATUS_OPTIONS;
   const expiresInDays = useMemo(() => {
     if (!product.license?.expiresAt) return null;
     const diff = new Date(product.license.expiresAt).getTime() - Date.now();
@@ -823,6 +852,14 @@ function AdminProductRow({
   };
 
   const handleUpdate = async () => {
+    if (!permissions.canUpdateStatus) {
+      setLocalMessage('Keine Berechtigung für Status-Updates.');
+      return;
+    }
+    if (!permissions.canFinalizeStatus && (selectedStatus === 'PASS' || selectedStatus === 'FAIL')) {
+      setLocalMessage('PASS/FAIL nur für Superadmin.');
+      return;
+    }
     setLocalMessage(null);
     setLoading(true);
     try {
@@ -855,6 +892,10 @@ function AdminProductRow({
   };
 
   const handleSaveLicense = async () => {
+    if (!permissions.canManageLicense) {
+      setLocalMessage('Keine Berechtigung für Lizenzen.');
+      return;
+    }
     setLicenseSaving(true);
     setLocalMessage(null);
     try {
@@ -886,6 +927,10 @@ function AdminProductRow({
   };
 
   const handleSendCertificate = async (opts?: { auto?: boolean }) => {
+    if (!permissions.canGenerateCert) {
+      setLocalMessage('Keine Berechtigung zum Generieren.');
+      return;
+    }
     setLocalMessage(null);
     setSendLoading(true);
     try {
@@ -913,6 +958,10 @@ function AdminProductRow({
   };
 
   const handlePaymentStatusChange = async () => {
+    if (!permissions.canManagePayments) {
+      setPaymentStatusMessage('Keine Berechtigung für Zahlungsstatus.');
+      return;
+    }
     setPaymentStatusMessage(null);
     setPaymentStatusLoading(true);
     try {
@@ -955,8 +1004,14 @@ function AdminProductRow({
   ];
 
   const sheetUrl = `https://docs.google.com/spreadsheets/d/1uwauj30aZ4KpwSHBL3Yi6yB85H_OQypI5ogKuR82KFk/edit?usp=sharing&productId=${product.id}`;
+  const canAccessRatings = permissions.canUpdateStatus;
+  const canAccessAssets = permissions.role !== 'VIEWER';
 
   const handleGenerateWithRating = async () => {
+    if (!permissions.canGenerateCert) {
+      setLocalMessage('Keine Berechtigung zum Generieren.');
+      return;
+    }
     setLocalMessage(null);
     setGenLoading(true);
     try {
@@ -984,6 +1039,10 @@ function AdminProductRow({
   };
 
   const handleReportUpload = async () => {
+    if (!permissions.canUploadReport) {
+      setReportMessage('Keine Berechtigung zum Hochladen.');
+      return;
+    }
     if (!reportFile) {
       setReportMessage('Bitte einen PDF-Prüfbericht auswählen.');
       return;
@@ -1127,17 +1186,25 @@ function AdminProductRow({
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value as StatusOption)}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em]"
+                disabled={!permissions.canUpdateStatus}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] disabled:opacity-60"
               >
-                {STATUS_OPTIONS.map((status) => (
-                  <option key={status.value} value={status.value} disabled={status.value === 'PRECHECK'}>
+                {allowedStatuses.map((status) => (
+                  <option
+                    key={status.value}
+                    value={status.value}
+                    disabled={
+                      status.value === 'PRECHECK' ||
+                      (!permissions.canFinalizeStatus && (status.value === 'PASS' || status.value === 'FAIL'))
+                    }
+                  >
                     {status.label}
                   </option>
                 ))}
               </select>
               <button
                 type="button"
-                disabled={loading}
+                disabled={loading || !permissions.canUpdateStatus}
                 onClick={handleUpdate}
                 className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-black disabled:opacity-70"
               >
@@ -1146,7 +1213,7 @@ function AdminProductRow({
 
               <button
                 type="button"
-                disabled={sendLoading}
+                disabled={sendLoading || !permissions.canGenerateCert}
                 onClick={() => handleSendCertificate()}
                 className="rounded-lg border border-emerald-600 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-70"
               >
@@ -1155,7 +1222,7 @@ function AdminProductRow({
 
               <button
                 type="button"
-                disabled={genLoading}
+                disabled={genLoading || !permissions.canGenerateCert}
                 onClick={handleGenerateWithRating}
                 className="rounded-lg border border-amber-700 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-800 transition hover:bg-amber-50 disabled:opacity-70"
               >
@@ -1168,8 +1235,12 @@ function AdminProductRow({
 
             <button
               type="button"
-              disabled={sendLoading}
+              disabled={sendLoading || !permissions.canSendCompletion}
               onClick={async () => {
+                if (!permissions.canSendCompletion) {
+                  setLocalMessage('Keine Berechtigung für Completion-Versand.');
+                  return;
+                }
                 setSendLoading(true);
                 setLocalMessage(null);
                 try {
@@ -1217,12 +1288,13 @@ function AdminProductRow({
                   type="file"
                   accept="application/pdf"
                   onChange={(e) => setReportFile(e.target.files?.[0] ?? null)}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-[11px] file:font-semibold file:uppercase file:tracking-[0.18em] file:text-white"
+                  disabled={!permissions.canUploadReport}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-[11px] file:font-semibold file:uppercase file:tracking-[0.18em] file:text-white disabled:opacity-60"
                 />
                 <button
                   type="button"
                   onClick={handleReportUpload}
-                  disabled={!reportFile || uploadingReport}
+                  disabled={!reportFile || uploadingReport || !permissions.canUploadReport}
                   className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-emerald-800 disabled:opacity-70"
                 >
                   {uploadingReport ? 'Lade hoch...' : 'Prüfbericht hochladen'}
@@ -1232,26 +1304,33 @@ function AdminProductRow({
             </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               <a
-                href={product.certificate?.pdfUrl ? `/api/certificates/${product.id}/download` : '#'}
-                target={product.certificate?.pdfUrl ? '_blank' : undefined}
+                href={product.certificate?.pdfUrl && canAccessAssets ? `/api/certificates/${product.id}/download` : '#'}
+                target={product.certificate?.pdfUrl && canAccessAssets ? '_blank' : undefined}
                 rel="noreferrer"
                 className={`inline-flex items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition ${
-                  product.certificate?.pdfUrl
+                  product.certificate?.pdfUrl && canAccessAssets
                     ? 'border border-slate-900 text-slate-900 hover:bg-slate-50'
                     : 'border border-slate-200 text-slate-400 cursor-not-allowed'
                 }`}
                 onClick={(e) => {
-                  if (!product.certificate?.pdfUrl) e.preventDefault();
+                  if (!product.certificate?.pdfUrl || !canAccessAssets) e.preventDefault();
                 }}
               >
                 Prüfbericht öffnen
               </a>
               {product.certificate?.reportUrl ? (
                 <a
-                  href={product.certificate.reportUrl}
-                  target="_blank"
+                  href={canAccessAssets ? product.certificate.reportUrl : '#'}
+                  target={canAccessAssets ? '_blank' : undefined}
                   rel="noreferrer"
-                  className="inline-flex items-center justify-center rounded-lg border border-emerald-700 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-800 transition hover:bg-emerald-50"
+                  onClick={(e) => {
+                    if (!canAccessAssets) e.preventDefault();
+                  }}
+                  className={`inline-flex items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition ${
+                    canAccessAssets
+                      ? 'border border-emerald-700 text-emerald-800 hover:bg-emerald-50'
+                      : 'border border-slate-200 text-slate-400 cursor-not-allowed'
+                  }`}
                 >
                   Hochgeladener Prüfbericht
                 </a>
@@ -1261,31 +1340,45 @@ function AdminProductRow({
                 </div>
               )}
               <a
-                href={product.certificate?.sealUrl || '#'}
-                target={product.certificate?.sealUrl ? '_blank' : undefined}
+                href={product.certificate?.sealUrl && canAccessAssets ? product.certificate.sealUrl : '#'}
+                target={product.certificate?.sealUrl && canAccessAssets ? '_blank' : undefined}
                 rel="noreferrer"
                 className={`inline-flex items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition ${
-                  product.certificate?.sealUrl
+                  product.certificate?.sealUrl && canAccessAssets
                     ? 'border border-amber-700 text-amber-800 hover:bg-amber-50'
                     : 'border border-slate-200 text-slate-400 cursor-not-allowed'
                 }`}
                 onClick={(e) => {
-                  if (!product.certificate?.sealUrl) e.preventDefault();
+                  if (!product.certificate?.sealUrl || !canAccessAssets) e.preventDefault();
                 }}
               >
                 Siegel öffnen
               </a>
               <a
-                href={`/api/admin/products/${product.id}/rating-sheet`}
-                className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-800 transition hover:bg-slate-50"
+                href={canAccessRatings ? `/api/admin/products/${product.id}/rating-sheet` : '#'}
+                onClick={(e) => {
+                  if (!canAccessRatings) e.preventDefault();
+                }}
+                className={`inline-flex items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition ${
+                  canAccessRatings
+                    ? 'border border-slate-300 text-slate-800 hover:bg-slate-50'
+                    : 'border border-slate-200 text-slate-400 cursor-not-allowed'
+                }`}
               >
                 Rating CSV herunterladen
               </a>
               <a
-                href={sheetUrl}
-                target="_blank"
+                href={canAccessRatings ? sheetUrl : '#'}
+                target={canAccessRatings ? '_blank' : undefined}
                 rel="noreferrer"
-                className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-800 transition hover:bg-slate-50"
+                onClick={(e) => {
+                  if (!canAccessRatings) e.preventDefault();
+                }}
+                className={`inline-flex items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition ${
+                  canAccessRatings
+                    ? 'border border-slate-300 text-slate-800 hover:bg-slate-50'
+                    : 'border border-slate-200 text-slate-400 cursor-not-allowed'
+                }`}
               >
                 Bewertungsblatt öffnen
               </a>
@@ -1312,7 +1405,8 @@ function AdminProductRow({
                 <select
                   value={paymentStatusValue}
                   onChange={(e) => setPaymentStatusValue(e.target.value as PaymentStatusOption)}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"
+                  disabled={!permissions.canManagePayments}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold disabled:opacity-60"
                 >
                   {PAYMENT_STATUS_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -1322,7 +1416,7 @@ function AdminProductRow({
                 </select>
                 <button
                   type="button"
-                  disabled={paymentStatusLoading}
+                  disabled={paymentStatusLoading || !permissions.canManagePayments}
                   onClick={handlePaymentStatusChange}
                   className="rounded-lg border border-slate-900 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-900 transition hover:bg-slate-50 disabled:opacity-70"
                 >
@@ -1350,7 +1444,8 @@ function AdminProductRow({
                 <select
                   value={licensePlan}
                   onChange={(e) => setLicensePlan(e.target.value)}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"
+                  disabled={!permissions.canManageLicense}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold disabled:opacity-60"
                 >
                   <option value="BASIC">BASIC</option>
                   <option value="PREMIUM">PREMIUM</option>
@@ -1362,7 +1457,8 @@ function AdminProductRow({
                 <select
                   value={licenseStatus}
                   onChange={(e) => setLicenseStatus(e.target.value)}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"
+                  disabled={!permissions.canManageLicense}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold disabled:opacity-60"
                 >
                   <option value="PENDING">PENDING</option>
                   <option value="ACTIVE">ACTIVE</option>
@@ -1376,7 +1472,8 @@ function AdminProductRow({
                   type="date"
                   value={licenseStart}
                   onChange={(e) => setLicenseStart(e.target.value)}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"
+                  disabled={!permissions.canManageLicense}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold disabled:opacity-60"
                 />
               </label>
               <label className="flex flex-col gap-1 text-xs font-semibold text-slate-700">
@@ -1385,7 +1482,7 @@ function AdminProductRow({
                   type="date"
                   value={licensePlan === 'LIFETIME' ? '' : licenseEnd}
                   onChange={(e) => setLicenseEnd(e.target.value)}
-                  disabled={licensePlan === 'LIFETIME'}
+                  disabled={licensePlan === 'LIFETIME' || !permissions.canManageLicense}
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold disabled:opacity-70"
                 />
               </label>
@@ -1395,14 +1492,15 @@ function AdminProductRow({
                   type="text"
                   value={licenseCode}
                   onChange={(e) => setLicenseCode(e.target.value)}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"
+                  disabled={!permissions.canManageLicense}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold disabled:opacity-60"
                 />
               </label>
             </div>
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <button
                 type="button"
-                disabled={licenseSaving}
+                disabled={licenseSaving || !permissions.canManageLicense}
                 onClick={handleSaveLicense}
                 className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-emerald-800 disabled:opacity-70"
               >

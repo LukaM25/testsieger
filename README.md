@@ -87,8 +87,11 @@ ADMIN_DB_BYPASS=false   # optional: true to bypass DB read in admin list
 - If SMTP is not configured, mails are skipped with a console warning.
 
 ## Admin usage
-- Login at `/admin` with your admin email/password (seeded via `npm run seed:admin`). Only `SUPERADMIN` currently has full access.
-- Actions include: list products, set payment/status, receive goods, upload report to create certificate, trigger internal certificate engine, or mark completion manually.
+- Login at `/admin` with your admin email/password (seeded via `npm run seed:admin`).
+- Roles:
+  - SUPERADMIN: Vollzugriff.
+  - EXAMINER (PRÜFER): Status-Updates + Rating-Sheet, aber keine Zahlungen/Lizenzen/Abschluss oder Zertifikatserstellung.
+  - VIEWER (ÜBERSICHT): Nur Lesen.
 - Admin routes require the admin session cookie (`admin_token`) signed with `ADMIN_JWT_SECRET`.
 
 ## Deployment notes

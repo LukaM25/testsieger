@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
+import { AdminRole } from '@prisma/client';
 import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { enqueueCompletionJob, processCompletionJob, CompletionError } from '@/lib/completion';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
-  const admin = await requireAdmin().catch(() => null);
+  const admin = await requireAdmin(AdminRole.SUPERADMIN).catch(() => null);
   if (!admin) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
 
   const { productId } = await req.json().catch(() => ({}));
