@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { sendPrecheckPaymentSuccess } from "@/lib/email";
+import { ensureProcessNumber } from '@/lib/processNumber';
 import { enqueueCompletionJob } from '@/lib/completion';
 import { Plan } from "@prisma/client";
 
@@ -142,11 +143,12 @@ async function handleCheckoutSession(cs: any) {
     }
 
     if (product?.user) {
+      const processNumber = await ensureProcessNumber(product.id);
       await sendPrecheckPaymentSuccess({
         to: product.user.email,
         name: product.user.name,
         productName: product.name,
-        processNumber: product.id,
+        processNumber,
         receiptPdf,
       }).catch((err) => {
         console.error('PRECHECK_PAYMENT_EMAIL_ERROR', err);

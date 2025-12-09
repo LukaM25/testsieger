@@ -31,6 +31,11 @@ export async function GET() {
 
   const payload = await Promise.all(
     products.map(async (p) => {
+      const lastPayment = await prisma.order.findFirst({
+        where: { productId: p.id, paidAt: { not: null } },
+        orderBy: { paidAt: 'desc' },
+        select: { paidAt: true },
+      });
       const assets = p.certificate ? await getCertificateAssetLinks(p.certificate.id) : null;
       const pdfUrl =
         assets?.OFFICIAL_PDF ??
@@ -47,6 +52,7 @@ export async function GET() {
         adminProgress: p.adminProgress,
         paymentStatus: p.paymentStatus,
         createdAt: p.createdAt,
+        paidAt: lastPayment?.paidAt ?? null,
         certificate: p.certificate
           ? {
               id: p.certificate.id,

@@ -4,6 +4,7 @@ import { requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 import { ensureSignedS3Url } from '@/lib/s3';
 import { getCertificateAssetLinks } from '@/lib/certificateAssets';
+import { ensureProcessNumber } from '@/lib/processNumber';
 
 export const runtime = 'nodejs';
 
@@ -52,6 +53,7 @@ export async function GET() {
         madeIn: true,
         material: true,
         status: true,
+        processNumber: true,
         adminProgress: true,
         paymentStatus: true,
         createdAt: true,
@@ -88,6 +90,7 @@ export async function GET() {
 
     const payload = await Promise.all(
       products.map(async (product) => {
+        const processNumber = product.processNumber ?? (await ensureProcessNumber(product.id));
         if (isViewerOnly) {
           return {
             id: product.id,
@@ -98,6 +101,7 @@ export async function GET() {
             adminProgress: product.adminProgress,
             paymentStatus: product.paymentStatus,
             createdAt: product.createdAt.toISOString(),
+            processNumber,
             user: {
               name: product.user.name,
               company: product.user.company,
@@ -137,6 +141,7 @@ export async function GET() {
           adminProgress: product.adminProgress,
           paymentStatus: product.paymentStatus,
           createdAt: product.createdAt.toISOString(),
+          processNumber,
           user: {
             name: product.user.name,
             company: product.user.company,

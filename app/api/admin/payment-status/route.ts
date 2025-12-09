@@ -3,6 +3,7 @@ import { AdminRole } from '@prisma/client';
 import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 import { sendPrecheckPaymentSuccess } from '@/lib/email';
+import { ensureProcessNumber } from '@/lib/processNumber';
 
 export const runtime = 'nodejs';
 
@@ -41,11 +42,12 @@ export async function POST(req: Request) {
 
   if (['PAID', 'MANUAL'].includes(status as ValidPaymentStatus) && product.user) {
     try {
+      const processNumber = await ensureProcessNumber(product.id);
       await sendPrecheckPaymentSuccess({
         to: product.user.email,
         name: product.user.name,
         productName: product.name,
-        processNumber: product.id,
+        processNumber,
         receiptPdf: undefined,
       });
     } catch (err) {

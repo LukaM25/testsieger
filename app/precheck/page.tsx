@@ -90,6 +90,7 @@ export default function PrecheckPage() {
   const productId = searchParams?.get("productId") || "";
   const statusState = usePrecheckStatusData({ initialProductId: productId });
   const { productStatus } = statusState;
+  const { products, selectedProductId, setSelectedProductId, productsLoading, statusError } = statusState;
   const [planNotice, setPlanNotice] = useState<string | null>(null);
   const [payError, setPayError] = useState<string | null>(null);
   const [paying, setPaying] = useState<string | null>(null);
@@ -287,7 +288,7 @@ export default function PrecheckPage() {
             </div>
           </FadeIn>
 
-          <div className="space-y-14 md:space-y-16">
+              <div className="space-y-16 md:space-y-18">
             <FadeIn delay={180}>
               <div className="space-y-3" id="checkout-options" ref={checkoutRef}>
                 <div className="text-2xl font-semibold text-slate-900">
@@ -299,9 +300,63 @@ export default function PrecheckPage() {
                     "Choose the processing speed and complete checkout so we can provide shipping details and your invoice."
                   )}
                 </p>
-              </div>
 
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="mt-4 mb-8 space-y-3 rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-md min-h-[140px]">
+                  <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">
+                    {tr("Produkt auswählen & Grundgebühr zahlen", "Select product & pay base fee")}
+                  </p>
+                  {productsLoading && <p className="text-sm text-slate-600">{tr("Lade Produkte…", "Loading products…")}</p>}
+                  {statusError === "UNAUTHORIZED" && (
+                    <p className="text-sm text-amber-700">
+                      {tr("Bitte einloggen, um Produkte zu sehen.", "Please sign in to view your products.")}
+                    </p>
+                  )}
+                  {statusError === "LOAD_FAILED" && (
+                    <p className="text-sm text-rose-700">
+                      {tr("Produkte konnten nicht geladen werden.", "Could not load products.")}
+                    </p>
+                  )}
+                  {!productsLoading && statusError === null && products.length === 0 && (
+                    <p className="text-sm text-slate-600">
+                      {tr("Noch keine Produkte angelegt. Bitte zuerst ein Produkt einreichen.", "No products yet. Please submit a product first.")}
+                    </p>
+                  )}
+                  {products.length > 0 && (
+                    <div className="grid gap-2 md:grid-cols-2">
+                     
+                      <select
+                        value={selectedProductId}
+                        onChange={(e) => setSelectedProductId(e.target.value)}
+                        className="col-span-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm"
+                      >
+                        <option value="">{tr("Bitte wählen", "Please choose")}</option>
+                        {products.map((p) => {
+                          const paid = ["PAID", "MANUAL"].includes(p.paymentStatus);
+                          const date = p.paidAt
+                            ? new Date(p.paidAt).toLocaleDateString(locale === "en" ? "en-GB" : "de-DE", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              })
+                            : "";
+                          return (
+                            <option key={p.id} value={p.id} disabled={paid}>
+                              {p.name} {p.brand ? `– ${p.brand}` : ""} {paid ? `(${tr("Bezahlt", "Paid")}${date ? ` · ${date}` : ""})` : ""}
+                            </option>
+                          );
+                        })}
+                      </select>
+                      {!selectedProductId && (
+                        <p className="col-span-2 text-xs text-amber-700">
+                          {tr("Bitte Produkt auswählen, um die Grundgebühr zu zahlen.", "Select a product to pay the base fee.")}
+                        </p>
+                      )}
+                    </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
                 {testOptions.map((option, idx) => (
                   <button
                     key={option.title.de}

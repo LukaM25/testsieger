@@ -35,6 +35,7 @@ model Product {
   status         ProductStatus   @default(PRECHECK)
   adminProgress  AdminProgress   @default(PRECHECK)
   paymentStatus  PaymentStatus   @default(UNPAID)
+  processNumber  String?         @unique
   createdAt      DateTime        @default(now())
   certificate    Certificate?
   license        License?

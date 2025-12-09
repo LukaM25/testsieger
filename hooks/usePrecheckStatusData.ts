@@ -9,6 +9,7 @@ export type ProductStatusPayload = {
   adminProgress: "PRECHECK" | "RECEIVED" | "ANALYSIS" | "COMPLETION" | "PASS" | "FAIL";
   status: string;
   createdAt?: string;
+  paidAt?: string | null;
   brand?: string | null;
   certificate?: { id: string; pdfUrl?: string | null; status?: string | null; sealUrl?: string | null } | null;
   license?: { status: string; plan?: string | null } | null;
