@@ -11,6 +11,7 @@ export type ProductStatusPayload = {
   createdAt?: string;
   paidAt?: string | null;
   brand?: string | null;
+  precheckDiscountPercent?: number | null;
   certificate?: { id: string; pdfUrl?: string | null; status?: string | null; sealUrl?: string | null } | null;
   license?: { status: string; plan?: string | null } | null;
 };

@@ -200,7 +200,7 @@ function formatNote(message) {
 
 function renderFooter() {
   const base = (APP_BASE_URL || '').replace(/\/$/, '') || 'http://pruefsiegelzentrum.vercel.app';
-  const logo = `${base}/tclogo.png`;
+  const logo = `${base}/dpilogo-v2.png`;
   const seal = `${base}/siegel.png`;
   return `
     <div style="margin-top:28px;padding-top:18px;border-top:1px solid #e2e8f0;display:flex;align-items:center;gap:16px;color:#475569;font-size:12px;">

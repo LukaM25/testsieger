@@ -30,6 +30,20 @@ function normalizeCertificateData(data = {}) {
 
   const qrUrl = data.qrUrl || data.qrDataUrl || certificate.qrDataUrl || certificate.qrUrl;
 
+  const baseDomain = (() => {
+    const domain = data.domain || process.env.APP_URL || process.env.NEXT_PUBLIC_BASE_URL;
+    if (typeof domain === 'string' && domain.trim()) return domain.replace(/\/$/, '');
+    if (typeof verifyUrl === 'string' && /^https?:\/\//i.test(verifyUrl)) {
+      try {
+        return new URL(verifyUrl).origin;
+      } catch {
+        return undefined;
+      }
+    }
+    return undefined;
+  })();
+  const logoUrl = baseDomain ? `${baseDomain}/dpilogo-v2.png` : undefined;
+
   return {
     ...data,
     ...product,
@@ -47,6 +61,7 @@ function normalizeCertificateData(data = {}) {
     seal_number: data.seal_number || certificate.seal_number,
     verify_url: verifyUrl,
     qrUrl,
+    logoUrl,
     certificate: {
       ...certificate,
       seal_number: certificate.seal_number || data.seal_number,

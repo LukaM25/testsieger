@@ -68,7 +68,9 @@
       gap: 24px;
     }
 
-    .brand-block { display: flex; flex-direction: column; gap: 4px; }
+    .brand-block { display: flex; flex-direction: column; gap: 10px; }
+    .brand-logo { display: flex; align-items: center; min-height: 32px; }
+    .brand-logo img { display: block; height: 32px; width: auto; object-fit: contain; }
     .brand-name {
       font-size: 14px;
       font-weight: 700;
@@ -252,7 +254,13 @@
     <div class="frame">
       <header>
         <div class="brand-block">
-          <div class="brand-name">Prüfsiegel Zentrum</div>
+          {{#if logoUrl}}
+            <div class="brand-logo">
+              <img src="{{logoUrl}}" alt="Deutsches Prüfsiegel Institut" />
+            </div>
+          {{else}}
+            <div class="brand-name">Deutsches Prüfsiegel Institut</div>
+          {{/if}}
           <div class="document-title">
             <h1>{{default name "Product Certification"}}</h1>
           </div>

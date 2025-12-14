@@ -164,6 +164,7 @@ export function PrecheckStatusCard({ state, className = "" }: Props) {
                 productId={productStatus.id}
                 initialCertificate={productStatus.certificate}
                 status={productStatus.status}
+                paymentStatus={productStatus.paymentStatus}
                 tr={tr}
               />
             </div>
@@ -206,12 +207,14 @@ export function PrecheckStatusCard({ state, className = "" }: Props) {
 type CertificateActionProps = {
   productId: string;
   status: string;
+  paymentStatus: ProductStatusPayload["paymentStatus"];
   initialCertificate: ProductStatusPayload["certificate"];
   tr: (de: string, en: string) => string;
 };
 
-function CertificateAction({ productId, status, initialCertificate, tr }: CertificateActionProps) {
-  const pollingEnabled = status === "PAID";
+function CertificateAction({ productId, status, paymentStatus, initialCertificate, tr }: CertificateActionProps) {
+  const isPaid = paymentStatus === "PAID" || paymentStatus === "MANUAL";
+  const pollingEnabled = isPaid;
   const { data } = useProductStatusPoll(productId, { enabled: pollingEnabled, intervalMs: 8000 });
 
   const effectivePdf = data?.pdfUrl ?? initialCertificate?.pdfUrl ?? null;
@@ -230,7 +233,7 @@ function CertificateAction({ productId, status, initialCertificate, tr }: Certif
     );
   }
 
-  const isGenerating = status === "PAID" && (!effectiveStatus || effectiveStatus === "PENDING");
+  const isGenerating = isPaid && (!effectiveStatus || effectiveStatus === "PENDING");
 
   return (
     <span className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
@@ -240,7 +243,7 @@ function CertificateAction({ productId, status, initialCertificate, tr }: Certif
           <path className="opacity-75" d="M4 12a8 8 0 018-8" />
         </svg>
       )}
-      {tr("Zertifikat wird generiert…", "Generating certificate…")}
+      {isPaid ? tr("Prüfung wird vorbereitet.", "Review is being prepared.") : tr("Zertifikat nach Zahlung verfügbar.", "Certificate available after payment.")}
     </span>
   );
 }

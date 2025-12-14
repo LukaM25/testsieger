@@ -385,7 +385,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                     </a>
                   </div>
                 ) : (
-                  <p className="mt-3 text-sm text-amber-600">Zertifikat wird vorbereitet. Wir melden uns per E-Mail.</p>
+                  <p className="mt-3 text-sm text-amber-600">Prüfung wird vorbereitet. Wir melden uns per E-Mail.</p>
                 )}
               </div>
             ))}

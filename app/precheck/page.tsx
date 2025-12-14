@@ -24,6 +24,10 @@ type Plan = {
 };
 
 // --- Data ---
+const STANDARD_NET_EUR = 254;
+const PRIORITY_NET_EUR = 318;
+const VAT_RATE = 0.19;
+
 const testOptions: TestOption[] = [
   {
     id: "standard",
@@ -88,7 +92,10 @@ export default function PrecheckPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const productId = searchParams?.get("productId") || "";
+  const checkout = searchParams?.get("checkout") || "";
+  const productNameFromQuery = searchParams?.get("product") || "";
   const statusState = usePrecheckStatusData({ initialProductId: productId });
+  const refreshStatus = statusState.refresh;
   const { productStatus } = statusState;
   const { products, selectedProductId, setSelectedProductId, productsLoading, statusError } = statusState;
   const [planNotice, setPlanNotice] = useState<string | null>(null);
@@ -97,6 +104,8 @@ export default function PrecheckPage() {
   const [heroStage, setHeroStage] = useState<"loading" | "done">("loading");
   const [dots, setDots] = useState(0);
   const [heroSeen, setHeroSeen] = useState(false);
+  const [paymentConfirming, setPaymentConfirming] = useState(false);
+  const [paymentConfirmTimedOut, setPaymentConfirmTimedOut] = useState(false);
   const heroTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dotsTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const checkoutRef = useRef<HTMLDivElement | null>(null);
@@ -105,10 +114,25 @@ export default function PrecheckPage() {
   const isPassed = productStatus
     ? productStatus.adminProgress === "PASS" || productStatus.adminProgress === "COMPLETION" || productStatus.status === "COMPLETED"
     : false;
+  const discountPercent = Math.max(0, Math.min(30, Number(productStatus?.precheckDiscountPercent ?? 0) || 0));
+  const hasDiscount = discountPercent > 0;
+  const displayProductName = (productStatus?.name || productNameFromQuery).trim();
+  const productLabel = displayProductName || tr("dein Produkt", "your product");
+  const formatEur = (amountEur: number) =>
+    new Intl.NumberFormat(locale === "en" ? "en-GB" : "de-DE", { style: "currency", currency: "EUR" }).format(amountEur);
+  const roundEur = (n: number) => Math.round(n * 100) / 100;
+  const discountedNet = (netEur: number) => roundEur(netEur * (1 - discountPercent / 100));
+  const discountedGross = (netEur: number) => roundEur(discountedNet(netEur) * (1 + VAT_RATE));
+  const standardNetLabel = `${formatEur(discountedNet(STANDARD_NET_EUR))}`;
+  const priorityNetLabel = `${formatEur(discountedNet(PRIORITY_NET_EUR))}`;
   const heroHeading =
-    heroStage === "loading"
-      ? `${tr("Pre-Check", "Pre-check")}${".".repeat((dots % 3) + 1)}`
-      : tr("Pre-Check bestanden!", "Pre-check passed!");
+    isPaid
+      ? tr("Danke! Zahlung bestätigt.", "Thanks! Payment confirmed.")
+    : checkout === "success" && !isPaid
+        ? `${tr("Zahlung wird bestätigt", "Confirming payment")}${".".repeat((dots % 3) + 1)}`
+        : heroStage === "loading"
+          ? `${tr("Pre-Check", "Pre-check")}${".".repeat((dots % 3) + 1)}`
+          : tr("Pre-Check bestanden!", "Pre-check passed!");
   const planDisabledTitle = tr(
     "Bitte zuerst den Pre-Check und die Grundgebühr abschließen. Wir leiten dich zum Formular.",
     "Please finish the pre-check and base fee first. We’ll take you to the form."
@@ -216,7 +240,8 @@ export default function PrecheckPage() {
   }, [productStatus]);
 
   useEffect(() => {
-    if (heroStage !== "loading") {
+    const shouldAnimateDots = heroStage === "loading" || paymentConfirming;
+    if (!shouldAnimateDots) {
       if (dotsTimer.current) {
         clearInterval(dotsTimer.current);
         dotsTimer.current = null;
@@ -229,7 +254,65 @@ export default function PrecheckPage() {
     return () => {
       if (dotsTimer.current) clearInterval(dotsTimer.current);
     };
-  }, [heroStage]);
+  }, [heroStage, paymentConfirming]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (checkout !== "success") {
+      setPaymentConfirming(false);
+      setPaymentConfirmTimedOut(false);
+      return;
+    }
+    if (isPaid) {
+      setPaymentConfirming(false);
+      setPaymentConfirmTimedOut(false);
+      return;
+    }
+
+    let cancelled = false;
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const startedAt = Date.now();
+    const maxMs = 60_000;
+    const intervalMs = 2_000;
+
+    setPaymentConfirming(true);
+    setPaymentConfirmTimedOut(false);
+
+    const tick = async () => {
+      if (cancelled) return;
+      try {
+        await refreshStatus({ signal: controller.signal });
+      } catch {
+        // ignore, we retry below
+      }
+      if (cancelled) return;
+      if (Date.now() - startedAt >= maxMs) {
+        setPaymentConfirming(false);
+        setPaymentConfirmTimedOut(true);
+        return;
+      }
+      timer = setTimeout(tick, intervalMs);
+    };
+
+    tick();
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      controller.abort();
+    };
+  }, [checkout, isPaid, refreshStatus]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (checkout !== "success") return;
+    if (!isPaid) return;
+    if (!searchParams) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("checkout");
+    router.replace(`/precheck?${params.toString()}`);
+  }, [checkout, isPaid, router, searchParams]);
 
   // Removed auto-scroll to avoid disrupting mobile keyboards
 
@@ -249,27 +332,76 @@ export default function PrecheckPage() {
                   <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-slate-900">
                     {heroHeading}
                   </h1>
-                  {heroStage === "loading" && (
+                  {checkout === "success" && !isPaid ? (
+                    <div className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600">
+                      <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" aria-hidden />
+                      {tr("Zahlung wird bestätigt …", "Confirming payment …")}
+                    </div>
+                  ) : heroStage === "loading" && !isPaid ? (
                     <div className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600">
                       <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" aria-hidden />
                       {tr("Lädt Ergebnis …", "Loading result …")}
                     </div>
-                  )}
-                  <p className="text-lg md:text-xl font-medium text-slate-800">
-                    {tr("Produkt jetzt an uns senden.", "Send your product to us now.")}
-                  </p>
-                  <p className="text-base md:text-lg text-slate-600 leading-relaxed">
-                    <strong>
-                      {tr(
-                        "Hierfür fällt einmalig eine Testgebühr in Höhe von 254,00€ an.",
-                        "A one-time test fee of €254 is due."
+                  ) : null}
+                  {isPaid ? (
+                    <>
+                      <p className="text-lg md:text-xl font-medium text-slate-800">
+                        {tr("Danke für deine Zahlung!", "Thanks for your payment!")}
+                      </p>
+                      <p className="text-base md:text-lg text-slate-600 leading-relaxed">
+                        {tr(
+                          `Wir haben die Grundgebühr für „${productLabel}“ erhalten. Als Nächstes bekommst du per E-Mail Rechnung und Versandadresse. Bitte sende dein Produkt an uns, damit wir mit der Prüfung starten können.`,
+                          `We’ve received the base fee for “${productLabel}”. Next, you’ll receive the invoice and shipping address by email. Please send your product to us so we can start testing.`
+                        )}
+                      </p>
+                    </>
+                  ) : checkout === "success" && !isPaid ? (
+                    <>
+                      <p className="text-lg md:text-xl font-medium text-slate-800">
+                        {tr("Wir prüfen den Zahlungseingang …", "We’re confirming your payment …")}
+                      </p>
+                      <p className="text-base md:text-lg text-slate-600 leading-relaxed">
+                        {tr(
+                          "Das dauert meist nur ein paar Sekunden. Diese Seite aktualisiert sich automatisch.",
+                          "This usually takes a few seconds. This page will update automatically."
+                        )}
+                      </p>
+                      {paymentConfirmTimedOut && (
+                        <p className="text-sm text-amber-700">
+                          {tr(
+                            "Das dauert länger als erwartet. Bitte lade die Seite neu oder versuche es in einer Minute erneut.",
+                            "This is taking longer than expected. Please refresh the page or try again in a minute."
+                          )}
+                        </p>
                       )}
-                    </strong>{" "}
-                    {tr(
-                      "Nach Bezahlung senden wir eine E-Mail mit Rechnung und Versandadresse.",
-                      "After payment we will email your invoice and the shipping address."
-                    )}
-                  </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-lg md:text-xl font-medium text-slate-800">
+                        {tr("Produkt jetzt an uns senden.", "Send your product to us now.")}
+                      </p>
+                      <p className="text-base md:text-lg text-slate-600 leading-relaxed">
+                        <strong>
+                          {tr(
+                            `Hierfür fällt einmalig eine Testgebühr ab ${standardNetLabel} zzgl. MwSt. an.`,
+                            `A one-time test fee starting at ${standardNetLabel} plus VAT is due.`
+                          )}
+                        </strong>{" "}
+                        {tr(
+                          "Nach Bezahlung senden wir eine E-Mail mit Rechnung und Versandadresse.",
+                          "After payment we will email your invoice and the shipping address."
+                        )}
+                      </p>
+                      {hasDiscount && (
+                        <p className="text-sm text-emerald-700 font-semibold">
+                          {tr(
+                            `Du erhältst ${discountPercent}% Rabatt auf die Grundgebühr für dieses Produkt.`,
+                            `You get ${discountPercent}% off the base fee for this product.`
+                          )}
+                        </p>
+                      )}
+                    </>
+                  )}
                 </div>
                 <div className="inline-flex items-center gap-3 rounded-full bg-slate-900 text-white px-4 py-2 text-xs font-semibold tracking-[0.18em] w-fit shadow-md">
                   {tr("Nächster Schritt: Versand & Zahlung", "Next step: shipping & payment")}
@@ -324,28 +456,34 @@ export default function PrecheckPage() {
                   {products.length > 0 && (
                     <div className="grid gap-2 md:grid-cols-2">
                      
-                      <select
-                        value={selectedProductId}
-                        onChange={(e) => setSelectedProductId(e.target.value)}
-                        className="col-span-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm"
-                      >
-                        <option value="">{tr("Bitte wählen", "Please choose")}</option>
-                        {products.map((p) => {
-                          const paid = ["PAID", "MANUAL"].includes(p.paymentStatus);
-                          const date = p.paidAt
-                            ? new Date(p.paidAt).toLocaleDateString(locale === "en" ? "en-GB" : "de-DE", {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric",
-                              })
-                            : "";
-                          return (
-                            <option key={p.id} value={p.id} disabled={paid}>
-                              {p.name} {p.brand ? `– ${p.brand}` : ""} {paid ? `(${tr("Bezahlt", "Paid")}${date ? ` · ${date}` : ""})` : ""}
-                            </option>
-                          );
-                        })}
-                      </select>
+	                      <select
+	                        value={selectedProductId}
+	                        onChange={(e) => setSelectedProductId(e.target.value)}
+	                        className="col-span-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm"
+	                      >
+	                        <option value="">{tr("Bitte wählen", "Please choose")}</option>
+	                        {products.map((p) => {
+	                          const paid = ["PAID", "MANUAL"].includes(p.paymentStatus);
+                          const pDiscount = Math.max(0, Math.min(30, Number(p.precheckDiscountPercent ?? 0) || 0));
+	                          const date = p.paidAt
+	                            ? new Date(p.paidAt).toLocaleDateString(locale === "en" ? "en-GB" : "de-DE", {
+	                                day: "2-digit",
+	                                month: "2-digit",
+	                                year: "numeric",
+	                              })
+	                            : "";
+	                          return (
+	                            <option key={p.id} value={p.id} disabled={paid}>
+	                              {p.name} {p.brand ? `– ${p.brand}` : ""}{" "}
+                                {paid
+                                  ? `(${tr("Bezahlt", "Paid")}${date ? ` · ${date}` : ""})`
+                                  : pDiscount > 0
+                                    ? `(${pDiscount}% ${tr("Rabatt", "off")})`
+                                    : ""}
+	                            </option>
+	                          );
+	                        })}
+	                      </select>
                       {!selectedProductId && (
                         <p className="col-span-2 text-xs text-amber-700">
                           {tr("Bitte Produkt auswählen, um die Grundgebühr zu zahlen.", "Select a product to pay the base fee.")}
@@ -357,7 +495,17 @@ export default function PrecheckPage() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
-                {testOptions.map((option, idx) => (
+                {testOptions.map((option, idx) => {
+                  const net = option.id === "priority" ? PRIORITY_NET_EUR : STANDARD_NET_EUR;
+                  const priceLabel = tr(
+                    `${formatEur(discountedNet(net))} zzgl. MwSt.`,
+                    `${formatEur(discountedNet(net))} plus VAT`
+                  );
+                  const grossLabel = tr(
+                    `Brutto: ${formatEur(discountedGross(net))}`,
+                    `Gross: ${formatEur(discountedGross(net))}`
+                  );
+                  return (
                   <button
                     key={option.title.de}
                     type="button"
@@ -377,12 +525,17 @@ export default function PrecheckPage() {
                         {tr(option.title.de, option.title.en)}
                       </div>
                       <div className="text-lg font-medium text-white/95">
-                        {tr(option.price.de, option.price.en)}
+                        {priceLabel}
                       </div>
-                      <div className="text-sm font-semibold text-white/90">{tr(option.gross.de, option.gross.en)}</div>
+                      <div className="text-sm font-semibold text-white/90">{grossLabel}</div>
                       <span className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-white/85">
                         {tr(option.timeline.de, option.timeline.en)}
                       </span>
+                      {hasDiscount && (
+                        <span className="mt-2 inline-flex items-center rounded-full bg-emerald-400/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/90">
+                          {tr(`${discountPercent}% Rabatt`, `${discountPercent}% off`)}
+                        </span>
+                      )}
                     </div>
 
                     <div className="mt-8 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white transition group-hover:bg-white/25">
@@ -394,7 +547,8 @@ export default function PrecheckPage() {
                       <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
                     </div>
                   </button>
-                ))}
+                  );
+                })}
               </div>
               {payError && <p className="text-sm text-amber-700">{payError}</p>}
             </FadeIn>

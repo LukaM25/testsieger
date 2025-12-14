@@ -486,13 +486,17 @@ export default function Navbar() {
 
   return (
     <header className="relative w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 overflow-visible">
-      <div className="max-w-7xl mx-auto flex items-center justify-between px-3 sm:px-6 py-3 gap-3">
+      <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-3 sm:px-6 gap-3">
         {/* Logo */}
-        <a href="/" className="flex items-center gap-2">
-          <div className="grid place-items-center w-8 h-8 rounded-full bg-transparent text-white font-semibold overflow-hidden">
-            <Image src="/images/iconen/logoTC.png" alt="Logo" width={26} height={26} className="h-[26px] w-[26px] object-contain" />
-          </div>
-          <span className="font-semibold text-[#2e4053]">Deutsches Prüfsiegel Institut</span>
+        <a href="/" className="flex h-full items-center shrink-0 py-2">
+          <Image
+            src="/dpilogo-v2.png"
+            alt="Deutsches Prüfsiegel Institut"
+            width={360}
+            height={96}
+            priority
+            className="block h-full w-auto object-contain"
+          />
         </a>
 
         <div className="flex items-center gap-3 sm:gap-4">

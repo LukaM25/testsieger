@@ -41,7 +41,7 @@ async function sendEmail(opts: { to: string; subject: string; html: string; atta
 }
 
 function renderFooter() {
-  const logo = `${APP_BASE_URL.replace(/\/$/, '')}/tclogo.png`;
+  const logo = `${APP_BASE_URL.replace(/\/$/, '')}/dpilogo-v2.png`;
   const seal = `${APP_BASE_URL.replace(/\/$/, '')}/siegel.png`;
   return `
     <div style="margin-top:28px;padding-top:18px;border-top:1px solid #e2e8f0;display:flex;align-items:center;gap:16px;color:#475569;font-size:12px;">
@@ -328,6 +328,10 @@ export async function sendCompletionReadyEmail(opts: {
 }) {
   const { to, name, productName, licenseUrl, csvBuffer } = opts;
   const plansLink = (licenseUrl || `${APP_BASE_URL.replace(/\/$/, '')}/pakete`).replace(/\/$/, '');
+  const join = plansLink.includes('?') ? '&' : '?';
+  const basicLink = `${plansLink}${join}plan=basic`;
+  const premiumLink = `${plansLink}${join}plan=premium`;
+  const lifetimeLink = `${plansLink}${join}plan=lifetime`;
   const attachments: Attachment[] = [];
   if (csvBuffer) {
     attachments.push({
@@ -337,20 +341,28 @@ export async function sendCompletionReadyEmail(opts: {
     });
   }
 
-  const html = `
-    <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
-      <p>Guten Tag ${escapeHtml(name)},</p>
-      <p>gute Nachrichten: Ihr Produkt hat den Testsieger Check erfolgreich bestanden!</p>
-      <p>Das vollständige Prüfergebnis finden Sie im Anhang dieser E-Mail.</p>
-      <p style="margin:14px 0;">Um das Siegel, den Prüfbericht und das Zertifikat offiziell zu aktivieren und nutzen zu dürfen, wählen Sie jetzt Ihren passenden Lizenzplan aus:</p>
-      <p style="margin:16px 0;">
-        <a href="${plansLink}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">Lizenzplan auswählen &amp; Siegel freischalten</a>
-      </p>
-      <p style="margin:12px 0;">Nach Abschluss wird Ihr Produkt automatisch für die Nutzung des Testsieger-Siegels freigegeben.</p>
-      <p style="margin-top:18px;">Mit besten Grüßen<br/>Deutsches Prüfsiegel Institut (DPI)</p>
-      ${renderFooter()}
-    </div>
-  `;
+	  const html = `
+	    <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
+	      <p>Guten Tag ${escapeHtml(name)},</p>
+	      <p>gute Nachrichten: Ihr Produkt hat den Testsieger Check erfolgreich bestanden!</p>
+	      <p>Das vollständige Prüfergebnis finden Sie im Anhang dieser E-Mail.</p>
+	      <p style="margin:14px 0;">Um das Siegel, den Prüfbericht und das Zertifikat offiziell zu aktivieren und nutzen zu dürfen, wählen Sie jetzt Ihren passenden Lizenzplan aus:</p>
+        <div style="margin:16px 0;max-width:520px;">
+          <a href="${basicLink}" style="display:block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;text-align:center;margin-bottom:10px;">
+            Basic wählen (0,99 € / Tag)
+          </a>
+          <a href="${premiumLink}" style="display:block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;text-align:center;margin-bottom:10px;">
+            Premium wählen (1,47 € / Tag)
+          </a>
+          <a href="${lifetimeLink}" style="display:block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;text-align:center;">
+            Lifetime wählen (1466 € einmalig)
+          </a>
+        </div>
+	      <p style="margin:12px 0;">Nach Abschluss wird Ihr Produkt automatisch für die Nutzung des Testsieger-Siegels freigegeben.</p>
+	      <p style="margin-top:18px;">Mit besten Grüßen<br/>Deutsches Prüfsiegel Institut (DPI)</p>
+	      ${renderFooter()}
+	    </div>
+	  `;
 
   await sendEmail({
     from: `Pruefsiegel Zentrum UG – Abschluss <${FROM_EMAIL}>`,

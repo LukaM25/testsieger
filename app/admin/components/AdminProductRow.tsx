@@ -581,7 +581,7 @@ export default function AdminProductRow({
                   if (!product.certificate?.pdfUrl || !canAccessAssets) e.preventDefault();
                 }}
               >
-                Prüfbericht öffnen
+                Zertifikat öffnen
               </a>
               {product.certificate?.reportUrl ? (
                 <a

@@ -29,6 +29,9 @@ export async function GET() {
     orderBy: { createdAt: 'desc' },
   });
 
+  const paidCount = products.filter((p) => p.paymentStatus === 'PAID' || p.paymentStatus === 'MANUAL').length;
+  const nextDiscountPercent = Math.min(30, Math.max(0, paidCount * 10));
+
   const payload = await Promise.all(
     products.map(async (p) => {
       const lastPayment = await prisma.order.findFirst({
@@ -53,6 +56,7 @@ export async function GET() {
         paymentStatus: p.paymentStatus,
         createdAt: p.createdAt,
         paidAt: lastPayment?.paidAt ?? null,
+        precheckDiscountPercent: p.paymentStatus === 'PAID' || p.paymentStatus === 'MANUAL' ? 0 : nextDiscountPercent,
         certificate: p.certificate
           ? {
               id: p.certificate.id,

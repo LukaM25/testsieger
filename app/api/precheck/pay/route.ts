@@ -5,6 +5,33 @@ import { getSession } from '@/lib/cookies';
 
 export const runtime = 'nodejs';
 
+const PRECHECK_COUPON_ENV: Record<10 | 20 | 30, string> = {
+  10: 'STRIPE_COUPON_PRECHECK_10',
+  20: 'STRIPE_COUPON_PRECHECK_20',
+  30: 'STRIPE_COUPON_PRECHECK_30',
+};
+
+async function getOrCreatePrecheckCouponId(percentOff: 10 | 20 | 30) {
+  const envKey = PRECHECK_COUPON_ENV[percentOff];
+  const fromEnv = process.env[envKey];
+  if (fromEnv) return fromEnv;
+
+  const g = globalThis as typeof globalThis & {
+    __precheckCoupons?: Partial<Record<10 | 20 | 30, string>>;
+  };
+  g.__precheckCoupons ||= {};
+  const cached = g.__precheckCoupons[percentOff];
+  if (cached) return cached;
+
+  const created = await stripe.coupons.create({
+    duration: 'once',
+    percent_off: percentOff,
+    name: `Precheck ${percentOff}%`,
+  });
+  g.__precheckCoupons[percentOff] = created.id;
+  return created.id;
+}
+
 export async function POST(req: Request) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
@@ -44,6 +71,19 @@ export async function POST(req: Request) {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.APP_URL || 'http://localhost:3000';
 
+  const paidCount = await prisma.product.count({
+    where: {
+      userId: session.userId,
+      id: { not: product.id },
+      paymentStatus: { in: ['PAID', 'MANUAL'] },
+    },
+  });
+  const discountPercent = Math.min(30, Math.max(0, paidCount * 10));
+  const couponId =
+    discountPercent === 10 || discountPercent === 20 || discountPercent === 30
+      ? await getOrCreatePrecheckCouponId(discountPercent)
+      : null;
+
   const checkout = await stripe.checkout.sessions.create({
     mode: 'payment',
     customer_email: product.user.email,
@@ -52,15 +92,17 @@ export async function POST(req: Request) {
       productId: product.id,
       userId: session.userId,
       plan: opt === 'priority' ? 'PRECHECK_PRIORITY' : 'PRECHECK_FEE',
+      precheckDiscountPercent: String(discountPercent),
     },
+    discounts: couponId ? [{ coupon: couponId }] : undefined,
     line_items: [
       {
         price: priceId,
         quantity: 1,
       },
     ],
-    success_url: `${baseUrl}/precheck?productId=${product.id}&product=${encodeURIComponent(product.name)}`,
-    cancel_url: `${baseUrl}/precheck?productId=${product.id}&product=${encodeURIComponent(product.name)}`,
+    success_url: `${baseUrl}/precheck?productId=${product.id}&product=${encodeURIComponent(product.name)}&checkout=success`,
+    cancel_url: `${baseUrl}/precheck?productId=${product.id}&product=${encodeURIComponent(product.name)}&checkout=cancel`,
   });
 
   return NextResponse.json({ ok: true, url: checkout.url });
