@@ -63,7 +63,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/produkte/spielplatz_sicherheit" className="hover:text-white transition-colors">
+                <Link href="/produkte/spielplatz-sicherheit" className="hover:text-white transition-colors">
                   {copy.playgroundSafety}
                 </Link>
               </li>
