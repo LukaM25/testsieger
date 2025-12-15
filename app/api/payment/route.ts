@@ -4,6 +4,9 @@ import { stripe } from "@/lib/stripe";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Plan } from "@prisma/client";
+import { getPublicBaseUrl } from "@/lib/baseUrl";
+
+export const runtime = "nodejs";
 
 const PLAN_PRICE: Record<string, string> = {
   BASIC: process.env.STRIPE_PRICE_BASIC!,
@@ -51,10 +54,12 @@ export async function POST(req: Request) {
 
   let stripeSession;
   try {
+    const baseUrl = getPublicBaseUrl();
     stripeSession = await stripe.checkout.sessions.create(
       {
         mode: checkoutMode,
         line_items: [{ price: priceId, quantity: 1 }],
+        customer_email: session.email,
         client_reference_id: `${session.userId}:${product.id}:${selectedPlan}`,
         metadata: {
           productId: product.id,
@@ -62,8 +67,8 @@ export async function POST(req: Request) {
           plan: selectedPlan,
           priceCents: priceAmountCents ?? null,
         },
-        success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
-        cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/pakete`,
+        success_url: `${baseUrl}/dashboard?checkout=success&productId=${encodeURIComponent(product.id)}`,
+        cancel_url: `${baseUrl}/pakete?checkout=cancel&productId=${encodeURIComponent(product.id)}&plan=${selectedPlan.toLowerCase()}`,
       },
       { maxNetworkRetries: 2 }
     );

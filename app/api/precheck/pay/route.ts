@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/cookies';
+import { getPublicBaseUrl } from '@/lib/baseUrl';
 
 export const runtime = 'nodejs';
 
@@ -69,7 +70,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, alreadyPaid: true });
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.APP_URL || 'http://localhost:3000';
+  const baseUrl = getPublicBaseUrl();
 
   const paidCount = await prisma.product.count({
     where: {

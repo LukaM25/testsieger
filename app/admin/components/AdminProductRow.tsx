@@ -497,18 +497,72 @@ function AdminProductRow({
                 {sendLoading ? 'Zertifikat wird generiert…' : 'Zertifikat generieren'}
               </button>
 
-              <button
-                type="button"
-                disabled={genLoading || !permissions.canGenerateCert}
-                onClick={handleGenerateWithRating}
-                className="rounded-lg border border-amber-700 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-800 transition hover:bg-amber-50 disabled:opacity-70"
-              >
-                {genLoading ? 'Siegel wird generiert…' : 'Siegel generieren'}
-              </button>
+	              <button
+	                type="button"
+	                disabled={genLoading || !permissions.canGenerateCert}
+	                onClick={handleGenerateWithRating}
+	                className="rounded-lg border border-amber-700 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-800 transition hover:bg-amber-50 disabled:opacity-70"
+	              >
+	                {genLoading ? 'Siegel wird generiert…' : 'Siegel generieren'}
+	              </button>
 
-              <p className="text-xs text-slate-500">
-                Hinweis: Der Versand an den Kunden erfolgt erst über die Aktion &ldquo;Completion – Send all Files&rdquo;.
-              </p>
+	              <button
+	                type="button"
+	                disabled={licensePlansEmailLoading || !canSendLicensePlansEmail}
+	                onClick={async () => {
+	                  setLicensePlansEmailMessage(null);
+	                  if (!canSendLicensePlansEmail) {
+	                    setLicensePlansEmailMessage('Voraussetzungen fehlen (Status/Payment/Permission).');
+	                    return;
+	                  }
+	                  setLicensePlansEmailLoading(true);
+	                  try {
+	                    const res = await fetch(`/api/admin/products/${product.id}/send-license-plans-email`, {
+	                      method: 'POST',
+	                      headers: { 'Content-Type': 'application/json' },
+	                    });
+	                    const data = await res.json().catch(() => ({}));
+	                    if (res.status === 409) {
+	                      setLicensePlansEmailMessage(
+	                        'Prüfergebnis-PDF nicht aktualisiert – bitte Prüfergebnis speichern und erneut versuchen.',
+	                      );
+	                      return;
+	                    }
+	                    if (!res.ok) {
+	                      setLicensePlansEmailMessage(data.error || 'Senden fehlgeschlagen.');
+	                      return;
+	                    }
+	                    setLicensePlansEmailMessage('E-Mail “Testsieger bestanden + Lizenzpläne” gesendet.');
+	                  } catch (err) {
+	                    console.error(err);
+	                    setLicensePlansEmailMessage('Senden fehlgeschlagen.');
+	                  } finally {
+	                    setLicensePlansEmailLoading(false);
+	                    onUpdated();
+	                  }
+	                }}
+	                className={`rounded-lg px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition ${
+	                  !canSendLicensePlansEmail || licensePlansEmailLoading
+	                    ? 'border border-slate-200 text-slate-400 cursor-not-allowed'
+	                    : 'border border-indigo-700 text-indigo-800 hover:bg-indigo-50'
+	                }`}
+	                title={
+	                  !permissions.canUpdateStatus
+	                    ? 'Keine Berechtigung.'
+	                    : !['PAID', 'MANUAL'].includes(product.paymentStatus)
+	                      ? 'Grundgebühr muss bezahlt sein.'
+	                      : (product.adminProgress as any) !== 'PASS'
+	                        ? 'Status muss auf Bestanden stehen.'
+	                        : undefined
+	                }
+	              >
+	                {licensePlansEmailLoading ? 'Sende…' : 'Bestanden-Mail senden'}
+	              </button>
+	              {licensePlansEmailMessage && <p className="text-xs text-slate-500">{licensePlansEmailMessage}</p>}
+
+	              <p className="text-xs text-slate-500">
+	                Hinweis: Der Versand an den Kunden erfolgt erst über die Aktion &ldquo;Completion – Send all Files&rdquo;.
+	              </p>
 
               <button
                 type="button"
@@ -643,67 +697,14 @@ function AdminProductRow({
                     ? 'border border-slate-300 text-slate-800 hover:bg-slate-50'
                     : 'border border-slate-200 text-slate-400 cursor-not-allowed'
                 }`}
-              >
-                Rating CSV herunterladen
-              </a>
-              <button
-                type="button"
-                disabled={licensePlansEmailLoading || !canSendLicensePlansEmail}
-                onClick={async () => {
-                  setLicensePlansEmailMessage(null);
-                  if (!canSendLicensePlansEmail) {
-                    setLicensePlansEmailMessage('Voraussetzungen fehlen (Status/Payment/Permission).');
-                    return;
-                  }
-                  setLicensePlansEmailLoading(true);
-                  try {
-                    const res = await fetch(`/api/admin/products/${product.id}/send-license-plans-email`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                    });
-                    const data = await res.json().catch(() => ({}));
-                    if (res.status === 409) {
-                      setLicensePlansEmailMessage('Prüfergebnis-PDF nicht aktualisiert – bitte Prüfergebnis speichern und erneut versuchen.');
-                      return;
-                    }
-                    if (!res.ok) {
-                      setLicensePlansEmailMessage(data.error || 'Senden fehlgeschlagen.');
-                      return;
-                    }
-                    setLicensePlansEmailMessage('E-Mail “Testsieger bestanden + Lizenzpläne” gesendet.');
-                  } catch (err) {
-                    console.error(err);
-                    setLicensePlansEmailMessage('Senden fehlgeschlagen.');
-                  } finally {
-                    setLicensePlansEmailLoading(false);
-                    onUpdated();
-                  }
-                }}
-                className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-3.5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition ${
-                  !canSendLicensePlansEmail || licensePlansEmailLoading
-                    ? 'border border-slate-200 text-slate-400 cursor-not-allowed'
-                    : 'border border-indigo-700 text-indigo-800 hover:bg-indigo-50'
-                }`}
-                title={
-                  !permissions.canUpdateStatus
-                    ? 'Keine Berechtigung.'
-                    : !['PAID', 'MANUAL'].includes(product.paymentStatus)
-                      ? 'Grundgebühr muss bezahlt sein.'
-                      : (product.adminProgress as any) !== 'PASS'
-                        ? 'Status muss auf Bestanden stehen.'
-                        : undefined
-                }
-              >
-                {licensePlansEmailLoading ? 'Sende…' : 'Bestanden-Mail senden'}
-              </button>
-              {licensePlansEmailMessage && (
-                <p className="sm:col-span-2 text-xs text-slate-500">{licensePlansEmailMessage}</p>
-              )}
-              {product.license?.licenseCode && (
-                <div className="col-span-2 flex flex-col rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
-                  <span>Lizenzcode</span>
-                  <span className="font-mono text-[11px] normal-case text-slate-900">{product.license.licenseCode}</span>
-                  {product.license.expiresAt ? (
+	              >
+	                Rating CSV herunterladen
+	              </a>
+	              {product.license?.licenseCode && (
+	                <div className="col-span-2 flex flex-col rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
+	                  <span>Lizenzcode</span>
+	                  <span className="font-mono text-[11px] normal-case text-slate-900">{product.license.licenseCode}</span>
+	                  {product.license.expiresAt ? (
                     <span className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
                       gültig bis {new Date(product.license.expiresAt).toLocaleDateString('de-DE')}
                     </span>

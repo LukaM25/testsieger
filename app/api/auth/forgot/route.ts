@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createResetToken } from '@/lib/passwordReset';
 import { sendPasswordResetEmail } from '@/lib/email';
+import { getPublicBaseUrl } from '@/lib/baseUrl';
 
 export async function POST(req: Request) {
   const { email } = await req.json().catch(() => ({}));
@@ -9,8 +10,8 @@ export async function POST(req: Request) {
 
   const result = await createResetToken(normalizedEmail);
   if (result) {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.APP_URL || 'http://localhost:3000';
-    const resetUrl = `${baseUrl.replace(/\/$/, '')}/reset-password?token=${encodeURIComponent(result.token)}`;
+    const baseUrl = getPublicBaseUrl();
+    const resetUrl = `${baseUrl}/reset-password?token=${encodeURIComponent(result.token)}`;
     await sendPasswordResetEmail({
       to: normalizedEmail,
       name: result.user.name,
