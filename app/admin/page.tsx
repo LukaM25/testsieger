@@ -70,6 +70,7 @@ export default function AdminPage() {
       if (statusFilter !== 'ALL') params.set('status', statusFilter);
       if (paymentFilter !== 'ALL') params.set('payment', paymentFilter);
       params.set('limit', '50');
+      params.set('signed', '0');
       if (opts?.cursor) params.set('cursor', opts.cursor);
 
       const res = await fetch(`/api/admin/products?${params.toString()}`, {
@@ -114,6 +115,27 @@ export default function AdminPage() {
   const refreshProducts = useCallback(() => {
     void fetchProductsRef.current({ cursor: null, append: false });
   }, []);
+
+  const refreshProductById = useCallback(
+    async (id: string) => {
+      try {
+        const res = await fetch(`/api/admin/products/${id}?signed=0`, {
+          credentials: 'same-origin',
+          cache: 'no-store',
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data?.product?.id) {
+          refreshProducts();
+          return;
+        }
+        setProducts((prev) => prev.map((p) => (p.id === id ? (data.product as AdminProduct) : p)));
+      } catch (err) {
+        console.error('REFRESH_PRODUCT_FAILED', err);
+        refreshProducts();
+      }
+    },
+    [refreshProducts],
+  );
 
   // Clear any mixed user session when visiting admin
   useEffect(() => {
@@ -266,16 +288,16 @@ export default function AdminPage() {
                 <h2 className="text-lg font-semibold text-slate-900">{date}</h2>
                 <span className="text-xs uppercase tracking-[0.3em] text-slate-500">Batch: {entries.length}</span>
               </div>
-              {entries.map((product) => (
-                <AdminProductRow
-                  key={product.id}
-                  product={product}
-                  onUpdated={refreshProducts}
-                  onPreview={onPreviewClick}
-                  isPreviewLoading={isPreviewLoading && activePreviewId === (product.certificate?.id || 'temp')}
-                  permissions={permissions}
-                />
-              ))}
+	              {entries.map((product) => (
+	                <AdminProductRow
+	                  key={product.id}
+	                  product={product}
+	                  onUpdated={() => refreshProductById(product.id)}
+	                  onPreview={onPreviewClick}
+	                  isPreviewLoading={isPreviewLoading && activePreviewId === (product.certificate?.id || 'temp')}
+	                  permissions={permissions}
+	                />
+	              ))}
             </section>
           ))
         )}

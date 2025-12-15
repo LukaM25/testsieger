@@ -295,6 +295,28 @@ function AdminProductRow({
     ['PAID', 'MANUAL'].includes(product.paymentStatus) &&
     (product.adminProgress as any) === 'PASS';
 
+  const openSignedAsset = async (kind: 'report' | 'seal') => {
+    if (!canAccessAssets) {
+      setLocalMessage('Keine Berechtigung für Downloads.');
+      return;
+    }
+    try {
+      const res = await fetch(`/api/admin/products/${product.id}/asset-url?kind=${encodeURIComponent(kind)}`, {
+        credentials: 'same-origin',
+        cache: 'no-store',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.url) {
+        setLocalMessage(data?.error || 'Download konnte nicht geöffnet werden.');
+        return;
+      }
+      window.open(String(data.url), '_blank', 'noreferrer');
+    } catch (err) {
+      console.error('OPEN_ASSET_FAILED', err);
+      setLocalMessage('Download konnte nicht geöffnet werden.');
+    }
+  };
+
   const handleGenerateWithRating = async () => {
     if (!permissions.canGenerateCert) {
       setLocalMessage('Keine Berechtigung zum Generieren.');
@@ -645,42 +667,36 @@ function AdminProductRow({
               >
                 Zertifikat öffnen
               </a>
-              {product.certificate?.reportUrl ? (
-                <a
-                  href={canAccessAssets ? product.certificate.reportUrl : '#'}
-                  target={canAccessAssets ? '_blank' : undefined}
-                  rel="noreferrer"
-                  onClick={(e) => {
-                    if (!canAccessAssets) e.preventDefault();
-                  }}
-                  className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-3.5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition ${
-                    canAccessAssets
-                      ? 'border border-emerald-700 text-emerald-800 hover:bg-emerald-50'
-                      : 'border border-slate-200 text-slate-400 cursor-not-allowed'
-                  }`}
-                >
-                  Hochgeladener Prüfbericht
-                </a>
-              ) : (
-                <div className="inline-flex items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  Kein Upload vorhanden
-                </div>
-              )}
-              <a
-                href={product.certificate?.sealUrl && canAccessAssets ? product.certificate.sealUrl : '#'}
-                target={product.certificate?.sealUrl && canAccessAssets ? '_blank' : undefined}
-                rel="noreferrer"
-                className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-3.5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition ${
-                  product.certificate?.sealUrl && canAccessAssets
-                    ? 'border border-amber-700 text-amber-800 hover:bg-amber-50'
-                    : 'border border-slate-200 text-slate-400 cursor-not-allowed'
-                }`}
-                onClick={(e) => {
-                  if (!product.certificate?.sealUrl || !canAccessAssets) e.preventDefault();
-                }}
-              >
-                Siegel öffnen
-              </a>
+	              {product.certificate?.reportUrl ? (
+	                <button
+	                  type="button"
+	                  onClick={() => openSignedAsset('report')}
+	                  disabled={!canAccessAssets}
+	                  className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-3.5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition ${
+	                    canAccessAssets
+	                      ? 'border border-emerald-700 text-emerald-800 hover:bg-emerald-50'
+	                      : 'border border-slate-200 text-slate-400 cursor-not-allowed'
+	                  }`}
+	                >
+	                  Hochgeladener Prüfbericht
+	                </button>
+	              ) : (
+	                <div className="inline-flex items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+	                  Kein Upload vorhanden
+	                </div>
+	              )}
+	              <button
+	                type="button"
+	                disabled={!product.certificate?.sealUrl || !canAccessAssets}
+	                onClick={() => openSignedAsset('seal')}
+	                className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-3.5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition ${
+	                  product.certificate?.sealUrl && canAccessAssets
+	                    ? 'border border-amber-700 text-amber-800 hover:bg-amber-50'
+	                    : 'border border-slate-200 text-slate-400 cursor-not-allowed'
+	                }`}
+	              >
+	                Siegel öffnen
+	              </button>
               <a
                 href={`/admin/products/${product.id}/rating`}
                 className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-slate-900 px-3.5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-900 transition hover:bg-slate-50"

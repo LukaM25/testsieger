@@ -29,6 +29,7 @@ export async function GET(request: Request) {
   const payment = (searchParams.get('payment') || '').trim();
   const cursor = (searchParams.get('cursor') || '').trim();
   const limit = parseLimit(searchParams.get('limit'));
+  const signed = (searchParams.get('signed') || '').trim() !== '0';
 
   // Optional bypass for offline dev or unreachable DB
   if (process.env.ADMIN_DB_BYPASS === 'true') {
@@ -190,22 +191,25 @@ export async function GET(request: Request) {
           };
         }
 
-        const assets = product.certificate?.id
-          ? await getCertificateAssetLinks(product.certificate.id)
-          : null;
+        const assets =
+          signed && product.certificate?.id ? await getCertificateAssetLinks(product.certificate.id) : null;
 
-        const pdfUrl =
-          assets?.OFFICIAL_PDF ??
-          (product.certificate ? await ensureSignedS3Url(product.certificate.pdfUrl) : null);
-        const reportUrl =
-          assets?.UPLOADED_PDF ??
-          (product.certificate?.reportUrl ? await ensureSignedS3Url(product.certificate.reportUrl) : null);
-        const qrUrl =
-          assets?.CERTIFICATE_QR ??
-          (product.certificate?.qrUrl ? await ensureSignedS3Url(product.certificate.qrUrl) : null);
-        const sealUrl =
-          assets?.SEAL_IMAGE ??
-          (product.certificate?.sealUrl ? await ensureSignedS3Url(product.certificate.sealUrl) : null);
+        const pdfUrl = signed
+          ? assets?.OFFICIAL_PDF ?? (product.certificate ? await ensureSignedS3Url(product.certificate.pdfUrl) : null)
+          : (product.certificate?.pdfUrl ?? null);
+
+        const reportUrl = signed
+          ? assets?.UPLOADED_PDF ??
+            (product.certificate?.reportUrl ? await ensureSignedS3Url(product.certificate.reportUrl) : null)
+          : (product.certificate?.reportUrl ?? null);
+
+        const qrUrl = signed
+          ? assets?.CERTIFICATE_QR ?? (product.certificate?.qrUrl ? await ensureSignedS3Url(product.certificate.qrUrl) : null)
+          : (product.certificate?.qrUrl ?? null);
+
+        const sealUrl = signed
+          ? assets?.SEAL_IMAGE ?? (product.certificate?.sealUrl ? await ensureSignedS3Url(product.certificate.sealUrl) : null)
+          : (product.certificate?.sealUrl ?? null);
 
         return {
           id: product.id,
