@@ -26,9 +26,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, paymentStatus: status });
   }
 
+  const wasUnpaid = product.paymentStatus === 'UNPAID';
+  const isPayingNow = status === 'PAID' || status === 'MANUAL';
+
   await prisma.product.update({
     where: { id: product.id },
-    data: { paymentStatus: status as ValidPaymentStatus },
+    data: {
+      paymentStatus: status as ValidPaymentStatus,
+      status: isPayingNow && product.status === 'PRECHECK' ? 'PAID' : product.status,
+    },
   });
 
   await logAdminAudit({
@@ -40,7 +46,7 @@ export async function POST(req: Request) {
     payload: { from: product.paymentStatus, to: status },
   });
 
-  if (['PAID', 'MANUAL'].includes(status as ValidPaymentStatus) && product.user) {
+  if (wasUnpaid && isPayingNow && product.user) {
     try {
       const processNumber = await ensureProcessNumber(product.id);
       await sendPrecheckPaymentSuccess({

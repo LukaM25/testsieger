@@ -4,37 +4,59 @@ import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { sendPrecheckPaymentSuccess } from "@/lib/email";
 import { ensureProcessNumber } from '@/lib/processNumber';
-import { enqueueCompletionJob } from '@/lib/completion';
 import { Plan } from "@prisma/client";
 
 export const runtime = "nodejs"; // ensure Node runtime for raw body
 
-async function handleCheckoutSession(cs: any) {
+function parseCheckoutSession(cs: any) {
   const reference = typeof cs.client_reference_id === 'string' ? cs.client_reference_id : '';
-  const [userId, productIdFromRef, planFromRef] = reference.split(':');
+  const [, productIdFromRef, planFromRef] = reference.split(':');
   const planFromMetadata = (cs.metadata && typeof cs.metadata.plan === 'string') ? cs.metadata.plan : '';
   const plan = planFromRef || planFromMetadata || '';
   const productIdFromMetadata = (cs.metadata && typeof cs.metadata.productId === 'string') ? cs.metadata.productId : '';
   if (productIdFromRef && productIdFromMetadata && productIdFromRef !== productIdFromMetadata) {
-    console.error('WEBHOOK_PRODUCT_ID_MISMATCH', { productIdFromRef, productIdFromMetadata, reference, metadata: cs.metadata });
-    return;
+    const err = new Error('WEBHOOK_PRODUCT_ID_MISMATCH');
+    (err as any).payload = { productIdFromRef, productIdFromMetadata, reference, metadata: cs.metadata };
+    throw err;
   }
   const productId = productIdFromRef || productIdFromMetadata || '';
   const metadataPriceCents = cs.metadata?.priceCents ? Number(cs.metadata.priceCents) : null;
   if (!productId) {
-    console.error('WEBHOOK_MISSING_PRODUCT_ID', { reference, metadata: cs.metadata });
-    return;
+    const err = new Error('WEBHOOK_MISSING_PRODUCT_ID');
+    (err as any).payload = { reference, metadata: cs.metadata };
+    throw err;
   }
+  return { reference, productId, plan, metadataPriceCents };
+}
+
+async function markProductPaid(productId: string) {
+  const updated = await prisma.product.updateMany({
+    where: { id: productId },
+    data: { status: 'PAID', paymentStatus: 'PAID' },
+  });
+  if (updated.count !== 1) {
+    const err = new Error('PRODUCT_NOT_FOUND');
+    (err as any).payload = { productId, updatedCount: updated.count };
+    throw err;
+  }
+}
+
+async function handleCheckoutSession(cs: any) {
+  const { reference, productId, plan, metadataPriceCents } = parseCheckoutSession(cs);
+  console.info('STRIPE_CHECKOUT_SESSION_COMPLETED', { sessionId: cs.id, productId, plan });
 
   const order = await prisma.order.findFirst({ where: { stripeSessionId: cs.id } });
   if (order) {
-    await prisma.order.update({ where: { id: order.id }, data: { paidAt: new Date(), stripeSubId: (cs.subscription as string) || null } });
-    await prisma.product.update({
-      where: { id: productId },
-      data: { status: 'PAID', paymentStatus: 'PAID' },
+    const now = new Date();
+    const stripeSubId = typeof cs.subscription === 'string' ? (cs.subscription as string) : null;
+    await prisma.$transaction(async (tx) => {
+      await tx.order.update({ where: { id: order.id }, data: { paidAt: now, stripeSubId } });
+      await tx.product.updateMany({
+        where: { id: productId },
+        data: { status: 'PAID', paymentStatus: 'PAID' },
+      });
     });
     // License activation based on plan payment
-    const now = new Date();
     const VALID_LICENSE_PLANS: Plan[] = ['BASIC', 'PREMIUM', 'LIFETIME'];
     const planFromReference = plan as Plan;
     const planFromOrder = order.plan;
@@ -54,19 +76,7 @@ async function handleCheckoutSession(cs: any) {
       LIFETIME: process.env.STRIPE_PRICE_LIFETIME,
     };
     const stripePriceId = priceIdMap[licensePlan] ?? undefined;
-    if (stripePriceId) {
-      try {
-        const price = await stripe.prices.retrieve(stripePriceId);
-        if (typeof price.unit_amount === 'number') {
-          await prisma.order.update({
-            where: { id: order.id },
-            data: { priceCents: price.unit_amount },
-          });
-        }
-      } catch (err) {
-        console.error('LICENSE_PRICE_LOOKUP_ERROR', err);
-      }
-    } else if (metadataPriceCents) {
+    if (metadataPriceCents && Number.isFinite(metadataPriceCents)) {
       await prisma.order.update({ where: { id: order.id }, data: { priceCents: metadataPriceCents } });
     }
     const expiresAt =
@@ -83,7 +93,7 @@ async function handleCheckoutSession(cs: any) {
           paidAt: now,
           startsAt: startsAtForUpdate,
           expiresAt,
-          stripeSubId: (cs.subscription as string) || null,
+          stripeSubId,
           stripePriceId,
           orderId: order.id,
         },
@@ -96,34 +106,21 @@ async function handleCheckoutSession(cs: any) {
           paidAt: now,
           startsAt: now,
           expiresAt,
-          stripeSubId: (cs.subscription as string) || null,
+          stripeSubId,
           stripePriceId,
         },
       });
     } else {
       console.warn('WEBHOOK_LICENSE_PLAN_INVALID_SKIP_UPSERT', { licensePlan, reference, orderPlan: order.plan });
     }
-
-    try {
-      const job = await enqueueCompletionJob(productId);
-      console.info('ENQUEUED_COMPLETION_JOB', { jobId: job.id, productId });
-    } catch (err) {
-      console.error('ENQUEUE_COMPLETION_JOB_FAILED', { productId, error: err });
-    }
   } else {
     // fallback: no order record (pre-check fee). Still mark product as paid.
-    await prisma.product.update({
-      where: { id: productId },
-      data: { status: 'PAID', paymentStatus: 'PAID' },
-    });
+    await markProductPaid(productId);
   }
 
   // Send confirmation for pre-check fee payments (standard or priority)
   if (plan === 'PRECHECK_FEE' || plan === 'PRECHECK_PRIORITY') {
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
-      include: { user: true },
-    });
+    const product = await prisma.product.findUnique({ where: { id: productId }, include: { user: true } });
 
     let receiptPdf: Buffer | undefined;
     if (typeof (cs as any).invoice === 'string') {
@@ -143,16 +140,18 @@ async function handleCheckoutSession(cs: any) {
     }
 
     if (product?.user) {
-      const processNumber = await ensureProcessNumber(product.id);
-      await sendPrecheckPaymentSuccess({
-        to: product.user.email,
-        name: product.user.name,
-        productName: product.name,
-        processNumber,
-        receiptPdf,
-      }).catch((err) => {
+      try {
+        const processNumber = await ensureProcessNumber(product.id);
+        await sendPrecheckPaymentSuccess({
+          to: product.user.email,
+          name: product.user.name,
+          productName: product.name,
+          processNumber,
+          receiptPdf,
+        });
+      } catch (err) {
         console.error('PRECHECK_PAYMENT_EMAIL_ERROR', err);
-      });
+      }
     }
   }
 }
@@ -168,11 +167,10 @@ export async function POST(req: Request) {
   }
 
   if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
-    try {
-      await handleCheckoutSession(event.data.object as any);
-    } catch (err) {
-      console.error('WEBHOOK_CHECKOUT_HANDLER_ERROR', err);
-    }
+    await handleCheckoutSession(event.data.object as any).catch((err) => {
+      console.error('WEBHOOK_CHECKOUT_HANDLER_ERROR', err, (err as any)?.payload ? { payload: (err as any).payload } : undefined);
+      throw err;
+    });
   }
 
   return NextResponse.json({ received: true });

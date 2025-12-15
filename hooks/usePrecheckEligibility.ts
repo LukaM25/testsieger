@@ -8,14 +8,16 @@ type EligibilityState = {
   paidAndPassed: boolean;
   productId: string | null;
   licensePaid: boolean;
+  unauthorized: boolean;
 };
 
-export function usePrecheckEligibility(): EligibilityState {
+export function usePrecheckEligibility(options?: { productId?: string | null }): EligibilityState {
   const [hasPrecheck, setHasPrecheck] = useState(false);
   const [paidAndPassed, setPaidAndPassed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [productId, setProductId] = useState<string | null>(null);
   const [licensePaid, setLicensePaid] = useState(false);
+  const [unauthorized, setUnauthorized] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -23,9 +25,11 @@ export function usePrecheckEligibility(): EligibilityState {
 
     const load = async () => {
       try {
-        const res = await fetch("/api/precheck/status", { cache: "no-store", signal: controller.signal });
+        const qs = options?.productId ? `?productId=${encodeURIComponent(options.productId)}` : "";
+        const res = await fetch(`/api/precheck/status${qs}`, { cache: "no-store", signal: controller.signal });
         if (!res.ok) {
           if (!active) return;
+          setUnauthorized(res.status === 401);
           setHasPrecheck(false);
           setPaidAndPassed(false);
           setLicensePaid(false);
@@ -33,6 +37,7 @@ export function usePrecheckEligibility(): EligibilityState {
         }
         const data = await res.json();
         if (!active) return;
+        setUnauthorized(false);
         const prod = data?.product;
         setHasPrecheck(!!prod);
         setProductId(prod?.id ?? null);
@@ -43,6 +48,7 @@ export function usePrecheckEligibility(): EligibilityState {
         setPaidAndPassed(!!prod && paid && passed);
       } catch {
         if (!active || controller.signal.aborted) return;
+        setUnauthorized(false);
         setHasPrecheck(false);
         setPaidAndPassed(false);
         setProductId(null);
@@ -57,7 +63,7 @@ export function usePrecheckEligibility(): EligibilityState {
       active = false;
       controller.abort();
     };
-  }, []);
+  }, [options?.productId]);
 
-  return { hasPrecheck, paidAndPassed, loading, productId, licensePaid };
+  return { hasPrecheck, paidAndPassed, loading, productId, licensePaid, unauthorized };
 }

@@ -34,7 +34,7 @@ export async function POST(req: Request) {
   const productUpdate: { adminProgress: ValidStatus; status?: ProductStatus } = {
     adminProgress: status as ValidStatus,
   };
-  if (['RECEIVED', 'ANALYSIS', 'COMPLETION', 'PASS'].includes(status) && product.status === 'PRECHECK') {
+  if (['RECEIVED', 'ANALYSIS', 'COMPLETION', 'PASS'].includes(status) && (product.status === 'PRECHECK' || product.status === 'PAID')) {
     productUpdate.status = 'IN_REVIEW';
   }
   await prisma.product.update({
@@ -72,18 +72,22 @@ export async function POST(req: Request) {
     }).catch((err) => console.error('RECEIVED_EMAIL_ERROR', err));
   } else if (status === 'COMPLETION') {
     const csvBuffer = await fetchRatingCsv(product.id, product.name);
+    const appUrl = (process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://pruefsiegelzentrum.vercel.app').replace(/\/$/, '');
     await sendCompletionReadyEmail({
       to: product.user.email,
       name: product.user.name,
       productName: product.name,
+      licenseUrl: `${appUrl}/pakete?productId=${encodeURIComponent(product.id)}`,
       csvBuffer,
     }).catch((err) => console.error('COMPLETION_EMAIL_ERROR', err));
   } else if (status === 'PASS') {
     try {
+      const appUrl = (process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://pruefsiegelzentrum.vercel.app').replace(/\/$/, '');
       await sendPassAndLicenseRequest({
         to: product.user.email,
         name: product.user.name,
         productName: product.name,
+        licenseUrl: `${appUrl}/pakete?productId=${encodeURIComponent(product.id)}`,
       });
     } catch (err) {
       console.error('PASS_EMAIL_ERROR', err);

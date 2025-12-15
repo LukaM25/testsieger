@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { usePrecheckEligibility } from "@/hooks/usePrecheckEligibility";
 
@@ -72,11 +72,18 @@ function Reveal({
 
 export default function Packages() {
   const router = useRouter();
-  const { hasPrecheck, paidAndPassed, loading, productId, licensePaid } = usePrecheckEligibility();
+  const searchParams = useSearchParams();
+  const preselectedProductId = searchParams.get("productId");
+  const preselectedPlanRaw = (searchParams.get("plan") || "").toUpperCase();
+  const preselectedPlan = ["BASIC", "PREMIUM", "LIFETIME"].includes(preselectedPlanRaw) ? preselectedPlanRaw : null;
+  const { hasPrecheck, paidAndPassed, loading, productId, licensePaid, unauthorized } = usePrecheckEligibility({
+    productId: preselectedProductId,
+  });
   const [notice, setNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<string | null>(null);
   const guardMessage = "Bitte Pre-Check abschließen, Grundgebühr bezahlen und Prüfung abwarten. Wir leiten dich zum Formular.";
   const paidMessage = "Lizenzplan bereits bezahlt. Du kannst nicht erneut zahlen.";
+  const loginMessage = "Bitte einloggen, um einen Lizenzplan zu bezahlen.";
 
   async function choose(plan: string) {
     if (!productId) {
@@ -107,6 +114,12 @@ export default function Packages() {
   const handleGuardedSelect = (plan: string) => {
     if (licensePaid) {
       setNotice(paidMessage);
+      return;
+    }
+    if (unauthorized) {
+      setNotice(loginMessage);
+      const next = encodeURIComponent(`/pakete${typeof window !== "undefined" ? window.location.search : ""}`);
+      router.push(`/login?next=${next}`);
       return;
     }
     if (!hasPrecheck || !paidAndPassed || !productId) {
@@ -210,11 +223,16 @@ export default function Packages() {
 
           <div className="grid gap-6 md:grid-cols-3">
             {plans.map((plan, idx) => {
-              const disabled =
-                licensePaid || !hasPrecheck || !paidAndPassed || !productId || loading || submitting === plan.key;
+              const isGuarded = licensePaid || !hasPrecheck || !paidAndPassed || !productId || unauthorized;
+              const isLoading = loading || submitting === plan.key;
+              const highlighted = preselectedPlan === plan.key;
               return (
                 <Reveal key={plan.key} delay={idx * 60 + 60}>
-                  <div className="flex h-full flex-col justify-between rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)]">
+                  <div
+                    className={`flex h-full flex-col justify-between rounded-2xl border bg-white p-7 shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)] ${
+                      highlighted ? "border-slate-900 ring-2 ring-slate-900/10" : "border-slate-200"
+                    }`}
+                  >
                     <div className="space-y-3">
                       <div className="text-lg font-semibold text-slate-900">{plan.name}</div>
                       <div className="text-base font-semibold text-slate-800">{plan.price}</div>
@@ -223,19 +241,23 @@ export default function Packages() {
                     <button
                       type="button"
                       onClick={() => handleGuardedSelect(plan.key)}
-                      disabled={disabled}
+                      disabled={isLoading}
                       className={`mt-8 rounded-full px-4 py-2 text-sm font-semibold ${
-                        disabled ? "bg-slate-200 text-slate-500 cursor-not-allowed" : "bg-slate-900 text-white transition hover:bg-black"
+                        isGuarded || isLoading
+                          ? "bg-slate-200 text-slate-600 cursor-not-allowed"
+                          : "bg-slate-900 text-white transition hover:bg-black"
                       }`}
                       title={
                         licensePaid
                           ? paidMessage
+                          : unauthorized
+                            ? loginMessage
                           : !hasPrecheck || !paidAndPassed
                             ? guardMessage
                             : undefined
                       }
                     >
-                      {submitting === plan.key ? "Wird geöffnet…" : "Lizenzplan wählen"}
+                      {submitting === plan.key ? "Wird geöffnet…" : highlighted ? "Weiter mit Auswahl" : "Lizenzplan wählen"}
                     </button>
                   </div>
                 </Reveal>
