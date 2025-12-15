@@ -3,7 +3,6 @@ import nodemailer from 'nodemailer';
 import fs from 'fs/promises';
 import QRCode from 'qrcode';
 import { ensureSignedS3Url } from './s3';
-import { fetchRatingCsv } from './ratingSheet';
 
 const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
@@ -105,12 +104,13 @@ export async function sendCompletionEmail(opts: {
   verifyUrl: string;
   pdfUrl: string;
   qrUrl: string;
-  pdfBuffer?: Buffer;
+  certificateBuffer?: Buffer;
+  reportBuffer?: Buffer | null;
   documentId?: string;
   message?: string;
   sealNumber?: string;
   invoiceUrl?: string;
-  csvBuffer?: Buffer | null;
+  ratingPdfBuffer?: Buffer | null;
   sealBuffer?: Buffer | null;
   invoiceBuffer?: Buffer | null;
 }) {
@@ -121,28 +121,36 @@ export async function sendCompletionEmail(opts: {
     verifyUrl,
     pdfUrl,
     qrUrl,
-    pdfBuffer,
+    certificateBuffer,
+    reportBuffer,
     documentId,
     message,
     sealNumber,
     invoiceUrl,
-    csvBuffer,
+    ratingPdfBuffer,
     sealBuffer,
     invoiceBuffer,
   } = opts;
   const attachments: Attachment[] = [];
-  if (pdfBuffer) {
+  if (certificateBuffer) {
     attachments.push({
-      filename: `${productName}-Prüfbericht.pdf`,
-      content: pdfBuffer,
+      filename: `${productName}-Zertifikat.pdf`,
+      content: certificateBuffer,
       contentType: 'application/pdf',
     });
   }
-  if (csvBuffer) {
+  if (reportBuffer) {
     attachments.push({
-      filename: `${productName}-Bewertung.csv`,
-      content: csvBuffer,
-      contentType: 'text/csv',
+      filename: `${productName}-Prüfbericht.pdf`,
+      content: reportBuffer,
+      contentType: 'application/pdf',
+    });
+  }
+  if (ratingPdfBuffer) {
+    attachments.push({
+      filename: `${productName}-Prüfergebnis.pdf`,
+      content: ratingPdfBuffer,
+      contentType: 'application/pdf',
     });
   }
   if (sealBuffer) {
@@ -162,37 +170,38 @@ export async function sendCompletionEmail(opts: {
 
   const html = `
     <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
-      <p>Hallo ${escapeHtml(name)},</p>
-      <p>die Prüfung Ihres Produkts <strong>${escapeHtml(productName)}</strong> wurde erfolgreich abgeschlossen (Bestanden).</p>
-      <p style="margin:12px 0;">Im Folgenden finden Sie Ihr finales Paket mit Prüfbericht, Zertifikat/Verifikation, Zusammenfassung und Rechnungsangaben.</p>
+      <p>Guten Tag ${escapeHtml(name)},</p>
+      <p>vielen Dank für die Auswahl und Bezahlung Ihres Lizenzplans. <strong>Ihre Lizenz ist jetzt aktiv.</strong></p>
+      <p>Im Anhang finden Sie alle freigegebenen Materialien zu Ihrem erfolgreich bestandenen Testsieger Check:</p>
+      <ul style="margin:12px 0 16px;padding-left:20px;color:#0f172a;">
+        <li>Offizielles Siegel${sealNumber ? ` (ID: ${escapeHtml(sealNumber)})` : ''}</li>
+        <li>Prüfergebnis (PDF)</li>
+        <li>Prüfbericht</li>
+        <li>Zertifikat</li>
+      </ul>
       <p style="margin:12px 0;">
         <strong>Verifikation / Zertifikat:</strong><br />
         <a href="${verifyUrl}" style="color:#1d4ed8;font-weight:600;">${verifyUrl}</a>
       </p>
       <p style="margin:12px 0;">
-        <strong>Prüfbericht:</strong> <a href="${pdfUrl}" style="color:#1d4ed8;font-weight:600;">Download</a><br />
-        <strong>QR-Code / Badge:</strong> <a href="${qrUrl}" style="color:#1d4ed8;font-weight:600;">Download</a>
+        <strong>Zertifikat (PDF):</strong> <a href="${pdfUrl}" style="color:#1d4ed8;font-weight:600;">Download</a><br />
+        <strong>QR-Code:</strong> <a href="${qrUrl}" style="color:#1d4ed8;font-weight:600;">Download</a>
       </p>
-      ${sealNumber ? `<p style="font-size:13px;color:#475569;">Siegel/Badge-ID: <code>${escapeHtml(sealNumber)}</code></p>` : ''}
       ${documentId ? `<p style="font-size:13px;color:#475569;">Dokument-ID: <code>${escapeHtml(documentId)}</code></p>` : ''}
       <p style="margin:12px 0;font-size:13px;color:#475569;">
         Rechnung: ${invoiceUrl ? `<a href="${invoiceUrl}" style="color:#1d4ed8;font-weight:600;">Abrufen</a>` : 'liegt in Ihrem Kundenkonto bereit.'}
       </p>
       ${renderNote(message)}
-      <ul style="margin:16px 0;padding-left:20px;font-size:13px;color:#475569;">
-        <li>Siegel/Badge und QR-Code sind ab sofort nutzbar.</li>
-        <li>Der Prüfbericht fasst Testergebnis und Bewertung zusammen.</li>
-        <li>Für Änderungen an Einsatzorten oder Ansprechpartnern nutzen Sie bitte das Kundenportal.</li>
-      </ul>
-      <p style="margin-top:18px;">Vielen Dank für die Zusammenarbeit.<br />Prüfsiegel Zentrum UG</p>
+      <p>Sie können diese Unterlagen ab sofort im vereinbarten Rahmen nutzen.</p>
+      <p style="margin-top:18px;">Mit besten Grüßen<br/>Deutsches Prüfsiegel Institut (DPI)</p>
       ${renderFooter()}
     </div>
   `;
 
   await sendEmail({
-    from: `Pruefsiegel Zentrum UG – Completion <${FROM_EMAIL}>`,
+    from: `Pruefsiegel Zentrum UG – Lizenz <${FROM_EMAIL}>`,
     to,
-    subject: `Prüfung abgeschlossen – ${productName}`,
+    subject: `Lizenz aktiv – ${productName}`,
     html,
     attachments: attachments.length ? attachments : undefined,
   });
@@ -324,31 +333,31 @@ export async function sendCompletionReadyEmail(opts: {
   name: string;
   productName: string;
   licenseUrl?: string;
-  csvBuffer?: Buffer | null;
+  ratingPdfBuffer?: Buffer | null;
 }) {
-  const { to, name, productName, licenseUrl, csvBuffer } = opts;
+  const { to, name, productName, licenseUrl, ratingPdfBuffer } = opts;
   const plansLink = (licenseUrl || `${APP_BASE_URL.replace(/\/$/, '')}/pakete`).replace(/\/$/, '');
   const join = plansLink.includes('?') ? '&' : '?';
   const basicLink = `${plansLink}${join}plan=basic`;
   const premiumLink = `${plansLink}${join}plan=premium`;
   const lifetimeLink = `${plansLink}${join}plan=lifetime`;
   const attachments: Attachment[] = [];
-  if (csvBuffer) {
+  if (ratingPdfBuffer) {
     attachments.push({
-      filename: 'Rating.csv',
-      content: csvBuffer,
-      contentType: 'text/csv',
+      filename: `${productName}-Prüfergebnis.pdf`,
+      content: ratingPdfBuffer,
+      contentType: 'application/pdf',
     });
   }
 
-	  const html = `
-	    <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
-	      <p>Guten Tag ${escapeHtml(name)},</p>
-	      <p>gute Nachrichten: Ihr Produkt hat den Testsieger Check erfolgreich bestanden!</p>
-	      <p>Das vollständige Prüfergebnis finden Sie im Anhang dieser E-Mail.</p>
-	      <p style="margin:14px 0;">Um das Siegel, den Prüfbericht und das Zertifikat offiziell zu aktivieren und nutzen zu dürfen, wählen Sie jetzt Ihren passenden Lizenzplan aus:</p>
-        <div style="margin:16px 0;max-width:520px;">
-          <a href="${basicLink}" style="display:block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;text-align:center;margin-bottom:10px;">
+		  const html = `
+		    <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
+		      <p>Guten Tag ${escapeHtml(name)},</p>
+		      <p>gute Nachrichten: Ihr Produkt hat den Testsieger Check erfolgreich bestanden!</p>
+		      <p>Das vollständige Prüfergebnis finden Sie im Anhang dieser E-Mail (PDF).</p>
+		      <p style="margin:14px 0;">Um das Siegel, den Prüfbericht und das Zertifikat offiziell zu aktivieren und nutzen zu dürfen, wählen Sie jetzt Ihren passenden Lizenzplan aus:</p>
+	        <div style="margin:16px 0;max-width:520px;">
+	          <a href="${basicLink}" style="display:block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;text-align:center;margin-bottom:10px;">
             Basic wählen (0,99 € / Tag)
           </a>
           <a href="${premiumLink}" style="display:block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;text-align:center;margin-bottom:10px;">

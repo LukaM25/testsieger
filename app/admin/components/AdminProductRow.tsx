@@ -72,6 +72,8 @@ function AdminProductRow({
   const [teamNote, setTeamNote] = useState('');
   const [loading, setLoading] = useState(false);
   const [sendLoading, setSendLoading] = useState(false);
+  const [licensePlansEmailLoading, setLicensePlansEmailLoading] = useState(false);
+  const [licensePlansEmailMessage, setLicensePlansEmailMessage] = useState<string | null>(null);
   
   const [paymentStatusValue, setPaymentStatusValue] = useState<PaymentStatusOption>(
     (product.paymentStatus as PaymentStatusOption) || 'UNPAID'
@@ -286,9 +288,12 @@ function AdminProductRow({
     }
   };
 
-  const sheetUrl = `https://docs.google.com/spreadsheets/d/1uwauj30aZ4KpwSHBL3Yi6yB85H_OQypI5ogKuR82KFk/edit?usp=sharing&productId=${product.id}`;
   const canAccessRatings = permissions.canUpdateStatus;
   const canAccessAssets = permissions.role !== 'VIEWER';
+  const canSendLicensePlansEmail =
+    permissions.canUpdateStatus &&
+    ['PAID', 'MANUAL'].includes(product.paymentStatus) &&
+    (product.adminProgress as any) === 'PASS';
 
   const handleGenerateWithRating = async () => {
     if (!permissions.canGenerateCert) {
@@ -623,6 +628,12 @@ function AdminProductRow({
                 Siegel öffnen
               </a>
               <a
+                href={`/admin/products/${product.id}/rating`}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-slate-900 px-3.5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-900 transition hover:bg-slate-50"
+              >
+                Prüfergebnis bearbeiten
+              </a>
+              <a
                 href={canAccessRatings ? `/api/admin/products/${product.id}/rating-sheet` : '#'}
                 onClick={(e) => {
                   if (!canAccessRatings) e.preventDefault();
@@ -635,21 +646,59 @@ function AdminProductRow({
               >
                 Rating CSV herunterladen
               </a>
-              <a
-                href={canAccessRatings ? sheetUrl : '#'}
-                target={canAccessRatings ? '_blank' : undefined}
-                rel="noreferrer"
-                onClick={(e) => {
-                  if (!canAccessRatings) e.preventDefault();
+              <button
+                type="button"
+                disabled={licensePlansEmailLoading || !canSendLicensePlansEmail}
+                onClick={async () => {
+                  setLicensePlansEmailMessage(null);
+                  if (!canSendLicensePlansEmail) {
+                    setLicensePlansEmailMessage('Voraussetzungen fehlen (Status/Payment/Permission).');
+                    return;
+                  }
+                  setLicensePlansEmailLoading(true);
+                  try {
+                    const res = await fetch(`/api/admin/products/${product.id}/send-license-plans-email`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (res.status === 409) {
+                      setLicensePlansEmailMessage('Prüfergebnis-PDF nicht aktualisiert – bitte Prüfergebnis speichern und erneut versuchen.');
+                      return;
+                    }
+                    if (!res.ok) {
+                      setLicensePlansEmailMessage(data.error || 'Senden fehlgeschlagen.');
+                      return;
+                    }
+                    setLicensePlansEmailMessage('E-Mail “Testsieger bestanden + Lizenzpläne” gesendet.');
+                  } catch (err) {
+                    console.error(err);
+                    setLicensePlansEmailMessage('Senden fehlgeschlagen.');
+                  } finally {
+                    setLicensePlansEmailLoading(false);
+                    onUpdated();
+                  }
                 }}
-                className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-3.5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition sm:col-span-2 ${
-                  canAccessRatings
-                    ? 'border border-slate-300 text-slate-800 hover:bg-slate-50'
-                    : 'border border-slate-200 text-slate-400 cursor-not-allowed'
+                className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-3.5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition ${
+                  !canSendLicensePlansEmail || licensePlansEmailLoading
+                    ? 'border border-slate-200 text-slate-400 cursor-not-allowed'
+                    : 'border border-indigo-700 text-indigo-800 hover:bg-indigo-50'
                 }`}
+                title={
+                  !permissions.canUpdateStatus
+                    ? 'Keine Berechtigung.'
+                    : !['PAID', 'MANUAL'].includes(product.paymentStatus)
+                      ? 'Grundgebühr muss bezahlt sein.'
+                      : (product.adminProgress as any) !== 'PASS'
+                        ? 'Status muss auf Bestanden stehen.'
+                        : undefined
+                }
               >
-                Bewertungsblatt öffnen
-              </a>
+                {licensePlansEmailLoading ? 'Sende…' : 'Bestanden-Mail senden'}
+              </button>
+              {licensePlansEmailMessage && (
+                <p className="sm:col-span-2 text-xs text-slate-500">{licensePlansEmailMessage}</p>
+              )}
               {product.license?.licenseCode && (
                 <div className="col-span-2 flex flex-col rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
                   <span>Lizenzcode</span>

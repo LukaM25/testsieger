@@ -5,6 +5,7 @@ import {
   GetObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { Readable } from 'node:stream';
 
 export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024; // 20MB
 
@@ -82,6 +83,21 @@ export async function signedUrlForKey(key: string, ttl = 60 * 15) {
     new GetObjectCommand({ Bucket: bucket(), Key: key }),
     { expiresIn: ttl }
   );
+}
+
+async function streamToBuffer(stream: any): Promise<Buffer> {
+  if (!stream) return Buffer.alloc(0);
+  const readable = stream instanceof Readable ? stream : Readable.from(stream);
+  const chunks: Buffer[] = [];
+  for await (const chunk of readable) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+}
+
+export async function getObjectBuffer(key: string): Promise<Buffer> {
+  const res = await s3.send(new GetObjectCommand({ Bucket: bucket(), Key: key }));
+  return streamToBuffer(res.Body as any);
 }
 
 export async function deleteKey(key: string) {

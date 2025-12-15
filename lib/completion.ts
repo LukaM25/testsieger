@@ -4,12 +4,12 @@ import { sendCompletionEmail } from '@/lib/email';
 import { generateCertificatePdf } from '@/pdfGenerator';
 import { generateInvoicePdf } from '@/lib/invoiceBuilder';
 import { InvoiceLine } from '@/lib/invoiceBuilder';
-import { fetchRatingCsv } from '@/lib/ratingSheet';
 import { generateSealForS3 } from '@/lib/seal';
 import { storeCertificateAssets } from '@/lib/certificateAssets';
 import { CompletionJob, CompletionJobStatus, AssetType } from '@prisma/client';
 import { saveBufferToS3, signedUrlForKey } from '@/lib/storage';
-import { sendLicenseActivatedEmail } from '@/lib/email';
+import { ensureSignedS3Url } from '@/lib/s3';
+import { fetchStoredRatingPdfAttachment, getRatingLockState } from '@/lib/ratingSheet';
 
 const APP_URL = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
 
@@ -120,8 +120,41 @@ async function runCompletion(productId: string, message?: string): Promise<Compl
     include: { user: true, certificate: true, orders: true, license: true },
   });
   if (!product) throw new CompletionError('PRODUCT_NOT_FOUND', 404);
-  if (!['PAID', 'IN_REVIEW', 'COMPLETED'].includes(product.status)) {
+  if (product.status === 'COMPLETED') {
+    throw new CompletionError('ALREADY_COMPLETED', 409);
+  }
+  if (!['PAID', 'IN_REVIEW'].includes(product.status)) {
     throw new CompletionError('INVALID_STATUS', 400);
+  }
+
+  const hasPaidLicenseOrder = product.orders.some(
+    (o) =>
+      Boolean(o.paidAt) &&
+      (o.plan === 'BASIC' || o.plan === 'PREMIUM' || o.plan === 'LIFETIME'),
+  );
+  const hasPaidLicense =
+    Boolean(product.license?.paidAt) &&
+    (product.license?.plan === 'BASIC' || product.license?.plan === 'PREMIUM' || product.license?.plan === 'LIFETIME');
+  if (!hasPaidLicenseOrder && !hasPaidLicense) {
+    throw new CompletionError('LICENSE_NOT_PAID', 400);
+  }
+
+  const reportUrl = product.certificate?.reportUrl ?? null;
+  if (!reportUrl) {
+    throw new CompletionError('REPORT_MISSING', 400);
+  }
+
+  const rating = await fetchStoredRatingPdfAttachment(product.id);
+  if (!rating?.buffer) throw new CompletionError('RATING_PDF_MISSING', 400);
+  const lockState = await getRatingLockState(product.id);
+  if (!lockState.passEmailSentAt || !lockState.lockedAt) {
+    throw new CompletionError('RATING_NOT_LOCKED', 400);
+  }
+
+  const signedReportUrl = (await ensureSignedS3Url(reportUrl)) ?? reportUrl;
+  const reportBuffer = await fetchBufferFromUrl(signedReportUrl);
+  if (!reportBuffer) {
+    throw new CompletionError('REPORT_FETCH_FAILED', 502, { reportUrl });
   }
 
   const seal = product.certificate?.seal_number ?? (await generateSeal());
@@ -332,21 +365,22 @@ async function runCompletion(productId: string, message?: string): Promise<Compl
     }
   }
 
-  await sendCompletionEmail({
-    to: product.user.email,
-    name: product.user.name,
-    productName: product.name,
-    verifyUrl,
-    pdfUrl: pdfSigned,
-    qrUrl: qrSigned,
-    pdfBuffer,
-    documentId: undefined,
-    message,
-    sealNumber: seal,
-    csvBuffer: await fetchRatingCsv(product.id, product.name),
-    sealBuffer,
-    invoiceBuffer,
-  });
+	  await sendCompletionEmail({
+	    to: product.user.email,
+	    name: product.user.name,
+	    productName: product.name,
+	    verifyUrl,
+	    pdfUrl: pdfSigned,
+	    qrUrl: qrSigned,
+	    certificateBuffer: pdfBuffer,
+	    reportBuffer,
+	    documentId: undefined,
+	    message,
+	    sealNumber: seal,
+	    ratingPdfBuffer: rating.buffer,
+	    sealBuffer,
+	    invoiceBuffer,
+	  });
 
   return {
     verifyUrl,
@@ -367,6 +401,18 @@ async function fetchSealBufferFromS3(sealUrl: string) {
     return Buffer.from(arr);
   } catch (err) {
     console.warn('SEAL_FETCH_FAILED', { sealUrl, err });
+    return null;
+  }
+}
+
+async function fetchBufferFromUrl(url: string) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const arr = await res.arrayBuffer();
+    return Buffer.from(arr);
+  } catch (err) {
+    console.warn('FETCH_BUFFER_FAILED', { url, err });
     return null;
   }
 }
@@ -410,27 +456,4 @@ async function syncLicenseAfterCompletion(productId: string, result: CompletionR
       paidAt: existingLicense.paidAt ?? now,
     },
   });
-
-  try {
-    const productFull = await prisma.product.findUnique({
-      where: { id: productId },
-      include: { user: true, certificate: true },
-    });
-    if (productFull?.user && productFull.certificate) {
-      const ratingCsv = await fetchRatingCsv(productId, productFull.name ?? null);
-      await sendLicenseActivatedEmail({
-        to: productFull.user.email,
-        name: productFull.user.name,
-        productName: productFull.name,
-        certificateId: productFull.certificate.id,
-        pdfUrl: productFull.certificate.pdfUrl,
-        qrUrl: productFull.certificate.qrUrl,
-        sealUrl: productFull.certificate.sealUrl,
-        sealNumber: productFull.certificate.seal_number,
-        ratingCsv,
-      });
-    }
-  } catch (err) {
-    console.error('SYNC_LICENSE_EMAIL_FAILED', { productId, error: err });
-  }
 }

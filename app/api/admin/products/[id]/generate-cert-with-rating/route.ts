@@ -1,43 +1,17 @@
-import fs from "fs/promises";
-import path from "path";
-
 import { NextResponse } from "next/server";
-import Papa from "papaparse";
 import QRCode from "qrcode";
 
-import { AdminRole } from "@prisma/client";
+import { AdminRole, AssetType } from "@prisma/client";
 import { logAdminAudit, requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { generateCertificatePdf } from "@/pdfGenerator";
-import { generateSeal } from "@/lib/seal";
-import { sendCertificateAndSealEmail } from "@/lib/email";
+import { generateSealForS3 } from "@/lib/seal";
 import { storeCertificateAssets } from "@/lib/certificateAssets";
+import { saveBufferToS3, signedUrlForKey } from "@/lib/storage";
 
-const SHEET_LINK = "https://docs.google.com/spreadsheets/d/1uwauj30aZ4KpwSHBL3Yi6yB85H_OQypI5ogKuR82KFk/edit?usp=sharing";
 const APP_URL = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 
 export const runtime = "nodejs";
-
-function toCsvLink(link: string) {
-  if (link.includes("/export?format=csv")) return link;
-  const base = link.split("/edit", 1)[0];
-  return `${base}/export?format=csv`;
-}
-
-type Matrix = string[][];
-
-function getCell(rows: Matrix, row: number, col: number) {
-  return (rows[row]?.[col] ?? "").toString().trim();
-}
-
-async function fetchSheet() {
-  const res = await fetch(toCsvLink(SHEET_LINK));
-  if (!res.ok) throw new Error(`Sheet fetch failed: ${res.status}`);
-  const csv = await res.text();
-  const parsed = Papa.parse<string[]>(csv, { skipEmptyLines: false });
-  if (parsed.errors?.length) throw new Error(parsed.errors.map((e) => e.message).join("; "));
-  return parsed.data as Matrix;
-}
 
 async function generateSealNumber() {
   for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -63,27 +37,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
   const body = await req.json().catch(() => ({} as Record<string, unknown>));
   const message = typeof body.message === "string" ? body.message.slice(0, 1000) : undefined;
-  const sendEmail = body?.sendEmail !== false;
 
   try {
-    const rows = await fetchSheet();
-    const sheetProductId = getCell(rows, 1, 3); // D2
-    const ratingScore = getCell(rows, 72, 3); // D73
-    const ratingLabel = getCell(rows, 72, 4); // E73
-
-    if (!ratingScore || !ratingLabel) {
-      return NextResponse.json({ error: "Rating cells D73/E73 are empty." }, { status: 400 });
-    }
-
-    if (sheetProductId && sheetProductId !== productId) {
-      return NextResponse.json({ error: `Sheet productId (${sheetProductId}) does not match requested product (${productId}).` }, { status: 400 });
-    }
-
     const product = await prisma.product.findUnique({
       where: { id: productId },
       include: { user: true, certificate: true, license: true },
     });
     if (!product) return NextResponse.json({ error: "PRODUCT_NOT_FOUND" }, { status: 404 });
+
+    const ratingScore = product.certificate?.ratingScore || "";
+    const ratingLabel = product.certificate?.ratingLabel || "";
+    if (!ratingScore || !ratingLabel) {
+      return NextResponse.json({ error: "RATING_MISSING" }, { status: 400 });
+    }
 
     const seal = product.certificate?.seal_number ?? (await generateSealNumber());
     const certificateRecord =
@@ -140,7 +106,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       qrBuffer,
     });
 
-    const sealPath = await generateSeal({
+    const generatedSeal = await generateSealForS3({
       product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
       certificateId,
       ratingScore,
@@ -148,6 +114,28 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       appUrl: APP_URL,
       licenseDate: product.license?.startsAt ?? product.license?.paidAt ?? product.license?.createdAt ?? null,
     });
+    await saveBufferToS3({ key: generatedSeal.key, body: generatedSeal.buffer, contentType: "image/png" });
+    await prisma.asset.upsert({
+      where: { key: generatedSeal.key },
+      update: {
+        type: AssetType.SEAL_IMAGE,
+        contentType: "image/png",
+        sizeBytes: generatedSeal.buffer.length,
+        certificateId,
+        productId: product.id,
+        userId: product.userId,
+      },
+      create: {
+        key: generatedSeal.key,
+        type: AssetType.SEAL_IMAGE,
+        contentType: "image/png",
+        sizeBytes: generatedSeal.buffer.length,
+        certificateId,
+        productId: product.id,
+        userId: product.userId,
+      },
+    });
+    const sealSigned = await signedUrlForKey(generatedSeal.key).catch(() => null);
 
     const cert = await prisma.certificate.upsert({
       where: { productId: product.id },
@@ -158,7 +146,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         externalReferenceId: null,
         ratingScore,
         ratingLabel,
-        sealUrl: sealPath,
+        sealUrl: generatedSeal.key,
       },
       create: {
         productId: product.id,
@@ -168,13 +156,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         externalReferenceId: null,
         ratingScore,
         ratingLabel,
-        sealUrl: sealPath,
+        sealUrl: generatedSeal.key,
       },
-    });
-
-    await prisma.product.update({
-      where: { id: product.id },
-      data: { status: "COMPLETED", adminProgress: "PASS" },
     });
 
     await logAdminAudit({
@@ -183,33 +166,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       entityType: "Product",
       entityId: product.id,
       productId: product.id,
-      payload: { certificateId, ratingScore, ratingLabel, sendEmail },
+      payload: { certificateId, ratingScore, ratingLabel, message: message ? true : false },
     });
-
-    // Email customer with PDF + seal attachments (optional)
-    if (sendEmail) {
-      try {
-        const sealAbs = path.join(process.cwd(), "public", sealPath.replace(/^\//, ""));
-        const sealBuffer = await fs.readFile(sealAbs);
-        await sendCertificateAndSealEmail({
-          to: product.user.email,
-          name: product.user.name,
-          productName: product.name,
-          verifyUrl,
-          pdfBuffer,
-          sealBuffer,
-          message,
-        });
-      } catch (err) {
-        console.error("CERT_SEAL_EMAIL_ERROR", err);
-      }
-    }
 
     return NextResponse.json({
       ok: true,
       certificateId: cert.id,
       pdfUrl: pdfSigned,
-      sealUrl: sealPath,
+      sealUrl: sealSigned ?? generatedSeal.key,
       ratingScore,
       ratingLabel,
     });

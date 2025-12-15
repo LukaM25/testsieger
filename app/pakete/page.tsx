@@ -98,6 +98,12 @@ export default function Packages() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan, productId }),
       });
+      if (res.status === 401) {
+        setNotice(loginMessage);
+        const next = encodeURIComponent(`/pakete${typeof window !== "undefined" ? window.location.search : ""}`);
+        router.push(`/login?next=${next}`);
+        return;
+      }
       const data = await res.json();
       if (!res.ok || !data.url) {
         setNotice(data.error || "Zahlung konnte nicht gestartet werden.");
@@ -221,11 +227,35 @@ export default function Packages() {
             </p>
           </Reveal>
 
+          {notice && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+              {notice}
+            </div>
+          )}
+
           <div className="grid gap-6 md:grid-cols-3">
             {plans.map((plan, idx) => {
-              const isGuarded = licensePaid || !hasPrecheck || !paidAndPassed || !productId || unauthorized;
+              const guardState = licensePaid
+                ? "PAID"
+                : unauthorized
+                  ? "LOGIN"
+                  : !hasPrecheck || !paidAndPassed || !productId
+                    ? "PRECHECK"
+                    : "PAY";
               const isLoading = loading || submitting === plan.key;
               const highlighted = preselectedPlan === plan.key;
+              const label =
+                guardState === "PAID"
+                  ? "Bereits bezahlt"
+                  : guardState === "LOGIN"
+                    ? "Einloggen & bezahlen"
+                    : guardState === "PRECHECK"
+                      ? "Zum Pre-Check"
+                      : submitting === plan.key
+                        ? "Wird geöffnet…"
+                        : highlighted
+                          ? "Weiter mit Auswahl"
+                          : "Lizenzplan wählen";
               return (
                 <Reveal key={plan.key} delay={idx * 60 + 60}>
                   <div
@@ -240,12 +270,28 @@ export default function Packages() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleGuardedSelect(plan.key)}
-                      disabled={isLoading}
+                      onClick={() => {
+                        if (guardState === "PAID") return;
+                        if (guardState === "LOGIN") {
+                          setNotice(loginMessage);
+                          const next = encodeURIComponent(`/pakete${typeof window !== "undefined" ? window.location.search : ""}`);
+                          router.push(`/login?next=${next}`);
+                          return;
+                        }
+                        if (guardState === "PRECHECK") {
+                          setNotice(guardMessage);
+                          router.push("/produkte/produkt-test");
+                          return;
+                        }
+                        handleGuardedSelect(plan.key);
+                      }}
+                      disabled={isLoading || guardState === "PAID"}
                       className={`mt-8 rounded-full px-4 py-2 text-sm font-semibold ${
-                        isGuarded || isLoading
+                        guardState === "PAID" || isLoading
                           ? "bg-slate-200 text-slate-600 cursor-not-allowed"
-                          : "bg-slate-900 text-white transition hover:bg-black"
+                          : guardState === "LOGIN" || guardState === "PRECHECK"
+                            ? "bg-slate-900 text-white transition hover:bg-black"
+                            : "bg-slate-900 text-white transition hover:bg-black"
                       }`}
                       title={
                         licensePaid
@@ -257,7 +303,7 @@ export default function Packages() {
                             : undefined
                       }
                     >
-                      {submitting === plan.key ? "Wird geöffnet…" : highlighted ? "Weiter mit Auswahl" : "Lizenzplan wählen"}
+                      {label}
                     </button>
                   </div>
                 </Reveal>

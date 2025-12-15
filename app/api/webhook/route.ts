@@ -4,6 +4,7 @@ import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { sendPrecheckPaymentSuccess } from "@/lib/email";
 import { ensureProcessNumber } from '@/lib/processNumber';
+import { enqueueCompletionJob, processCompletionJob } from '@/lib/completion';
 import { Plan } from "@prisma/client";
 
 export const runtime = "nodejs"; // ensure Node runtime for raw body
@@ -112,6 +113,38 @@ async function handleCheckoutSession(cs: any) {
       });
     } else {
       console.warn('WEBHOOK_LICENSE_PLAN_INVALID_SKIP_UPSERT', { licensePlan, reference, orderPlan: order.plan });
+    }
+
+    // Auto-trigger completion when license is paid and all required assets are present.
+    if (isValidLicensePlan) {
+      try {
+        const productForAuto = await prisma.product.findUnique({
+          where: { id: productId },
+          select: {
+            status: true,
+            adminProgress: true,
+            certificate: { select: { reportUrl: true, snapshotData: true } },
+          },
+        });
+        const ratingV1 = (productForAuto?.certificate?.snapshotData as any)?.ratingV1;
+        const hasLockedRating =
+          Boolean(ratingV1?.lockedAt) && Boolean(ratingV1?.passEmailSentAt) && Boolean(ratingV1?.pdf?.key);
+        const shouldAutoComplete =
+          productForAuto?.status !== 'COMPLETED' &&
+          productForAuto?.adminProgress === 'PASS' &&
+          Boolean(productForAuto?.certificate?.reportUrl) &&
+          hasLockedRating;
+        if (shouldAutoComplete) {
+          const job = await enqueueCompletionJob(productId);
+          console.info('ENQUEUED_COMPLETION_JOB', { jobId: job.id, productId });
+          if (process.env.RUN_COMPLETION_INLINE === 'true') {
+            await processCompletionJob(job.id);
+            console.info('COMPLETION_JOB_PROCESSED_INLINE', { jobId: job.id, productId });
+          }
+        }
+      } catch (err) {
+        console.error('AUTO_COMPLETION_ENQUEUE_FAILED', { productId, err });
+      }
     }
   } else {
     // fallback: no order record (pre-check fee). Still mark product as paid.

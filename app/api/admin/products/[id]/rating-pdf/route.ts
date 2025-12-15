@@ -3,7 +3,7 @@ import { AdminRole } from "@prisma/client";
 
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import { fetchStoredRatingCsvAttachment } from "@/lib/ratingSheet";
+import { fetchStoredRatingPdfAttachment } from "@/lib/ratingSheet";
 
 export const runtime = "nodejs";
 
@@ -28,18 +28,18 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     : "unbenannt";
 
   try {
-    const rating = await fetchStoredRatingCsvAttachment(productId);
-    if (!rating) return NextResponse.json({ error: "RATING_CSV_MISSING" }, { status: 404 });
-    const body = new Uint8Array(rating.buffer);
-    return new NextResponse(body, {
+    const rating = await fetchStoredRatingPdfAttachment(productId);
+    if (!rating) return NextResponse.json({ error: "RATING_PDF_MISSING" }, { status: 404 });
+    return new NextResponse(new Uint8Array(rating.buffer), {
       status: 200,
       headers: {
-        "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="rating-${productId}-${sluggedName}.csv"`,
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="pruefergebnis-${productId}-${sluggedName}.pdf"`,
       },
     });
   } catch (err: any) {
-    console.error("RATING_SHEET_DOWNLOAD_ERROR", err);
-    return NextResponse.json({ error: "FAILED_TO_DOWNLOAD_SHEET" }, { status: 500 });
+    console.error("RATING_PDF_DOWNLOAD_ERROR", err);
+    return NextResponse.json({ error: "FAILED_TO_DOWNLOAD_PDF" }, { status: 500 });
   }
 }
+

@@ -28,7 +28,7 @@ export default function AdminList() {
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.error || "Fehler beim Generieren");
-      alert("Zertifikat erfolgreich generiert und E-Mail versendet ✅");
+      alert("Zertifikat erfolgreich generiert ✅");
 
       // Optional: reload product data after generation
       const reload = await fetch("/api/admin/products");

@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { ProductStatus, AdminRole } from '@prisma/client';
 import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
-import { sendFailureNotification, sendProductReceivedEmail, sendPassAndLicenseRequest, sendCompletionReadyEmail } from '@/lib/email';
-import { fetchRatingCsv } from '@/lib/ratingSheet';
+import { sendFailureNotification, sendProductReceivedEmail } from '@/lib/email';
 
 export const runtime = 'nodejs';
 
@@ -70,28 +69,6 @@ export async function POST(req: Request) {
       name: product.user.name,
       productName: product.name,
     }).catch((err) => console.error('RECEIVED_EMAIL_ERROR', err));
-  } else if (status === 'COMPLETION') {
-    const csvBuffer = await fetchRatingCsv(product.id, product.name);
-    const appUrl = (process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://pruefsiegelzentrum.vercel.app').replace(/\/$/, '');
-    await sendCompletionReadyEmail({
-      to: product.user.email,
-      name: product.user.name,
-      productName: product.name,
-      licenseUrl: `${appUrl}/pakete?productId=${encodeURIComponent(product.id)}`,
-      csvBuffer,
-    }).catch((err) => console.error('COMPLETION_EMAIL_ERROR', err));
-  } else if (status === 'PASS') {
-    try {
-      const appUrl = (process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://pruefsiegelzentrum.vercel.app').replace(/\/$/, '');
-      await sendPassAndLicenseRequest({
-        to: product.user.email,
-        name: product.user.name,
-        productName: product.name,
-        licenseUrl: `${appUrl}/pakete?productId=${encodeURIComponent(product.id)}`,
-      });
-    } catch (err) {
-      console.error('PASS_EMAIL_ERROR', err);
-    }
   }
 
   return NextResponse.json({ ok: true, status });

@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendCompletionEmail } from "@/lib/email";
 import { generateCertificatePdf } from "@/pdfGenerator";
 import QRCode from "qrcode";
-import fs from "fs/promises";
-import path from "path";
 import { generateSeal as generateSealImage } from "@/lib/seal";
 import { storeCertificateAssets } from "@/lib/certificateAssets";
 
@@ -12,7 +9,7 @@ export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
-    const { productId, message } = await req.json();
+    const { productId } = await req.json();
 
     const product = await prisma.product.findUnique({
       where: { id: productId },
@@ -108,33 +105,6 @@ export async function POST(req: Request) {
         externalReferenceId: null,
         sealUrl,
       },
-    });
-
-    let sealBuffer: Buffer | undefined;
-    if (sealUrl) {
-      try {
-        const sealAbs = path.join(process.cwd(), 'public', sealUrl.replace(/^\//, ""));
-        sealBuffer = await fs.readFile(sealAbs);
-      } catch (err) {
-        console.warn("SEAL_BUFFER_LOAD_FAILED", err);
-      }
-    }
-    if (!sealBuffer) {
-      throw new Error('SEAL_MISSING');
-    }
-
-    await sendCompletionEmail({
-      to: product.user.email,
-      name: product.user.name,
-      productName: product.name,
-      verifyUrl,
-      pdfUrl: pdfSigned,
-      qrUrl: qrSigned,
-      pdfBuffer,
-      documentId: undefined,
-      message: typeof message === 'string' ? message.slice(0, 1000) : undefined,
-      sealNumber: seal_number,
-      sealBuffer,
     });
 
     return NextResponse.json({

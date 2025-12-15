@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server';
-import path from 'path';
-import { promises as fs } from 'fs';
 import crypto from 'crypto';
 import QRCode from 'qrcode';
 import { AdminRole, AssetType } from '@prisma/client';
 
 import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
-import { sendCompletionEmail } from '@/lib/email';
-import { generateSeal as generateSealImage } from '@/lib/seal';
+import { generateSealForS3 } from '@/lib/seal';
 import { saveBufferToS3, signedUrlForKey, MAX_UPLOAD_BYTES } from '@/lib/storage';
 import { uploadedPdfKey, qrKey } from '@/lib/assetKeys';
 
@@ -30,7 +27,6 @@ export async function POST(req: Request) {
 
     const form = await req.formData();
     const productId = String(form.get('productId') || '');
-    const message = form.get('message');
     const file = form.get('report') as File | null;
 
     if (!productId || !file) {
@@ -135,50 +131,40 @@ export async function POST(req: Request) {
       },
     });
 
-    // Generate seal image and store path
-    let sealUrl: string | null = null;
-    let sealBuffer: Buffer | undefined;
-    try {
-      sealUrl = await generateSealImage({
-        product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
+    const baseAppUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const generatedSeal = await generateSealForS3({
+      product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
+      certificateId: cert.id,
+      ratingScore: cert.ratingScore ?? 'PASS',
+      ratingLabel: cert.ratingLabel ?? 'PASS',
+      appUrl: baseAppUrl,
+    });
+    await saveBufferToS3({ key: generatedSeal.key, body: generatedSeal.buffer, contentType: 'image/png' });
+    await prisma.asset.upsert({
+      where: { key: generatedSeal.key },
+      update: {
+        type: AssetType.SEAL_IMAGE,
+        contentType: 'image/png',
+        sizeBytes: generatedSeal.buffer.length,
         certificateId: cert.id,
-        ratingScore: cert.ratingScore ?? 'PASS',
-        ratingLabel: cert.ratingLabel ?? 'PASS',
-        appUrl: process.env.APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
-      });
-      const sealAbs = path.join(process.cwd(), 'public', sealUrl.replace(/^\//, ''));
-      sealBuffer = await fs.readFile(sealAbs);
-    } catch (err) {
-      console.warn('SEAL_GENERATION_FAILED', err);
-    }
-    if (!sealBuffer) {
-      throw new Error('SEAL_MISSING');
-    }
+        productId: product.id,
+        userId: product.userId,
+      },
+      create: {
+        key: generatedSeal.key,
+        type: AssetType.SEAL_IMAGE,
+        contentType: 'image/png',
+        sizeBytes: generatedSeal.buffer.length,
+        certificateId: cert.id,
+        productId: product.id,
+        userId: product.userId,
+      },
+    });
 
     await prisma.certificate.update({
       where: { id: cert.id },
-      data: { sealUrl },
+      data: { sealUrl: generatedSeal.key },
     });
-
-    // Mark product as COMPLETED
-    await prisma.product.update({
-      where: { id: product.id },
-      data: { status: 'COMPLETED' },
-    });
-
-    // Email customer with links
-
-    await sendCompletionEmail({
-      to: product.user.email,
-      name: product.user.name,
-      productName: product.name,
-      verifyUrl,
-      pdfUrl: pdfSigned,
-      qrUrl: qrSigned,
-      message: typeof message === 'string' ? message.slice(0, 1000) : undefined,
-      sealNumber: seal,
-      sealBuffer,
-    }).catch(e => console.error('Email error', e));
 
     await logAdminAudit({
       adminId: admin.id,
@@ -189,7 +175,8 @@ export async function POST(req: Request) {
       payload: { certificateId: cert.id, seal },
     });
 
-    return NextResponse.json({ ok: true, verifyUrl, certId: cert.id, pdfUrl: pdfSigned });
+    const sealSigned = await signOrFallback(generatedSeal.key);
+    return NextResponse.json({ ok: true, verifyUrl, certId: cert.id, pdfUrl: pdfSigned, sealUrl: sealSigned });
   } catch (e: any) {
     if (e?.message === 'UNAUTHORIZED_ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

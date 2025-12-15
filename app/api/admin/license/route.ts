@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 import { Plan, LicenseStatus, AdminRole } from '@prisma/client';
 import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
-import { sendLicenseActivatedEmail } from '@/lib/email';
-import { fetchRatingCsv } from '@/lib/ratingSheet';
 
 export const runtime = 'nodejs';
 
@@ -98,25 +96,6 @@ export async function POST(req: Request) {
       expiresAt: expiresDate ? expiresDate.toISOString() : null,
     },
   });
-
-  if (status === 'ACTIVE' && product.user) {
-    const ratingCsv = await fetchRatingCsv(product.id, product.name);
-    try {
-      await sendLicenseActivatedEmail({
-        to: product.user.email,
-        name: product.user.name,
-        productName: product.name,
-        certificateId: product.certificate?.id ?? null,
-        pdfUrl: product.certificate?.pdfUrl ?? null,
-        qrUrl: product.certificate?.qrUrl ?? null,
-        sealUrl: product.certificate?.sealUrl ?? null,
-        sealNumber: product.certificate?.seal_number ?? null,
-        ratingCsv,
-      });
-    } catch (err) {
-      console.error('LICENSE_ACTIVATED_EMAIL_ERROR', err);
-    }
-  }
 
   return NextResponse.json({ ok: true, license });
 }

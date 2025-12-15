@@ -203,6 +203,9 @@ export async function GET(request: Request) {
         const qrUrl =
           assets?.CERTIFICATE_QR ??
           (product.certificate?.qrUrl ? await ensureSignedS3Url(product.certificate.qrUrl) : null);
+        const sealUrl =
+          assets?.SEAL_IMAGE ??
+          (product.certificate?.sealUrl ? await ensureSignedS3Url(product.certificate.sealUrl) : null);
 
         return {
           id: product.id,
@@ -235,7 +238,7 @@ export async function GET(request: Request) {
                 externalReferenceId: product.certificate.externalReferenceId,
                 ratingScore: product.certificate.ratingScore,
                 ratingLabel: product.certificate.ratingLabel,
-                sealUrl: product.certificate.sealUrl,
+                sealUrl,
               }
             : null,
           license: product.license
