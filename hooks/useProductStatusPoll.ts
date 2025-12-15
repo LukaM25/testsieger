@@ -23,20 +23,36 @@ export function useProductStatusPoll(productId: string | null | undefined, optio
   const [loading, setLoading] = useState(false);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const stoppedRef = useRef(false);
 
   useEffect(() => {
     if (!productId || !enabled) {
       setData(null);
+      stoppedRef.current = false;
       if (timerRef.current) clearTimeout(timerRef.current);
       return;
     }
 
     let cancelled = false;
+    stoppedRef.current = false;
 
     const tick = async () => {
+      if (stoppedRef.current) return;
       setLoading(true);
       try {
         const res = await fetch(`/api/products/${productId}/status`, { cache: "no-store" });
+        if (res.status === 401) {
+          // Session expired or cookie missing -> stop polling to avoid console spam.
+          stoppedRef.current = true;
+          setData(null);
+          return;
+        }
+        if (res.status === 404) {
+          // Product deleted / no longer accessible -> stop polling.
+          stoppedRef.current = true;
+          setData(null);
+          return;
+        }
         if (!res.ok) throw new Error(`Status fetch failed: ${res.status}`);
         const json = (await res.json()) as ProductStatusApiResponse;
         if (!cancelled) setData(json);
@@ -44,7 +60,7 @@ export function useProductStatusPoll(productId: string | null | undefined, optio
         if (!cancelled) console.warn("PRODUCT_STATUS_POLL_ERROR", err);
       } finally {
         if (!cancelled) setLoading(false);
-        if (!cancelled) {
+        if (!cancelled && !stoppedRef.current) {
           timerRef.current = setTimeout(tick, intervalMs);
         }
       }

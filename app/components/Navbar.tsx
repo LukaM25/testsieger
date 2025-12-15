@@ -162,49 +162,51 @@ export default function Navbar() {
         ? t('profile.admin', 'Admin')
         : t('profile.signin', 'Anmelden');
 
-  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setLoginError(null);
-    setLoginLoading(true);
-    try {
-      // Try admin login first; if it fails, fall back to user login.
-      const adminRes = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
-      });
-      const adminData = await adminRes.json().catch(() => ({}));
-      if (adminRes.ok) {
-        setAdminAuthed(true);
-        setProfileUser(null);
-        setProfileOpen(false);
-        setLoginEmail('');
-        setLoginPassword('');
-        router.refresh();
-        router.push('/admin');
-        return;
-      }
+	  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+	    event.preventDefault();
+	    setLoginError(null);
+	    setLoginLoading(true);
+	    try {
+	      // Try user login first to avoid noisy 401s for normal users; if it fails, try admin login.
+	      const res = await fetch('/api/auth/login', {
+	        method: 'POST',
+	        headers: { 'Content-Type': 'application/json' },
+	        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+	      });
+	      const data = await res.json().catch(() => ({}));
+	      if (res.ok && data.ok) {
+	        const user = await loadProfile();
+	        setProfileUser(user);
+	        setProfileOpen(true);
+	        setLoginEmail('');
+	        setLoginPassword('');
+	        return;
+	      }
 
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok) {
-        const errorMessage = data.error || adminData?.error || 'Login fehlgeschlagen';
-        throw new Error(errorMessage);
-      }
-      const user = await loadProfile();
-      setProfileUser(user);
-      setProfileOpen(true);
-      setLoginEmail('');
-      setLoginPassword('');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Login fehlgeschlagen';
-      setLoginError(message);
-    } finally {
-      setLoginLoading(false);
+	      const adminRes = await fetch('/api/admin/login', {
+	        method: 'POST',
+	        headers: { 'Content-Type': 'application/json' },
+	        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+	      });
+	      const adminData = await adminRes.json().catch(() => ({}));
+	      if (adminRes.ok) {
+	        setAdminAuthed(true);
+	        setProfileUser(null);
+	        setProfileOpen(false);
+	        setLoginEmail('');
+	        setLoginPassword('');
+	        router.refresh();
+	        router.push('/admin');
+	        return;
+	      }
+
+	      const errorMessage = adminData?.error || data.error || 'Login fehlgeschlagen';
+	      throw new Error(errorMessage);
+	    } catch (error) {
+	      const message = error instanceof Error ? error.message : 'Login fehlgeschlagen';
+	      setLoginError(message);
+	    } finally {
+	      setLoginLoading(false);
     }
   };
 

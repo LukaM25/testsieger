@@ -9,12 +9,12 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   _req: Request,
-  { params }: { params: { productId: string } }
+  { params }: { params: Promise<{ productId: string }> }
 ) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
 
-  const productId = params.productId;
+  const { productId } = await params;
   if (!productId) {
     return NextResponse.json({ error: 'Missing productId' }, { status: 400 });
   }
