@@ -1,12 +1,21 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CertificatePreviewModal } from '@/components/CertificatePreviewModal';
 import { useCertificateActions } from '@/hooks/useCertificateActions';
 import AdminHeader from './components/AdminHeader';
 import AdminProductRow from './components/AdminProductRow';
 import SuperadminPanel from './components/SuperadminPanel';
 import { AdminPermissions, AdminProduct, AdminSummary, PaymentStatusOption, StatusOption } from './types';
+
+type ProductsResponse = {
+  products?: AdminProduct[];
+  total?: number;
+  statusCounts?: Record<string, number>;
+  nextCursor?: string | null;
+  warning?: string;
+  error?: string;
+};
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
@@ -17,49 +26,93 @@ export default function AdminPage() {
   const [banner, setBanner] = useState<string | null>(null);
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusOption | 'ALL'>('ALL');
   const [paymentFilter, setPaymentFilter] = useState<PaymentStatusOption | 'ALL'>('ALL');
   const [showSuperControls, setShowSuperControls] = useState(false);
   const [activePreviewId, setActivePreviewId] = useState<string | null>(null);
-  const isSuperAdmin = adminInfo?.role === 'SUPERADMIN';
-  const canUpdateStatus = adminInfo?.role === 'SUPERADMIN' || adminInfo?.role === 'EXAMINER';
-  const canFinalizeStatus = isSuperAdmin;
-  const canManagePayments = isSuperAdmin;
-  const canManageLicense = isSuperAdmin;
-  const canGenerateCert = isSuperAdmin;
-  const canUploadReport = isSuperAdmin;
-  const canSendCompletion = isSuperAdmin;
+  const productsAbortRef = useRef<AbortController | null>(null);
+  const role = adminInfo?.role || 'VIEWER';
+  const isSuperAdmin = role === 'SUPERADMIN';
+  const permissions: AdminPermissions = useMemo(() => {
+    const canUpdateStatus = role === 'SUPERADMIN' || role === 'EXAMINER';
+    return {
+      role,
+      canUpdateStatus,
+      canFinalizeStatus: role === 'SUPERADMIN',
+      canManagePayments: role === 'SUPERADMIN',
+      canManageLicense: role === 'SUPERADMIN',
+      canGenerateCert: role === 'SUPERADMIN',
+      canUploadReport: role === 'SUPERADMIN',
+      canSendCompletion: role === 'SUPERADMIN',
+    };
+  }, [role]);
 
-  const permissions: AdminPermissions = {
-    role: adminInfo?.role || 'VIEWER',
-    canUpdateStatus,
-    canFinalizeStatus,
-    canManagePayments,
-    canManageLicense,
-    canGenerateCert,
-    canUploadReport,
-    canSendCompletion,
-  };
+  const { handlePreview, clearPreview, previewUrl, isLoading: isPreviewLoading } = useCertificateActions();
 
-  const { handlePreview, previewUrl, isLoading: isPreviewLoading } = useCertificateActions();
-
-  const fetchProducts = useCallback(async () => {
-    setLoadingProducts(true);
+  const fetchProducts = useCallback(async (opts?: { cursor?: string | null; append?: boolean }) => {
+    const append = Boolean(opts?.append);
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      productsAbortRef.current?.abort();
+      productsAbortRef.current = new AbortController();
+      setLoadingProducts(true);
+    }
     try {
-      const res = await fetch('/api/admin/products', { credentials: 'same-origin' });
+      const params = new URLSearchParams();
+      const q = search.trim();
+      if (q) params.set('q', q);
+      if (statusFilter !== 'ALL') params.set('status', statusFilter);
+      if (paymentFilter !== 'ALL') params.set('payment', paymentFilter);
+      params.set('limit', '50');
+      if (opts?.cursor) params.set('cursor', opts.cursor);
+
+      const res = await fetch(`/api/admin/products?${params.toString()}`, {
+        credentials: 'same-origin',
+        cache: 'no-store',
+        signal: append ? undefined : productsAbortRef.current?.signal,
+      });
       if (!res.ok) {
         setBanner(`Fehler beim Laden der Produkte: ${res.status}`);
         return;
       }
-      const data = await res.json();
-      setProducts(data.products ?? []);
+      const data = (await res.json()) as ProductsResponse;
+      setBanner(data.warning || null);
+      setTotalCount(typeof data.total === 'number' ? data.total : null);
+      setStatusCounts(data.statusCounts ?? {});
+      setNextCursor(data.nextCursor ?? null);
+      setProducts((prev) => {
+        const incoming = data.products ?? [];
+        if (!append) return incoming;
+        const seen = new Set(prev.map((p) => p.id));
+        const merged = [...prev];
+        for (const item of incoming) {
+          if (!seen.has(item.id)) merged.push(item);
+        }
+        return merged;
+      });
     } catch (err) {
+      if ((err as any)?.name === 'AbortError') return;
       console.error(err);
       setBanner('Produktliste konnte nicht geladen werden.');
     } finally {
-      setLoadingProducts(false);
+      if (append) setLoadingMore(false);
+      else setLoadingProducts(false);
     }
+  }, [paymentFilter, search, statusFilter]);
+
+  const fetchProductsRef = useRef(fetchProducts);
+  useEffect(() => {
+    fetchProductsRef.current = fetchProducts;
+  }, [fetchProducts]);
+
+  const refreshProducts = useCallback(() => {
+    void fetchProductsRef.current({ cursor: null, append: false });
   }, []);
 
   // Clear any mixed user session when visiting admin
@@ -83,35 +136,20 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (authed) {
-      fetchProducts();
-    }
+    if (!authed) return;
+    fetchProducts({ cursor: null, append: false });
   }, [authed, fetchProducts]);
 
-  const filteredProducts = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return products.filter((p) => {
-      const matchTerm =
-        !term ||
-        [p.name, p.brand, p.user.email, p.user.name]
-          .filter(Boolean)
-          .some((field) => (field || '').toLowerCase().includes(term));
-      const matchStatus = statusFilter === 'ALL' || p.adminProgress === statusFilter || p.status === statusFilter;
-      const matchPayment = paymentFilter === 'ALL' || p.paymentStatus === paymentFilter;
-      return matchTerm && matchStatus && matchPayment;
-    });
-  }, [products, search, statusFilter, paymentFilter]);
-
-  const statusCounts = useMemo(() => {
-    return filteredProducts.reduce<Record<string, number>>((acc, p) => {
-      const key = p.status;
-      acc[key] = (acc[key] || 0) + 1;
-      return acc;
-    }, {});
-  }, [filteredProducts]);
+  useEffect(() => {
+    if (!authed) return;
+    const timer = window.setTimeout(() => {
+      fetchProducts({ cursor: null, append: false });
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [authed, fetchProducts, paymentFilter, search, statusFilter]);
 
   const grouped = useMemo(() => {
-    return filteredProducts.reduce<Record<string, AdminProduct[]>>((acc, product) => {
+    return products.reduce<Record<string, AdminProduct[]>>((acc, product) => {
       const date = new Date(product.createdAt).toLocaleDateString('de-DE', {
         weekday: 'long',
         day: '2-digit',
@@ -122,7 +160,7 @@ export default function AdminPage() {
       acc[date].push(product);
       return acc;
     }, {});
-  }, [filteredProducts]);
+  }, [products]);
 
   const handleLogin = async () => {
     setMessage(null);
@@ -146,10 +184,10 @@ export default function AdminPage() {
     }
   };
 
-  const onPreviewClick = async (certId: string) => {
+  const onPreviewClick = useCallback(async (certId: string) => {
     setActivePreviewId(certId);
     await handlePreview(certId);
-  };
+  }, [handlePreview]);
 
   if (!authed) {
     return (
@@ -161,6 +199,9 @@ export default function AdminPage() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Admin-E-Mail"
           className="mb-3 w-full rounded-lg border px-3 py-2"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleLogin();
+          }}
         />
         <input
           type="password"
@@ -168,6 +209,9 @@ export default function AdminPage() {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Admin-Passwort"
           className="w-full rounded-lg border px-3 py-2"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleLogin();
+          }}
         />
         <button onClick={handleLogin} className="mt-4 rounded-lg bg-black px-4 py-2 text-white">
           Login
@@ -186,7 +230,10 @@ export default function AdminPage() {
           onToggleSuper={() => {
             setShowSuperControls((prev) => !prev);
           }}
-          onRefresh={fetchProducts}
+          onRefresh={refreshProducts}
+          shownCount={products.length}
+          totalCount={totalCount}
+          isLoading={loadingProducts}
           search={search}
           onSearchChange={setSearch}
           statusFilter={statusFilter}
@@ -208,7 +255,7 @@ export default function AdminPage() {
           <div className="rounded-3xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500 shadow-sm">
             Lade Produkte…
           </div>
-        ) : filteredProducts.length === 0 ? (
+        ) : products.length === 0 ? (
           <div className="rounded-3xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-600 shadow-sm">
             Keine Produkte oder Filter-Treffer. Bitte Filter anpassen oder Liste aktualisieren.
           </div>
@@ -223,11 +270,8 @@ export default function AdminPage() {
                 <AdminProductRow
                   key={product.id}
                   product={product}
-                  onUpdated={() => {
-                    fetchProducts();
-                    setMessage(`Status für ${product.name} aktualisiert.`);
-                  }}
-                  onPreview={(id) => onPreviewClick(id)}
+                  onUpdated={refreshProducts}
+                  onPreview={onPreviewClick}
                   isPreviewLoading={isPreviewLoading && activePreviewId === (product.certificate?.id || 'temp')}
                   permissions={permissions}
                 />
@@ -235,12 +279,27 @@ export default function AdminPage() {
             </section>
           ))
         )}
+        {nextCursor ? (
+          <div className="flex items-center justify-center">
+            <button
+              type="button"
+              onClick={() => fetchProducts({ cursor: nextCursor, append: true })}
+              disabled={loadingMore}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loadingMore ? 'Lädt…' : 'Mehr laden / Load more'}
+            </button>
+          </div>
+        ) : null}
         {message && <p className="text-sm text-green-700">{message}</p>}
       </div>
 
       <CertificatePreviewModal 
         isOpen={!!previewUrl}
-        onClose={() => window.location.reload()}
+        onClose={() => {
+          clearPreview();
+          setActivePreviewId(null);
+        }}
         pdfUrl={previewUrl}
         productName="Admin Preview"
       />

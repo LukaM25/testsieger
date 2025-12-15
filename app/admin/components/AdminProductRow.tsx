@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { PAYMENT_STATUS_OPTIONS, PAYMENT_TONE, STATUS_OPTIONS, STATUS_TONE, statusLabel } from '../constants';
 import { AdminPermissions, AdminProduct, PaymentStatusOption, StatusOption } from '../types';
 
@@ -11,6 +11,15 @@ type Props = {
   isPreviewLoading: boolean;
   permissions: AdminPermissions;
 };
+
+const FLOW_STEPS: { key: StatusOption; label: string }[] = [
+  { key: 'PRECHECK', label: 'Pre-Check' },
+  { key: 'RECEIVED', label: 'Eingang' },
+  { key: 'ANALYSIS', label: 'Analyse' },
+  { key: 'COMPLETION', label: 'Abschluss' },
+  { key: 'PASS', label: 'Bestanden' },
+  { key: 'FAIL', label: 'Nicht bestanden' },
+];
 
 function CollapsibleSection({
   title,
@@ -44,7 +53,7 @@ function CollapsibleSection({
   );
 }
 
-export default function AdminProductRow({
+function AdminProductRow({
   product,
   onUpdated,
   onPreview,
@@ -348,18 +357,10 @@ export default function AdminProductRow({
     }
   };
 
-  const flowSteps: { key: StatusOption; label: string }[] = [
-    { key: 'PRECHECK', label: 'Pre-Check' },
-    { key: 'RECEIVED', label: 'Eingang' },
-    { key: 'ANALYSIS', label: 'Analyse' },
-    { key: 'COMPLETION', label: 'Abschluss' },
-    { key: 'PASS', label: 'Bestanden' },
-    { key: 'FAIL', label: 'Nicht bestanden' },
-  ];
   const currentKey = (product.adminProgress as StatusOption) || (product.status as StatusOption);
   const currentIdx = Math.max(
     0,
-    flowSteps.findIndex((s) => s.key === currentKey),
+    FLOW_STEPS.findIndex((s) => s.key === currentKey),
   );
 
   return (
@@ -413,12 +414,14 @@ export default function AdminProductRow({
               {expanded ? 'Details ausblenden / Hide details' : 'Details anzeigen / Show details'}
             </button>
           </div>
-        </div>
+	        </div>
 
-        <div className="grid gap-4 lg:grid-cols-3">
-          <CollapsibleSection title="Flow" subtitle="Phasen" defaultOpen={false}>
-            <div className="grid gap-2">
-              {flowSteps.map((step, idx) => {
+	        {expanded ? (
+	          <>
+	            <div className="grid gap-4 lg:grid-cols-3">
+	          <CollapsibleSection title="Flow" subtitle="Phasen" defaultOpen={false}>
+	            <div className="grid gap-2">
+	              {FLOW_STEPS.map((step, idx) => {
                 const state = idx < currentIdx ? 'done' : idx === currentIdx ? 'current' : 'upcoming';
                 const style =
                   state === 'done'
@@ -443,7 +446,7 @@ export default function AdminProductRow({
                       {idx + 1}
                     </span>
                     <span>{step.label}</span>
-                  </div>
+	        </div>
                 );
               })}
             </div>
@@ -830,8 +833,12 @@ export default function AdminProductRow({
           </div>
         )}
 
-        {localMessage && <p className="text-xs text-slate-500">{localMessage}</p>}
-      </div>
-    </article>
-  );
+	        {localMessage && <p className="text-xs text-slate-500">{localMessage}</p>}
+	          </>
+	        ) : null}
+	      </div>
+	    </article>
+	  );
 }
+
+export default memo(AdminProductRow);

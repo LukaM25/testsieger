@@ -1,16 +1,41 @@
 node_modules
+
+# Next.js / build output
 .next
 dist
 build
 out
+.output
+
+# Tests / coverage
 coverage
+
+# Logs
 *.log
+*storybook.log
+
+# OS files
+.DS_Store
+
+# TypeScript incremental build
+*.tsbuildinfo
+
+# Environment (never commit secrets)
 .env
 .env.*
+!.env.example
 
-*storybook.log
+# Storybook
 storybook-static
-.output
+
+# Generated runtime assets (local-only)
+public/uploads/*
+!public/uploads/.gitkeep
+!public/uploads/seals/
+public/uploads/seals/*
+!public/uploads/seals/.gitkeep
+public/qr/*
+!public/qr/.gitkeep
+
+# Misc
 .webm
-.env.local
-.env

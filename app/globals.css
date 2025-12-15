@@ -2,12 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #__next {
-  height: 100%;
-}
-
 body {
   @apply bg-brand-surface text-brand-text;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-image: radial-gradient(40rem 20rem at 120% -10%, rgba(184, 134, 11, 0.06), transparent 60%);
+}
+
+@layer base {
+  a {
+    @apply underline-offset-4;
+  }
+
+  a:hover {
+    @apply text-brand-green;
+  }
+
+  a:focus-visible {
+    @apply outline-none ring-2 ring-brand-green ring-offset-2;
+  }
+
+  button:focus-visible {
+    @apply outline-none ring-2 ring-brand-green ring-offset-2;
+  }
+}
+
+html,
+body {
+  height: 100%;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center rounded-md px-4 py-2 bg-gray-900 text-white transition hover:bg-black focus:outline-none focus:ring-2 focus:ring-black/40;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.15s ease-out forwards;
 }

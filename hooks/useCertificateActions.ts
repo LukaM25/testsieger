@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useRef, useState, useCallback } from 'react';
 
 type Status = 'idle' | 'generating' | 'sending' | 'success' | 'error';
 
@@ -6,6 +6,7 @@ export const useCertificateActions = () => {
   const [status, setStatus] = useState<Status>('idle');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
 
   // 1. Handle Preview (Generates Blob)
   const handlePreview = useCallback(async (certificateId: string) => {
@@ -16,9 +17,9 @@ export const useCertificateActions = () => {
 
     try {
       // Clean up previous blob to prevent memory leaks
-      if (previewUrl) {
-        window.URL.revokeObjectURL(previewUrl);
-        setPreviewUrl(null);
+      if (previewUrlRef.current) {
+        window.URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = null;
       }
 
       const response = await fetch(`/api/certificates/${certificateId}/preview`);
@@ -30,7 +31,8 @@ export const useCertificateActions = () => {
       // Create a blob URL from the binary PDF data
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      
+
+      previewUrlRef.current = url;
       setPreviewUrl(url);
       setStatus('idle'); // Back to idle so we don't show loading forever
     } catch (err) {
@@ -38,7 +40,7 @@ export const useCertificateActions = () => {
       setError('Preview generation failed');
       setStatus('error');
     }
-  }, [previewUrl]);
+  }, []);
 
   // 2. Handle Email Sending
   const handleSend = useCallback(async (certificateId: string) => {
@@ -72,12 +74,11 @@ export const useCertificateActions = () => {
 
   // 3. Cleanup function (Call this when closing modal)
   const clearPreview = useCallback(() => {
-    if (previewUrl) {
-      window.URL.revokeObjectURL(previewUrl);
-    }
+    if (previewUrlRef.current) window.URL.revokeObjectURL(previewUrlRef.current);
+    previewUrlRef.current = null;
     setPreviewUrl(null);
     setStatus('idle');
-  }, [previewUrl]);
+  }, []);
 
   return {
     handlePreview,

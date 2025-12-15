@@ -8,6 +8,7 @@ export type ProductStatusApiResponse = {
   certificateStatus: string | null;
   certificateId: string | null;
   pdfUrl: string | null;
+  reportUrl: string | null;
   sealUrl: string | null;
 };
 

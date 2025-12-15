@@ -36,6 +36,10 @@ End-to-end Next.js 16 app for handling product pre-checks, payments, licensing, 
 - SMTP credentials for transactional mail
 
 ## Environment variables (`.env.local`)
+Start from the template and fill in real values:
+
+`cp .env.example .env.local`
+
 ```
 DATABASE_URL=
 JWT_SECRET=

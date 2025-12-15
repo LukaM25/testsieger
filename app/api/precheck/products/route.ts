@@ -22,7 +22,7 @@ export async function GET() {
       paymentStatus: true,
       createdAt: true,
       certificate: {
-        select: { id: true, pdfUrl: true, qrUrl: true },
+        select: { id: true, status: true, pdfUrl: true, qrUrl: true, reportUrl: true, sealUrl: true },
       },
       license: { select: { status: true, plan: true } },
     },
@@ -43,9 +43,15 @@ export async function GET() {
       const pdfUrl =
         assets?.OFFICIAL_PDF ??
         (p.certificate?.pdfUrl ? await ensureSignedS3Url(p.certificate.pdfUrl) : null);
+      const reportUrl =
+        assets?.UPLOADED_PDF ??
+        (p.certificate?.reportUrl ? await ensureSignedS3Url(p.certificate.reportUrl) : null);
       const qrUrl =
         assets?.CERTIFICATE_QR ??
         (p.certificate?.qrUrl ? await ensureSignedS3Url(p.certificate.qrUrl) : null);
+      const sealUrl =
+        assets?.SEAL_IMAGE ??
+        (p.certificate?.sealUrl ? await ensureSignedS3Url(p.certificate.sealUrl) : null);
 
       return {
         id: p.id,
@@ -60,8 +66,11 @@ export async function GET() {
         certificate: p.certificate
           ? {
               id: p.certificate.id,
+              status: p.certificate.status ?? null,
               pdfUrl,
+              reportUrl,
               qrUrl,
+              sealUrl,
             }
           : null,
         license: p.license

@@ -26,8 +26,11 @@ export function PrecheckStatusCard({ state, className = "" }: Props) {
   const tr = (de: string, en: string) => (locale === "en" ? en : de);
   const { products, selectedProductId, setSelectedProductId, productStatus, productsLoading, statusLoading, statusError } = state;
 
+  const isOptimistic = Boolean(productStatus?.id && productStatus.id.startsWith("tmp_"));
   const stage = deriveStage(productStatus);
-  const stageLabel = productStatus
+  const stageLabel = isOptimistic
+    ? tr("Produkt wird angelegt…", "Creating product…")
+    : productStatus
     ? stage.key === "PASS"
       ? tr("Pass, Glückwunsch!", "Pass, congratulations!")
       : stage.key === "FAIL"
@@ -70,7 +73,7 @@ export function PrecheckStatusCard({ state, className = "" }: Props) {
     { key: stage.key, percent: 100, label: finalLabel, helper: finalHelper },
   ];
 
-  const activePercent = Math.min(stage.percent, 100);
+  const activePercent = isOptimistic ? 0 : Math.min(stage.percent, 100);
   const errorMessage =
     statusError === "UNAUTHORIZED"
       ? tr("Bitte melden Sie sich an, um den Status zu sehen.", "Please sign in to view your status.")
@@ -152,7 +155,11 @@ export function PrecheckStatusCard({ state, className = "" }: Props) {
               {tr("Wähle ein Produkt, um zu bezahlen oder das Zertifikat zu sehen.", "Select a product to pay or view the certificate.")}
             </p>
           )}
-          {productStatus && (
+          {productStatus && isOptimistic ? (
+            <p className="mt-2 text-sm text-slate-600">
+              {tr("Bitte kurz warten, das Produkt wird gespeichert.", "Please wait a moment while we save your product.")}
+            </p>
+          ) : productStatus ? (
             <div className="mt-3 space-y-2">
               <ProductPayButton
                 productId={productStatus.id}
@@ -168,7 +175,7 @@ export function PrecheckStatusCard({ state, className = "" }: Props) {
                 tr={tr}
               />
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 

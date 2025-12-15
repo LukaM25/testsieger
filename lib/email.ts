@@ -41,7 +41,7 @@ async function sendEmail(opts: { to: string; subject: string; html: string; atta
 }
 
 function renderFooter() {
-  const logo = `${APP_BASE_URL.replace(/\/$/, '')}/dpilogo-v2.png`;
+  const logo = `${APP_BASE_URL.replace(/\/$/, '')}/dpilogo-v3.png`;
   const seal = `${APP_BASE_URL.replace(/\/$/, '')}/siegel.png`;
   return `
     <div style="margin-top:28px;padding-top:18px;border-top:1px solid #e2e8f0;display:flex;align-items:center;gap:16px;color:#475569;font-size:12px;">

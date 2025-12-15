@@ -8,6 +8,9 @@ type Props = {
   showSuperControls: boolean;
   onToggleSuper: () => void;
   onRefresh: () => void;
+  shownCount: number;
+  totalCount: number | null;
+  isLoading: boolean;
   search: string;
   onSearchChange: (value: string) => void;
   statusFilter: StatusOption | 'ALL';
@@ -24,6 +27,9 @@ export default function AdminHeader({
   showSuperControls,
   onToggleSuper,
   onRefresh,
+  shownCount,
+  totalCount,
+  isLoading,
   search,
   onSearchChange,
   statusFilter,
@@ -42,6 +48,10 @@ export default function AdminHeader({
           <h1 className="text-3xl font-bold text-slate-900">Zertifikats-Workflow steuern</h1>
           <p className="mt-2 text-sm text-slate-600">
             Suche, filtere, aktualisiere Status und verschicke Zertifikate mit klar beschrifteten Aktionen.
+          </p>
+          <p className="mt-3 text-xs font-semibold text-slate-600">
+            {typeof totalCount === 'number' ? `${shownCount} von ${totalCount} Einträgen` : `${shownCount} Einträge`}
+            {isLoading ? ' · lädt…' : null}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

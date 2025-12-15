@@ -1,23 +1,43 @@
 import { NextResponse } from 'next/server';
-import { Prisma, AdminRole } from '@prisma/client';
+import { AdminProgress, AdminRole, PaymentStatus, Prisma, ProductStatus } from '@prisma/client';
 import { requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 import { ensureSignedS3Url } from '@/lib/s3';
 import { getCertificateAssetLinks } from '@/lib/certificateAssets';
-import { ensureProcessNumber } from '@/lib/processNumber';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-export async function GET() {
+const ADMIN_PROGRESS_VALUES = new Set<string>(Object.values(AdminProgress));
+const PRODUCT_STATUS_VALUES = new Set<string>(Object.values(ProductStatus));
+const PAYMENT_STATUS_VALUES = new Set<string>(Object.values(PaymentStatus));
+
+function parseLimit(raw: string | null): number {
+  const parsed = raw ? Number.parseInt(raw, 10) : 50;
+  if (!Number.isFinite(parsed)) return 50;
+  return Math.max(1, Math.min(100, parsed));
+}
+
+export async function GET(request: Request) {
   const admin = await requireAdmin(AdminRole.VIEWER).catch(() => null);
   if (!admin) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
   const isViewerOnly = admin.role === AdminRole.VIEWER;
+
+  const { searchParams } = new URL(request.url);
+  const q = (searchParams.get('q') || '').trim();
+  const status = (searchParams.get('status') || '').trim();
+  const payment = (searchParams.get('payment') || '').trim();
+  const cursor = (searchParams.get('cursor') || '').trim();
+  const limit = parseLimit(searchParams.get('limit'));
 
   // Optional bypass for offline dev or unreachable DB
   if (process.env.ADMIN_DB_BYPASS === 'true') {
     return NextResponse.json(
       {
         products: [],
+        total: 0,
+        statusCounts: {},
+        nextCursor: null,
         warning:
           'Datenbank-Zugriff ist deaktiviert (ADMIN_DB_BYPASS). Liste bleibt leer, bitte später erneut versuchen.',
       },
@@ -33,6 +53,9 @@ export async function GET() {
     return NextResponse.json(
       {
         products: [],
+        total: 0,
+        statusCounts: {},
+        nextCursor: null,
         warning:
           'Datenbank aktuell nicht erreichbar. Die Liste ist leer, bitte später erneut versuchen.',
       },
@@ -41,56 +64,110 @@ export async function GET() {
   }
 
   try {
-    const products = await prisma.product.findMany({
-      select: {
-        id: true,
-        name: true,
-        brand: true,
-        category: true,
-        code: true,
-        specs: true,
-        size: true,
-        madeIn: true,
-        material: true,
-        status: true,
-        processNumber: true,
-        adminProgress: true,
-        paymentStatus: true,
-        createdAt: true,
-        user: { select: { name: true, company: true, email: true, address: true } },
-        certificate: {
-          select: {
-            id: true,
-            pdfUrl: true,
-            reportUrl: true,
-            qrUrl: true,
-            seal_number: true,
-            externalReferenceId: true,
-            ratingScore: true,
-            ratingLabel: true,
-            sealUrl: true,
-          },
+    const and: Prisma.ProductWhereInput[] = [];
+    if (q) {
+      const contains = { contains: q, mode: 'insensitive' as const };
+      and.push({
+        OR: [
+          { name: contains },
+          { brand: contains },
+          { category: contains },
+          { code: contains },
+          { processNumber: contains },
+          { user: { is: { email: contains } } },
+          { user: { is: { name: contains } } },
+          { user: { is: { company: contains } } },
+        ],
+      });
+    }
+    if (status) {
+      const statusOr: Prisma.ProductWhereInput[] = [];
+      if (ADMIN_PROGRESS_VALUES.has(status)) statusOr.push({ adminProgress: status as AdminProgress });
+      if (PRODUCT_STATUS_VALUES.has(status)) statusOr.push({ status: status as ProductStatus });
+      if (statusOr.length) and.push({ OR: statusOr });
+    }
+    if (payment) {
+      if (PAYMENT_STATUS_VALUES.has(payment)) {
+        and.push({ paymentStatus: payment as PaymentStatus });
+      }
+    }
+
+    const where: Prisma.ProductWhereInput = and.length ? { AND: and } : {};
+
+    const [rawProducts, total, groupedStatusCounts] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          brand: true,
+          category: true,
+          code: true,
+          specs: true,
+          size: true,
+          madeIn: true,
+          material: true,
+          status: true,
+          processNumber: true,
+          adminProgress: true,
+          paymentStatus: true,
+          createdAt: true,
+          user: { select: { name: true, company: true, email: true, address: true } },
+          certificate: isViewerOnly
+            ? undefined
+            : {
+                select: {
+                  id: true,
+                  pdfUrl: true,
+                  reportUrl: true,
+                  qrUrl: true,
+                  seal_number: true,
+                  externalReferenceId: true,
+                  ratingScore: true,
+                  ratingLabel: true,
+                  sealUrl: true,
+                },
+              },
+          license: isViewerOnly
+            ? undefined
+            : {
+                select: {
+                  id: true,
+                  plan: true,
+                  status: true,
+                  licenseCode: true,
+                  startsAt: true,
+                  expiresAt: true,
+                  paidAt: true,
+                  stripeSubId: true,
+                  stripePriceId: true,
+                },
+              },
         },
-        license: {
-          select: {
-            id: true,
-            plan: true,
-            status: true,
-            licenseCode: true,
-            startsAt: true,
-            expiresAt: true,
-            paidAt: true,
-            stripeSubId: true,
-            stripePriceId: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: limit + 1,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      }),
+      prisma.product.count({ where }),
+      prisma.product.groupBy({
+        by: ['status'],
+        where,
+        _count: { _all: true },
+      }),
+    ]);
+
+    const hasMore = rawProducts.length > limit;
+    const pageProducts = hasMore ? rawProducts.slice(0, limit) : rawProducts;
+    const nextCursor = hasMore ? pageProducts[pageProducts.length - 1]?.id ?? null : null;
+
+    const statusCounts = groupedStatusCounts.reduce<Record<string, number>>((acc, row) => {
+      acc[row.status] = row._count._all;
+      return acc;
+    }, {});
 
     const payload = await Promise.all(
-      products.map(async (product) => {
-        const processNumber = product.processNumber ?? (await ensureProcessNumber(product.id));
+      pageProducts.map(async (product) => {
+        const processNumber = product.processNumber ?? null;
         if (isViewerOnly) {
           return {
             id: product.id,
@@ -113,7 +190,7 @@ export async function GET() {
           };
         }
 
-        const assets = product.certificate
+        const assets = product.certificate?.id
           ? await getCertificateAssetLinks(product.certificate.id)
           : null;
 
@@ -178,13 +255,16 @@ export async function GET() {
       }),
     );
 
-    return NextResponse.json({ products: payload });
+    return NextResponse.json({ products: payload, total, statusCounts, nextCursor });
   } catch (error) {
     console.error('Failed to load products from database', error);
     // Gracefully degrade for any failure: return empty list with warning.
     return NextResponse.json(
       {
         products: [],
+        total: 0,
+        statusCounts: {},
+        nextCursor: null,
         warning:
           'Datenbank aktuell nicht erreichbar. Die Liste ist leer, bitte später erneut versuchen.',
       },

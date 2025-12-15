@@ -40,7 +40,21 @@ export async function POST(req: Request) {
         adminProgress: 'PRECHECK',
         paymentStatus: 'UNPAID',
       },
-      select: { id: true, name: true },
+      select: {
+        id: true,
+        name: true,
+        brand: true,
+        category: true,
+        code: true,
+        specs: true,
+        size: true,
+        madeIn: true,
+        material: true,
+        status: true,
+        adminProgress: true,
+        paymentStatus: true,
+        createdAt: true,
+      },
     });
 
     const user = await prisma.user.findUnique({
@@ -55,7 +69,13 @@ export async function POST(req: Request) {
       }).catch(() => {});
     }
 
-    return NextResponse.json({ ok: true, product });
+    return NextResponse.json({
+      ok: true,
+      product: {
+        ...product,
+        createdAt: product.createdAt.toISOString(),
+      },
+    });
   } catch (err: any) {
     if (err?.issues) {
       return NextResponse.json({ ok: false, errors: err.issues }, { status: 400 });

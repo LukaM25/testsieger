@@ -490,7 +490,7 @@ export default function Navbar() {
         {/* Logo */}
         <a href="/" className="flex h-full items-center shrink-0 py-2">
           <Image
-            src="/dpilogo-v2.png"
+            src="/dpilogo-v3.png"
             alt="Deutsches Prüfsiegel Institut"
             width={360}
             height={96}

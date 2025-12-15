@@ -42,7 +42,7 @@ function normalizeCertificateData(data = {}) {
     }
     return undefined;
   })();
-  const logoUrl = baseDomain ? `${baseDomain}/dpilogo-v2.png` : undefined;
+  const logoUrl = baseDomain ? `${baseDomain}/dpilogo-v3.png` : undefined;
 
   return {
     ...data,
