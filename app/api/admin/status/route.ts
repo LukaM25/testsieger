@@ -71,7 +71,8 @@ export async function POST(req: Request) {
     }).catch((err) => console.error('RECEIVED_EMAIL_ERROR', err));
   }
 
-  return NextResponse.json({ ok: true, status });
+  const nextProductStatus = productUpdate.status ?? product.status;
+  return NextResponse.json({ ok: true, status, adminProgress: status, productStatus: nextProductStatus });
 }
 
 async function generateSealNumber() {

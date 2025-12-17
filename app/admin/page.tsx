@@ -17,6 +17,42 @@ type ProductsResponse = {
   error?: string;
 };
 
+type ProductPatch = { id: string } & Partial<Omit<AdminProduct, 'id'>>;
+
+function mergeProduct(prev: AdminProduct, patch: ProductPatch): AdminProduct {
+  const next: AdminProduct = { ...prev, ...patch };
+
+  if (Object.prototype.hasOwnProperty.call(patch, 'user') && patch.user) {
+    next.user = { ...prev.user, ...patch.user };
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, 'certificate')) {
+    if (patch.certificate === null) next.certificate = null;
+    else if (patch.certificate) next.certificate = { ...(prev.certificate ?? ({} as any)), ...patch.certificate };
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, 'license')) {
+    if (patch.license === null) next.license = null;
+    else if (patch.license) next.license = { ...(prev.license ?? ({} as any)), ...patch.license };
+  }
+
+  return next;
+}
+
+function matchesFilters(
+  product: AdminProduct,
+  filters: {
+    statusFilter: StatusOption | 'ALL';
+    paymentFilter: PaymentStatusOption | 'ALL';
+  },
+) {
+  if (filters.statusFilter !== 'ALL') {
+    if (product.adminProgress !== filters.statusFilter && product.status !== filters.statusFilter) return false;
+  }
+  if (filters.paymentFilter !== 'ALL') {
+    if (product.paymentStatus !== filters.paymentFilter) return false;
+  }
+  return true;
+}
+
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [adminInfo, setAdminInfo] = useState<AdminSummary | null>(null);
@@ -116,25 +152,21 @@ export default function AdminPage() {
     void fetchProductsRef.current({ cursor: null, append: false });
   }, []);
 
-  const refreshProductById = useCallback(
-    async (id: string) => {
-      try {
-        const res = await fetch(`/api/admin/products/${id}?signed=0`, {
-          credentials: 'same-origin',
-          cache: 'no-store',
+  const applyProductPatch = useCallback(
+    (patch: ProductPatch) => {
+      setProducts((prev) => {
+        let didUpdate = false;
+        const next = prev.flatMap((p) => {
+          if (p.id !== patch.id) return [p];
+          const merged = mergeProduct(p, patch);
+          didUpdate = true;
+          if (!matchesFilters(merged, { statusFilter, paymentFilter })) return [];
+          return [merged];
         });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data?.product?.id) {
-          refreshProducts();
-          return;
-        }
-        setProducts((prev) => prev.map((p) => (p.id === id ? (data.product as AdminProduct) : p)));
-      } catch (err) {
-        console.error('REFRESH_PRODUCT_FAILED', err);
-        refreshProducts();
-      }
+        return didUpdate ? next : prev;
+      });
     },
-    [refreshProducts],
+    [paymentFilter, statusFilter],
   );
 
   // Clear any mixed user session when visiting admin
@@ -292,7 +324,7 @@ export default function AdminPage() {
 	                <AdminProductRow
 	                  key={product.id}
 	                  product={product}
-	                  onUpdated={() => refreshProductById(product.id)}
+	                  onUpdated={applyProductPatch}
 	                  onPreview={onPreviewClick}
 	                  isPreviewLoading={isPreviewLoading && activePreviewId === (product.certificate?.id || 'temp')}
 	                  permissions={permissions}

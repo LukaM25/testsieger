@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   const product = await prisma.product.findUnique({ where: { id: productId }, include: { user: true } });
   if (!product) return NextResponse.json({ error: 'PRODUCT_NOT_FOUND' }, { status: 404 });
   if (product.paymentStatus === status) {
-    return NextResponse.json({ ok: true, paymentStatus: status });
+    return NextResponse.json({ ok: true, paymentStatus: status, productStatus: product.status });
   }
 
   const wasUnpaid = product.paymentStatus === 'UNPAID';
@@ -61,5 +61,6 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, paymentStatus: status });
+  const nextProductStatus = isPayingNow && product.status === 'PRECHECK' ? 'PAID' : product.status;
+  return NextResponse.json({ ok: true, paymentStatus: status, productStatus: nextProductStatus });
 }

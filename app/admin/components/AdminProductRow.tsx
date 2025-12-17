@@ -6,7 +6,7 @@ import { AdminPermissions, AdminProduct, PaymentStatusOption, StatusOption } fro
 
 type Props = {
   product: AdminProduct;
-  onUpdated: () => void;
+  onUpdated: (patch: { id: string } & Partial<Omit<AdminProduct, 'id'>>) => void;
   onPreview: (id: string) => void;
   isPreviewLoading: boolean;
   permissions: AdminPermissions;
@@ -140,7 +140,7 @@ function AdminProductRow({
 
       if (data.certificateId) {
         setLocalMessage('Lade Vorschau...');
-        onUpdated();
+        onUpdated({ id: product.id, certificate: { id: String(data.certificateId) } });
         onPreview(data.certificateId);
       } else {
         setLocalMessage('Fehler bei Entwurf-Erstellung');
@@ -162,6 +162,13 @@ function AdminProductRow({
     }
     setLocalMessage(null);
     setLoading(true);
+    const previous = { id: product.id, adminProgress: product.adminProgress, status: product.status };
+    const optimisticStatus =
+      ['RECEIVED', 'ANALYSIS', 'COMPLETION', 'PASS'].includes(selectedStatus) &&
+      ['PRECHECK', 'PAID'].includes(product.status)
+        ? 'IN_REVIEW'
+        : product.status;
+    onUpdated({ id: product.id, adminProgress: selectedStatus, status: optimisticStatus });
     try {
       const res = await fetch('/api/admin/status', {
         method: 'POST',
@@ -175,10 +182,15 @@ function AdminProductRow({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setLocalMessage(data.error || 'Status konnte nicht aktualisiert werden.');
+        onUpdated(previous);
         return;
       }
       setLocalMessage('Status aktualisiert.');
-      onUpdated();
+      onUpdated({
+        id: product.id,
+        adminProgress: (data.adminProgress as StatusOption) || selectedStatus,
+        status: (data.productStatus as string) || optimisticStatus,
+      });
       if (selectedStatus === 'PASS' && !autoSent) {
         setAutoSent(true);
         await handleSendCertificate({ auto: true });
@@ -186,6 +198,7 @@ function AdminProductRow({
     } catch (err) {
       console.error(err);
       setLocalMessage('Aktualisierung fehlgeschlagen.');
+      onUpdated(previous);
     } finally {
       setLoading(false);
     }
@@ -217,7 +230,8 @@ function AdminProductRow({
         return;
       }
       setLocalMessage('Lizenz gespeichert.');
-      onUpdated();
+      if (data.license?.id) onUpdated({ id: product.id, license: data.license });
+      else onUpdated({ id: product.id });
     } catch (err) {
       console.error(err);
       setLocalMessage('Fehler beim Speichern der Lizenz.');
@@ -242,13 +256,27 @@ function AdminProductRow({
           message: teamNote.trim() ? teamNote.trim().slice(0, 1000) : undefined,
         }),
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         setLocalMessage(data.error || 'Zertifikat konnte nicht erstellt werden.');
         return;
       }
       setLocalMessage('Zertifikat generiert.');
-      onUpdated();
+      const certId = data.certificateId || product.certificate?.id;
+      if (certId) {
+        onUpdated({
+          id: product.id,
+          certificate: {
+            id: String(certId),
+            pdfUrl: data.pdfUrl ?? product.certificate?.pdfUrl ?? null,
+            sealUrl: data.sealUrl ?? product.certificate?.sealUrl ?? null,
+            ratingScore: data.ratingScore ?? product.certificate?.ratingScore ?? null,
+            ratingLabel: data.ratingLabel ?? product.certificate?.ratingLabel ?? null,
+          },
+        });
+      } else {
+        onUpdated({ id: product.id });
+      }
     } catch (err) {
       console.error(err);
       setLocalMessage('Erstellung fehlgeschlagen.');
@@ -264,6 +292,12 @@ function AdminProductRow({
     }
     setPaymentStatusMessage(null);
     setPaymentStatusLoading(true);
+    const previous = { id: product.id, paymentStatus: product.paymentStatus, status: product.status };
+    const optimisticProductStatus =
+      (paymentStatusValue === 'PAID' || paymentStatusValue === 'MANUAL') && product.status === 'PRECHECK'
+        ? 'PAID'
+        : product.status;
+    onUpdated({ id: product.id, paymentStatus: paymentStatusValue, status: optimisticProductStatus });
     try {
       const res = await fetch('/api/admin/payment-status', {
         method: 'POST',
@@ -276,13 +310,19 @@ function AdminProductRow({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setPaymentStatusMessage(data.error || 'Payment status konnte nicht gesetzt werden.');
+        onUpdated(previous);
         return;
       }
       setPaymentStatusMessage('Payment status aktualisiert.');
-      onUpdated();
+      onUpdated({
+        id: product.id,
+        paymentStatus: (data.paymentStatus as PaymentStatusOption) || paymentStatusValue,
+        status: (data.productStatus as string) || optimisticProductStatus,
+      });
     } catch (err) {
       console.error(err);
       setPaymentStatusMessage('Payment status konnte nicht gesetzt werden.');
+      onUpdated(previous);
     } finally {
       setPaymentStatusLoading(false);
     }
@@ -339,7 +379,21 @@ function AdminProductRow({
         return;
       }
       setLocalMessage('Siegel generiert.');
-      onUpdated();
+      const certId = data.certificateId || product.certificate?.id;
+      if (certId) {
+        onUpdated({
+          id: product.id,
+          certificate: {
+            id: String(certId),
+            pdfUrl: data.pdfUrl ?? product.certificate?.pdfUrl ?? null,
+            sealUrl: data.sealUrl ?? product.certificate?.sealUrl ?? null,
+            ratingScore: data.ratingScore ?? product.certificate?.ratingScore ?? null,
+            ratingLabel: data.ratingLabel ?? product.certificate?.ratingLabel ?? null,
+          },
+        });
+      } else {
+        onUpdated({ id: product.id });
+      }
     } catch (err) {
       console.error(err);
       setLocalMessage('Erstellung fehlgeschlagen.');
@@ -375,7 +429,18 @@ function AdminProductRow({
       setReportMessage('Prüfbericht gespeichert.');
       setReportFile(null);
       if (reportInputRef.current) reportInputRef.current.value = '';
-      onUpdated();
+      const certId = data.certificateId || product.certificate?.id;
+      if (certId) {
+        onUpdated({
+          id: product.id,
+          certificate: {
+            id: String(certId),
+            reportUrl: (data.reportUrl as string) || product.certificate?.reportUrl || null,
+          },
+        });
+      } else {
+        onUpdated({ id: product.id });
+      }
     } catch (err) {
       console.error(err);
       setReportMessage('Upload fehlgeschlagen.');
@@ -558,11 +623,11 @@ function AdminProductRow({
 	                  } catch (err) {
 	                    console.error(err);
 	                    setLicensePlansEmailMessage('Senden fehlgeschlagen.');
-	                  } finally {
-	                    setLicensePlansEmailLoading(false);
-	                    onUpdated();
-	                  }
-	                }}
+		                  } finally {
+		                    setLicensePlansEmailLoading(false);
+		                    onUpdated({ id: product.id });
+		                  }
+		                }}
 	                className={`rounded-lg px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition ${
 	                  !canSendLicensePlansEmail || licensePlansEmailLoading
 	                    ? 'border border-slate-200 text-slate-400 cursor-not-allowed'
@@ -611,11 +676,11 @@ function AdminProductRow({
                     } catch (err) {
                       console.error(err);
                       setLocalMessage('Senden fehlgeschlagen.');
-                    } finally {
-                      setSendLoading(false);
-                      onUpdated();
-                    }
-                  }}
+	                    } finally {
+	                      setSendLoading(false);
+	                      onUpdated({ id: product.id, status: 'COMPLETED', adminProgress: 'PASS' });
+	                    }
+	                  }}
                 className="rounded-lg border border-emerald-800 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-800 transition hover:bg-emerald-50 disabled:opacity-70"
               >
                 {sendLoading ? 'Sende…' : 'Completion – Send all Files'}
