@@ -98,6 +98,9 @@ export default function PrecheckPage() {
   const refreshStatus = statusState.refresh;
   const { productStatus } = statusState;
   const { products, selectedProductId, setSelectedProductId, productsLoading, statusError } = statusState;
+  const isUnauthorized = statusError === "UNAUTHORIZED";
+  const search = searchParams?.toString();
+  const nextAfterLogin = encodeURIComponent(`/precheck${search ? `?${search}` : ""}`);
   const [planNotice, setPlanNotice] = useState<string | null>(null);
   const [payError, setPayError] = useState<string | null>(null);
   const [paying, setPaying] = useState<string | null>(null);
@@ -116,6 +119,7 @@ export default function PrecheckPage() {
     : false;
   const discountPercent = Math.max(0, Math.min(30, Number(productStatus?.precheckDiscountPercent ?? 0) || 0));
   const hasDiscount = discountPercent > 0;
+  const upsellDiscountPercent = discountPercent > 0 ? discountPercent : 30;
   const displayProductName = (productStatus?.name || productNameFromQuery).trim();
   const productLabel = displayProductName || tr("dein Produkt", "your product");
   const formatEur = (amountEur: number) =>
@@ -126,7 +130,9 @@ export default function PrecheckPage() {
   const standardNetLabel = `${formatEur(discountedNet(STANDARD_NET_EUR))}`;
   const priorityNetLabel = `${formatEur(discountedNet(PRIORITY_NET_EUR))}`;
   const heroHeading =
-    isPaid
+    isUnauthorized
+      ? tr("Pre-Check nicht möglich. Bitte melde dich an.", "Pre-check unavailable. Please sign in.")
+    : isPaid
       ? tr("Danke! Zahlung bestätigt.", "Thanks! Payment confirmed.")
     : checkout === "success" && !isPaid
         ? `${tr("Zahlung wird bestätigt", "Confirming payment")}${".".repeat((dots % 3) + 1)}`
@@ -139,6 +145,12 @@ export default function PrecheckPage() {
   );
 
   const handlePlanClick = (e: MouseEvent<HTMLAnchorElement>) => {
+    if (isUnauthorized) {
+      e.preventDefault();
+      setPlanNotice(tr("Bitte melde dich an, um fortzufahren.", "Please sign in to continue."));
+      router.push(`/login?next=${nextAfterLogin}`);
+      return;
+    }
     const ready = productStatus && isPaid && isPassed;
     if (ready) {
       setPlanNotice(null);
@@ -155,6 +167,11 @@ export default function PrecheckPage() {
   };
 
   const handlePayClick = async (optionId: string) => {
+    if (isUnauthorized) {
+      setPayError(tr("Bitte melde dich an, um die Zahlung zu starten.", "Please sign in to start payment."));
+      router.push(`/login?next=${nextAfterLogin}`);
+      return;
+    }
     if (!productStatus) {
       setPayError(tr("Bitte zuerst ein Produkt auswählen oder Pre-Check einreichen.", "Please select a product or submit a pre-check first."));
       return;
@@ -174,6 +191,7 @@ export default function PrecheckPage() {
       const data = await res.json();
       if (res.status === 401) {
         setPayError(tr("Bitte einloggen, um die Zahlung zu starten.", "Please sign in to start payment."));
+        router.push(`/login?next=${nextAfterLogin}`);
         return;
       }
       if (!res.ok) {
@@ -203,6 +221,12 @@ export default function PrecheckPage() {
     if (heroTimer.current) {
       clearTimeout(heroTimer.current);
       heroTimer.current = null;
+    }
+
+    if (isUnauthorized) {
+      setHeroStage("done");
+      setHeroSeen(true);
+      return;
     }
 
     // If no logged-in product context, keep loading forever
@@ -237,10 +261,10 @@ export default function PrecheckPage() {
     return () => {
       if (heroTimer.current) clearTimeout(heroTimer.current);
     };
-  }, [productStatus]);
+  }, [isUnauthorized, productStatus]);
 
   useEffect(() => {
-    const shouldAnimateDots = heroStage === "loading" || paymentConfirming;
+    const shouldAnimateDots = (heroStage === "loading" || paymentConfirming) && !isUnauthorized;
     if (!shouldAnimateDots) {
       if (dotsTimer.current) {
         clearInterval(dotsTimer.current);
@@ -254,10 +278,15 @@ export default function PrecheckPage() {
     return () => {
       if (dotsTimer.current) clearInterval(dotsTimer.current);
     };
-  }, [heroStage, paymentConfirming]);
+  }, [heroStage, isUnauthorized, paymentConfirming]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (isUnauthorized) {
+      setPaymentConfirming(false);
+      setPaymentConfirmTimedOut(false);
+      return;
+    }
     if (checkout !== "success") {
       setPaymentConfirming(false);
       setPaymentConfirmTimedOut(false);
@@ -302,7 +331,7 @@ export default function PrecheckPage() {
       if (timer) clearTimeout(timer);
       controller.abort();
     };
-  }, [checkout, isPaid, refreshStatus]);
+  }, [checkout, isPaid, isUnauthorized, refreshStatus]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -317,7 +346,7 @@ export default function PrecheckPage() {
   // Removed auto-scroll to avoid disrupting mobile keyboards
 
   return (
-    <main className="text-slate-900 overflow-hidden font-sans" style={{ backgroundColor: '#EEF4ED' }}>
+    <main className="text-slate-900 font-sans" style={{ backgroundColor: '#EEF4ED' }}>
       <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_20%_10%,#e0f2fe_0%,transparent_50%),radial-gradient(140%_90%_at_80%_-10%,#eef2ff_0%,transparent_55%)]" />
 
@@ -332,18 +361,35 @@ export default function PrecheckPage() {
                   <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-slate-900">
                     {heroHeading}
                   </h1>
-                  {checkout === "success" && !isPaid ? (
+                  {checkout === "success" && !isPaid && !isUnauthorized ? (
                     <div className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600">
                       <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" aria-hidden />
                       {tr("Zahlung wird bestätigt …", "Confirming payment …")}
                     </div>
-                  ) : heroStage === "loading" && !isPaid ? (
+                  ) : heroStage === "loading" && !isPaid && !isUnauthorized ? (
                     <div className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600">
                       <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" aria-hidden />
                       {tr("Lädt Ergebnis …", "Loading result …")}
                     </div>
                   ) : null}
-                  {isPaid ? (
+                  {isUnauthorized ? (
+                    <>
+                      <p className="text-base md:text-lg text-slate-600 leading-relaxed">
+                        {tr(
+                          "Bitte melde dich an, um deinen Pre-Check einzusehen und fortzufahren.",
+                          "Please sign in to view your pre-check and continue."
+                        )}
+                      </p>
+                      <div className="flex flex-wrap gap-3">
+                        <Link
+                          href={`/login?next=${nextAfterLogin}`}
+                          className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-black"
+                        >
+                          {tr("Einloggen", "Sign in")}
+                        </Link>
+                      </div>
+                    </>
+                  ) : isPaid ? (
                     <>
                       <p className="text-lg md:text-xl font-medium text-slate-800">
                         {tr("Danke für deine Zahlung!", "Thanks for your payment!")}
@@ -403,9 +449,11 @@ export default function PrecheckPage() {
                     </>
                   )}
                 </div>
-                <div className="inline-flex items-center gap-3 rounded-full bg-slate-900 text-white px-4 py-2 text-xs font-semibold tracking-[0.18em] w-fit shadow-md">
-                  {tr("Nächster Schritt: Versand & Zahlung", "Next step: shipping & payment")}
-                </div>
+                {!isUnauthorized && (
+                  <div className="inline-flex items-center gap-3 rounded-full bg-slate-900 text-white px-4 py-2 text-xs font-semibold tracking-[0.18em] w-fit shadow-md">
+                    {tr("Nächster Schritt: Versand & Zahlung", "Next step: shipping & payment")}
+                  </div>
+                )}
               </div>
 
               <div className="relative shrink-0 w-40 h-40 md:w-56 md:h-56 lg:w-64 lg:h-64 self-start rounded-3xl bg-gradient-to-b from-white to-slate-50 p-3 shadow-inner ring-1 ring-slate-200">
@@ -420,7 +468,7 @@ export default function PrecheckPage() {
             </div>
           </FadeIn>
 
-              <div className="space-y-16 md:space-y-18">
+          <div className="space-y-16 md:space-y-18">
             <FadeIn delay={180}>
               <div className="space-y-3" id="checkout-options" ref={checkoutRef}>
                 <div className="text-2xl font-semibold text-slate-900">
@@ -455,46 +503,44 @@ export default function PrecheckPage() {
                   )}
                   {products.length > 0 && (
                     <div className="grid gap-2 md:grid-cols-2">
-                     
-	                      <select
-	                        value={selectedProductId}
-	                        onChange={(e) => setSelectedProductId(e.target.value)}
-	                        className="col-span-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm"
-	                      >
-	                        <option value="">{tr("Bitte wählen", "Please choose")}</option>
-	                        {products.map((p) => {
-	                          const paid = ["PAID", "MANUAL"].includes(p.paymentStatus);
+                      <select
+                        value={selectedProductId}
+                        onChange={(e) => setSelectedProductId(e.target.value)}
+                        className="col-span-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm"
+                      >
+                        <option value="">{tr("Bitte wählen", "Please choose")}</option>
+                        {products.map((p) => {
+                          const paid = ["PAID", "MANUAL"].includes(p.paymentStatus);
                           const pDiscount = Math.max(0, Math.min(30, Number(p.precheckDiscountPercent ?? 0) || 0));
-	                          const date = p.paidAt
-	                            ? new Date(p.paidAt).toLocaleDateString(locale === "en" ? "en-GB" : "de-DE", {
-	                                day: "2-digit",
-	                                month: "2-digit",
-	                                year: "numeric",
-	                              })
-	                            : "";
-	                          return (
-	                            <option key={p.id} value={p.id} disabled={paid}>
-	                              {p.name} {p.brand ? `– ${p.brand}` : ""}{" "}
-                                {paid
-                                  ? `(${tr("Bezahlt", "Paid")}${date ? ` · ${date}` : ""})`
-                                  : pDiscount > 0
-                                    ? `(${pDiscount}% ${tr("Rabatt", "off")})`
-                                    : ""}
-	                            </option>
-	                          );
-	                        })}
-	                      </select>
+                          const date = p.paidAt
+                            ? new Date(p.paidAt).toLocaleDateString(locale === "en" ? "en-GB" : "de-DE", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              })
+                            : "";
+                          return (
+                            <option key={p.id} value={p.id} disabled={paid}>
+                              {p.name} {p.brand ? `– ${p.brand}` : ""}{" "}
+                              {paid
+                                ? `(${tr("Bezahlt", "Paid")}${date ? ` · ${date}` : ""})`
+                                : pDiscount > 0
+                                  ? `(${pDiscount}% ${tr("Rabatt", "off")})`
+                                  : ""}
+                            </option>
+                          );
+                        })}
+                      </select>
                       {!selectedProductId && (
                         <p className="col-span-2 text-xs text-amber-700">
                           {tr("Bitte Produkt auswählen, um die Grundgebühr zu zahlen.", "Select a product to pay the base fee.")}
                         </p>
                       )}
                     </div>
-                    )}
-                  </div>
+                  )}
                 </div>
 
-                <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                 {testOptions.map((option, idx) => {
                   const net = option.id === "priority" ? PRIORITY_NET_EUR : STANDARD_NET_EUR;
                   const priceLabel = tr(
@@ -510,9 +556,9 @@ export default function PrecheckPage() {
                     key={option.title.de}
                     type="button"
                     onClick={() => handlePayClick(option.id)}
-                    disabled={isPaid || paying === option.id}
-                    className={`group relative flex h-full flex-col items-center justify-between overflow-hidden rounded-3xl border border-white/15 px-10 py-12 text-center text-white shadow-[0_28px_80px_-45px_rgba(15,23,42,0.55)] ring-1 ring-slate-900/10 transition-all duration-300 ${
-                      isPaid ? "opacity-70 cursor-not-allowed" : "hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-blue-900/30"
+                    disabled={isUnauthorized || isPaid || paying === option.id}
+                    className={`group relative flex h-full flex-col items-center justify-between overflow-hidden rounded-3xl border border-white/15 px-8 py-10 text-center text-white shadow-[0_28px_80px_-45px_rgba(15,23,42,0.55)] ring-1 ring-slate-900/10 transition-all duration-300 ${
+                      isUnauthorized || isPaid ? "opacity-70 cursor-not-allowed" : "hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-blue-900/30"
                     }`}
                     style={{
                       backgroundImage: idx === 0
@@ -521,10 +567,10 @@ export default function PrecheckPage() {
                     }}
                   >
                     <div className="flex flex-col items-center space-y-2">
-                      <div className="text-2xl font-semibold leading-tight tracking-tight">
+                      <div className="text-xl font-semibold leading-tight tracking-tight">
                         {tr(option.title.de, option.title.en)}
                       </div>
-                      <div className="text-lg font-medium text-white/95">
+                      <div className="text-base font-medium text-white/95">
                         {priceLabel}
                       </div>
                       <div className="text-sm font-semibold text-white/90">{grossLabel}</div>
@@ -538,8 +584,10 @@ export default function PrecheckPage() {
                       )}
                     </div>
 
-                    <div className="mt-8 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white transition group-hover:bg-white/25">
-                      {isPaid
+                    <div className="mt-7 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white transition group-hover:bg-white/25">
+                      {isUnauthorized
+                        ? tr("Bitte einloggen", "Please sign in")
+                        : isPaid
                         ? tr("Bereits bezahlt", "Already paid")
                         : paying === option.id
                         ? tr("Starte Zahlung…", "Starting payment…")
@@ -550,7 +598,56 @@ export default function PrecheckPage() {
                   );
                 })}
               </div>
+              <div className="mt-8 flex justify-center">
+                <div
+                  id="discount-upsell"
+                  className="w-full max-w-5xl rounded-3xl p-7 md:p-8 shadow-[0_30px_90px_-55px_rgba(15,23,42,0.7)] ring-1 ring-white/10"
+                  style={{
+                    background: "linear-gradient(90deg, #020617 0%, #1e3a8a 52%, #0f172a 100%)",
+                    opacity: 1,
+                    filter: "none",
+                  }}
+                >
+                  <div className="relative overflow-hidden rounded-3xl">
+                    <div className="relative isolate rounded-3xl px-6 py-7 text-center text-white ring-1 ring-white/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:px-10 md:py-8">
+                      <div className="flex flex-col items-center gap-5 md:flex-row md:items-center md:justify-between md:text-left">
+                        <div className="space-y-2">
+                          <div className="text-base md:text-lg font-semibold tracking-tight">
+                            {tr("Rabatt auf jede weitere Grundgebühr", "Discount on every additional base fee")}
+                          </div>
+                          <p className="max-w-2xl text-sm md:text-base text-white/85 leading-relaxed">
+                            {tr(
+                              `Reiche jetzt weitere Produkte ein und sichere dir automatisch bis zu ${upsellDiscountPercent}% Rabatt auf die Grundgebühr pro Produkt. So kommst du schneller zum nächsten Schritt Richtung Prüfsiegel, mit spürbar geringeren Kosten pro Prüfung.`,
+                              `Submit more products now and automatically secure up to ${upsellDiscountPercent}% off the base fee per product. This gets you to the next step towards the seal faster with noticeably lower costs per test.`
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap justify-center gap-3 md:justify-end">
+                          <Link
+                            href={isUnauthorized ? `/login?next=${nextAfterLogin}` : "/produkte/produkt-test"}
+                            className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100"
+                          >
+                            {isUnauthorized
+                              ? tr("Einloggen & Rabatt sichern", "Sign in to secure discount")
+                              : tr("Weitere Produkte einreichen", "Submit more products")}
+                          </Link>
+                          <Link
+                            href="/produkte/produkt-test"
+                            className="rounded-full border border-white/30 bg-white/0 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-white/10"
+                          >
+                            {tr("Zum Produkt Test", "Go to product test")}
+                          </Link>
+                        </div>
+                      </div>
+                      <div className="mt-5 text-center text-[11px] md:text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
+                        {tr("Rabatt wird automatisch pro Produkt angewendet", "Discount is applied automatically per product")}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
               {payError && <p className="text-sm text-amber-700">{payError}</p>}
+              </div>
             </FadeIn>
 
             <FadeIn delay={260}>
