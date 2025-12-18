@@ -682,45 +682,48 @@ function AdminProductRow({
 	                    }
 	                  }}
                 className="rounded-lg border border-emerald-800 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-800 transition hover:bg-emerald-50 disabled:opacity-70"
-              >
-                {sendLoading ? 'Sende…' : 'Completion – Send all Files'}
-              </button>
-            </div>
-          </CollapsibleSection>
+	              >
+	                {sendLoading ? 'Sende…' : 'Completion – Send all Files'}
+	              </button>
 
-          <CollapsibleSection title="Assets & Downloads" subtitle="Links" defaultOpen={false}>
-            <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-600">Prüfbericht hochladen</span>
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  {product.certificate?.reportUrl ? 'Upload vorhanden' : 'Noch kein Upload'}
-                </span>
-              </div>
-              <div className="flex flex-col gap-3">
-                <input
-                  ref={reportInputRef}
-                  type="file"
-                  accept="application/pdf"
-                  onChange={(e) => setReportFile(e.target.files?.[0] ?? null)}
-                  disabled={!permissions.canUploadReport}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-[11px] file:font-semibold file:uppercase file:tracking-[0.18em] file:text-white disabled:opacity-60"
-                />
-                <button
-                  type="button"
-                  onClick={handleReportUpload}
-                  disabled={!reportFile || uploadingReport || !permissions.canUploadReport}
-                  className="inline-flex min-h-[44px] w-full items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-emerald-800 disabled:opacity-70"
-                >
-                  {uploadingReport ? 'Lade hoch...' : 'Prüfbericht hochladen'}
-                </button>
-              </div>
-              {reportMessage && <p className="text-xs text-slate-500">{reportMessage}</p>}
-            </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <a
-                href={product.certificate?.pdfUrl && canAccessAssets ? `/api/certificates/${product.id}/download` : '#'}
-                target={product.certificate?.pdfUrl && canAccessAssets ? '_blank' : undefined}
-                rel="noreferrer"
+	              <div className="mt-4 space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+	                <div className="flex items-center justify-between gap-2">
+	                  <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-600">
+	                    Prüfbericht hochladen
+	                  </span>
+	                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+	                    {product.certificate?.reportUrl ? 'Upload vorhanden' : 'Noch kein Upload'}
+	                  </span>
+	                </div>
+	                <div className="flex flex-col gap-3">
+	                  <input
+	                    ref={reportInputRef}
+	                    type="file"
+	                    accept="application/pdf"
+	                    onChange={(e) => setReportFile(e.target.files?.[0] ?? null)}
+	                    disabled={!permissions.canUploadReport}
+	                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-[11px] file:font-semibold file:uppercase file:tracking-[0.18em] file:text-white disabled:opacity-60"
+	                  />
+	                  <button
+	                    type="button"
+	                    onClick={handleReportUpload}
+	                    disabled={!reportFile || uploadingReport || !permissions.canUploadReport}
+	                    className="inline-flex min-h-[44px] w-full items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-emerald-800 disabled:opacity-70"
+	                  >
+	                    {uploadingReport ? 'Lade hoch...' : 'Prüfbericht hochladen'}
+	                  </button>
+	                </div>
+	                {reportMessage && <p className="text-xs text-slate-500">{reportMessage}</p>}
+	              </div>
+	            </div>
+	          </CollapsibleSection>
+
+	          <CollapsibleSection title="Assets & Downloads" subtitle="Links" defaultOpen={false}>
+	            <div className="grid gap-3 sm:grid-cols-2">
+	              <a
+	                href={product.certificate?.pdfUrl && canAccessAssets ? `/api/certificates/${product.id}/download` : '#'}
+	                target={product.certificate?.pdfUrl && canAccessAssets ? '_blank' : undefined}
+	                rel="noreferrer"
                 className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-3.5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition ${
                   product.certificate?.pdfUrl && canAccessAssets
                     ? 'border border-slate-900 text-slate-900 hover:bg-slate-50'

@@ -216,14 +216,15 @@ export default function AdminPage() {
     }, {});
   }, [products]);
 
-  const handleLogin = async () => {
-    setMessage(null);
-    try {
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+	  const handleLogin = async () => {
+	    setMessage(null);
+	    try {
+	      const normalizedEmail = email.trim().toLowerCase();
+	      const res = await fetch('/api/admin/login', {
+	        method: 'POST',
+	        headers: { 'Content-Type': 'application/json' },
+	        body: JSON.stringify({ email: normalizedEmail, password }),
+	      });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setAuthed(true);
@@ -247,16 +248,20 @@ export default function AdminPage() {
     return (
       <div className="mx-auto max-w-md px-4 py-10">
         <h1 className="mb-6 text-2xl font-semibold">Admin Login</h1>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Admin-E-Mail"
-          className="mb-3 w-full rounded-lg border px-3 py-2"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleLogin();
-          }}
-        />
+	        <input
+	          type="email"
+	          value={email}
+	          onChange={(e) => setEmail(e.target.value.toLowerCase())}
+	          placeholder="Admin-E-Mail"
+	          className="mb-3 w-full rounded-lg border px-3 py-2"
+	          autoComplete="email"
+	          autoCapitalize="none"
+	          autoCorrect="off"
+	          spellCheck={false}
+	          onKeyDown={(e) => {
+	            if (e.key === 'Enter') handleLogin();
+	          }}
+	        />
         <input
           type="password"
           value={password}

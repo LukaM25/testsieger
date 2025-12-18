@@ -56,10 +56,13 @@ function RequestForm() {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value.toLowerCase())}
               required
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
               autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
             />
           </div>
           <button

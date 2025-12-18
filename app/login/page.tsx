@@ -23,7 +23,7 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, redirectTo: next }),
+        body: JSON.stringify({ email: email.trim(), password, redirectTo: next }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -49,12 +49,16 @@ export default function LoginPage() {
         <h1 className="text-2xl font-semibold mb-6 text-center">Login</h1>
 
         <input
-          type="text"
+          type="email"
           inputMode="email"
           placeholder="E-Mail"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => setEmail(e.target.value.toLowerCase())}
           className="mb-3 w-full rounded-md border px-3 py-2"
+          autoComplete="email"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
         />
 
         <div className="mb-4">

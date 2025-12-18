@@ -162,17 +162,18 @@ export default function Navbar() {
         ? t('profile.admin', 'Admin')
         : t('profile.signin', 'Anmelden');
 
-	  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
-	    event.preventDefault();
-	    setLoginError(null);
-	    setLoginLoading(true);
-	    try {
-	      // Try user login first to avoid noisy 401s for normal users; if it fails, try admin login.
-	      const res = await fetch('/api/auth/login', {
-	        method: 'POST',
-	        headers: { 'Content-Type': 'application/json' },
-	        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
-	      });
+		  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+		    event.preventDefault();
+		    setLoginError(null);
+		    setLoginLoading(true);
+		    try {
+		      const email = loginEmail.trim().toLowerCase();
+		      // Try user login first to avoid noisy 401s for normal users; if it fails, try admin login.
+		      const res = await fetch('/api/auth/login', {
+		        method: 'POST',
+		        headers: { 'Content-Type': 'application/json' },
+		        body: JSON.stringify({ email, password: loginPassword }),
+		      });
 	      const data = await res.json().catch(() => ({}));
 	      if (res.ok && data.ok) {
 	        const user = await loadProfile();
@@ -183,11 +184,11 @@ export default function Navbar() {
 	        return;
 	      }
 
-	      const adminRes = await fetch('/api/admin/login', {
-	        method: 'POST',
-	        headers: { 'Content-Type': 'application/json' },
-	        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
-	      });
+		      const adminRes = await fetch('/api/admin/login', {
+		        method: 'POST',
+		        headers: { 'Content-Type': 'application/json' },
+		        body: JSON.stringify({ email, password: loginPassword }),
+		      });
 	      const adminData = await adminRes.json().catch(() => ({}));
 	      if (adminRes.ok) {
 	        setAdminAuthed(true);
@@ -237,25 +238,25 @@ export default function Navbar() {
     }
   };
 
-  const handleRegister = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setRegisterError(null);
-    setRegisterLoading(true);
-    try {
+	  const handleRegister = async (event: FormEvent<HTMLFormElement>) => {
+	    event.preventDefault();
+	    setRegisterError(null);
+	    setRegisterLoading(true);
+	    try {
       if (registerData.password !== registerData.confirmPassword) {
         setRegisterError('Passwörter stimmen nicht überein');
         setRegisterLoading(false);
         return;
       }
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: registerData.name,
-          email: registerData.email,
-          password: registerData.password,
-        }),
-      });
+	      const res = await fetch('/api/auth/register', {
+	        method: 'POST',
+	        headers: { 'Content-Type': 'application/json' },
+	        body: JSON.stringify({
+	          name: registerData.name,
+	          email: registerData.email.trim().toLowerCase(),
+	          password: registerData.password,
+	        }),
+	      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(data.error || 'Registrierung fehlgeschlagen');
@@ -675,15 +676,20 @@ export default function Navbar() {
                       autoComplete="name"
                       required
                     />
-                    <input
-                      type="email"
-                      placeholder={t('profile.email')}
-                      value={registerData.email}
-                      onChange={(e) => setRegisterData((s) => ({ ...s, email: e.target.value }))}
-                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                      autoComplete="email"
-                      required
-                    />
+	                    <input
+	                      type="email"
+	                      placeholder={t('profile.email')}
+	                      value={registerData.email}
+	                      onChange={(e) =>
+	                        setRegisterData((s) => ({ ...s, email: e.target.value.toLowerCase() }))
+	                      }
+	                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+	                      autoComplete="email"
+	                      autoCapitalize="none"
+	                      autoCorrect="off"
+	                      spellCheck={false}
+	                      required
+	                    />
                     <div className="relative">
                       <input
                         type={showRegisterPassword ? 'text' : 'password'}
@@ -741,16 +747,19 @@ export default function Navbar() {
                 ) : (
                   <form onSubmit={handleLogin} className="space-y-3">
                     <p className="text-sm font-semibold text-slate-900">{t('profile.loginTitle')}</p>
-                    <input
-                      type="text"
-                      inputMode="email"
-                      placeholder={t('profile.email')}
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                      autoComplete="username"
-                      required
-                    />
+	                    <input
+	                      type="text"
+	                      inputMode="email"
+	                      placeholder={t('profile.email')}
+	                      value={loginEmail}
+	                      onChange={(e) => setLoginEmail(e.target.value.toLowerCase())}
+	                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+	                      autoComplete="username"
+	                      autoCapitalize="none"
+	                      autoCorrect="off"
+	                      spellCheck={false}
+	                      required
+	                    />
                     <div className="relative">
                       <input
                         type={showLoginPassword ? 'text' : 'password'}

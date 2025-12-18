@@ -7,7 +7,10 @@ const SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
 const TOKEN_EXPIRY = '7d';
 
 export async function loginUser(email: string, password: string) {
-  const user = await prisma.user.findUnique({ where: { email } });
+  const normalizedEmail = email.trim();
+  const user = await prisma.user.findFirst({
+    where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
+  });
   if (!user) throw new Error('USER_NOT_FOUND');
 
   const valid = await bcrypt.compare(password, user.passwordHash);
@@ -40,4 +43,3 @@ export async function getCurrentUser() {
   return prisma.user.findUnique({ where: { id: session.userId } });
 }
 export { getSession };
-

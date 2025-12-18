@@ -25,7 +25,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    await loginUser(email, password); // sets the cookie via setSession()
+    await loginUser(email.trim(), password); // sets the cookie via setSession()
     const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '';
     return NextResponse.json({ ok: true, redirect: safeRedirect || '/dashboard' });
   } catch (e: any) {

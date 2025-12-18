@@ -29,17 +29,18 @@ export async function POST(req: Request) {
     const json = await req.json();
     const data = PrecheckSchema.parse(json);
     const category = data.category?.trim() || undefined;
+    const normalizedEmail = data.email.trim().toLowerCase();
     const session = await getSession();
 
     // 1) Ensure user exists (or create)
-    const existing = await prisma.user.findUnique({ where: { email: data.email } });
+    const existing = await prisma.user.findFirst({ where: { email: { equals: normalizedEmail, mode: 'insensitive' } } });
 
     if (existing && (!session || session.userId !== existing.id)) {
       return NextResponse.json(
         {
           ok: false,
           error: 'LOGIN_REQUIRED',
-          redirect: `/login?email=${encodeURIComponent(data.email)}`,
+          redirect: `/login?email=${encodeURIComponent(normalizedEmail)}`,
           message: 'Account existiert bereits. Bitte einloggen.',
         },
         { status: 409 }
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
       const user = await prisma.user.create({
         data: {
           name: data.name,
-          email: data.email,
+          email: normalizedEmail,
           passwordHash,
           address: data.address,
           company: data.company ?? undefined,
@@ -99,13 +100,13 @@ export async function POST(req: Request) {
     // 3) Prepare invoice PDF
     // 4) Send confirmation email (fire and forget)
     sendPrecheckConfirmation({
-      to: data.email,
+      to: normalizedEmail,
       name: data.name,
       productName: product.name,
     }).catch(() => { /* avoid blocking */ });
 
     // 5) Set session & respond with redirect to precheck overview
-    await setSession({ userId, email: data.email });
+    await setSession({ userId, email: normalizedEmail });
 
     const params = new URLSearchParams();
     params.set('product', product.name);
