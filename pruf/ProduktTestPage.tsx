@@ -52,24 +52,45 @@ const carouselImages = ['/carosel/prod1.jpeg', '/carosel/prod2.jpeg', '/carosel/
 const phasesQa = {
   qa: [
     {
-      question: { de: 'Wie lange dauert der gesamte Prozess?', en: 'How long does the entire process take?' },
+      question: { de: 'Was genau wird geprüft?', en: 'What exactly is tested?' },
       answer: {
-        de: 'Je nach Produktkategorie beträgt die Durchlaufzeit zwischen 14 und 21 Werktagen. Mit Buchungsoption sind 7 Werktage möglich.',
-        en: 'Depending on the product category the lead time is 14–21 business days. With booking option we can deliver in 7 business days.',
+        de: 'Wir prüfen Konsumprodukte anhand klar definierter, transparenter Prüfkriterien nach DPI-Standard.\nJe nach Produktkategorie bewerten wir u. a. Verarbeitung, Funktion, Sicherheit, Praxistauglichkeit und Dokumentation. Die Prüfung erfolgt nachvollziehbar und wird schriftlich dokumentiert.',
+        en: 'We test consumer products against clearly defined, transparent criteria (DPI standard).\nDepending on the product category, we assess workmanship, function, safety, real-world usability, and documentation. The process is traceable and documented in writing.',
       }, 
     },
     {
-      question: { de: 'Welche Unterlagen benötigen wir?', en: 'Which documents do we need?' },
+      question: { de: 'Warum gibt es eine jährliche Lizenz?', en: 'Why is there an annual license?' },
       answer: {
-        de: 'Mindestens technische Spezifikationen, Sicherheitsnachweise und – falls vorhanden – bisherige Auditberichte. Eine Checkliste erhalten Sie nach dem Pre-Check.',
-        en: 'At minimum technical specifications, safety proofs, and—if available—previous audit reports. You’ll receive a checklist after the pre-check.',
+        de: 'Qualität ist kein einmaliger Zustand. Die Jahreslizenz stellt sicher, dass:\n• das Produkt weiterhin unverändert ist,\n• das Siegel aktuell bleibt,\n• Missbrauch ausgeschlossen wird.\nOhne aktive Lizenz erlischt das Nutzungsrecht am Siegel.',
+        en: 'Quality is not a one-time event. The annual license ensures that:\n• the product remains unchanged,\n• the seal stays current,\n• misuse is prevented.\nWithout an active license, the right to use the seal expires.',
       },
     },
     {
-      question: { de: 'Sind internationale Prüfungen möglich?', en: 'Are international tests possible?' },
+      question: { de: 'Wie lange dauert die Prüfung?', en: 'How long does the test take?' },
       answer: {
-        de: 'Ja. Wir koordinieren Laborpartner in EU, UK und USA und liefern ein abgestimmtes Gutachten für alle Märkte.',
-        en: 'Yes. We coordinate lab partners in the EU, UK, and USA and provide a harmonized report for all markets.',
+        de: 'Nach Eingang des Produkts planen wir für den vollständigen Produkttest inklusive Prüfbericht und Zertifikat 14–21 Tage ein.\nMit unserem Prioritäts-Service kann die Bearbeitungszeit auf 7 Tage reduziert werden.',
+        en: 'After the product arrives, we plan 14–21 days for the full product test including report and certificate.\nWith our priority service, turnaround can be reduced to 7 days.',
+      },
+    },
+    {
+      question: { de: 'Was passiert, wenn ich die Lizenz kündige?', en: 'What happens if I cancel the license?' },
+      answer: {
+        de: 'Nach Kündigung und Ende des Gültigkeitszeitraums:\n• erlischt das Nutzungsrecht am Siegel,\n• muss das Siegel aus allen Kanälen entfernt werden,\n• darf nicht weiter mit der Auszeichnung geworben werden.',
+        en: 'After cancellation and the end of the validity period:\n• the right to use the seal expires,\n• the seal must be removed from all channels,\n• advertising with the award is no longer permitted.',
+      },
+    },
+    {
+      question: { de: 'Was passiert, wenn mein Produkt die Prüfung nicht besteht?', en: 'What if my product does not pass?' },
+      answer: {
+        de: 'Sie erhalten eine klare, sachliche Rückmeldung, welche Punkte nicht erfüllt wurden. Sie können Ihr Produkt anpassen und erneut kostenlos zur Prüfung einreichen.\nEin Siegel wird erst nach bestandener Prüfung vergeben. Die Lizenzgebühren werden erst nach bestandener Prüfung fällig – vorab ist lediglich die Gebühr für den Prüfaufwand zu entrichten.',
+        en: 'You receive clear, factual feedback on which criteria were not met. You can improve your product and resubmit it for testing free of charge.\nA seal is awarded only after passing. License fees are due only after a successful test; upfront, only the testing effort fee applies.',
+      },
+    },
+    {
+      question: { de: 'Was erhalte ich nach bestandener Prüfung?', en: 'What do I receive after passing?' },
+      answer: {
+        de: 'Nach bestandener Prüfung erhalten Sie direkt das Testergebnis und können den passenden Lizenzplan auswählen.\nSie erhalten einen detaillierten Prüfbericht (vollständig für Ihre Unterlagen), zusätzlich wird das Ergebnis unter der zugeordneten Produktkategorie beim Deutschen Prüfsiegel Institut veröffentlicht.\nDarüber hinaus erhalten Sie ein Zertifikat (abrufbar via QR-Code auf dem Siegel) sowie das Siegel als PNG-Datei zur vereinbarten Nutzung auf Verpackung, Website oder Marketingmaterialien.',
+        en: 'After passing, you receive the test result immediately and can choose the appropriate license plan.\nYou get a detailed test report for your records; additionally, the result is published under the assigned product category at the Deutsches Prüfsiegel Institut.\nYou also receive a certificate (accessible via the QR code on the seal) and the seal as a PNG file for the agreed use on packaging, website, or marketing materials.',
       },
     },
   ],
@@ -762,14 +783,14 @@ export default function ProduktTestPage() {
 
         <div className="mt-12 bg-white pt-8">
           <h3 className="text-2xl font-semibold">{tr('Häufige Fragen', 'Frequently asked questions')}</h3>
-          <div className="mt-6 space-y-6">
-            {phasesQa.qa.map((item, i) => (
-              <div key={item.question.de} data-animate="card" style={stagger(i)} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
-                <h4 className="text-lg font-semibold text-slate-900">{tr(item.question.de, item.question.en)}</h4>
-                <p className="mt-2 text-sm text-slate-600">{tr(item.answer.de, item.answer.en)}</p>
-              </div>
-            ))}
-          </div>
+	          <div className="mt-6 space-y-6">
+	            {phasesQa.qa.map((item, i) => (
+	              <div key={item.question.de} data-animate="card" style={stagger(i)} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+	                <h4 className="text-lg font-semibold text-slate-900">{tr(item.question.de, item.question.en)}</h4>
+	                <p className="mt-2 whitespace-pre-line text-sm text-slate-600">{tr(item.answer.de, item.answer.en)}</p>
+	              </div>
+	            ))}
+	          </div>
         </div>
       </section>
     </main>

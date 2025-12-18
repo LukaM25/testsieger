@@ -46,19 +46,34 @@ const phases = [
 
 const qa = [
   {
-    question: 'Wie lange dauert der gesamte Prozess?',
+    question: 'Was genau wird geprüft?',
     answer:
-      'Je nach Produktkategorie beträgt die Durchlaufzeit zwischen 3 und 8 Wochen. Express-Optionen sind nach Absprache möglich.',
+      'Wir prüfen Konsumprodukte anhand klar definierter, transparenter Prüfkriterien nach DPI-Standard.\nJe nach Produktkategorie bewerten wir u. a. Verarbeitung, Funktion, Sicherheit, Praxistauglichkeit und Dokumentation. Die Prüfung erfolgt nachvollziehbar und wird schriftlich dokumentiert.',
   },
   {
-    question: 'Welche Unterlagen benötigen wir?',
+    question: 'Warum gibt es eine jährliche Lizenz?',
     answer:
-      'Mindestens technische Spezifikationen, Sicherheitsnachweise und – falls vorhanden – bisherige Auditberichte. Eine Checkliste erhalten Sie nach dem Pre-Check.',
+      'Qualität ist kein einmaliger Zustand. Die Jahreslizenz stellt sicher, dass:\n• das Produkt weiterhin unverändert ist,\n• das Siegel aktuell bleibt,\n• Missbrauch ausgeschlossen wird.\nOhne aktive Lizenz erlischt das Nutzungsrecht am Siegel.',
   },
   {
-    question: 'Sind internationale Prüfungen möglich?',
+    question: 'Wie lange dauert die Prüfung?',
     answer:
-      'Ja. Wir koordinieren Laborpartner in EU, UK und USA und liefern ein abgestimmtes Gutachten für alle Märkte.',
+      'Nach Eingang des Produkts planen wir für den vollständigen Produkttest inklusive Prüfbericht und Zertifikat 14–21 Tage ein.\nMit unserem Prioritäts-Service kann die Bearbeitungszeit auf 7 Tage reduziert werden.',
+  },
+  {
+    question: 'Was passiert, wenn ich die Lizenz kündige?',
+    answer:
+      'Nach Kündigung und Ende des Gültigkeitszeitraums:\n• erlischt das Nutzungsrecht am Siegel,\n• muss das Siegel aus allen Kanälen entfernt werden,\n• darf nicht weiter mit der Auszeichnung geworben werden.',
+  },
+  {
+    question: 'Was passiert, wenn mein Produkt die Prüfung nicht besteht?',
+    answer:
+      'Sie erhalten eine klare, sachliche Rückmeldung, welche Punkte nicht erfüllt wurden. Sie können Ihr Produkt anpassen und erneut kostenlos zur Prüfung einreichen.\nEin Siegel wird erst nach bestandener Prüfung vergeben. Die Lizenzgebühren werden erst nach bestandener Prüfung fällig – vorab ist lediglich die Gebühr für den Prüfaufwand zu entrichten.',
+  },
+  {
+    question: 'Was erhalte ich nach bestandener Prüfung?',
+    answer:
+      'Nach bestandener Prüfung erhalten Sie direkt das Testergebnis und können den passenden Lizenzplan auswählen.\nSie erhalten einen detaillierten Prüfbericht (vollständig für Ihre Unterlagen), zusätzlich wird das Ergebnis unter der zugeordneten Produktkategorie beim Deutschen Prüfsiegel Institut veröffentlicht.\nDarüber hinaus erhalten Sie ein Zertifikat (abrufbar via QR-Code auf dem Siegel) sowie das Siegel als PNG-Datei zur vereinbarten Nutzung auf Verpackung, Website oder Marketingmaterialien.',
   },
 ];
 
@@ -134,14 +149,14 @@ export default function VerfahrenPage() {
       <section className="border-t border-slate-200 bg-white">
         <div className="mx-auto max-w-5xl px-6 py-16">
           <h2 className="text-2xl font-semibold text-slate-900">Häufige Fragen</h2>
-          <div className="mt-8 space-y-6">
-            {qa.map((item) => (
-              <div key={item.question} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
-                <h3 className="text-lg font-semibold text-slate-900">{item.question}</h3>
-                <p className="mt-2 text-sm text-slate-600">{item.answer}</p>
-              </div>
-            ))}
-          </div>
+	          <div className="mt-8 space-y-6">
+	            {qa.map((item) => (
+	              <div key={item.question} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+	                <h3 className="text-lg font-semibold text-slate-900">{item.question}</h3>
+	                <p className="mt-2 whitespace-pre-line text-sm text-slate-600">{item.answer}</p>
+	              </div>
+	            ))}
+	          </div>
         </div>
       </section>
     </div>

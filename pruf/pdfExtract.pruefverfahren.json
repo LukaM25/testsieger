@@ -99,24 +99,28 @@
   ],
   "faq": [
     {
-      "q": "Wie entsteht die Gesamtnote?",
-      "a": "Durchschnitt der Punktbewertungen (1–10) und Umrechnung in die Schulnote laut Tabelle."
+      "q": "Was genau wird geprüft?",
+      "a": "Wir prüfen Konsumprodukte anhand klar definierter, transparenter Prüfkriterien nach DPI-Standard.\nJe nach Produktkategorie bewerten wir u. a. Verarbeitung, Funktion, Sicherheit, Praxistauglichkeit und Dokumentation. Die Prüfung erfolgt nachvollziehbar und wird schriftlich dokumentiert."
     },
     {
-      "q": "Wer führt die Prüfungen durch?",
-      "a": "Unabhängige, qualifizierte Prüfer nach einheitlicher Methodik."
+      "q": "Warum gibt es eine jährliche Lizenz?",
+      "a": "Qualität ist kein einmaliger Zustand. Die Jahreslizenz stellt sicher, dass:\n• das Produkt weiterhin unverändert ist,\n• das Siegel aktuell bleibt,\n• Missbrauch ausgeschlossen wird.\nOhne aktive Lizenz erlischt das Nutzungsrecht am Siegel."
     },
     {
-      "q": "Welche Kriterien fließen ein?",
-      "a": "Produktschutz, Verarbeitung/Erscheinungsbild, Praxistest sowie Preis-/Leistung und Verbraucherbewertungen."
+      "q": "Wie lange dauert die Prüfung?",
+      "a": "Nach Eingang des Produkts planen wir für den vollständigen Produkttest inklusive Prüfbericht und Zertifikat 14–21 Tage ein.\nMit unserem Prioritäts-Service kann die Bearbeitungszeit auf 7 Tage reduziert werden."
     },
     {
-      "q": "Sind halbe Punkte erlaubt?",
-      "a": "Ja, halbe Punktwerte sind zulässig, um eine präzise Bewertung zu ermöglichen."
+      "q": "Was passiert, wenn ich die Lizenz kündige?",
+      "a": "Nach Kündigung und Ende des Gültigkeitszeitraums:\n• erlischt das Nutzungsrecht am Siegel,\n• muss das Siegel aus allen Kanälen entfernt werden,\n• darf nicht weiter mit der Auszeichnung geworben werden."
     },
     {
-      "q": "Sind die Ergebnisse nachvollziehbar?",
-      "a": "Ja. Testergebnisse, Gewichtungen und Einzelbewertungen sind dokumentiert und auf Anfrage prüfbar."
+      "q": "Was passiert, wenn mein Produkt die Prüfung nicht besteht?",
+      "a": "Sie erhalten eine klare, sachliche Rückmeldung, welche Punkte nicht erfüllt wurden. Sie können Ihr Produkt anpassen und erneut kostenlos zur Prüfung einreichen.\nEin Siegel wird erst nach bestandener Prüfung vergeben. Die Lizenzgebühren werden erst nach bestandener Prüfung fällig – vorab ist lediglich die Gebühr für den Prüfaufwand zu entrichten."
+    },
+    {
+      "q": "Was erhalte ich nach bestandener Prüfung?",
+      "a": "Nach bestandener Prüfung erhalten Sie direkt das Testergebnis und können den passenden Lizenzplan auswählen.\nSie erhalten einen detaillierten Prüfbericht (vollständig für Ihre Unterlagen), zusätzlich wird das Ergebnis unter der zugeordneten Produktkategorie beim Deutschen Prüfsiegel Institut veröffentlicht.\nDarüber hinaus erhalten Sie ein Zertifikat (abrufbar via QR-Code auf dem Siegel) sowie das Siegel als PNG-Datei zur vereinbarten Nutzung auf Verpackung, Website oder Marketingmaterialien."
     }
   ]
 }

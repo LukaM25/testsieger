@@ -105,7 +105,7 @@ export default function PruefverfahrenPage(props: { data: Extract }) {
             {faq.map((f, i) => (
               <details key={i} className="rounded-xl border p-4">
                 <summary className="font-medium cursor-pointer">{f.q}</summary>
-                <p className="mt-2 text-slate-700">{f.a}</p>
+                <p className="mt-2 whitespace-pre-line text-slate-700">{f.a}</p>
               </details>
             ))}
           </div>

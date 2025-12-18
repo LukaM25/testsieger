@@ -31,19 +31,46 @@ const licenseSteps = [
 
 const faq = [
   {
-    question: 'Wie kann ich die Gültigkeit eines Siegels prüfen?',
-    answer:
-      'Nutzen Sie das Formular zur Lizenzsuche. Geben Sie entweder den Lizenzcode oder den Produktnamen ein. Die Antwort zeigt Status, Laufzeit und zuständige Ansprechpartner.',
+    question: { de: 'Was genau wird geprüft?', en: 'What exactly is tested?' },
+    answer: {
+      de: 'Wir prüfen Konsumprodukte anhand klar definierter, transparenter Prüfkriterien nach DPI-Standard.\nJe nach Produktkategorie bewerten wir u. a. Verarbeitung, Funktion, Sicherheit, Praxistauglichkeit und Dokumentation. Die Prüfung erfolgt nachvollziehbar und wird schriftlich dokumentiert.',
+      en: 'We test consumer products against clearly defined, transparent criteria (DPI standard).\nDepending on the product category, we assess workmanship, function, safety, real-world usability, and documentation. The process is traceable and documented in writing.',
+    },
   },
   {
-    question: 'Welche Dateiformate stehen zur Verfügung?',
-    answer:
-      'Sie erhalten das Siegel in PNG, SVG und PDF. Farbliche Varianten (hell/dunkel) liegen bei. Weitere Formate liefern wir auf Anfrage.',
+    question: { de: 'Warum gibt es eine jährliche Lizenz?', en: 'Why is there an annual license?' },
+    answer: {
+      de: 'Qualität ist kein einmaliger Zustand. Die Jahreslizenz stellt sicher, dass:\n• das Produkt weiterhin unverändert ist,\n• das Siegel aktuell bleibt,\n• Missbrauch ausgeschlossen wird.\nOhne aktive Lizenz erlischt das Nutzungsrecht am Siegel.',
+      en: 'Quality is not a one-time event. The annual license ensures that:\n• the product remains unchanged,\n• the seal stays current,\n• misuse is prevented.\nWithout an active license, the right to use the seal expires.',
+    },
   },
   {
-    question: 'Was passiert bei Produktänderungen?',
-    answer:
-      'Melden Sie wesentliche Änderungen (Material, Lieferkette, Softwareversion) innerhalb von 30 Tagen im Kundenportal. Wir prüfen, ob ein Re-Audit notwendig ist.',
+    question: { de: 'Wie lange dauert die Prüfung?', en: 'How long does the test take?' },
+    answer: {
+      de: 'Nach Eingang des Produkts planen wir für den vollständigen Produkttest inklusive Prüfbericht und Zertifikat 14–21 Tage ein.\nMit unserem Prioritäts-Service kann die Bearbeitungszeit auf 7 Tage reduziert werden.',
+      en: 'After the product arrives, we plan 14–21 days for the full product test including report and certificate.\nWith our priority service, turnaround can be reduced to 7 days.',
+    },
+  },
+  {
+    question: { de: 'Was passiert, wenn ich die Lizenz kündige?', en: 'What happens if I cancel the license?' },
+    answer: {
+      de: 'Nach Kündigung und Ende des Gültigkeitszeitraums:\n• erlischt das Nutzungsrecht am Siegel,\n• muss das Siegel aus allen Kanälen entfernt werden,\n• darf nicht weiter mit der Auszeichnung geworben werden.',
+      en: 'After cancellation and the end of the validity period:\n• the right to use the seal expires,\n• the seal must be removed from all channels,\n• advertising with the award is no longer permitted.',
+    },
+  },
+  {
+    question: { de: 'Was passiert, wenn mein Produkt die Prüfung nicht besteht?', en: 'What if my product does not pass?' },
+    answer: {
+      de: 'Sie erhalten eine klare, sachliche Rückmeldung, welche Punkte nicht erfüllt wurden. Sie können Ihr Produkt anpassen und erneut kostenlos zur Prüfung einreichen.\nEin Siegel wird erst nach bestandener Prüfung vergeben. Die Lizenzgebühren werden erst nach bestandener Prüfung fällig – vorab ist lediglich die Gebühr für den Prüfaufwand zu entrichten.',
+      en: 'You receive clear, factual feedback on which criteria were not met. You can improve your product and resubmit it for testing free of charge.\nA seal is awarded only after passing. License fees are due only after a successful test; upfront, only the testing effort fee applies.',
+    },
+  },
+  {
+    question: { de: 'Was erhalte ich nach bestandener Prüfung?', en: 'What do I receive after passing?' },
+    answer: {
+      de: 'Nach bestandener Prüfung erhalten Sie direkt das Testergebnis und können den passenden Lizenzplan auswählen.\nSie erhalten einen detaillierten Prüfbericht (vollständig für Ihre Unterlagen), zusätzlich wird das Ergebnis unter der zugeordneten Produktkategorie beim Deutschen Prüfsiegel Institut veröffentlicht.\nDarüber hinaus erhalten Sie ein Zertifikat (abrufbar via QR-Code auf dem Siegel) sowie das Siegel als PNG-Datei zur vereinbarten Nutzung auf Verpackung, Website oder Marketingmaterialien.',
+      en: 'After passing, you receive the test result immediately and can choose the appropriate license plan.\nYou get a detailed test report for your records; additionally, the result is published under the assigned product category at the Deutsches Prüfsiegel Institut.\nYou also receive a certificate (accessible via the QR code on the seal) and the seal as a PNG file for the agreed use on packaging, website, or marketing materials.',
+    },
   },
 ];
 
@@ -519,14 +546,16 @@ export default async function LizenzenPage({ searchParams }: Props) {
                 <p className="text-sm text-gray-600">{tr('Kurz erklärt, wie der Lizenzcheck funktioniert.', 'Short answers on how license checks work.')}</p>
               </div>
             </div>
-            <div className="mt-8 grid gap-7 md:grid-cols-2">
-              {faq.map((item) => (
-                <div key={item.question} className="rounded-2xl border border-gray-100 bg-[#F0F6FA] p-7">
-                  <h3 className="text-lg font-semibold text-brand-dark">{item.question}</h3>
-                  <p className="mt-2 text-sm text-gray-600">{item.answer}</p>
-                </div>
-              ))}
-            </div>
+	            <div className="mt-8 grid gap-7 md:grid-cols-2">
+	              {faq.map((item) => (
+	                <div key={item.question.de} className="rounded-2xl border border-gray-100 bg-[#F0F6FA] p-7">
+	                  <h3 className="text-lg font-semibold text-brand-dark">{tr(item.question.de, item.question.en)}</h3>
+	                  <p className="mt-2 whitespace-pre-line text-sm text-gray-600">
+	                    {tr(item.answer.de, item.answer.en)}
+	                  </p>
+	                </div>
+	              ))}
+	            </div>
           </div>
         </div>
       </section>
