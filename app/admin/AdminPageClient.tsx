@@ -80,7 +80,7 @@ export default function AdminPageClient({ initialAdmin }: AdminPageClientProps) 
   const [showSuperControls, setShowSuperControls] = useState(false);
   const [activePreviewId, setActivePreviewId] = useState<string | null>(null);
   const productsAbortRef = useRef<AbortController | null>(null);
-  const warnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warnTimerRef = useRef<number | null>(null);
   const idleWarningRef = useRef(false);
   const role = adminInfo?.role || 'VIEWER';
   const isSuperAdmin = role === 'SUPERADMIN';
@@ -220,7 +220,7 @@ export default function AdminPageClient({ initialAdmin }: AdminPageClientProps) 
       resetIdleTimers();
     };
 
-    const options = { passive: true } as const;
+    const options: AddEventListenerOptions = { passive: true };
     window.addEventListener('mousemove', handleActivity, options);
     window.addEventListener('keydown', handleActivity, options);
     window.addEventListener('scroll', handleActivity, options);
