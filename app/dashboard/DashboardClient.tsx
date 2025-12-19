@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import LogoutButton from "@/components/LogoutButton";
 import { usePrecheckStatusData, type ProductStatusPayload } from "@/hooks/usePrecheckStatusData";
 import { PrecheckStatusCard } from "@/components/PrecheckStatusCard";
+import { useProductStatusPoll } from "@/hooks/useProductStatusPoll";
 
 interface DashboardClientProps {
   user: any;
@@ -29,7 +30,73 @@ export default function DashboardClient({ user }: DashboardClientProps) {
   );
 
   const statusState = usePrecheckStatusData({ initialProducts: initialStatusProducts });
-  const { products, setProducts, setSelectedProductId } = statusState;
+  const { products, selectedProductId, setProducts, setSelectedProductId } = statusState;
+
+  const [isTabVisible, setIsTabVisible] = useState(true);
+  useEffect(() => {
+    const handleVisibility = () => {
+      setIsTabVisible(document.visibilityState === "visible");
+    };
+    handleVisibility();
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
+
+  const pollingEnabled = Boolean(selectedProductId) && isTabVisible;
+  const { data: polledStatus } = useProductStatusPoll(selectedProductId || null, {
+    enabled: pollingEnabled,
+    intervalMs: 20000,
+  });
+
+  useEffect(() => {
+    if (!polledStatus || !selectedProductId) return;
+    setProducts((prev) => {
+      let changed = false;
+      const next = prev.map((product) => {
+        if (product.id !== selectedProductId) return product;
+        const nextProduct = { ...product };
+        if (polledStatus.productStatus && polledStatus.productStatus !== product.status) {
+          nextProduct.status = polledStatus.productStatus;
+          changed = true;
+        }
+        if (polledStatus.adminProgress && polledStatus.adminProgress !== product.adminProgress) {
+          nextProduct.adminProgress = polledStatus.adminProgress as ProductStatusPayload["adminProgress"];
+          changed = true;
+        }
+        const certId = polledStatus.certificateId ?? product.certificate?.id ?? null;
+        const hasCertData = Boolean(
+          certId ||
+            polledStatus.certificateStatus ||
+            polledStatus.pdfUrl ||
+            polledStatus.reportUrl ||
+            polledStatus.sealUrl
+        );
+        if (hasCertData) {
+          const nextCertificate = {
+            id: certId || product.certificate?.id || "",
+            status: polledStatus.certificateStatus ?? product.certificate?.status ?? null,
+            pdfUrl: polledStatus.pdfUrl ?? product.certificate?.pdfUrl ?? null,
+            reportUrl: polledStatus.reportUrl ?? product.certificate?.reportUrl ?? null,
+            sealUrl: polledStatus.sealUrl ?? product.certificate?.sealUrl ?? null,
+          };
+          const prevCertificate = product.certificate ?? null;
+          if (
+            !prevCertificate ||
+            prevCertificate.id !== nextCertificate.id ||
+            prevCertificate.status !== nextCertificate.status ||
+            prevCertificate.pdfUrl !== nextCertificate.pdfUrl ||
+            prevCertificate.reportUrl !== nextCertificate.reportUrl ||
+            prevCertificate.sealUrl !== nextCertificate.sealUrl
+          ) {
+            nextProduct.certificate = nextCertificate;
+            changed = true;
+          }
+        }
+        return changed ? nextProduct : product;
+      });
+      return changed ? next : prev;
+    });
+  }, [polledStatus, selectedProductId, setProducts]);
 
   const [orders, setOrders] = useState(user.orders || []);
   const [showSubmit, setShowSubmit] = useState(false);
