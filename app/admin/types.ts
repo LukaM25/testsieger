@@ -58,6 +58,8 @@ export type AdminSummary = {
   updatedAt: string;
 };
 
+export type AdminAuthInfo = Pick<AdminSummary, 'id' | 'email' | 'name' | 'role'>;
+
 export type AuditEntry = {
   id: string;
   action: string;

@@ -2,9 +2,11 @@ import { AdminRole } from '@prisma/client';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { prisma } from './prisma';
-
-const ADMIN_COOKIE = 'admin_token';
-const ADMIN_SESSION_MAX_AGE = 60 * 60 * 12; // 12h
+import {
+  ADMIN_SESSION_COOKIE_NAME,
+  ADMIN_SESSION_MAX_AGE_SECONDS,
+  adminSessionCookieOptions,
+} from './session';
 
 const ROLE_RANK: Record<AdminRole, number> = {
   VIEWER: 0,
@@ -28,22 +30,16 @@ export async function setAdminSession(admin: { id: string; email: string; role: 
   const token = jwt.sign(
     { adminId: admin.id, email: admin.email, role: admin.role } satisfies AdminSessionPayload,
     getAdminSecret(),
-    { expiresIn: ADMIN_SESSION_MAX_AGE },
+    { expiresIn: ADMIN_SESSION_MAX_AGE_SECONDS },
   );
 
   const jar = await cookies();
-  jar.set(ADMIN_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: ADMIN_SESSION_MAX_AGE,
-  });
+  jar.set(ADMIN_SESSION_COOKIE_NAME, token, adminSessionCookieOptions());
 }
 
 export async function clearAdminSession() {
   const jar = await cookies();
-  jar.set(ADMIN_COOKIE, '', { path: '/', maxAge: 0 });
+  jar.set(ADMIN_SESSION_COOKIE_NAME, '', { path: '/', maxAge: 0 });
 }
 
 export function hasRequiredRole(role: AdminRole, required: AdminRole) {
@@ -52,7 +48,7 @@ export function hasRequiredRole(role: AdminRole, required: AdminRole) {
 
 async function readSessionFromCookie(): Promise<AdminSessionPayload | null> {
   const jar = await cookies();
-  const token = jar.get(ADMIN_COOKIE)?.value;
+  const token = jar.get(ADMIN_SESSION_COOKIE_NAME)?.value;
   if (!token) return null;
   try {
     return jwt.verify(token, getAdminSecret()) as AdminSessionPayload;

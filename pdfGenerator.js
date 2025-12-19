@@ -8,7 +8,27 @@ import fs from 'fs';
 Handlebars.registerHelper('default', (value, defaultValue) => value || defaultValue);
 Handlebars.registerHelper('date', (dateStr) => {
   if (!dateStr) return '';
-  return new Date(dateStr).toLocaleDateString('en-US');
+  return new Date(dateStr).toLocaleDateString('de-DE');
+});
+Handlebars.registerHelper('statusLabel', (value) => {
+  if (!value) return 'AUSSTEHEND';
+  const key = String(value).trim().toUpperCase();
+  const labels = {
+    PENDING: 'AUSSTEHEND',
+    VERIFIED: 'VERIFIZIERT',
+    COMPLETED: 'ABGESCHLOSSEN',
+    IN_REVIEW: 'IN PRÜFUNG',
+    PRECHECK: 'PRE-CHECK',
+    RECEIVED: 'EINGEGANGEN',
+    ANALYSIS: 'ANALYSE',
+    COMPLETION: 'ABSCHLUSS',
+    PASS: 'BESTANDEN',
+    FAIL: 'NICHT BESTANDEN',
+    PAID: 'BEZAHLT',
+    MANUAL: 'MANUELL',
+    UNPAID: 'UNBEZAHLT',
+  };
+  return labels[key] || value;
 });
 
 // Normalize incoming payloads so both flat and nested shapes render correctly
@@ -42,7 +62,7 @@ function normalizeCertificateData(data = {}) {
     }
     return undefined;
   })();
-  const logoUrl = baseDomain ? `${baseDomain}/dpilogo-v3.png` : undefined;
+  const logoUrl = baseDomain ? `${baseDomain}/dpilogo.png` : undefined;
 
   return {
     ...data,

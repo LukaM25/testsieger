@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { getSession } from "@/lib/auth";
+import { setSession } from "@/lib/cookies";
 
 export async function POST(req: Request) {
   const form = await req.formData();
@@ -14,6 +14,6 @@ export async function POST(req: Request) {
   if (exists) return NextResponse.json({ error: 'E‑Mail bereits registriert' }, { status: 400 });
   const passwordHash = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({ data: { name, email, passwordHash, address } });
-  await getSession({ userId: user.id, email: user.email, name: user.name });
+  await setSession({ userId: user.id, email: user.email });
   return NextResponse.json({ ok: true });
 }

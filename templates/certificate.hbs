@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Product Certificate | Prüfsiegel Zentrum</title>
+  <title>Produktzertifikat | Prüfsiegel Zentrum</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
     @page { size: A4; margin: 0; }
@@ -69,8 +69,14 @@
     }
 
     .brand-block { display: flex; flex-direction: column; gap: 10px; }
-    .brand-logo { display: flex; align-items: center; min-height: 32px; }
-    .brand-logo img { display: block; height: 32px; width: auto; object-fit: contain; }
+    .brand-logo { display: flex; align-items: center; min-height: 80px; }
+    .brand-logo img {
+      display: block;
+      height: 80px;
+      width: auto;
+      max-width: 396px;
+      object-fit: contain;
+    }
     .brand-name {
       font-size: 14px;
       font-weight: 700;
@@ -80,7 +86,7 @@
     }
     .document-title h1 {
       font-family: 'Playfair Display', serif;
-      font-size: 36px;
+      font-size: 32px;
       margin: 8px 0 0 0;
       color: var(--brand-primary);
       line-height: 1.1;
@@ -97,19 +103,7 @@
       color: var(--text-label);
     }
 
-    .logo-placeholder {
-      width: 64px;
-      height: 64px;
-      background: var(--brand-primary);
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: bold;
-      font-size: 24px;
-      flex-shrink: 0;
-    }
+	    .logo-placeholder { display: none; }
 
     .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 40px; }
 
@@ -262,86 +256,86 @@
             <div class="brand-name">Deutsches Prüfsiegel Institut</div>
           {{/if}}
           <div class="document-title">
-            <h1>{{default name "Product Certification"}}</h1>
+            <h1>{{default name "Produktzertifikat"}}</h1>
           </div>
           <div class="meta-tags">
-            <span class="tag">Brand: {{default brand "—"}}</span>
-            <span class="tag">SKU: {{default code "—"}}</span>
-            <span class="tag">Cat: {{default category "—"}}</span>
+            <span class="tag">Marke: {{default brand "—"}}</span>
+            <span class="tag">Artikelnummer: {{default code "—"}}</span>
+            <span class="tag">Kategorie: {{default category "—"}}</span>
           </div>
         </div>
-        <div class="logo-placeholder">PZ</div>
-      </header>
+	        <div class="logo-placeholder" aria-hidden="true"></div>
+	      </header>
 
       <div class="content-grid">
         <div class="main-col">
-          <div class="section-title">Verified Specifications</div>
+          <div class="section-title">Geprüfte Spezifikationen</div>
           <table class="info-table">
-            <tr><td class="label">Product ID</td><td class="value">{{default id "—"}}</td></tr>
-            <tr><td class="label">Material Composition</td><td class="value">{{default material "—"}}</td></tr>
-            <tr><td class="label">Dimensions / Size</td><td class="value">{{default size "—"}}</td></tr>
-            <tr><td class="label">Origin</td><td class="value">{{default madeIn "—"}}</td></tr>
-            <tr><td class="label">Registration Date</td><td class="value">{{date createdAt}}</td></tr>
+            <tr><td class="label">Produkt-ID</td><td class="value">{{default id "—"}}</td></tr>
+            <tr><td class="label">Materialzusammensetzung</td><td class="value">{{default material "—"}}</td></tr>
+            <tr><td class="label">Abmessungen / Größe</td><td class="value">{{default size "—"}}</td></tr>
+            <tr><td class="label">Herkunft</td><td class="value">{{default madeIn "—"}}</td></tr>
+            <tr><td class="label">Registrierungsdatum</td><td class="value">{{date createdAt}}</td></tr>
           </table>
 
           <div class="narrative-box">
-            <h2>Technical Narrative</h2>
+            <h2>Technische Beschreibung</h2>
             <p>
-              {{default specs "No detailed technical specifications have been provided for this snapshot. Please refer to the full audit report for complete documentation."}}
+              {{default specs "Für diese Zusammenfassung liegen derzeit keine detaillierten technischen Spezifikationen vor. Bitte beachten Sie den vollständigen Prüfbericht für die komplette Dokumentation."}}
             </p>
           </div>
 
           <div class="trust-badges">
-            <div class="trust-badge">Verified Source</div>
-            <div class="trust-badge">Immutable Audit Trail</div>
-            <div class="trust-badge">QA Standard Checked</div>
+            <div class="trust-badge">Verifizierte Quelle</div>
+            <div class="trust-badge">Unveränderliche Prüfhistorie</div>
+            <div class="trust-badge">QA-Standard geprüft</div>
           </div>
         </div>
 
         <div class="sidebar-col">
           <div class="status-card">
             <div class="seal-number">
-              SEAL:
+              SIEGEL:
               {{#if certificate.seal_number}}
                 {{certificate.seal_number}}
               {{else if seal_number}}
                 {{seal_number}}
               {{else}}
-                PENDING
+                AUSSTEHEND
               {{/if}}
             </div>
 
             <div class="status-badge">
-              {{default status "PENDING"}}
+              {{statusLabel status}}
             </div>
 
             <div class="qr-container">
               {{#if qrUrl}}
-                <img src="{{qrUrl}}" alt="QR Verification Code" />
+                <img src="{{qrUrl}}" alt="QR-Verifizierungscode" />
               {{else if certificate.qrUrl}}
-                <img src="{{certificate.qrUrl}}" alt="QR Verification Code" />
+                <img src="{{certificate.qrUrl}}" alt="QR-Verifizierungscode" />
               {{else}}
-                <span style="font-size:10px; color:var(--text-muted); text-align: center;">QR Code<br>Generated upon approval</span>
+                <span style="font-size:10px; color:var(--text-muted); text-align: center;">QR-Code<br>Wird nach Freigabe erstellt</span>
               {{/if}}
             </div>
 
             <div style="font-size: 11px; color: var(--text-muted); text-align: center; line-height: 1.4;">
-              Scan to view the live<br>verification report.
+              Scannen, um den aktuellen<br>Verifizierungsbericht zu öffnen.
             </div>
           </div>
 
           <div class="owner-info">
-            <div class="section-title" style="margin-bottom: 12px;">Registered To</div>
+            <div class="section-title" style="margin-bottom: 12px;">Registriert auf</div>
             <div class="owner-item">
-              <div class="owner-label">Entity / Name</div>
+              <div class="owner-label">Inhaber / Name</div>
               <div class="owner-value">{{default user.name "—"}}</div>
             </div>
             <div class="owner-item">
-              <div class="owner-label">Company</div>
+              <div class="owner-label">Firma</div>
               <div class="owner-value">{{default user.company "—"}}</div>
             </div>
             <div class="owner-item">
-              <div class="owner-label">Address</div>
+              <div class="owner-label">Adresse</div>
               <div class="owner-value" style="font-weight:400;">{{default user.address "—"}}</div>
             </div>
           </div>
@@ -350,7 +344,7 @@
 
       <footer>
         <div>
-          <strong>Document ID:</strong>
+          <strong>Dokument-ID:</strong>
           {{#if certificate.pdfmonkeyDocumentId}}
             {{certificate.pdfmonkeyDocumentId}}
           {{else if pdfmonkeyDocumentId}}
@@ -359,17 +353,17 @@
             —
           {{/if}}
           <span style="margin: 0 8px; color: var(--line-strong);">|</span>
-          Generated on {{date createdAt}}
+          Erstellt am {{date createdAt}}
         </div>
 
         {{#if certificate.pdfUrl}}
-          <a class="verify-btn" href="{{certificate.pdfUrl}}" target="_blank">Open Digital Report</a>
+          <a class="verify-btn" href="{{certificate.pdfUrl}}" target="_blank">Digitalen Bericht öffnen</a>
         {{else if certificate.qrUrl}}
-          <a class="verify-btn" href="{{certificate.qrUrl}}" target="_blank">Open Digital Report</a>
+          <a class="verify-btn" href="{{certificate.qrUrl}}" target="_blank">Digitalen Bericht öffnen</a>
         {{else if verify_url}}
-          <a class="verify-btn" href="{{verify_url}}" target="_blank">Open Digital Report</a>
+          <a class="verify-btn" href="{{verify_url}}" target="_blank">Digitalen Bericht öffnen</a>
         {{else}}
-          <span style="font-size: 11px; font-style: italic;">Report link pending</span>
+          <span style="font-size: 11px; font-style: italic;">Berichtslink ausstehend</span>
         {{/if}}
       </footer>
 
