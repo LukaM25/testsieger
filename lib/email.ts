@@ -83,7 +83,7 @@ export async function sendPrecheckConfirmation(opts: {
         <a href="${checkoutAnchor}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">Prüfgebühr jetzt buchen</a>
       </p>
       <p>Sollten Sie bereits bezahlt haben, können Sie diesen Hinweis ignorieren.</p>
-      <p>Nach Zahlung wird Ihr Produkt automatisch in den Prufplan aufgenommen. Sie erhalten anschlieBend die verbindliche Bestatigung inklusive Zeitfenster.</p>
+      <p>Nach Zahlung wird Ihr Produkt automatisch in den Prüfplan aufgenommen. Sie erhalten anschließend die verbindliche Bestätigung inklusive Zeitfenster.</p>
       <p style="margin-top:18px;">Mit besten Grüßen<br/>Deutsches Prüfsiegel Institut (DPI)</p>
       ${renderFooter()}
     </div>
