@@ -4,8 +4,8 @@ export const STATUS_OPTIONS = [
   { value: 'PRECHECK', label: 'Pre-Check / Pre-check' },
   { value: 'RECEIVED', label: 'Eingegangen / Received' },
   { value: 'ANALYSIS', label: 'Analyse / Analysis' },
-  { value: 'COMPLETION', label: 'Abschluss / Completion' },
   { value: 'PASS', label: 'Bestanden / Pass' },
+  { value: 'COMPLETION', label: 'Abschluss / Completion' },
   { value: 'FAIL', label: 'Nicht bestanden / Fail' },
 ] as const satisfies { value: StatusOption; label: string }[];
 

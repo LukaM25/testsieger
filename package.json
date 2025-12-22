@@ -26,6 +26,7 @@
     "@prisma/client": "5.22.0",
     "@sparticuz/chromium": "^141.0.0",
     "bcryptjs": "^2.4.3",
+    "dependencies": "^0.0.1",
     "handlebars": "^4.7.8",
     "jose": "^5.9.3",
     "jsonwebtoken": "^9.0.2",
@@ -75,7 +76,7 @@
     "puppeteer": "^24.31.0",
     "storybook": "^10.0.6",
     "tailwindcss": "^3.4.10",
-    "typescript": "^5.4.5",
+    "typescript": "5.9.3",
     "vitest": "^4.0.8"
   }
 }

@@ -97,7 +97,7 @@ export default function PrecheckPage() {
   const statusState = usePrecheckStatusData({ initialProductId: productId });
   const refreshStatus = statusState.refresh;
   const { productStatus } = statusState;
-  const { products, selectedProductId, setSelectedProductId, productsLoading, statusError } = statusState;
+  const { products, setProducts, selectedProductId, setSelectedProductId, productsLoading, statusError } = statusState;
   const isUnauthorized = statusError === "UNAUTHORIZED";
   const search = searchParams?.toString();
   const nextAfterLogin = encodeURIComponent(`/precheck${search ? `?${search}` : ""}`);
@@ -109,6 +109,19 @@ export default function PrecheckPage() {
   const [heroSeen, setHeroSeen] = useState(false);
   const [paymentConfirming, setPaymentConfirming] = useState(false);
   const [paymentConfirmTimedOut, setPaymentConfirmTimedOut] = useState(false);
+  const [showInlinePrecheck, setShowInlinePrecheck] = useState(false);
+  const [inlineSubmitMessage, setInlineSubmitMessage] = useState<string | null>(null);
+  const [inlineSubmitting, setInlineSubmitting] = useState(false);
+  const [inlineProduct, setInlineProduct] = useState({
+    productName: "",
+    brand: "",
+    category: "",
+    code: "",
+    specs: "",
+    size: "",
+    madeIn: "",
+    material: "",
+  });
   const heroTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dotsTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const checkoutRef = useRef<HTMLDivElement | null>(null);
@@ -133,7 +146,7 @@ export default function PrecheckPage() {
     isUnauthorized
       ? tr("Pre-Check nicht möglich. Bitte melde dich an.", "Pre-check unavailable. Please sign in.")
     : isPaid
-      ? tr("Danke! Zahlung bestätigt.", "Thanks! Payment confirmed.")
+      ? tr("Zahlung bestätigt.", "Payment confirmed.")
     : checkout === "success" && !isPaid
         ? `${tr("Zahlung wird bestätigt", "Confirming payment")}${".".repeat((dots % 3) + 1)}`
         : heroStage === "loading"
@@ -209,6 +222,68 @@ export default function PrecheckPage() {
       setPayError(tr("Zahlung konnte nicht gestartet werden.", "Could not start payment."));
     } finally {
       setPaying(null);
+    }
+  };
+
+  const handleInlinePrecheckSubmit = async () => {
+    setInlineSubmitMessage(null);
+    if (!inlineProduct.productName.trim() || !inlineProduct.brand.trim()) {
+      setInlineSubmitMessage(tr("Bitte Produktname und Marke ausfüllen.", "Please enter product name and brand."));
+      return;
+    }
+    setInlineSubmitting(true);
+    try {
+      const payload = {
+        productName: inlineProduct.productName.trim(),
+        brand: inlineProduct.brand.trim(),
+        category: inlineProduct.category.trim() || undefined,
+        code: inlineProduct.code.trim() || undefined,
+        specs: inlineProduct.specs.trim() || undefined,
+        size: inlineProduct.size.trim() || undefined,
+        madeIn: inlineProduct.madeIn.trim() || undefined,
+        material: inlineProduct.material.trim() || undefined,
+      };
+      const res = await fetch("/api/products/quick-create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        setInlineSubmitMessage(tr("Bitte einloggen, um fortzufahren.", "Please sign in to continue."));
+        router.push(`/login?next=${nextAfterLogin}`);
+        return;
+      }
+      if (!res.ok || !data?.product) {
+        setInlineSubmitMessage(data?.error || tr("Produkt konnte nicht angelegt werden.", "Product could not be created."));
+        return;
+      }
+      const nextProduct = {
+        id: data.product.id as string,
+        name: data.product.name as string,
+        brand: data.product.brand ?? null,
+        paymentStatus: (data.product.paymentStatus as "UNPAID" | "PAID" | "MANUAL") || "UNPAID",
+        adminProgress: (data.product.adminProgress as "PRECHECK" | "RECEIVED" | "ANALYSIS" | "COMPLETION" | "PASS" | "FAIL") || "PRECHECK",
+        status: (data.product.status as string) || "PRECHECK",
+        createdAt: data.product.createdAt as string | undefined,
+      };
+      setProducts((prev) => [nextProduct, ...prev]);
+      setSelectedProductId(nextProduct.id);
+      setInlineSubmitMessage(tr("Produkt angelegt.", "Product created."));
+      setInlineProduct({
+        productName: "",
+        brand: "",
+        category: "",
+        code: "",
+        specs: "",
+        size: "",
+        madeIn: "",
+        material: "",
+      });
+    } catch {
+      setInlineSubmitMessage(tr("Produkt konnte nicht angelegt werden.", "Product could not be created."));
+    } finally {
+      setInlineSubmitting(false);
     }
   };
 
@@ -343,6 +418,12 @@ export default function PrecheckPage() {
     router.replace(`/precheck?${params.toString()}`);
   }, [checkout, isPaid, router, searchParams]);
 
+  useEffect(() => {
+    if (isUnauthorized) {
+      setShowInlinePrecheck(false);
+    }
+  }, [isUnauthorized]);
+
   // Removed auto-scroll to avoid disrupting mobile keyboards
 
   return (
@@ -451,7 +532,7 @@ export default function PrecheckPage() {
                 </div>
                 {!isUnauthorized && (
                   <div className="inline-flex items-center gap-3 rounded-full bg-slate-900 text-white px-4 py-2 text-xs font-semibold tracking-[0.18em] w-fit shadow-md">
-                    {tr("Nächster Schritt: Versand & Zahlung", "Next step: shipping & payment")}
+                    {tr("Nächster Schritt: Überprüfen Sie Ihren E-Mail-Posteingang", "Next step: Check your email inbox")}
                   </div>
                 )}
               </div>
@@ -481,66 +562,242 @@ export default function PrecheckPage() {
                   )}
                 </p>
 
-                <div className="mt-4 mb-8 space-y-3 rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-md min-h-[140px]">
-                  <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">
-                    {tr("Produkt auswählen & Grundgebühr zahlen", "Select product & pay base fee")}
-                  </p>
-                  {productsLoading && <p className="text-sm text-slate-600">{tr("Lade Produkte…", "Loading products…")}</p>}
-                  {statusError === "UNAUTHORIZED" && (
-                    <p className="text-sm text-amber-700">
-                      {tr("Bitte einloggen, um Produkte zu sehen.", "Please sign in to view your products.")}
-                    </p>
-                  )}
-                  {statusError === "LOAD_FAILED" && (
-                    <p className="text-sm text-rose-700">
-                      {tr("Produkte konnten nicht geladen werden.", "Could not load products.")}
-                    </p>
-                  )}
-                  {!productsLoading && statusError === null && products.length === 0 && (
-                    <p className="text-sm text-slate-600">
-                      {tr("Noch keine Produkte angelegt. Bitte zuerst ein Produkt einreichen.", "No products yet. Please submit a product first.")}
-                    </p>
-                  )}
-                  {products.length > 0 && (
-                    <div className="grid gap-2 md:grid-cols-2">
-                      <select
-                        value={selectedProductId}
-                        onChange={(e) => setSelectedProductId(e.target.value)}
-                        className="col-span-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm"
-                      >
-                        <option value="">{tr("Bitte wählen", "Please choose")}</option>
-                        {products.map((p) => {
-                          const paid = ["PAID", "MANUAL"].includes(p.paymentStatus);
-                          const pDiscount = Math.max(0, Math.min(30, Number(p.precheckDiscountPercent ?? 0) || 0));
-                          const date = p.paidAt
-                            ? new Date(p.paidAt).toLocaleDateString(locale === "en" ? "en-GB" : "de-DE", {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric",
-                              })
-                            : "";
-                          return (
-                            <option key={p.id} value={p.id} disabled={paid}>
-                              {p.name} {p.brand ? `– ${p.brand}` : ""}{" "}
-                              {paid
-                                ? `(${tr("Bezahlt", "Paid")}${date ? ` · ${date}` : ""})`
-                                : pDiscount > 0
-                                  ? `(${pDiscount}% ${tr("Rabatt", "off")})`
-                                  : ""}
-                            </option>
-                          );
-                        })}
-                      </select>
-                      {!selectedProductId && (
-                        <p className="col-span-2 text-xs text-amber-700">
-                          {tr("Bitte Produkt auswählen, um die Grundgebühr zu zahlen.", "Select a product to pay the base fee.")}
-                        </p>
-                      )}
+                <div className="mt-8 flex justify-center items-start">
+                  <div
+                    id="discount-upsell"
+                    className={`w-full rounded-3xl p-6 md:p-7 shadow-[0_30px_90px_-55px_rgba(15,23,42,0.7)] ring-1 ring-white/10 ${
+                      showInlinePrecheck ? "max-w-5xl h-auto min-h-0" : "max-w-4xl"
+                    }`}
+                    style={{
+                      background: "linear-gradient(90deg, #020617 0%, #1e3a8a 52%, #0f172a 100%)",
+                      opacity: 1,
+                      filter: "none",
+                    }}
+                  >
+                    <div className="relative overflow-hidden rounded-3xl">
+                      <div className="relative isolate rounded-3xl px-6 py-7 text-center text-white ring-1 ring-white/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:px-10 md:py-8">
+                        <div className="flex flex-col gap-6">
+                          <div className="space-y-2">
+                            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-white/70">
+                              {tr("Produkt auswählen & Grundgebühr zahlen", "Select product & pay base fee")}
+                            </p>
+                            <div className="text-base md:text-lg font-semibold tracking-tight">
+                              {tr("Rabatt auf jede weitere Grundgebühr", "Discount on every additional base fee")}
+                            </div>
+                            <p className="mx-auto max-w-2xl text-sm md:text-base text-white/85 leading-relaxed">
+                              {tr(
+                                `Reiche jetzt weitere Produkte ein und sichere dir automatisch bis zu 30% Rabatt auf die Grundgebühr pro Produkt. So kommst du schneller zum nächsten Schritt Richtung Prüfsiegel, mit spürbar geringeren Kosten pro Prüfung.`,
+                                `Submit more products now and automatically secure up to 30% off the base fee per product. This gets you to the next step towards the seal faster with noticeably lower costs per test.`
+                              )}
+                            </p>
+                          </div>
+
+                          <div className="rounded-2xl border border-white/15 bg-white/10 p-4 text-left">
+                            {productsLoading && (
+                              <p className="text-sm text-white/80">{tr("Lade Produkte…", "Loading products…")}</p>
+                            )}
+                            {statusError === "UNAUTHORIZED" && (
+                              <p className="text-sm text-amber-200">
+                                {tr("Bitte einloggen, um Produkte zu sehen.", "Please sign in to view your products.")}
+                              </p>
+                            )}
+                            {statusError === "LOAD_FAILED" && (
+                              <p className="text-sm text-rose-200">
+                                {tr("Produkte konnten nicht geladen werden.", "Could not load products.")}
+                              </p>
+                            )}
+                            {!productsLoading && statusError === null && products.length === 0 && (
+                              <p className="text-sm text-white/80">
+                                {tr("Noch keine Produkte angelegt. Bitte zuerst ein Produkt einreichen.", "No products yet. Please submit a product first.")}
+                              </p>
+                            )}
+                            {products.length > 0 && (
+                              <div className="grid gap-2 md:grid-cols-2">
+                                <select
+                                  value={selectedProductId}
+                                  onChange={(e) => setSelectedProductId(e.target.value)}
+                                  className="col-span-2 rounded-xl border border-white/20 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm"
+                                >
+                                  <option value="">{tr("Bitte wählen", "Please choose")}</option>
+                                  {products.map((p) => {
+                                    const paid = ["PAID", "MANUAL"].includes(p.paymentStatus);
+                                    const pDiscount = Math.max(0, Math.min(30, Number(p.precheckDiscountPercent ?? 0) || 0));
+                                    const date = p.paidAt
+                                      ? new Date(p.paidAt).toLocaleDateString(locale === "en" ? "en-GB" : "de-DE", {
+                                          day: "2-digit",
+                                          month: "2-digit",
+                                          year: "numeric",
+                                        })
+                                      : "";
+                                    return (
+                                      <option key={p.id} value={p.id} disabled={paid}>
+                                        {p.name} {p.brand ? `– ${p.brand}` : ""}{" "}
+                                        {paid
+                                          ? `(${tr("Bezahlt", "Paid")}${date ? ` · ${date}` : ""})`
+                                          : pDiscount > 0
+                                            ? `(${pDiscount}% ${tr("Rabatt", "off")})`
+                                            : ""}
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                                {!selectedProductId && (
+                                  <p className="col-span-2 text-xs text-amber-200">
+                                    {tr("Bitte Produkt auswählen, um die Grundgebühr zu zahlen.", "Select a product to pay the base fee.")}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex flex-wrap justify-center gap-3 md:justify-end">
+                            {isUnauthorized ? (
+                              <>
+                                <Link
+                                  href={`/login?next=${nextAfterLogin}`}
+                                  className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100"
+                                >
+                                  {tr("Einloggen & Rabatt sichern", "Sign in to secure discount")}
+                                </Link>
+                                <Link
+                                  href="/produkte/produkt-test?precheck=open#precheck"
+                                  className="rounded-full border border-white/30 bg-white/0 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-white/10"
+                                >
+                                  {tr("Zum Produkt Test", "Go to product test")}
+                                </Link>
+                              </>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setInlineSubmitMessage(null);
+                                  setShowInlinePrecheck((s) => !s);
+                                }}
+                                aria-expanded={showInlinePrecheck}
+                                aria-controls="inline-precheck"
+                                className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100"
+                              >
+                                {tr("Weitere Produkte einreichen", "Submit more products")}
+                              </button>
+                            )}
+                          </div>
+
+                          {showInlinePrecheck && !isUnauthorized && (
+                            <div
+                              id="inline-precheck"
+                              className="mt-4"
+                            >
+                              <fieldset
+                                disabled={!showInlinePrecheck}
+                                className="rounded-2xl border border-white/15 bg-white/95 p-5 text-slate-900 shadow-sm"
+                              >
+                                <div className="grid gap-3 md:grid-cols-2">
+                                  <input
+                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                                    placeholder={tr("Produktname", "Product name")}
+                                    value={inlineProduct.productName}
+                                    onChange={(e) => setInlineProduct((p) => ({ ...p, productName: e.target.value }))}
+                                  />
+                                  <input
+                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                                    placeholder={tr("Marke", "Brand")}
+                                    value={inlineProduct.brand}
+                                    onChange={(e) => setInlineProduct((p) => ({ ...p, brand: e.target.value }))}
+                                  />
+                                  <select
+                                    value={inlineProduct.category}
+                                    onChange={(e) => setInlineProduct((p) => ({ ...p, category: e.target.value }))}
+                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                                  >
+                                    <option value="">{tr("Nichts ausgewählt", "Nothing selected")}</option>
+                                    <option value="Ausbildung">Ausbildung</option>
+                                    <option value="Auto & Motorrad">Auto &amp; Motorrad</option>
+                                    <option value="Baby">Baby</option>
+                                    <option value="Baumarkt">Baumarkt</option>
+                                    <option value="Beleuchtung">Beleuchtung</option>
+                                    <option value="Bücher">Bücher</option>
+                                    <option value="Bürobedarf & Schreibwaren">Bürobedarf &amp; Schreibwaren</option>
+                                    <option value="Computer & Zubehör">Computer &amp; Zubehör</option>
+                                    <option value="DVD & Blu-ray">DVD &amp; Blu-ray</option>
+                                    <option value="Elektro-Großgeräte">Elektro-Großgeräte</option>
+                                    <option value="Elektronik & Foto">Elektronik &amp; Foto</option>
+                                    <option value="Garten">Garten</option>
+                                    <option value="Gewerbe, Industrie & Wissenschaft">Gewerbe, Industrie &amp; Wissenschaft</option>
+                                    <option value="Handgefertigte Produkte">Handgefertigte Produkte</option>
+                                    <option value="Haustierbedarf">Haustierbedarf</option>
+                                    <option value="Kamera & Foto">Kamera &amp; Foto</option>
+                                    <option value="Kosmetik & Pflege">Kosmetik &amp; Pflege</option>
+                                    <option value="Küche, Haushalt & Wohnen">Küche, Haushalt &amp; Wohnen</option>
+                                    <option value="Lebensmittel & Getränke">Lebensmittel &amp; Getränke</option>
+                                    <option value="Mode">Mode</option>
+                                    <option value="Musikinstrumente & DJ-Equipment">Musikinstrumente &amp; DJ-Equipment</option>
+                                    <option value="Software">Software</option>
+                                    <option value="Spiele & Gaming">Spiele &amp; Gaming</option>
+                                    <option value="Spielzeug">Spielzeug</option>
+                                    <option value="Sport & Freizeit">Sport &amp; Freizeit</option>
+                                    <option value="Uhren & Schmuck">Uhren &amp; Schmuck</option>
+                                    <option value="Wohnen">Wohnen</option>
+                                  </select>
+                                  <input
+                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                                    placeholder={tr("Artikelnummer (optional)", "Item code (optional)")}
+                                    value={inlineProduct.code}
+                                    onChange={(e) => setInlineProduct((p) => ({ ...p, code: e.target.value }))}
+                                  />
+                                  <input
+                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 md:col-span-2"
+                                    placeholder={tr("Spezifikationen (optional)", "Specs (optional)")}
+                                    value={inlineProduct.specs}
+                                    onChange={(e) => setInlineProduct((p) => ({ ...p, specs: e.target.value }))}
+                                  />
+                                  <input
+                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                                    placeholder={tr("Größe / Maße (optional)", "Size (optional)")}
+                                    value={inlineProduct.size}
+                                    onChange={(e) => setInlineProduct((p) => ({ ...p, size: e.target.value }))}
+                                  />
+                                  <input
+                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                                    placeholder={tr("Hergestellt in (optional)", "Made in (optional)")}
+                                    value={inlineProduct.madeIn}
+                                    onChange={(e) => setInlineProduct((p) => ({ ...p, madeIn: e.target.value }))}
+                                  />
+                                  <input
+                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 md:col-span-2"
+                                    placeholder={tr("Material (optional)", "Material (optional)")}
+                                    value={inlineProduct.material}
+                                    onChange={(e) => setInlineProduct((p) => ({ ...p, material: e.target.value }))}
+                                  />
+                                  <div className="md:col-span-2 flex flex-wrap items-center gap-3">
+                                    <button
+                                      type="button"
+                                      onClick={handleInlinePrecheckSubmit}
+                                      disabled={inlineSubmitting}
+                                      className="rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-black disabled:opacity-60"
+                                    >
+                                      {inlineSubmitting
+                                        ? tr("Wird gesendet…", "Submitting…")
+                                        : tr("Produkt einreichen", "Submit product")}
+                                    </button>
+                                    {inlineSubmitMessage && (
+                                      <span className="text-sm text-slate-600">{inlineSubmitMessage}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </fieldset>
+                            </div>
+                          )}
+
+                          <div className="text-center text-[11px] md:text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
+                            {tr("Rabatt wird automatisch pro Produkt angewendet", "Discount is applied automatically per product")}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-2">
                 {testOptions.map((option, idx) => {
                   const net = option.id === "priority" ? PRIORITY_NET_EUR : STANDARD_NET_EUR;
                   const priceLabel = tr(
@@ -597,54 +854,6 @@ export default function PrecheckPage() {
                   </button>
                   );
                 })}
-              </div>
-              <div className="mt-8 flex justify-center">
-                <div
-                  id="discount-upsell"
-                  className="w-full max-w-5xl rounded-3xl p-7 md:p-8 shadow-[0_30px_90px_-55px_rgba(15,23,42,0.7)] ring-1 ring-white/10"
-                  style={{
-                    background: "linear-gradient(90deg, #020617 0%, #1e3a8a 52%, #0f172a 100%)",
-                    opacity: 1,
-                    filter: "none",
-                  }}
-                >
-                  <div className="relative overflow-hidden rounded-3xl">
-                    <div className="relative isolate rounded-3xl px-6 py-7 text-center text-white ring-1 ring-white/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:px-10 md:py-8">
-                      <div className="flex flex-col items-center gap-5 md:flex-row md:items-center md:justify-between md:text-left">
-                        <div className="space-y-2">
-                          <div className="text-base md:text-lg font-semibold tracking-tight">
-                            {tr("Rabatt auf jede weitere Grundgebühr", "Discount on every additional base fee")}
-                          </div>
-                          <p className="max-w-2xl text-sm md:text-base text-white/85 leading-relaxed">
-                            {tr(
-                              `Reiche jetzt weitere Produkte ein und sichere dir automatisch bis zu ${upsellDiscountPercent}% Rabatt auf die Grundgebühr pro Produkt. So kommst du schneller zum nächsten Schritt Richtung Prüfsiegel, mit spürbar geringeren Kosten pro Prüfung.`,
-                              `Submit more products now and automatically secure up to ${upsellDiscountPercent}% off the base fee per product. This gets you to the next step towards the seal faster with noticeably lower costs per test.`
-                            )}
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap justify-center gap-3 md:justify-end">
-                          <Link
-                            href={isUnauthorized ? `/login?next=${nextAfterLogin}` : "/produkte/produkt-test"}
-                            className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100"
-                          >
-                            {isUnauthorized
-                              ? tr("Einloggen & Rabatt sichern", "Sign in to secure discount")
-                              : tr("Weitere Produkte einreichen", "Submit more products")}
-                          </Link>
-                          <Link
-                            href="/produkte/produkt-test"
-                            className="rounded-full border border-white/30 bg-white/0 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-white/10"
-                          >
-                            {tr("Zum Produkt Test", "Go to product test")}
-                          </Link>
-                        </div>
-                      </div>
-                      <div className="mt-5 text-center text-[11px] md:text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
-                        {tr("Rabatt wird automatisch pro Produkt angewendet", "Discount is applied automatically per product")}
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
               {payError && <p className="text-sm text-amber-700">{payError}</p>}
               </div>

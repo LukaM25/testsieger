@@ -149,14 +149,23 @@ export default function VerfahrenPage() {
       <section className="border-t border-slate-200 bg-white">
         <div className="mx-auto max-w-5xl px-6 py-16">
           <h2 className="text-2xl font-semibold text-slate-900">Häufige Fragen</h2>
-	          <div className="mt-8 space-y-6">
-	            {qa.map((item) => (
-	              <div key={item.question} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
-	                <h3 className="text-lg font-semibold text-slate-900">{item.question}</h3>
-	                <p className="mt-2 whitespace-pre-line text-sm text-slate-600">{item.answer}</p>
-	              </div>
-	            ))}
-	          </div>
+          <div className="mt-8 space-y-6">
+            {qa.map((item) => (
+              <details key={item.question} className="group rounded-2xl border border-slate-200 bg-slate-50">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-6 [&::-webkit-details-marker]:hidden">
+                  <h3 className="text-lg font-semibold text-slate-900">{item.question}</h3>
+                  <span className="text-slate-400 transition group-open:rotate-180">
+                    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M5 8l5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                </summary>
+                <div className="px-6 pb-6">
+                  <p className="whitespace-pre-line text-sm text-slate-600">{item.answer}</p>
+                </div>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
     </div>

@@ -13,8 +13,8 @@ type Props = {
 const deriveStage = (product: ProductStatusPayload | null) => {
   if (!product) return { key: "PRECHECK", percent: 0 } as const;
   if (product.adminProgress === "FAIL") return { key: "FAIL", percent: 100 } as const;
-  if (product.adminProgress === "PASS") return { key: "PASS", percent: 100 } as const;
-  if (product.adminProgress === "COMPLETION") return { key: "COMPLETION", percent: 80 } as const;
+  if (product.adminProgress === "COMPLETION") return { key: "COMPLETION", percent: 100 } as const;
+  if (product.adminProgress === "PASS") return { key: "PASS", percent: 80 } as const;
   if (product.adminProgress === "ANALYSIS") return { key: "ANALYSIS", percent: 60 } as const;
   if (product.adminProgress === "RECEIVED") return { key: "RECEIVED", percent: 40 } as const;
   if (["PAID", "MANUAL"].includes(product.paymentStatus)) return { key: "WAITING_SHIPPING", percent: 20 } as const;
@@ -46,18 +46,19 @@ export function PrecheckStatusCard({ state, className = "" }: Props) {
       : tr("Pre-Check", "Pre-check")
     : tr("Produkt auswählen", "Choose a product");
 
+  const passLabel = tr("Bestanden", "Pass");
+  const passHelper = tr("Prüfung bestanden", "Review passed");
+  const completionLabel = tr("Abschluss", "Completion");
+  const completionHelper = tr("Alle Dateien sind versendet.", "All files have been sent.");
+  const finalKey = stage.key === "FAIL" ? "FAIL" : "COMPLETION";
   const finalLabel =
     stage.key === "FAIL"
       ? tr("Fail, bitte E-Mail prüfen.", "Fail, please check your email for possible solutions.")
-      : stage.key === "PASS"
-      ? tr("Pass, Glückwunsch!", "Pass, congratulations!")
-      : tr("Ergebnis ausstehend", "Result pending");
+      : completionLabel;
   const finalHelper =
     stage.key === "FAIL"
       ? tr("Wir haben Details per E-Mail gesendet.", "We sent details via email.")
-      : stage.key === "PASS"
-      ? tr("Zertifikat & Versand folgen.", "Certificate & shipping details follow.")
-      : tr("Wir schließen den Bericht ab.", "We are finalising the report.");
+      : completionHelper;
 
   const steps = [
     { key: "PRECHECK", percent: 0, label: tr("Pre-Check", "Pre-check"), helper: tr("Formular eingereicht", "Form submitted") },
@@ -69,8 +70,8 @@ export function PrecheckStatusCard({ state, className = "" }: Props) {
     },
     { key: "RECEIVED", percent: 40, label: tr("Eingang bestätigt", "Received"), helper: tr("Muster ist eingegangen", "Sample has arrived") },
     { key: "ANALYSIS", percent: 60, label: tr("Analysis", "Analysis"), helper: tr("Tests laufen", "Testing in progress") },
-    { key: "COMPLETION", percent: 80, label: tr("Completion", "Completion"), helper: tr("Bericht wird erstellt", "Report is being finalised") },
-    { key: stage.key, percent: 100, label: finalLabel, helper: finalHelper },
+    { key: "PASS", percent: 80, label: passLabel, helper: passHelper },
+    { key: finalKey, percent: 100, label: finalLabel, helper: finalHelper },
   ];
 
   const activePercent = isOptimistic ? 0 : Math.min(stage.percent, 100);

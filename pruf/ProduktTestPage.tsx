@@ -504,6 +504,37 @@ export default function ProduktTestPage() {
         </div>
       </section>
 
+      <section className="bg-white">
+        <div className="mx-auto max-w-6xl px-6 py-14">
+          <div className="grid items-center gap-10 md:grid-cols-2">
+            <div className="space-y-6 text-left">
+              <h2 className="text-4xl font-semibold leading-tight text-slate-900 sm:text-6xl">
+                <span>{tr('Spare mehrere Hundert Euro Werbebudget ein.', 'Save hundreds of euros in marketing budget.')}</span>
+                <span className="ml-3 inline-flex align-middle sm:ml-4">
+                  <Image
+                    src="/checkmark.png"
+                    alt={tr('Checkmark', 'Checkmark')}
+                    width={60}
+                    height={60}
+                    className="h-10 w-10 object-contain sm:h-[3rem] sm:w-[3rem]"
+                  />
+                </span>
+              </h2>
+              <p className="text-3xl font-medium text-slate-900 sm:text-[2.35rem]">
+                {tr('Verbrenne nicht unnötig Werbebudget', "Don't burn marketing budget unnecessarily")}
+              </p>
+            </div>
+            <div className="flex h-full items-center justify-center md:justify-end">
+              <img
+                src="/cashdrop.jpeg"
+                alt={tr('Cash drop', 'Cash drop')}
+                className="h-full w-full max-w-[421px] object-contain sm:max-w-[518px]"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="mx-auto max-w-6xl px-6 py-16">
         <div className="text-center">
           <h2 className="text-4xl font-bold">
@@ -783,14 +814,30 @@ export default function ProduktTestPage() {
 
         <div className="mt-12 bg-white pt-8">
           <h3 className="text-2xl font-semibold">{tr('Häufige Fragen', 'Frequently asked questions')}</h3>
-	          <div className="mt-6 space-y-6">
-	            {phasesQa.qa.map((item, i) => (
-	              <div key={item.question.de} data-animate="card" style={stagger(i)} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
-	                <h4 className="text-lg font-semibold text-slate-900">{tr(item.question.de, item.question.en)}</h4>
-	                <p className="mt-2 whitespace-pre-line text-sm text-slate-600">{tr(item.answer.de, item.answer.en)}</p>
-	              </div>
-	            ))}
-	          </div>
+          <div className="mt-6 space-y-6">
+            {phasesQa.qa.map((item, i) => (
+              <details
+                key={item.question.de}
+                data-animate="card"
+                style={stagger(i)}
+                className="group rounded-2xl border border-slate-200 bg-slate-50"
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-6 [&::-webkit-details-marker]:hidden">
+                  <h4 className="text-lg font-semibold text-slate-900">{tr(item.question.de, item.question.en)}</h4>
+                  <span className="text-slate-400 transition group-open:rotate-180">
+                    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M5 8l5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                </summary>
+                <div className="px-6 pb-6">
+                  <p className="whitespace-pre-line text-sm text-slate-600">
+                    {tr(item.answer.de, item.answer.en)}
+                  </p>
+                </div>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
     </main>

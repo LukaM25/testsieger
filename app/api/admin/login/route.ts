@@ -14,7 +14,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'MISSING_CREDENTIALS' }, { status: 400 });
   }
 
-  const admin = await prisma.admin.findUnique({ where: { email: normalizedEmail } });
+  let admin;
+  try {
+    admin = await prisma.admin.findUnique({ where: { email: normalizedEmail } });
+  } catch (error) {
+    console.error('Admin login database error', error);
+    return NextResponse.json({ ok: false, error: 'DATABASE_UNAVAILABLE' }, { status: 503 });
+  }
   const unauthorizedResponse = NextResponse.json({ ok: false, error: 'INVALID_CREDENTIALS' }, { status: 401 });
 
   if (!admin || !admin.active || admin.revokedAt) {
@@ -29,10 +35,14 @@ export async function POST(req: Request) {
   // Ensure any regular user session is cleared before elevating to admin.
   await clearSession();
   await setAdminSession({ id: admin.id, email: admin.email, role: admin.role as AdminRole });
-  await prisma.admin.update({
-    where: { id: admin.id },
-    data: { lastLoginAt: new Date() },
-  });
+  try {
+    await prisma.admin.update({
+      where: { id: admin.id },
+      data: { lastLoginAt: new Date() },
+    });
+  } catch (error) {
+    console.error('Admin login lastLoginAt update failed', error);
+  }
 
   return NextResponse.json({
     ok: true,

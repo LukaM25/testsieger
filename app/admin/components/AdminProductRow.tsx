@@ -16,8 +16,8 @@ const FLOW_STEPS: { key: StatusOption; label: string }[] = [
   { key: 'PRECHECK', label: 'Pre-Check' },
   { key: 'RECEIVED', label: 'Eingang' },
   { key: 'ANALYSIS', label: 'Analyse' },
-  { key: 'COMPLETION', label: 'Abschluss' },
   { key: 'PASS', label: 'Bestanden' },
+  { key: 'COMPLETION', label: 'Abschluss' },
   { key: 'FAIL', label: 'Nicht bestanden' },
 ];
 
@@ -334,6 +334,14 @@ function AdminProductRow({
     permissions.canUpdateStatus &&
     ['PAID', 'MANUAL'].includes(product.paymentStatus) &&
     (product.adminProgress as any) === 'PASS';
+  const canTriggerCompletion =
+    permissions.canSendCompletion && (product.adminProgress as any) === 'COMPLETION';
+  const hasRatingData = Boolean(product.certificate?.ratingScore && product.certificate?.ratingLabel);
+  const hasCertificatePdf = Boolean(product.certificate?.pdfUrl);
+  const hasSeal = Boolean(product.certificate?.sealUrl);
+  const sealButtonStyle = hasSeal
+    ? { backgroundColor: '#b45309', borderColor: '#b45309', color: '#ffffff', WebkitTextFillColor: '#ffffff' }
+    : undefined;
 
   const openSignedAsset = async (kind: 'report' | 'seal') => {
     if (!canAccessAssets) {
@@ -547,56 +555,51 @@ function AdminProductRow({
           <CollapsibleSection title="Workflow-Schritte" subtitle="Update & Versand" defaultOpen={false}>
             <div className="flex flex-col gap-2">
               <label className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-600">Status setzen</label>
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value as StatusOption)}
-                disabled={!permissions.canUpdateStatus}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] disabled:opacity-60"
+              <div className="flex flex-col gap-2">
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value as StatusOption)}
+                  disabled={!permissions.canUpdateStatus}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] disabled:opacity-60"
+                >
+                  {allowedStatuses.map((status) => (
+                    <option
+                      key={status.value}
+                      value={status.value}
+                      disabled={
+                        status.value === 'PRECHECK' ||
+                        (!permissions.canFinalizeStatus && (status.value === 'PASS' || status.value === 'FAIL'))
+                      }
+                    >
+                      {status.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={loading || !permissions.canUpdateStatus}
+                  onClick={handleUpdate}
+                  className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-black disabled:opacity-70"
+                >
+                  {loading ? 'Status wird gespeichert…' : 'STATUS SPEICHERN'}
+                </button>
+              </div>
+
+              <a
+                href={`/admin/products/${product.id}/rating`}
+                className={`rounded-lg border px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition ${
+                  hasRatingData
+                    ? 'border-slate-900 bg-slate-900 text-white hover:bg-slate-800'
+                    : 'border-slate-900 text-slate-900 hover:bg-slate-50'
+                }`}
               >
-                {allowedStatuses.map((status) => (
-                  <option
-                    key={status.value}
-                    value={status.value}
-                    disabled={
-                      status.value === 'PRECHECK' ||
-                      (!permissions.canFinalizeStatus && (status.value === 'PASS' || status.value === 'FAIL'))
-                    }
-                  >
-                    {status.label}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                disabled={loading || !permissions.canUpdateStatus}
-                onClick={handleUpdate}
-                className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-black disabled:opacity-70"
-              >
-                {loading ? 'Status wird gespeichert…' : 'Status speichern / Save status'}
-              </button>
+                1. Prüfergebnis bearbeiten
+              </a>
 
               <button
                 type="button"
-                disabled={sendLoading || !permissions.canGenerateCert}
-                onClick={() => handleSendCertificate()}
-                className="rounded-lg border border-emerald-600 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-70"
-              >
-                {sendLoading ? 'Zertifikat wird generiert…' : 'Zertifikat generieren'}
-              </button>
-
-	              <button
-	                type="button"
-	                disabled={genLoading || !permissions.canGenerateCert}
-	                onClick={handleGenerateWithRating}
-	                className="rounded-lg border border-amber-700 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-800 transition hover:bg-amber-50 disabled:opacity-70"
-	              >
-	                {genLoading ? 'Siegel wird generiert…' : 'Siegel generieren'}
-	              </button>
-
-	              <button
-	                type="button"
-	                disabled={licensePlansEmailLoading || !canSendLicensePlansEmail}
-	                onClick={async () => {
+                disabled={licensePlansEmailLoading || !canSendLicensePlansEmail}
+                onClick={async () => {
 	                  setLicensePlansEmailMessage(null);
 	                  if (!canSendLicensePlansEmail) {
 	                    setLicensePlansEmailMessage('Voraussetzungen fehlen (Status/Payment/Permission).');
@@ -643,53 +646,41 @@ function AdminProductRow({
 	                        : undefined
 	                }
 	              >
-	                {licensePlansEmailLoading ? 'Sende…' : 'Bestanden-Mail senden'}
-	              </button>
-	              {licensePlansEmailMessage && <p className="text-xs text-slate-500">{licensePlansEmailMessage}</p>}
-
-	              <p className="text-xs text-slate-500">
-	                Hinweis: Der Versand an den Kunden erfolgt erst über die Aktion &ldquo;Completion – Send all Files&rdquo;.
-	              </p>
+                {licensePlansEmailLoading ? '2. Sende…' : '2. Bestanden - Mail senden'}
+              </button>
+              {licensePlansEmailMessage && <p className="text-xs text-slate-500">{licensePlansEmailMessage}</p>}
 
               <button
                 type="button"
-                disabled={sendLoading || !permissions.canSendCompletion}
-                onClick={async () => {
-                  if (!permissions.canSendCompletion) {
-                    setLocalMessage('Keine Berechtigung für Completion-Versand.');
-                    return;
-                  }
-                  setSendLoading(true);
-                  setLocalMessage(null);
-                  try {
-                    const res = await fetch('/api/admin/complete-license', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ productId: product.id }),
-                      });
-                      const data = await res.json().catch(() => ({}));
-                      if (!res.ok) {
-                        setLocalMessage(data.error || 'Senden fehlgeschlagen.');
-                      } else {
-                        setLocalMessage('Completion-Email mit allen Dateien gesendet.');
-                      }
-                    } catch (err) {
-                      console.error(err);
-                      setLocalMessage('Senden fehlgeschlagen.');
-	                    } finally {
-	                      setSendLoading(false);
-	                      onUpdated({ id: product.id, status: 'COMPLETED', adminProgress: 'PASS' });
-	                    }
-	                  }}
-                className="rounded-lg border border-emerald-800 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-800 transition hover:bg-emerald-50 disabled:opacity-70"
-	              >
-	                {sendLoading ? 'Sende…' : 'Completion – Send all Files'}
-	              </button>
+                disabled={sendLoading || !permissions.canGenerateCert}
+                onClick={() => handleSendCertificate()}
+                className={`rounded-lg border px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition ${
+                  hasCertificatePdf
+                    ? 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 disabled:border-emerald-600 disabled:bg-emerald-600 disabled:text-white disabled:opacity-100 disabled:cursor-not-allowed'
+                    : 'border-emerald-600 text-emerald-700 hover:bg-emerald-50 disabled:opacity-70'
+                }`}
+              >
+                {sendLoading ? '3. Zertifikat wird generiert…' : '3. Zertifikat generieren'}
+              </button>
 
-	              <div className="mt-4 space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <button
+                type="button"
+                disabled={genLoading || !permissions.canGenerateCert}
+                onClick={handleGenerateWithRating}
+                style={sealButtonStyle}
+                className={`rounded-lg border px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition ${
+                  hasSeal
+                    ? 'border-amber-700 disabled:cursor-not-allowed'
+                    : 'border-amber-700 text-amber-800 hover:bg-amber-50 disabled:opacity-70'
+                }`}
+              >
+                {genLoading ? '4. Siegel wird generiert…' : '4. Siegel generieren'}
+              </button>
+
+              <div className="mt-4 space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
 	                <div className="flex items-center justify-between gap-2">
 	                  <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-600">
-	                    Prüfbericht hochladen
+	                    5. Prüfbericht hochladen
 	                  </span>
 	                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
 	                    {product.certificate?.reportUrl ? 'Upload vorhanden' : 'Noch kein Upload'}
@@ -715,8 +706,58 @@ function AdminProductRow({
 	                </div>
 	                {reportMessage && <p className="text-xs text-slate-500">{reportMessage}</p>}
 	              </div>
-	            </div>
-	          </CollapsibleSection>
+
+              <button
+                type="button"
+                disabled={sendLoading || !canTriggerCompletion}
+                onClick={async () => {
+                  if (!canTriggerCompletion) {
+                    if (!permissions.canSendCompletion) {
+                      setLocalMessage('Keine Berechtigung für Completion-Versand.');
+                    } else {
+                      setLocalMessage('Status muss auf Abschluss stehen.');
+                    }
+                    return;
+                  }
+                  setSendLoading(true);
+                  setLocalMessage(null);
+                  try {
+                    const res = await fetch('/api/admin/complete-license', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ productId: product.id }),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                      setLocalMessage(data.error || 'Senden fehlgeschlagen.');
+                    } else {
+                      setLocalMessage('Completion-Email mit allen Dateien gesendet.');
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    setLocalMessage('Senden fehlgeschlagen.');
+                  } finally {
+                    setSendLoading(false);
+                    onUpdated({ id: product.id, status: 'COMPLETED', adminProgress: 'PASS' });
+                  }
+                }}
+                className="rounded-lg border border-emerald-800 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-800 transition hover:bg-emerald-50 disabled:opacity-70"
+                title={
+                  !permissions.canSendCompletion
+                    ? 'Keine Berechtigung.'
+                    : (product.adminProgress as any) !== 'COMPLETION'
+                      ? 'Status muss auf Abschluss stehen.'
+                      : undefined
+                }
+              >
+                {sendLoading ? '6. Sende…' : '6. Completion – Send all Files'}
+              </button>
+
+              <p className="text-xs text-slate-500">
+                Hinweis: Der Versand an den Kunden erfolgt erst über die Aktion &ldquo;Completion – Send all Files&rdquo;.
+              </p>
+            </div>
+          </CollapsibleSection>
 
 	          <CollapsibleSection title="Assets & Downloads" subtitle="Links" defaultOpen={false}>
 	            <div className="grid gap-3 sm:grid-cols-2">
@@ -765,12 +806,6 @@ function AdminProductRow({
 	              >
 	                Siegel öffnen
 	              </button>
-              <a
-                href={`/admin/products/${product.id}/rating`}
-                className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-slate-900 px-3.5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-900 transition hover:bg-slate-50"
-              >
-                Prüfergebnis bearbeiten
-              </a>
               <a
                 href={canAccessRatings ? `/api/admin/products/${product.id}/rating-sheet` : '#'}
                 onClick={(e) => {

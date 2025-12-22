@@ -50,7 +50,6 @@ export default function ProductsOverviewPage() {
                 priority
               />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 via-slate-900/20 to-transparent p-6 text-sm text-slate-100">
-                Platzhalter-Visual – ersetzt durch hero.jpg aus gelieferten Assets.
               </div>
             </div>
           </div>
