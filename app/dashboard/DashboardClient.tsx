@@ -242,6 +242,37 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     }
   };
 
+  const getProgressLabel = (adminProgress?: string, status?: string) => {
+    switch (adminProgress) {
+      case "PRECHECK":
+        return "Pre-Check eingereicht";
+      case "RECEIVED":
+        return "Eingegangen";
+      case "ANALYSIS":
+        return "Analyse";
+      case "PASS":
+        return "Bestanden";
+      case "COMPLETION":
+        return "Abschluss";
+      case "FAIL":
+        return "Nicht bestanden";
+      default:
+        break;
+    }
+    switch (status) {
+      case "PRECHECK":
+        return "Pre-Check eingereicht";
+      case "PAID":
+        return "Gebühr bezahlt";
+      case "IN_REVIEW":
+        return "In Prüfung";
+      case "COMPLETED":
+        return "Abgeschlossen";
+      default:
+        return "Status folgt";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8">
       <div className="mx-auto max-w-5xl space-y-8">
@@ -454,8 +485,8 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                   )}
                 </div>
 
-                {p.certificate ? (
-                  <div className="mt-3">
+                <div className="mt-3 space-y-2">
+                  {p.certificate ? (
                     <a
                       href={`/api/certificates/${p.id}/download`}
                       target="_blank"
@@ -464,10 +495,15 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                     >
                       Zertifikat öffnen (PDF)
                     </a>
+                  ) : (
+                    <p className="text-sm text-amber-600">Prüfung wird vorbereitet. Wir melden uns per E-Mail.</p>
+                  )}
+                  <div className="flex justify-center">
+                    <span className="rounded-lg bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+                      Prüfungsverlauf: {getProgressLabel(p.adminProgress, p.status)}
+                    </span>
                   </div>
-                ) : (
-                  <p className="mt-3 text-sm text-amber-600">Prüfung wird vorbereitet. Wir melden uns per E-Mail.</p>
-                )}
+                </div>
               </div>
               );
             })}
