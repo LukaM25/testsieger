@@ -31,6 +31,19 @@ export default function DashboardClient({ user }: DashboardClientProps) {
 
   const statusState = usePrecheckStatusData({ initialProducts: initialStatusProducts });
   const { products, selectedProductId, setProducts, setSelectedProductId } = statusState;
+  const baseFeeOrdersByProductId = useMemo(() => {
+    const orders = Array.isArray(user.orders) ? user.orders : [];
+    const byProduct: Record<string, { id: string; paidAt?: string | null }> = {};
+    orders.forEach((order: any) => {
+      if (!order?.productId || !order?.paidAt) return;
+      if (order.plan !== "PRECHECK_FEE" && order.plan !== "PRECHECK_PRIORITY") return;
+      const existing = byProduct[order.productId];
+      if (!existing || (existing.paidAt && new Date(order.paidAt) > new Date(existing.paidAt))) {
+        byProduct[order.productId] = { id: order.id, paidAt: order.paidAt };
+      }
+    });
+    return byProduct;
+  }, [user.orders]);
 
   const [isTabVisible, setIsTabVisible] = useState(true);
   useEffect(() => {
@@ -98,7 +111,6 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     });
   }, [polledStatus, selectedProductId, setProducts]);
 
-  const [orders, setOrders] = useState(user.orders || []);
   const [showSubmit, setShowSubmit] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -162,34 +174,12 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     }
   };
 
-  const handlePayOrder = async (order: any) => {
-    if (!order?.productId || !order?.plan) {
-      alert("Produkt oder Plan fehlt.");
-      return;
-    }
-    try {
-      const res = await fetch("/api/payment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: order.plan, productId: order.productId }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data?.url) {
-        alert(data.error || "Zahlung konnte nicht gestartet werden.");
-        return;
-      }
-      window.location.href = data.url as string;
-    } catch {
-      alert("Zahlung konnte nicht gestartet werden.");
-    }
-  };
-
-  const handleReceipt = async (order: any) => {
+  const handleReceipt = async (orderId: string) => {
     try {
       const res = await fetch("/api/orders/receipt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: order.id }),
+        body: JSON.stringify({ orderId }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.receiptUrl) {
@@ -346,7 +336,11 @@ export default function DashboardClient({ user }: DashboardClientProps) {
           <h2 className="text-lg font-semibold text-slate-900">Ihre Produkte</h2>
           {products.length === 0 && <p className="text-slate-600">Noch keine Produkte erfasst.</p>}
           <div className="grid gap-4">
-            {products.map((p: any) => (
+            {products.map((p: any) => {
+              const baseFeePaid = ["PAID", "MANUAL"].includes(p.paymentStatus);
+              const hasPassed = p.adminProgress === "PASS";
+              const licenseActive = p.license?.status === "ACTIVE";
+              return (
               <div key={p.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
@@ -359,8 +353,25 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-center gap-3">
-                  {["PAID", "MANUAL"].includes(p.paymentStatus) ? (
-                    <span className="text-xs font-semibold text-emerald-700">Grundgebühr bezahlt</span>
+                  {baseFeePaid ? (
+                    <>
+                      <span className="text-xs font-semibold text-emerald-700">Grundgebühr bezahlt</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const order = baseFeeOrdersByProductId[p.id];
+                          if (order?.id) handleReceipt(order.id);
+                        }}
+                        disabled={!baseFeeOrdersByProductId[p.id]?.id}
+                        className={`rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition ${
+                          baseFeeOrdersByProductId[p.id]?.id
+                            ? "bg-slate-900 text-white hover:bg-black"
+                            : "bg-slate-200 text-slate-500 cursor-not-allowed"
+                        }`}
+                      >
+                        Beleg herunterladen
+                      </button>
+                    </>
                   ) : (
                     <>
                       <select
@@ -392,9 +403,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                     value={licenseSelections[p.id] || p.license?.plan || "BASIC"}
                     onChange={(e) => setLicenseSelections((prev) => ({ ...prev, [p.id]: e.target.value }))}
                     disabled={
-                      licensePaying === p.id ||
-                      p.license?.status === "ACTIVE" ||
-                      !["PAID", "MANUAL"].includes(p.paymentStatus)
+                      licensePaying === p.id || licenseActive || !baseFeePaid || !hasPassed
                     }
                   >
                     <option value="BASIC">Basic</option>
@@ -405,27 +414,29 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                     type="button"
                     onClick={() => handleLicensePay(p.id, licenseSelections[p.id] || p.license?.plan || "BASIC")}
                     disabled={
-                      licensePaying === p.id ||
-                      p.license?.status === "ACTIVE" ||
-                      !["PAID", "MANUAL"].includes(p.paymentStatus)
+                      licensePaying === p.id || licenseActive || !baseFeePaid || !hasPassed
                     }
                     className={`rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition ${
-                      p.license?.status === "ACTIVE"
+                      licenseActive
                         ? "bg-emerald-100 text-emerald-700 cursor-not-allowed"
-                        : ["PAID", "MANUAL"].includes(p.paymentStatus)
+                        : baseFeePaid && hasPassed
                         ? "bg-slate-900 text-white hover:bg-black"
                         : "bg-slate-200 text-slate-500 cursor-not-allowed"
                     }`}
                   >
-                    {p.license?.status === "ACTIVE"
+                    {licenseActive
                       ? "Lizenz aktiv"
                       : licensePaying === p.id
                       ? "Starte Zahlung…"
-                      : ["PAID", "MANUAL"].includes(p.paymentStatus)
+                      : !baseFeePaid
+                      ? "Grundgebühr zuerst zahlen"
+                      : !hasPassed
+                      ? "Bestanden erforderlich"
+                      : baseFeePaid
                       ? p.license?.status === "EXPIRED"
                         ? "Lizenz verlängern"
                         : "Lizenzplan zahlen"
-                      : "Grundgebühr zuerst zahlen"}
+                      : "Lizenzplan zahlen"}
                   </button>
                   {p.license?.status === "ACTIVE" && (
                     <span className="text-xs font-semibold text-emerald-700">
@@ -435,8 +446,11 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                   {p.license?.status === "EXPIRED" && (
                     <span className="text-xs font-semibold text-amber-600">Lizenz abgelaufen – bitte neu buchen.</span>
                   )}
-                  {!["PAID", "MANUAL"].includes(p.paymentStatus) && (
+                  {!baseFeePaid && (
                     <span className="text-xs text-amber-600">Bitte zuerst Grundgebühr bezahlen.</span>
+                  )}
+                  {baseFeePaid && !hasPassed && (
+                    <span className="text-xs text-amber-600">Prüfergebnis ausstehend.</span>
                   )}
                 </div>
 
@@ -455,55 +469,11 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                   <p className="mt-3 text-sm text-amber-600">Prüfung wird vorbereitet. Wir melden uns per E-Mail.</p>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold text-slate-900">Bestellungen</h2>
-          {orders.length === 0 && <p className="text-slate-600">Keine Bestellungen vorhanden.</p>}
-          <div className="grid gap-4">
-            {orders.map((o: any) => (
-              <div key={o.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-semibold text-slate-900">{o.plan}</div>
-                    <div className="text-xs text-slate-500">{o.product?.name || "Produkt"}</div>
-                  </div>
-                  <span className={`text-sm font-semibold ${o.paidAt ? "text-emerald-600" : "text-amber-600"}`}>
-                    {o.paidAt ? "Bezahlt" : "Offen"}
-                  </span>
-                </div>
-                <div className="mt-2 text-sm text-slate-700 flex flex-wrap gap-3">
-                  <span>Preis: {(o.priceCents || 0) / 100} €</span>
-                  <span>{new Date(o.createdAt).toLocaleDateString("de-DE")}</span>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={() => handleReceipt(o)}
-                    disabled={!o.paidAt}
-                    className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                      o.paidAt ? "bg-slate-900 text-white hover:bg-black" : "bg-slate-200 text-slate-500 cursor-not-allowed"
-                    }`}
-                  >
-                    Beleg herunterladen
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handlePayOrder(o)}
-                    disabled={!!o.paidAt}
-                    className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                      o.paidAt ? "bg-slate-200 text-slate-500 cursor-not-allowed" : "bg-emerald-600 text-white hover:bg-emerald-700"
-                    }`}
-                  >
-                    {o.paidAt ? "Bereits bezahlt" : "Jetzt zahlen"}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
       </div>
     </div>
   );

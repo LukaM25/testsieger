@@ -12,7 +12,6 @@ type TestOption = {
   id: string;
   title: { de: string; en: string };
   price: { de: string; en: string };
-  gross: { de: string; en: string };
   timeline: { de: string; en: string };
 };
 
@@ -33,14 +32,12 @@ const testOptions: TestOption[] = [
     id: "standard",
     title: { de: "Produkttest Checkout", en: "Product test checkout" },
     price: { de: "254,00 € zzgl. MwSt.", en: "€254 plus VAT" },
-    gross: { de: "Brutto: 302,26 €", en: "Gross: €302.26" },
     timeline: { de: "14–17 Werktage nach Erhalt", en: "14–17 business days after receipt" },
   },
   {
     id: "priority",
     title: { de: "Produkttest Priority", en: "Product test priority" },
     price: { de: "(254 € + 64 €) zzgl. MwSt.", en: "(€254 + €64) plus VAT" },
-    gross: { de: "Brutto: 378,42 €", en: "Gross: €378.42" },
     timeline: { de: "4–7 Werktage nach Erhalt", en: "4–7 business days after receipt" },
   },
 ];
@@ -110,6 +107,7 @@ export default function PrecheckPage() {
   const [paymentConfirming, setPaymentConfirming] = useState(false);
   const [paymentConfirmTimedOut, setPaymentConfirmTimedOut] = useState(false);
   const [showInlinePrecheck, setShowInlinePrecheck] = useState(false);
+  const [inlinePrecheckMounted, setInlinePrecheckMounted] = useState(false);
   const [inlineSubmitMessage, setInlineSubmitMessage] = useState<string | null>(null);
   const [inlineSubmitting, setInlineSubmitting] = useState(false);
   const [inlineProduct, setInlineProduct] = useState({
@@ -124,6 +122,7 @@ export default function PrecheckPage() {
   });
   const heroTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dotsTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const inlinePrecheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const checkoutRef = useRef<HTMLDivElement | null>(null);
 
   const isPaid = productStatus ? ["PAID", "MANUAL"].includes(productStatus.paymentStatus) : false;
@@ -222,6 +221,29 @@ export default function PrecheckPage() {
       setPayError(tr("Zahlung konnte nicht gestartet werden.", "Could not start payment."));
     } finally {
       setPaying(null);
+    }
+  };
+
+  const openInlinePrecheck = () => {
+    if (!inlinePrecheckMounted) {
+      setInlinePrecheckMounted(true);
+      requestAnimationFrame(() => {
+        setShowInlinePrecheck(true);
+      });
+      return;
+    }
+    setShowInlinePrecheck(true);
+  };
+
+  const closeInlinePrecheck = () => {
+    setShowInlinePrecheck(false);
+  };
+
+  const toggleInlinePrecheck = () => {
+    if (showInlinePrecheck) {
+      closeInlinePrecheck();
+    } else {
+      openInlinePrecheck();
     }
   };
 
@@ -424,6 +446,27 @@ export default function PrecheckPage() {
     }
   }, [isUnauthorized]);
 
+  useEffect(() => {
+    if (showInlinePrecheck) {
+      if (inlinePrecheckTimer.current) {
+        clearTimeout(inlinePrecheckTimer.current);
+        inlinePrecheckTimer.current = null;
+      }
+      return;
+    }
+    if (!inlinePrecheckMounted) return;
+    inlinePrecheckTimer.current = setTimeout(() => {
+      setInlinePrecheckMounted(false);
+      inlinePrecheckTimer.current = null;
+    }, 300);
+    return () => {
+      if (inlinePrecheckTimer.current) {
+        clearTimeout(inlinePrecheckTimer.current);
+        inlinePrecheckTimer.current = null;
+      }
+    };
+  }, [showInlinePrecheck, inlinePrecheckMounted]);
+
   // Removed auto-scroll to avoid disrupting mobile keyboards
 
   return (
@@ -612,37 +655,53 @@ export default function PrecheckPage() {
                               </p>
                             )}
                             {products.length > 0 && (
-                              <div className="grid gap-2 md:grid-cols-2">
-                                <select
-                                  value={selectedProductId}
-                                  onChange={(e) => setSelectedProductId(e.target.value)}
-                                  className="col-span-2 rounded-xl border border-white/20 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm"
-                                >
-                                  <option value="">{tr("Bitte wählen", "Please choose")}</option>
-                                  {products.map((p) => {
-                                    const paid = ["PAID", "MANUAL"].includes(p.paymentStatus);
-                                    const pDiscount = Math.max(0, Math.min(30, Number(p.precheckDiscountPercent ?? 0) || 0));
-                                    const date = p.paidAt
-                                      ? new Date(p.paidAt).toLocaleDateString(locale === "en" ? "en-GB" : "de-DE", {
-                                          day: "2-digit",
-                                          month: "2-digit",
-                                          year: "numeric",
-                                        })
-                                      : "";
-                                    return (
-                                      <option key={p.id} value={p.id} disabled={paid}>
-                                        {p.name} {p.brand ? `– ${p.brand}` : ""}{" "}
-                                        {paid
-                                          ? `(${tr("Bezahlt", "Paid")}${date ? ` · ${date}` : ""})`
-                                          : pDiscount > 0
-                                            ? `(${pDiscount}% ${tr("Rabatt", "off")})`
-                                            : ""}
-                                      </option>
-                                    );
-                                  })}
-                                </select>
+                              <div className="flex flex-col gap-2">
+                                <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                                  <select
+                                    value={selectedProductId}
+                                    onChange={(e) => setSelectedProductId(e.target.value)}
+                                    className="w-full rounded-xl border border-white/20 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm md:flex-1"
+                                  >
+                                    <option value="">{tr("Bitte wählen", "Please choose")}</option>
+                                    {products.map((p) => {
+                                      const paid = ["PAID", "MANUAL"].includes(p.paymentStatus);
+                                      const pDiscount = Math.max(0, Math.min(30, Number(p.precheckDiscountPercent ?? 0) || 0));
+                                      const date = p.paidAt
+                                        ? new Date(p.paidAt).toLocaleDateString(locale === "en" ? "en-GB" : "de-DE", {
+                                            day: "2-digit",
+                                            month: "2-digit",
+                                            year: "numeric",
+                                          })
+                                        : "";
+                                      return (
+                                        <option key={p.id} value={p.id} disabled={paid}>
+                                          {p.name} {p.brand ? `– ${p.brand}` : ""}{" "}
+                                          {paid
+                                            ? `(${tr("Bezahlt", "Paid")}${date ? ` · ${date}` : ""})`
+                                            : pDiscount > 0
+                                              ? `(${pDiscount}% ${tr("Rabatt", "off")})`
+                                              : ""}
+                                        </option>
+                                      );
+                                    })}
+                                  </select>
+                                  {!isUnauthorized && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setInlineSubmitMessage(null);
+                                        toggleInlinePrecheck();
+                                      }}
+                                      aria-expanded={showInlinePrecheck}
+                                      aria-controls="inline-precheck"
+                                      className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100"
+                                    >
+                                      {tr("Weitere Produkte einreichen", "Submit more products")}
+                                    </button>
+                                  )}
+                                </div>
                                 {!selectedProductId && (
-                                  <p className="col-span-2 text-xs text-amber-200">
+                                  <p className="text-xs text-amber-200">
                                     {tr("Bitte Produkt auswählen, um die Grundgebühr zu zahlen.", "Select a product to pay the base fee.")}
                                   </p>
                                 )}
@@ -650,146 +709,153 @@ export default function PrecheckPage() {
                             )}
                           </div>
 
-                          <div className="flex flex-wrap justify-center gap-3 md:justify-end">
-                            {isUnauthorized ? (
-                              <>
-                                <Link
-                                  href={`/login?next=${nextAfterLogin}`}
+                          <div>
+                            <div className="flex flex-wrap justify-center gap-3 md:justify-end">
+                              {isUnauthorized ? (
+                                <>
+                                  <Link
+                                    href={`/login?next=${nextAfterLogin}`}
+                                    className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100"
+                                  >
+                                    {tr("Einloggen & Rabatt sichern", "Sign in to secure discount")}
+                                  </Link>
+                                  <Link
+                                    href="/produkte/produkt-test?precheck=open#precheck"
+                                    className="rounded-full border border-white/30 bg-white/0 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-white/10"
+                                  >
+                                    {tr("Zum Produkt Test", "Go to product test")}
+                                  </Link>
+                                </>
+                              ) : products.length === 0 ? (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setInlineSubmitMessage(null);
+                                    toggleInlinePrecheck();
+                                  }}
+                                  aria-expanded={showInlinePrecheck}
+                                  aria-controls="inline-precheck"
                                   className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100"
                                 >
-                                  {tr("Einloggen & Rabatt sichern", "Sign in to secure discount")}
-                                </Link>
-                                <Link
-                                  href="/produkte/produkt-test?precheck=open#precheck"
-                                  className="rounded-full border border-white/30 bg-white/0 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-white/10"
-                                >
-                                  {tr("Zum Produkt Test", "Go to product test")}
-                                </Link>
-                              </>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setInlineSubmitMessage(null);
-                                  setShowInlinePrecheck((s) => !s);
-                                }}
-                                aria-expanded={showInlinePrecheck}
-                                aria-controls="inline-precheck"
-                                className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100"
-                              >
-                                {tr("Weitere Produkte einreichen", "Submit more products")}
-                              </button>
-                            )}
-                          </div>
-
-                          {showInlinePrecheck && !isUnauthorized && (
-                            <div
-                              id="inline-precheck"
-                              className="mt-4"
-                            >
-                              <fieldset
-                                disabled={!showInlinePrecheck}
-                                className="rounded-2xl border border-white/15 bg-white/95 p-5 text-slate-900 shadow-sm"
-                              >
-                                <div className="grid gap-3 md:grid-cols-2">
-                                  <input
-                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
-                                    placeholder={tr("Produktname", "Product name")}
-                                    value={inlineProduct.productName}
-                                    onChange={(e) => setInlineProduct((p) => ({ ...p, productName: e.target.value }))}
-                                  />
-                                  <input
-                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
-                                    placeholder={tr("Marke", "Brand")}
-                                    value={inlineProduct.brand}
-                                    onChange={(e) => setInlineProduct((p) => ({ ...p, brand: e.target.value }))}
-                                  />
-                                  <select
-                                    value={inlineProduct.category}
-                                    onChange={(e) => setInlineProduct((p) => ({ ...p, category: e.target.value }))}
-                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
-                                  >
-                                    <option value="">{tr("Nichts ausgewählt", "Nothing selected")}</option>
-                                    <option value="Ausbildung">Ausbildung</option>
-                                    <option value="Auto & Motorrad">Auto &amp; Motorrad</option>
-                                    <option value="Baby">Baby</option>
-                                    <option value="Baumarkt">Baumarkt</option>
-                                    <option value="Beleuchtung">Beleuchtung</option>
-                                    <option value="Bücher">Bücher</option>
-                                    <option value="Bürobedarf & Schreibwaren">Bürobedarf &amp; Schreibwaren</option>
-                                    <option value="Computer & Zubehör">Computer &amp; Zubehör</option>
-                                    <option value="DVD & Blu-ray">DVD &amp; Blu-ray</option>
-                                    <option value="Elektro-Großgeräte">Elektro-Großgeräte</option>
-                                    <option value="Elektronik & Foto">Elektronik &amp; Foto</option>
-                                    <option value="Garten">Garten</option>
-                                    <option value="Gewerbe, Industrie & Wissenschaft">Gewerbe, Industrie &amp; Wissenschaft</option>
-                                    <option value="Handgefertigte Produkte">Handgefertigte Produkte</option>
-                                    <option value="Haustierbedarf">Haustierbedarf</option>
-                                    <option value="Kamera & Foto">Kamera &amp; Foto</option>
-                                    <option value="Kosmetik & Pflege">Kosmetik &amp; Pflege</option>
-                                    <option value="Küche, Haushalt & Wohnen">Küche, Haushalt &amp; Wohnen</option>
-                                    <option value="Lebensmittel & Getränke">Lebensmittel &amp; Getränke</option>
-                                    <option value="Mode">Mode</option>
-                                    <option value="Musikinstrumente & DJ-Equipment">Musikinstrumente &amp; DJ-Equipment</option>
-                                    <option value="Software">Software</option>
-                                    <option value="Spiele & Gaming">Spiele &amp; Gaming</option>
-                                    <option value="Spielzeug">Spielzeug</option>
-                                    <option value="Sport & Freizeit">Sport &amp; Freizeit</option>
-                                    <option value="Uhren & Schmuck">Uhren &amp; Schmuck</option>
-                                    <option value="Wohnen">Wohnen</option>
-                                  </select>
-                                  <input
-                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
-                                    placeholder={tr("Artikelnummer (optional)", "Item code (optional)")}
-                                    value={inlineProduct.code}
-                                    onChange={(e) => setInlineProduct((p) => ({ ...p, code: e.target.value }))}
-                                  />
-                                  <input
-                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 md:col-span-2"
-                                    placeholder={tr("Spezifikationen (optional)", "Specs (optional)")}
-                                    value={inlineProduct.specs}
-                                    onChange={(e) => setInlineProduct((p) => ({ ...p, specs: e.target.value }))}
-                                  />
-                                  <input
-                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
-                                    placeholder={tr("Größe / Maße (optional)", "Size (optional)")}
-                                    value={inlineProduct.size}
-                                    onChange={(e) => setInlineProduct((p) => ({ ...p, size: e.target.value }))}
-                                  />
-                                  <input
-                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
-                                    placeholder={tr("Hergestellt in (optional)", "Made in (optional)")}
-                                    value={inlineProduct.madeIn}
-                                    onChange={(e) => setInlineProduct((p) => ({ ...p, madeIn: e.target.value }))}
-                                  />
-                                  <input
-                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 md:col-span-2"
-                                    placeholder={tr("Material (optional)", "Material (optional)")}
-                                    value={inlineProduct.material}
-                                    onChange={(e) => setInlineProduct((p) => ({ ...p, material: e.target.value }))}
-                                  />
-                                  <div className="md:col-span-2 flex flex-wrap items-center gap-3">
-                                    <button
-                                      type="button"
-                                      onClick={handleInlinePrecheckSubmit}
-                                      disabled={inlineSubmitting}
-                                      className="rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-black disabled:opacity-60"
-                                    >
-                                      {inlineSubmitting
-                                        ? tr("Wird gesendet…", "Submitting…")
-                                        : tr("Produkt einreichen", "Submit product")}
-                                    </button>
-                                    {inlineSubmitMessage && (
-                                      <span className="text-sm text-slate-600">{inlineSubmitMessage}</span>
-                                    )}
-                                  </div>
-                                </div>
-                              </fieldset>
+                                  {tr("Weitere Produkte einreichen", "Submit more products")}
+                                </button>
+                              ) : null}
                             </div>
-                          )}
 
-                          <div className="text-center text-[11px] md:text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
-                            {tr("Rabatt wird automatisch pro Produkt angewendet", "Discount is applied automatically per product")}
+                            {!isUnauthorized && inlinePrecheckMounted && (
+                              <div
+                                id="inline-precheck"
+                                className={`overflow-hidden transition-[max-height,opacity,margin] duration-300 ease-in-out ${
+                                  showInlinePrecheck
+                                    ? "max-h-[1200px] opacity-100 pointer-events-auto mt-4"
+                                    : "max-h-0 opacity-0 pointer-events-none mt-0"
+                                }`}
+                                aria-hidden={!showInlinePrecheck}
+                              >
+                                <fieldset
+                                  disabled={!showInlinePrecheck}
+                                  className="rounded-2xl border border-white/15 bg-white/95 p-5 text-slate-900 shadow-sm"
+                                >
+                                  <div className="grid gap-3 md:grid-cols-2">
+                                    <input
+                                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                                      placeholder={tr("Produktname", "Product name")}
+                                      value={inlineProduct.productName}
+                                      onChange={(e) => setInlineProduct((p) => ({ ...p, productName: e.target.value }))}
+                                    />
+                                    <input
+                                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                                      placeholder={tr("Marke", "Brand")}
+                                      value={inlineProduct.brand}
+                                      onChange={(e) => setInlineProduct((p) => ({ ...p, brand: e.target.value }))}
+                                    />
+                                    <select
+                                      value={inlineProduct.category}
+                                      onChange={(e) => setInlineProduct((p) => ({ ...p, category: e.target.value }))}
+                                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                                    >
+                                      <option value="">{tr("Nichts ausgewählt", "Nothing selected")}</option>
+                                      <option value="Ausbildung">Ausbildung</option>
+                                      <option value="Auto & Motorrad">Auto &amp; Motorrad</option>
+                                      <option value="Baby">Baby</option>
+                                      <option value="Baumarkt">Baumarkt</option>
+                                      <option value="Beleuchtung">Beleuchtung</option>
+                                      <option value="Bücher">Bücher</option>
+                                      <option value="Bürobedarf & Schreibwaren">Bürobedarf &amp; Schreibwaren</option>
+                                      <option value="Computer & Zubehör">Computer &amp; Zubehör</option>
+                                      <option value="DVD & Blu-ray">DVD &amp; Blu-ray</option>
+                                      <option value="Elektro-Großgeräte">Elektro-Großgeräte</option>
+                                      <option value="Elektronik & Foto">Elektronik &amp; Foto</option>
+                                      <option value="Garten">Garten</option>
+                                      <option value="Gewerbe, Industrie & Wissenschaft">Gewerbe, Industrie &amp; Wissenschaft</option>
+                                      <option value="Handgefertigte Produkte">Handgefertigte Produkte</option>
+                                      <option value="Haustierbedarf">Haustierbedarf</option>
+                                      <option value="Kamera & Foto">Kamera &amp; Foto</option>
+                                      <option value="Kosmetik & Pflege">Kosmetik &amp; Pflege</option>
+                                      <option value="Küche, Haushalt & Wohnen">Küche, Haushalt &amp; Wohnen</option>
+                                      <option value="Lebensmittel & Getränke">Lebensmittel &amp; Getränke</option>
+                                      <option value="Mode">Mode</option>
+                                      <option value="Musikinstrumente & DJ-Equipment">Musikinstrumente &amp; DJ-Equipment</option>
+                                      <option value="Software">Software</option>
+                                      <option value="Spiele & Gaming">Spiele &amp; Gaming</option>
+                                      <option value="Spielzeug">Spielzeug</option>
+                                      <option value="Sport & Freizeit">Sport &amp; Freizeit</option>
+                                      <option value="Uhren & Schmuck">Uhren &amp; Schmuck</option>
+                                      <option value="Wohnen">Wohnen</option>
+                                    </select>
+                                    <input
+                                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                                      placeholder={tr("Artikelnummer (optional)", "Item code (optional)")}
+                                      value={inlineProduct.code}
+                                      onChange={(e) => setInlineProduct((p) => ({ ...p, code: e.target.value }))}
+                                    />
+                                    <input
+                                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 md:col-span-2"
+                                      placeholder={tr("Spezifikationen (optional)", "Specs (optional)")}
+                                      value={inlineProduct.specs}
+                                      onChange={(e) => setInlineProduct((p) => ({ ...p, specs: e.target.value }))}
+                                    />
+                                    <input
+                                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                                      placeholder={tr("Größe / Maße (optional)", "Size (optional)")}
+                                      value={inlineProduct.size}
+                                      onChange={(e) => setInlineProduct((p) => ({ ...p, size: e.target.value }))}
+                                    />
+                                    <input
+                                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                                      placeholder={tr("Hergestellt in (optional)", "Made in (optional)")}
+                                      value={inlineProduct.madeIn}
+                                      onChange={(e) => setInlineProduct((p) => ({ ...p, madeIn: e.target.value }))}
+                                    />
+                                    <input
+                                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 md:col-span-2"
+                                      placeholder={tr("Material (optional)", "Material (optional)")}
+                                      value={inlineProduct.material}
+                                      onChange={(e) => setInlineProduct((p) => ({ ...p, material: e.target.value }))}
+                                    />
+                                    <div className="md:col-span-2 flex flex-wrap items-center gap-3">
+                                      <button
+                                        type="button"
+                                        onClick={handleInlinePrecheckSubmit}
+                                        disabled={inlineSubmitting}
+                                        className="rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-black disabled:opacity-60"
+                                      >
+                                        {inlineSubmitting
+                                          ? tr("Wird gesendet…", "Submitting…")
+                                          : tr("Produkt einreichen", "Submit product")}
+                                      </button>
+                                      {inlineSubmitMessage && (
+                                        <span className="text-sm text-slate-600">{inlineSubmitMessage}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </fieldset>
+                              </div>
+                            )}
+
+                            <div className="mt-3 text-center text-[11px] md:text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
+                              {tr("Rabatt wird automatisch pro Produkt angewendet", "Discount is applied automatically per product")}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -803,10 +869,6 @@ export default function PrecheckPage() {
                   const priceLabel = tr(
                     `${formatEur(discountedNet(net))} zzgl. MwSt.`,
                     `${formatEur(discountedNet(net))} plus VAT`
-                  );
-                  const grossLabel = tr(
-                    `Brutto: ${formatEur(discountedGross(net))}`,
-                    `Gross: ${formatEur(discountedGross(net))}`
                   );
                   return (
                   <button
@@ -825,12 +887,18 @@ export default function PrecheckPage() {
                   >
                     <div className="flex flex-col items-center space-y-2">
                       <div className="text-xl font-semibold leading-tight tracking-tight">
-                        {tr(option.title.de, option.title.en)}
+                        {option.id === "priority" ? (
+                          <>
+                            {tr("Produkttest ", "Product test ")}
+                            <span style={{ color: "#f97316" }}>Priority</span>
+                          </>
+                        ) : (
+                          tr(option.title.de, option.title.en)
+                        )}
                       </div>
                       <div className="text-base font-medium text-white/95">
                         {priceLabel}
                       </div>
-                      <div className="text-sm font-semibold text-white/90">{grossLabel}</div>
                       <span className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-white/85">
                         {tr(option.timeline.de, option.timeline.en)}
                       </span>

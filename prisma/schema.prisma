@@ -224,6 +224,8 @@ enum Plan {
   BASIC
   PREMIUM
   LIFETIME
+  PRECHECK_FEE
+  PRECHECK_PRIORITY
 }
 
 enum LicenseStatus {

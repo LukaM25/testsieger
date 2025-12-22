@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 
 export const runtime = 'nodejs';
 
-const PLAN_DURATIONS: Record<Plan, number | null> = {
+const PLAN_DURATIONS: Partial<Record<Plan, number | null>> = {
   BASIC: 365,
   PREMIUM: 365,
   LIFETIME: null,

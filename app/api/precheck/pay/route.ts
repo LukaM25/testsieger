@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
+import { Plan } from '@prisma/client';
 import { getSession } from '@/lib/cookies';
 import { getPublicBaseUrl } from '@/lib/baseUrl';
 
@@ -104,6 +105,17 @@ export async function POST(req: Request) {
     ],
     success_url: `${baseUrl}/precheck?productId=${product.id}&product=${encodeURIComponent(product.name)}&checkout=success`,
     cancel_url: `${baseUrl}/precheck?productId=${product.id}&product=${encodeURIComponent(product.name)}&checkout=cancel`,
+  });
+
+  const orderPlan = opt === 'priority' ? Plan.PRECHECK_PRIORITY : Plan.PRECHECK_FEE;
+  await prisma.order.create({
+    data: {
+      userId: session.userId,
+      productId: product.id,
+      plan: orderPlan,
+      priceCents: 0,
+      stripeSessionId: checkout.id,
+    },
   });
 
   return NextResponse.json({ ok: true, url: checkout.url });

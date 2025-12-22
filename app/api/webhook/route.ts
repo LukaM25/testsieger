@@ -149,6 +149,24 @@ async function handleCheckoutSession(cs: any) {
   } else {
     // fallback: no order record (pre-check fee). Still mark product as paid.
     await markProductPaid(productId);
+    if (plan === 'PRECHECK_FEE' || plan === 'PRECHECK_PRIORITY') {
+      const product = await prisma.product.findUnique({
+        where: { id: productId },
+        select: { userId: true },
+      });
+      if (product?.userId) {
+        await prisma.order.create({
+          data: {
+            userId: product.userId,
+            productId,
+            plan: plan as Plan,
+            priceCents: metadataPriceCents ?? 0,
+            stripeSessionId: cs.id,
+            paidAt: new Date(),
+          },
+        });
+      }
+    }
   }
 
   // Send confirmation for pre-check fee payments (standard or priority)
