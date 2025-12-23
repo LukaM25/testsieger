@@ -329,7 +329,7 @@ async function runCompletion(productId: string, message?: string): Promise<Compl
 
   await prisma.product.update({
     where: { id: product.id },
-    data: { status: 'COMPLETED', adminProgress: 'PASS' },
+    data: { status: 'COMPLETED', adminProgress: 'COMPLETION' },
   });
 
   // Build invoice lines (best-effort)

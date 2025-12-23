@@ -335,7 +335,9 @@ function AdminProductRow({
     ['PAID', 'MANUAL'].includes(product.paymentStatus) &&
     (product.adminProgress as any) === 'PASS';
   const canTriggerCompletion =
-    permissions.canSendCompletion && (product.adminProgress as any) === 'COMPLETION';
+    permissions.canSendCompletion &&
+    (product.adminProgress as any) === 'COMPLETION' &&
+    product.status !== 'COMPLETED';
   const hasRatingData = Boolean(product.certificate?.ratingScore && product.certificate?.ratingLabel);
   const hasCertificatePdf = Boolean(product.certificate?.pdfUrl);
   const hasSeal = Boolean(product.certificate?.sealUrl);
@@ -714,6 +716,8 @@ function AdminProductRow({
                   if (!canTriggerCompletion) {
                     if (!permissions.canSendCompletion) {
                       setLocalMessage('Keine Berechtigung für Completion-Versand.');
+                    } else if (product.status === 'COMPLETED') {
+                      setLocalMessage('Bereits abgeschlossen.');
                     } else {
                       setLocalMessage('Status muss auf Abschluss stehen.');
                     }
@@ -730,24 +734,26 @@ function AdminProductRow({
                     const data = await res.json().catch(() => ({}));
                     if (!res.ok) {
                       setLocalMessage(data.error || 'Senden fehlgeschlagen.');
-                    } else {
-                      setLocalMessage('Completion-Email mit allen Dateien gesendet.');
+                      return;
                     }
+                    setLocalMessage('Completion-Email mit allen Dateien gesendet.');
+                    onUpdated({ id: product.id, status: 'COMPLETED', adminProgress: 'COMPLETION' });
                   } catch (err) {
                     console.error(err);
                     setLocalMessage('Senden fehlgeschlagen.');
                   } finally {
                     setSendLoading(false);
-                    onUpdated({ id: product.id, status: 'COMPLETED', adminProgress: 'PASS' });
                   }
                 }}
                 className="rounded-lg border border-emerald-800 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-800 transition hover:bg-emerald-50 disabled:opacity-70"
                 title={
                   !permissions.canSendCompletion
                     ? 'Keine Berechtigung.'
-                    : (product.adminProgress as any) !== 'COMPLETION'
-                      ? 'Status muss auf Abschluss stehen.'
-                      : undefined
+                    : product.status === 'COMPLETED'
+                      ? 'Bereits abgeschlossen.'
+                      : (product.adminProgress as any) !== 'COMPLETION'
+                        ? 'Status muss auf Abschluss stehen.'
+                        : undefined
                 }
               >
                 {sendLoading ? '6. Sende…' : '6. Completion – Send all Files'}

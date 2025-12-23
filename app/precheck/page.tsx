@@ -891,11 +891,16 @@ export default function PrecheckPage() {
                   );
                   const savingsLabel = formatEur(discountSavings(net));
                   const isPriority = option.id === "priority";
-                  const checkoutCtaClass = isPriority
-                    ? "text-slate-900 shadow-lg shadow-amber-500/25 ring-1 ring-amber-200/70 group-hover:brightness-110"
-                    : "bg-white/15 text-white group-hover:bg-white/25";
-                  const checkoutCtaStyle = isPriority
-                    ? { backgroundImage: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 55%, #d97706 100%)" }
+                  const checkoutCtaClass =
+                    "text-slate-900 shadow-lg shadow-amber-500/25 ring-1 ring-amber-200/70 group-hover:brightness-110";
+                  const checkoutCtaStyle = {
+                    backgroundImage: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 55%, #d97706 100%)",
+                  };
+                  const timelineClass = isPriority
+                    ? "mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-white/95 shadow-sm ring-1 ring-emerald-200/40"
+                    : "mt-2 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-white/85";
+                  const timelineStyle = isPriority
+                    ? { backgroundImage: "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #4ade80 100%)" }
                     : undefined;
                   return (
                   <button
@@ -926,7 +931,7 @@ export default function PrecheckPage() {
                       <div className="text-base font-medium text-white/95">
                         {priceLabel}
                       </div>
-                      <span className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-white/85">
+                      <span className={timelineClass} style={timelineStyle}>
                         {tr(option.timeline.de, option.timeline.en)}
                       </span>
                       {showCtaDiscount && (
