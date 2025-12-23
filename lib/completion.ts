@@ -126,6 +126,9 @@ async function runCompletion(productId: string, message?: string): Promise<Compl
   if (!['PAID', 'IN_REVIEW'].includes(product.status)) {
     throw new CompletionError('INVALID_STATUS', 400);
   }
+  if (product.paymentStatus !== 'PAID' && product.paymentStatus !== 'MANUAL') {
+    throw new CompletionError('PRECHECK_NOT_PAID', 400);
+  }
 
   const hasPaidLicenseOrder = product.orders.some(
     (o) =>

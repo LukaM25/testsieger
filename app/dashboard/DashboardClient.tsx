@@ -496,7 +496,9 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                       Zertifikat öffnen (PDF)
                     </a>
                   ) : (
-                    <p className="text-sm text-amber-600">Prüfung wird vorbereitet. Wir melden uns per E-Mail.</p>
+                    <p className="text-sm text-amber-600">
+                      Prüfungsverlauf: {getProgressLabel(p.adminProgress, p.status)}
+                    </p>
                   )}
                   <div className="flex justify-center">
                     <span className="rounded-lg bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">

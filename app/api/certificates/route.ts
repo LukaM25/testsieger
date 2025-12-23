@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { generateCertificatePdf } from "@/pdfGenerator";
 import QRCode from "qrcode";
+import { AdminRole } from "@prisma/client";
+
+import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/admin";
+import { generateCertificatePdf } from "@/pdfGenerator";
 import { generateSeal as generateSealImage } from "@/lib/seal";
 import { storeCertificateAssets } from "@/lib/certificateAssets";
 
@@ -9,6 +12,9 @@ export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
+    const admin = await requireAdmin(AdminRole.SUPERADMIN).catch(() => null);
+    if (!admin) return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+
     const { productId } = await req.json();
 
     const product = await prisma.product.findUnique({
@@ -17,6 +23,11 @@ export async function POST(req: Request) {
     });
 
     if (!product) return NextResponse.json({ error: "Produkt nicht gefunden" }, { status: 404 });
+
+    const isPrecheckPaid = product.paymentStatus === "PAID" || product.paymentStatus === "MANUAL";
+    if (!isPrecheckPaid) {
+      return NextResponse.json({ error: "PRECHECK_NOT_PAID" }, { status: 400 });
+    }
 
     const existingCert = product.certificate;
     const seal_number = existingCert?.seal_number ?? generateSeal();

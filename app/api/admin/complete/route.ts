@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
+import { AdminRole } from '@prisma/client';
+
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/admin';
 import { processAndSendCertificate } from '@/emailService';
 
 export async function POST(req: Request) {
   try {
+    const admin = await requireAdmin(AdminRole.SUPERADMIN).catch(() => null);
+    if (!admin) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+
     const { productId, message } = await req.json();
 
     if (!productId) {
@@ -18,6 +24,9 @@ export async function POST(req: Request) {
 
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+    if (product.paymentStatus !== 'PAID' && product.paymentStatus !== 'MANUAL') {
+      return NextResponse.json({ error: 'PRECHECK_NOT_PAID' }, { status: 400 });
     }
 
     // 2. Ensure a Certificate Record exists

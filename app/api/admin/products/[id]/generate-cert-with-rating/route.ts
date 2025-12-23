@@ -45,6 +45,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     });
     if (!product) return NextResponse.json({ error: "PRODUCT_NOT_FOUND" }, { status: 404 });
 
+    const isPrecheckPaid = product.paymentStatus === "PAID" || product.paymentStatus === "MANUAL";
+    if (!isPrecheckPaid) {
+      return NextResponse.json({ error: "PRECHECK_NOT_PAID" }, { status: 400 });
+    }
+
     const ratingScore = product.certificate?.ratingScore || "";
     const ratingLabel = product.certificate?.ratingLabel || "";
     if (!ratingScore || !ratingLabel) {

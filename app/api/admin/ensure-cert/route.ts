@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
+import { AdminRole } from '@prisma/client';
+
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/admin';
 
 export async function POST(req: Request) {
   try {
+    const admin = await requireAdmin(AdminRole.EXAMINER).catch(() => null);
+    if (!admin) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+
     const { productId } = await req.json();
 
     if (!productId) return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
