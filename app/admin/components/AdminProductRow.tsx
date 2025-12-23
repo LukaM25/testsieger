@@ -350,6 +350,7 @@ function AdminProductRow({
       setLocalMessage('Keine Berechtigung für Downloads.');
       return;
     }
+    const popup = window.open('', '_blank', 'noopener,noreferrer');
     try {
       const res = await fetch(`/api/admin/products/${product.id}/asset-url?kind=${encodeURIComponent(kind)}`, {
         credentials: 'same-origin',
@@ -357,11 +358,18 @@ function AdminProductRow({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.url) {
+        if (popup) popup.close();
         setLocalMessage(data?.error || 'Download konnte nicht geöffnet werden.');
         return;
       }
-      window.open(String(data.url), '_blank', 'noreferrer');
+      if (popup) {
+        popup.location.href = String(data.url);
+        popup.focus();
+      } else {
+        window.location.href = String(data.url);
+      }
     } catch (err) {
+      if (popup) popup.close();
       console.error('OPEN_ASSET_FAILED', err);
       setLocalMessage('Download konnte nicht geöffnet werden.');
     }
