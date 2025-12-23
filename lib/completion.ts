@@ -334,7 +334,7 @@ async function runCompletion(productId: string, message?: string): Promise<Compl
 
   // Build invoice lines (best-effort)
   const invoiceLines: InvoiceLine[] = [];
-  if (product.paymentStatus !== 'UNPAID') {
+  if (product.paymentStatus === 'PAID' || product.paymentStatus === 'MANUAL') {
     invoiceLines.push({
       label: 'Grundgebühr',
       amountCents: 25400,

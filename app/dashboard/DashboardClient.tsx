@@ -118,6 +118,10 @@ export default function DashboardClient({ user }: DashboardClientProps) {
   const [licensePaying, setLicensePaying] = useState<string | null>(null);
   const [baseFeeSelections, setBaseFeeSelections] = useState<Record<string, string>>({});
   const [baseFeePaying, setBaseFeePaying] = useState<string | null>(null);
+  const [showBilling, setShowBilling] = useState(false);
+  const [showProducts, setShowProducts] = useState(false);
+  const [billingMounted, setBillingMounted] = useState(false);
+  const [productsMounted, setProductsMounted] = useState(false);
   const [newProduct, setNewProduct] = useState({
     productName: "",
     brand: "",
@@ -273,6 +277,47 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     }
   };
 
+  useEffect(() => {
+    if (showBilling) {
+      setBillingMounted(true);
+      return;
+    }
+    if (!billingMounted) return;
+    const timer = setTimeout(() => setBillingMounted(false), 250);
+    return () => clearTimeout(timer);
+  }, [showBilling, billingMounted]);
+
+  useEffect(() => {
+    if (showProducts) {
+      setProductsMounted(true);
+      return;
+    }
+    if (!productsMounted) return;
+    const timer = setTimeout(() => setProductsMounted(false), 250);
+    return () => clearTimeout(timer);
+  }, [showProducts, productsMounted]);
+
+  const paidOrders = useMemo(() => {
+    const orders = Array.isArray(user.orders) ? user.orders : [];
+    return orders.filter((order: any) => Boolean(order?.paidAt));
+  }, [user.orders]);
+
+  const formatDate = (iso?: string | null) => {
+    if (!iso) return "—";
+    const date = new Date(iso);
+    return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+  };
+
+  const orderLabel = (order: any) => {
+    const plan = order?.plan;
+    if (plan === "PRECHECK_PRIORITY") return "Grundgebühr (Priority)";
+    if (plan === "PRECHECK_FEE") return "Grundgebühr";
+    if (plan === "BASIC") return "Lizenz Basic";
+    if (plan === "PREMIUM") return "Lizenz Premium";
+    if (plan === "LIFETIME") return "Lizenz Lifetime";
+    return "Rechnung";
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8">
       <div className="mx-auto max-w-5xl space-y-8">
@@ -286,6 +331,81 @@ export default function DashboardClient({ user }: DashboardClientProps) {
         </header>
 
         <PrecheckStatusCard state={statusState} />
+
+        <section id="billing-licenses" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setShowBilling((open) => !open)}
+            className="flex w-full items-center justify-between gap-3 text-left"
+            aria-expanded={showBilling}
+          >
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Abrechnung & Lizenzen</h2>
+              <p className="text-sm text-slate-500">Rechnungen und Lizenzstatus im Überblick.</p>
+            </div>
+            <span className={`text-slate-400 transition ${showBilling ? "rotate-180" : ""}`}>▾</span>
+          </button>
+          {billingMounted && (
+            <div
+              className={`mt-4 overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${
+                showBilling ? "max-h-[1200px] opacity-100" : "max-h-0 opacity-0"
+              }`}
+            >
+              <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+              <div className="text-sm font-semibold text-slate-800">Rechnungen</div>
+              <div className="mt-3 space-y-2">
+                {paidOrders.length === 0 && <p className="text-sm text-slate-500">Noch keine Rechnungen.</p>}
+                {paidOrders.map((order: any) => (
+                  <div key={order.id} className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 shadow-sm">
+                    <div className="text-xs text-slate-600">
+                      <div className="font-semibold text-slate-800">{orderLabel(order)}</div>
+                      <div>{order.product?.name || "Produkt"} · {formatDate(order.paidAt)}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleReceipt(order.id)}
+                      className="rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-black"
+                    >
+                      Rechnung PDF
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+              <div className="text-sm font-semibold text-slate-800">Lizenzen</div>
+              <div className="mt-3 space-y-2">
+                {products.filter((p: any) => p.license?.status).length === 0 && (
+                  <p className="text-sm text-slate-500">Noch keine Lizenzen aktiv.</p>
+                )}
+                {products.map((p: any) => {
+                  const status = p.license?.status;
+                  if (!status) return null;
+                  return (
+                    <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 text-xs font-semibold shadow-sm">
+                      <span className="text-slate-700">{p.name}</span>
+                      {status === "ACTIVE" ? (
+                        <a
+                          href={`/kontakt?topic=lizenz-kuendigen&productId=${encodeURIComponent(p.id)}`}
+                          className="rounded-full border border-slate-200 px-3 py-1 text-[11px] font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-800"
+                        >
+                          Lizenz kündigen
+                        </a>
+                      ) : status === "EXPIRED" ? (
+                        <span className="text-amber-600">Lizenz abgelaufen</span>
+                      ) : (
+                        <span className="text-slate-500">Status: {status}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+            </div>
+          )}
+        </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
@@ -363,16 +483,30 @@ export default function DashboardClient({ user }: DashboardClientProps) {
           )}
         </section>
 
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold text-slate-900">Ihre Produkte</h2>
-          {products.length === 0 && <p className="text-slate-600">Noch keine Produkte erfasst.</p>}
-          <div className="grid gap-4">
-            {products.map((p: any) => {
-              const baseFeePaid = ["PAID", "MANUAL"].includes(p.paymentStatus);
-              const hasPassed = p.adminProgress === "PASS";
-              const licenseActive = p.license?.status === "ACTIVE";
-              return (
-              <div key={p.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="space-y-3" id="products-section">
+          <button
+            type="button"
+            onClick={() => setShowProducts((open) => !open)}
+            className="flex w-full items-center justify-between gap-3 text-left"
+            aria-expanded={showProducts}
+          >
+            <h2 className="text-lg font-semibold text-slate-900">Ihre Produkte</h2>
+            <span className={`text-slate-400 transition ${showProducts ? "rotate-180" : ""}`}>▾</span>
+          </button>
+          {productsMounted && (
+            <div
+              className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${
+                showProducts ? "max-h-[2200px] opacity-100" : "max-h-0 opacity-0"
+              }`}
+            >
+              {products.length === 0 && <p className="text-slate-600">Noch keine Produkte erfasst.</p>}
+              <div className="grid gap-4">
+                {products.map((p: any) => {
+                  const baseFeePaid = ["PAID", "MANUAL"].includes(p.paymentStatus);
+                  const hasPassed = p.adminProgress === "PASS";
+                  const licenseActive = p.license?.status === "ACTIVE";
+                  return (
+                  <div key={p.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <div className="text-lg font-semibold text-slate-900">{p.name}</div>
@@ -400,7 +534,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                             : "bg-slate-200 text-slate-500 cursor-not-allowed"
                         }`}
                       >
-                        Beleg herunterladen
+                        Rechnung Grundgebühr
                       </button>
                     </>
                   ) : (
@@ -507,9 +641,11 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                   </div>
                 </div>
               </div>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </section>
 
       </div>

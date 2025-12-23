@@ -75,6 +75,8 @@ export function PrecheckStatusCard({ state, className = "" }: Props) {
   ];
 
   const activePercent = isOptimistic ? 0 : Math.min(stage.percent, 100);
+  const statusBadgeLabel = steps.find((step) => step.key === stage.key)?.label ?? stageLabel;
+  const showStatusBadge = Boolean(productStatus) && !isOptimistic && stage.key !== "PRECHECK";
   const errorMessage =
     statusError === "UNAUTHORIZED"
       ? tr("Bitte melden Sie sich an, um den Status zu sehen.", "Please sign in to view your status.")
@@ -173,6 +175,8 @@ export function PrecheckStatusCard({ state, className = "" }: Props) {
                 initialCertificate={productStatus.certificate}
                 status={productStatus.status}
                 paymentStatus={productStatus.paymentStatus}
+                statusLabel={statusBadgeLabel}
+                showStatusLabel={showStatusBadge}
                 tr={tr}
               />
             </div>
@@ -217,10 +221,20 @@ type CertificateActionProps = {
   status: string;
   paymentStatus: ProductStatusPayload["paymentStatus"];
   initialCertificate: ProductStatusPayload["certificate"];
+  statusLabel: string;
+  showStatusLabel: boolean;
   tr: (de: string, en: string) => string;
 };
 
-function CertificateAction({ productId, status, paymentStatus, initialCertificate, tr }: CertificateActionProps) {
+function CertificateAction({
+  productId,
+  status,
+  paymentStatus,
+  initialCertificate,
+  statusLabel,
+  showStatusLabel,
+  tr,
+}: CertificateActionProps) {
   const isPaid = paymentStatus === "PAID" || paymentStatus === "MANUAL";
   const pollingEnabled = isPaid;
   const { data } = useProductStatusPoll(productId, { enabled: pollingEnabled, intervalMs: 8000 });
@@ -243,6 +257,12 @@ function CertificateAction({ productId, status, paymentStatus, initialCertificat
 
   const isGenerating = isPaid && (!effectiveStatus || effectiveStatus === "PENDING");
 
+  const statusText = showStatusLabel
+    ? statusLabel
+    : isPaid
+      ? tr("Prüfung wird vorbereitet.", "Review is being prepared.")
+      : tr("Zertifikat nach Zahlung verfügbar.", "Certificate available after payment.");
+
   return (
     <span className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
       {isGenerating && (
@@ -251,7 +271,7 @@ function CertificateAction({ productId, status, paymentStatus, initialCertificat
           <path className="opacity-75" d="M4 12a8 8 0 018-8" />
         </svg>
       )}
-      {isPaid ? tr("Prüfung wird vorbereitet.", "Review is being prepared.") : tr("Zertifikat nach Zahlung verfügbar.", "Certificate available after payment.")}
+      {statusText}
     </span>
   );
 }
