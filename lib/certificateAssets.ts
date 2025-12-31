@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import { AssetType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { officialPdfKey, qrKey } from '@/lib/assetKeys';
-import { MAX_UPLOAD_BYTES, saveBufferToS3, signedUrlForKey } from '@/lib/storage';
+import { MAX_UPLOAD_BYTES, saveBufferToS3, signedUrlForKey, deleteKey } from '@/lib/storage';
 
 const PDF_MIME = 'application/pdf';
 const PNG_MIME = 'image/png';
@@ -50,17 +50,32 @@ export async function storeCertificateAssets({
   const pdfKey = officialPdfKey(sealNumber);
   const qrKeyStr = qrKey(sealNumber);
 
-  await saveBufferToS3({
-    key: pdfKey,
-    body: pdfBuffer,
-    contentType: PDF_MIME,
-  });
+  const uploadedKeys: string[] = [];
+  try {
+    await saveBufferToS3({
+      key: pdfKey,
+      body: pdfBuffer,
+      contentType: PDF_MIME,
+    });
+    uploadedKeys.push(pdfKey);
 
-  await saveBufferToS3({
-    key: qrKeyStr,
-    body: qrBuffer,
-    contentType: PNG_MIME,
-  });
+    await saveBufferToS3({
+      key: qrKeyStr,
+      body: qrBuffer,
+      contentType: PNG_MIME,
+    });
+    uploadedKeys.push(qrKeyStr);
+  } catch (err) {
+    // Best-effort cleanup if an upload fails mid-flight
+    await Promise.all(
+      uploadedKeys.map((key) =>
+        deleteKey(key).catch((cleanupErr) =>
+          console.warn('CERT_ASSET_CLEANUP_FAILED', { key, cleanupErr })
+        )
+      )
+    );
+    throw err;
+  }
 
   const pdfHash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
   const qrHash = crypto.createHash('sha256').update(qrBuffer).digest('hex');

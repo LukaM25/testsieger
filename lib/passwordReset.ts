@@ -9,8 +9,10 @@ export async function createResetToken(email: string) {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) return null; // Avoid leaking user existence
 
+  await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
+
   const token = crypto.randomBytes(TOKEN_BYTES).toString('hex');
-  const tokenHash = await bcrypt.hash(token, 10);
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
   const expiresAt = new Date(Date.now() + TOKEN_TTL_MINUTES * 60 * 1000);
 
   await prisma.passwordResetToken.create({
@@ -21,13 +23,29 @@ export async function createResetToken(email: string) {
 }
 
 export async function consumeResetToken(rawToken: string) {
-  // Find non-expired tokens and compare hashes to avoid storing raw tokens
-  const tokens = await prisma.passwordResetToken.findMany({
-    where: { expiresAt: { gt: new Date() } },
+  if (!rawToken || rawToken.length !== TOKEN_BYTES * 2) return null;
+
+  const digest = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+  // Fast path: deterministic match
+  const now = new Date();
+  const exact = await prisma.passwordResetToken.findFirst({
+    where: { tokenHash: digest, expiresAt: { gt: now } },
     orderBy: { createdAt: 'desc' },
   });
+  if (exact) {
+    await prisma.passwordResetToken.deleteMany({ where: { userId: exact.userId } });
+    return exact.userId;
+  }
 
-  for (const t of tokens) {
+  // Backward compatibility: legacy bcrypt hashes (limit scope)
+  const legacyTokens = await prisma.passwordResetToken.findMany({
+    where: { expiresAt: { gt: now } },
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+  });
+
+  for (const t of legacyTokens) {
     const ok = await bcrypt.compare(rawToken, t.tokenHash);
     if (ok) {
       await prisma.passwordResetToken.deleteMany({ where: { userId: t.userId } });
