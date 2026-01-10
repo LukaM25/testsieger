@@ -8,6 +8,8 @@ const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const BREVO_API_URL = process.env.BREVO_API_URL ?? 'https://api.brevo.com/v3/smtp/email';
 const FROM_EMAIL = process.env.MAIL_FROM ?? 'pruefsiegel@lucidstar.de';
 const APP_BASE_URL = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://pruefsiegelzentrum.vercel.app';
 
@@ -24,6 +26,37 @@ type Attachment = { filename: string; content: Buffer; contentType?: string };
 
 async function sendEmail(opts: { to: string; subject: string; html: string; attachments?: Attachment[]; from?: string }) {
   const { to, subject, html, attachments, from } = opts;
+
+  if (BREVO_API_KEY) {
+    const sender = parseFrom(from ?? FROM_EMAIL);
+    const payload: Record<string, unknown> = {
+      sender,
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    };
+    if (attachments?.length) {
+      payload.attachment = attachments.map((attachment) => ({
+        name: attachment.filename,
+        content: attachment.content.toString('base64'),
+      }));
+    }
+    const res = await fetch(BREVO_API_URL, {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        'api-key': BREVO_API_KEY,
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      console.error('Brevo send failed', res.status, text);
+      throw new Error(`Brevo send failed: ${res.status}`);
+    }
+    return;
+  }
 
   if (transporter) {
     await transporter.sendMail({
@@ -542,6 +575,15 @@ function renderNote(message?: string) {
       <p style="margin:0;color:#0f172a;">${safe}</p>
     </div>
   `;
+}
+
+function parseFrom(input: string): { name?: string; email: string } {
+  const trimmed = input.trim();
+  const match = trimmed.match(/^(.*)<([^>]+)>$/);
+  if (!match) return { email: trimmed };
+  const name = match[1].trim().replace(/^"|"$/g, '');
+  const email = match[2].trim();
+  return { email, name: name || undefined };
 }
 
 // minimal XSS-safe escaping for interpolated strings in HTML

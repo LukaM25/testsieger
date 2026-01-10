@@ -19,15 +19,24 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: false, 
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+const SMTP_HOST = process.env.SMTP_HOST;
+const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const BREVO_API_URL = process.env.BREVO_API_URL || 'https://api.brevo.com/v3/smtp/email';
+
+const transporter = SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS
+  ? nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_PORT === 465,
+      auth: {
+        user: SMTP_USER,
+        pass: SMTP_PASS,
+      },
+    })
+  : null;
 const MAIL_FROM = process.env.MAIL_FROM || process.env.SMTP_USER;
 
 export async function processAndSendCertificate(certificateId, userEmail, message) {
@@ -132,7 +141,7 @@ const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/lizenzen?q=${record
     console.log(`Sending email to ${userEmail}...`);
     const note = formatNote(message);
 
-    await transporter.sendMail({
+    await sendEmail({
       from: `Pruefsiegel Zentrum UG – Certificate <${MAIL_FROM}>`,
       to: userEmail,
       subject: `Your Product Certificate: ${record.name}`,
@@ -213,4 +222,55 @@ function renderFooter() {
       </div>
     </div>
   `;
+}
+
+async function sendEmail(opts) {
+  const { from, to, subject, html, attachments } = opts;
+
+  if (BREVO_API_KEY) {
+    const sender = parseFrom(from || MAIL_FROM);
+    const payload = {
+      sender,
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    };
+    if (attachments && attachments.length) {
+      payload.attachment = attachments.map((attachment) => ({
+        name: attachment.filename,
+        content: attachment.content.toString('base64'),
+      }));
+    }
+    const res = await fetch(BREVO_API_URL, {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        'api-key': BREVO_API_KEY,
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      console.error('Brevo send failed', res.status, text);
+      throw new Error(`Brevo send failed: ${res.status}`);
+    }
+    return;
+  }
+
+  if (transporter) {
+    await transporter.sendMail({ from, to, subject, html, attachments });
+    return;
+  }
+
+  console.warn('No email provider configured. Email skipped.');
+}
+
+function parseFrom(input) {
+  const trimmed = String(input || '').trim();
+  const match = trimmed.match(/^(.*)<([^>]+)>$/);
+  if (!match) return { email: trimmed };
+  const name = match[1].trim().replace(/^"|"$/g, '');
+  const email = match[2].trim();
+  return { email, name: name || undefined };
 }
