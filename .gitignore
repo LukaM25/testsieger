@@ -23,10 +23,11 @@ coverage
 # Environment (never commit secrets)
 .env
 .env.*
+.env.example
 !.env.example
 
 # Storybook
-storybook-static
+storybook-static     
 
 # Generated runtime assets (local-only)
 public/uploads/*
