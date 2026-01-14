@@ -61,7 +61,7 @@ export async function POST(req: Request) {
         size: product.size ?? null,
         madeIn: product.madeIn ?? null,
         material: product.material ?? null,
-        status: product.status,
+        status: 'PASS',
         adminProgress: product.adminProgress,
         paymentStatus: product.paymentStatus,
         createdAt: product.createdAt.toISOString(),
@@ -115,6 +115,7 @@ export async function POST(req: Request) {
         seal_number,
         externalReferenceId: null,
         sealUrl,
+        status: 'PASS',
       },
     });
 
