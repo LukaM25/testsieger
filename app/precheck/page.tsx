@@ -1044,7 +1044,7 @@ export default function PrecheckPage() {
             <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl transition-transform duration-700 hover:scale-[1.01]">
               <div className="relative aspect-[16/9] w-full">
                 <Image
-                  src="/images/amazonsiegel.png"
+                  src="/images/amazonsiegel.jpeg"
                   alt={tr("Listing mit Testsieger-Siegel", "Listing with Testsieger seal")}
                   fill
                   className="object-cover"
