@@ -93,6 +93,23 @@ const phasesQa = {
         en: 'After passing, you receive the test result immediately and can choose the appropriate license plan.\nYou get a detailed test report for your records; additionally, the result is published under the assigned product category at the Deutsches Prüfsiegel Institut.\nYou also receive a certificate (accessible via the QR code on the seal) and the seal as a PNG file for the agreed use on packaging, website, or marketing materials.',
       },
     },
+    {
+      question: { de: 'Welche Kosten entstehen – und wann?', en: 'What costs arise — and when?' },
+      answer: {
+        de: 'Nach dem kostenlosen bestandenen Pre-Check kann das Produkt an uns geschickt werden.\nFür den Prüfungsaufwand, das Erstellen der Zertifikate und Berichte wird eine Grundgebühr von 254 € erhoben.\nNach Abschluss der Prüfung und dem vorliegenden Testergebnis kann der Lizenzplan gewählt werden.\nDer Lizenzplan ist individuell auszuwählen und wird für ein komplettes Jahr bezahlt. Ist das Ergebnis nicht zufriedenstellend, muss kein Lizenzplan ausgewählt werden – somit wird auch kein Siegel und Zertifikat ausgestellt.',
+        en: 'After the free pre-check is passed, the product can be sent to us.\nA base fee of €254 is charged for the testing effort and the creation of certificates and reports.\nAfter the test is completed and the result is available, you can choose a license plan.\nThe license plan is selected individually and paid for a full year.\nIf the result is not satisfactory, no license plan is required — therefore no seal or certificate is issued.',
+      },
+    },
+    {
+      question: {
+        de: 'Mehrere Produkte sollen getestet werden, ändert sich der Preis?',
+        en: 'If multiple products are tested, does the price change?',
+      },
+      answer: {
+        de: 'Bei einer Anzahl ab 5 Produkten, die getestet werden sollen, können Sie uns direkt anschreiben und wir bereiten Ihnen ein individuelles Angebot.',
+        en: 'If you want to test 5 or more products, please contact us directly and we will prepare a tailored offer.',
+      },
+    },
   ],
 };
 
