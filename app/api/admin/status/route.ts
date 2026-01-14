@@ -44,8 +44,23 @@ export async function POST(req: Request) {
   });
   const licensePaid =
     Boolean(paidLicenseOrder) || Boolean(product.license?.paidAt) || product.license?.status === 'ACTIVE';
-  if (!licensePaid) {
-    return NextResponse.json({ error: 'LICENSE_NOT_PAID' }, { status: 400 });
+  const ratingReady = Boolean(product.certificate?.ratingScore && product.certificate?.ratingLabel);
+  const reportUploaded = Boolean(product.certificate?.reportUrl);
+
+  if (status === 'PASS' && !ratingReady) {
+    return NextResponse.json({ error: 'RATING_MISSING' }, { status: 400 });
+  }
+
+  if (status === 'COMPLETION') {
+    if (!licensePaid) {
+      return NextResponse.json({ error: 'LICENSE_NOT_PAID' }, { status: 400 });
+    }
+    if (!ratingReady) {
+      return NextResponse.json({ error: 'RATING_MISSING' }, { status: 400 });
+    }
+    if (!reportUploaded) {
+      return NextResponse.json({ error: 'REPORT_MISSING' }, { status: 400 });
+    }
   }
 
   const productUpdate: { adminProgress: ValidStatus; status?: ProductStatus } = {

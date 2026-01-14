@@ -156,12 +156,12 @@ function AdminProductRow({
       setLocalMessage('Keine Berechtigung für Status-Updates.');
       return;
     }
-    if (!licensePaid) {
-      setLocalMessage('Lizenzzahlung erforderlich.');
-      return;
-    }
     if (!permissions.canFinalizeStatus && (selectedStatus === 'PASS' || selectedStatus === 'FAIL')) {
       setLocalMessage('PASS/FAIL nur für Superadmin.');
+      return;
+    }
+    if (statusBlockReason) {
+      setLocalMessage(statusBlockReason);
       return;
     }
     setLocalMessage(null);
@@ -340,8 +340,11 @@ function AdminProductRow({
   const canAccessAssets = permissions.role !== 'VIEWER';
   const licensePaid =
     Boolean(product.licensePaid) || Boolean(product.license?.paidAt) || product.license?.status === 'ACTIVE';
+  const ratingReady = Boolean(product.certificate?.ratingScore && product.certificate?.ratingLabel);
+  const reportUploaded = Boolean(product.certificate?.reportUrl);
   const canSendLicensePlansEmail =
     permissions.canUpdateStatus &&
+    ratingReady &&
     ['PAID', 'MANUAL'].includes(product.paymentStatus) &&
     (product.adminProgress as any) === 'PASS';
   const canTriggerCompletion =
@@ -349,9 +352,20 @@ function AdminProductRow({
     (product.adminProgress as any) === 'COMPLETION' &&
     product.status !== 'COMPLETED' &&
     licensePaid;
-  const hasRatingData = Boolean(product.certificate?.ratingScore && product.certificate?.ratingLabel);
+  const hasRatingData = ratingReady;
   const hasCertificatePdf = Boolean(product.certificate?.pdfUrl);
   const hasSeal = Boolean(product.certificate?.sealUrl);
+  const statusBlockReason = (() => {
+    if (selectedStatus === 'PASS' && !ratingReady) {
+      return 'Prüfergebnis fehlt – bitte Ergebnis speichern.';
+    }
+    if (selectedStatus === 'COMPLETION') {
+      if (!licensePaid) return 'Lizenzzahlung erforderlich.';
+      if (!ratingReady) return 'Prüfergebnis fehlt – bitte Ergebnis speichern.';
+      if (!reportUploaded) return 'Prüfbericht fehlt.';
+    }
+    return null;
+  })();
   const sealButtonStyle = hasSeal
     ? { backgroundColor: '#b45309', borderColor: '#b45309', color: '#ffffff', WebkitTextFillColor: '#ffffff' }
     : undefined;
@@ -559,7 +573,7 @@ function AdminProductRow({
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value as StatusOption)}
-                  disabled={!permissions.canUpdateStatus || !licensePaid}
+                  disabled={!permissions.canUpdateStatus}
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] disabled:opacity-60"
                 >
                   {allowedStatuses.map((status) => (
@@ -568,7 +582,9 @@ function AdminProductRow({
                       value={status.value}
                       disabled={
                         status.value === 'PRECHECK' ||
-                        (!permissions.canFinalizeStatus && (status.value === 'PASS' || status.value === 'FAIL'))
+                        (!permissions.canFinalizeStatus && (status.value === 'PASS' || status.value === 'FAIL')) ||
+                        (status.value === 'PASS' && !ratingReady) ||
+                        (status.value === 'COMPLETION' && (!licensePaid || !ratingReady || !reportUploaded))
                       }
                     >
                       {status.label}
@@ -577,18 +593,20 @@ function AdminProductRow({
                 </select>
                 <button
                   type="button"
-                  disabled={loading || !permissions.canUpdateStatus || !licensePaid}
+                  disabled={loading || !permissions.canUpdateStatus || Boolean(statusBlockReason)}
                   onClick={handleUpdate}
                   className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-black disabled:opacity-70"
                 >
                   {loading ? 'Status wird gespeichert…' : 'STATUS SPEICHERN'}
                 </button>
               </div>
-              {!licensePaid && (
+              {statusBlockReason ? (
+                <p className="text-xs text-rose-600">{statusBlockReason}</p>
+              ) : !licensePaid ? (
                 <p className="text-xs text-rose-600">
-                  Lizenzzahlung offen – Statusänderungen sind gesperrt.
+                  Lizenzzahlung offen – Abschluss &amp; Zertifikate sind gesperrt.
                 </p>
-              )}
+              ) : null}
 
               <a
                 href={`/admin/products/${product.id}/rating`}
@@ -607,7 +625,17 @@ function AdminProductRow({
                 onClick={async () => {
 	                  setLicensePlansEmailMessage(null);
 	                  if (!canSendLicensePlansEmail) {
-	                    setLicensePlansEmailMessage('Voraussetzungen fehlen (Status/Payment/Permission).');
+	                    if (!permissions.canUpdateStatus) {
+	                      setLicensePlansEmailMessage('Keine Berechtigung.');
+	                    } else if (!ratingReady) {
+	                      setLicensePlansEmailMessage('Prüfergebnis fehlt – bitte Ergebnis speichern.');
+	                    } else if (!['PAID', 'MANUAL'].includes(product.paymentStatus)) {
+	                      setLicensePlansEmailMessage('Grundgebühr muss bezahlt sein.');
+	                    } else if ((product.adminProgress as any) !== 'PASS') {
+	                      setLicensePlansEmailMessage('Status muss auf Bestanden stehen.');
+	                    } else {
+	                      setLicensePlansEmailMessage('Voraussetzungen fehlen.');
+	                    }
 	                    return;
 	                  }
 	                  setLicensePlansEmailLoading(true);
@@ -644,6 +672,8 @@ function AdminProductRow({
 	                title={
 	                  !permissions.canUpdateStatus
 	                    ? 'Keine Berechtigung.'
+                      : !ratingReady
+                        ? 'Prüfergebnis fehlt.'
 	                    : !['PAID', 'MANUAL'].includes(product.paymentStatus)
 	                      ? 'Grundgebühr muss bezahlt sein.'
 	                      : (product.adminProgress as any) !== 'PASS'
