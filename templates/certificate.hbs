@@ -173,6 +173,11 @@
       margin-bottom: 24px;
       border: 1px solid rgba(0,0,0,0.05);
     }
+    .status-check {
+      margin-left: 8px;
+      color: #16a34a;
+      font-weight: 700;
+    }
 
     .qr-container {
       background: white;
@@ -307,6 +312,7 @@
 
             <div class="status-badge">
               {{statusLabel status}}
+              {{#isPass status}}<span class="status-check" aria-hidden="true">&#10003;</span>{{/isPass}}
             </div>
 
             <div class="qr-container">

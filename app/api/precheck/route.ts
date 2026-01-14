@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { setSession } from '@/lib/cookies';
 import { sendPrecheckConfirmation } from '@/lib/email';
-import { getSession } from '@/lib/cookies';
+import { getSession } from '@/lib/auth';
 
 const PrecheckSchema = z.object({
   name: z.string().min(2),

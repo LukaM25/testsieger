@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
 import { Plan } from '@prisma/client';
-import { getSession } from '@/lib/cookies';
+import { getSession } from '@/lib/auth';
 import { getPublicBaseUrl } from '@/lib/baseUrl';
 
 export const runtime = 'nodejs';

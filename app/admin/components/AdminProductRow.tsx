@@ -156,6 +156,10 @@ function AdminProductRow({
       setLocalMessage('Keine Berechtigung für Status-Updates.');
       return;
     }
+    if (!licensePaid) {
+      setLocalMessage('Lizenzzahlung erforderlich.');
+      return;
+    }
     if (!permissions.canFinalizeStatus && (selectedStatus === 'PASS' || selectedStatus === 'FAIL')) {
       setLocalMessage('PASS/FAIL nur für Superadmin.');
       return;
@@ -245,6 +249,10 @@ function AdminProductRow({
       setLocalMessage('Keine Berechtigung zum Generieren.');
       return;
     }
+    if (!licensePaid) {
+      setLocalMessage('Lizenzzahlung erforderlich.');
+      return;
+    }
     setLocalMessage(null);
     setSendLoading(true);
     try {
@@ -330,6 +338,8 @@ function AdminProductRow({
 
   const canAccessRatings = permissions.canUpdateStatus;
   const canAccessAssets = permissions.role !== 'VIEWER';
+  const licensePaid =
+    Boolean(product.licensePaid) || Boolean(product.license?.paidAt) || product.license?.status === 'ACTIVE';
   const canSendLicensePlansEmail =
     permissions.canUpdateStatus &&
     ['PAID', 'MANUAL'].includes(product.paymentStatus) &&
@@ -337,7 +347,8 @@ function AdminProductRow({
   const canTriggerCompletion =
     permissions.canSendCompletion &&
     (product.adminProgress as any) === 'COMPLETION' &&
-    product.status !== 'COMPLETED';
+    product.status !== 'COMPLETED' &&
+    licensePaid;
   const hasRatingData = Boolean(product.certificate?.ratingScore && product.certificate?.ratingLabel);
   const hasCertificatePdf = Boolean(product.certificate?.pdfUrl);
   const hasSeal = Boolean(product.certificate?.sealUrl);
@@ -345,39 +356,13 @@ function AdminProductRow({
     ? { backgroundColor: '#b45309', borderColor: '#b45309', color: '#ffffff', WebkitTextFillColor: '#ffffff' }
     : undefined;
 
-  const openSignedAsset = async (kind: 'report' | 'seal') => {
-    if (!canAccessAssets) {
-      setLocalMessage('Keine Berechtigung für Downloads.');
-      return;
-    }
-    const popup = window.open('', '_blank', 'noopener,noreferrer');
-    try {
-      const res = await fetch(`/api/admin/products/${product.id}/asset-url?kind=${encodeURIComponent(kind)}`, {
-        credentials: 'same-origin',
-        cache: 'no-store',
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data?.url) {
-        if (popup) popup.close();
-        setLocalMessage(data?.error || 'Download konnte nicht geöffnet werden.');
-        return;
-      }
-      if (popup) {
-        popup.location.href = String(data.url);
-        popup.focus();
-      } else {
-        window.location.href = String(data.url);
-      }
-    } catch (err) {
-      if (popup) popup.close();
-      console.error('OPEN_ASSET_FAILED', err);
-      setLocalMessage('Download konnte nicht geöffnet werden.');
-    }
-  };
-
   const handleGenerateWithRating = async () => {
     if (!permissions.canGenerateCert) {
       setLocalMessage('Keine Berechtigung zum Generieren.');
+      return;
+    }
+    if (!licensePaid) {
+      setLocalMessage('Lizenzzahlung erforderlich.');
       return;
     }
     setLocalMessage(null);
@@ -502,6 +487,11 @@ function AdminProductRow({
                   {typeof expiresInDays === 'number' ? ` · ${expiresInDays} Tage` : ''}
                 </span>
               ) : null}
+              {!licensePaid && (
+                <span className="inline-flex items-center rounded-full bg-rose-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-rose-700 ring-1 ring-rose-100">
+                  Lizenz: Zahlung offen
+                </span>
+              )}
               {product.certificate?.ratingScore && product.certificate?.ratingLabel && (
                 <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700 ring-1 ring-emerald-100">
                   {product.certificate.ratingScore} · {product.certificate.ratingLabel}
@@ -569,7 +559,7 @@ function AdminProductRow({
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value as StatusOption)}
-                  disabled={!permissions.canUpdateStatus}
+                  disabled={!permissions.canUpdateStatus || !licensePaid}
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] disabled:opacity-60"
                 >
                   {allowedStatuses.map((status) => (
@@ -587,13 +577,18 @@ function AdminProductRow({
                 </select>
                 <button
                   type="button"
-                  disabled={loading || !permissions.canUpdateStatus}
+                  disabled={loading || !permissions.canUpdateStatus || !licensePaid}
                   onClick={handleUpdate}
                   className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-black disabled:opacity-70"
                 >
                   {loading ? 'Status wird gespeichert…' : 'STATUS SPEICHERN'}
                 </button>
               </div>
+              {!licensePaid && (
+                <p className="text-xs text-rose-600">
+                  Lizenzzahlung offen – Statusänderungen sind gesperrt.
+                </p>
+              )}
 
               <a
                 href={`/admin/products/${product.id}/rating`}
@@ -662,8 +657,9 @@ function AdminProductRow({
 
               <button
                 type="button"
-                disabled={sendLoading || !permissions.canGenerateCert}
+                disabled={sendLoading || !permissions.canGenerateCert || !licensePaid}
                 onClick={() => handleSendCertificate()}
+                title={!licensePaid ? 'Lizenzzahlung erforderlich.' : undefined}
                 className={`rounded-lg border px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition ${
                   hasCertificatePdf
                     ? 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 disabled:border-emerald-600 disabled:bg-emerald-600 disabled:text-white disabled:opacity-100 disabled:cursor-not-allowed'
@@ -675,8 +671,9 @@ function AdminProductRow({
 
               <button
                 type="button"
-                disabled={genLoading || !permissions.canGenerateCert}
+                disabled={genLoading || !permissions.canGenerateCert || !licensePaid}
                 onClick={handleGenerateWithRating}
+                title={!licensePaid ? 'Lizenzzahlung erforderlich.' : undefined}
                 style={sealButtonStyle}
                 className={`rounded-lg border px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition ${
                   hasSeal
@@ -686,6 +683,12 @@ function AdminProductRow({
               >
                 {genLoading ? '4. Siegel wird generiert…' : '4. Siegel generieren'}
               </button>
+
+              {!licensePaid && (
+                <p className="text-xs text-rose-600">
+                  Lizenzzahlung erforderlich für Zertifikat, Siegel und Completion.
+                </p>
+              )}
 
               <div className="mt-4 space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
 	                <div className="flex items-center justify-between gap-2">
@@ -719,32 +722,31 @@ function AdminProductRow({
 
               <button
                 type="button"
-                disabled={sendLoading || !canTriggerCompletion}
+                disabled={sendLoading || !permissions.canSendCompletion}
                 onClick={async () => {
-                  if (!canTriggerCompletion) {
-                    if (!permissions.canSendCompletion) {
-                      setLocalMessage('Keine Berechtigung für Completion-Versand.');
-                    } else if (product.status === 'COMPLETED') {
-                      setLocalMessage('Bereits abgeschlossen.');
-                    } else {
-                      setLocalMessage('Status muss auf Abschluss stehen.');
-                    }
+                  if (!permissions.canSendCompletion) {
+                    setLocalMessage('Keine Berechtigung für Completion-Versand.');
                     return;
                   }
+                  const forceSend = !canTriggerCompletion;
                   setSendLoading(true);
                   setLocalMessage(null);
                   try {
                     const res = await fetch('/api/admin/complete-license', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ productId: product.id }),
+                      body: JSON.stringify({ productId: product.id, force: forceSend }),
                     });
                     const data = await res.json().catch(() => ({}));
                     if (!res.ok) {
                       setLocalMessage(data.error || 'Senden fehlgeschlagen.');
                       return;
                     }
-                    setLocalMessage('Completion-Email mit allen Dateien gesendet.');
+                    if (data.alreadySent) {
+                      setLocalMessage('Completion-Email wurde bereits gesendet und erneut verschickt.');
+                    } else {
+                      setLocalMessage('Completion-Email mit allen Dateien gesendet.');
+                    }
                     onUpdated({ id: product.id, status: 'COMPLETED', adminProgress: 'COMPLETION' });
                   } catch (err) {
                     console.error(err);
@@ -754,15 +756,7 @@ function AdminProductRow({
                   }
                 }}
                 className="rounded-lg border border-emerald-800 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-800 transition hover:bg-emerald-50 disabled:opacity-70"
-                title={
-                  !permissions.canSendCompletion
-                    ? 'Keine Berechtigung.'
-                    : product.status === 'COMPLETED'
-                      ? 'Bereits abgeschlossen.'
-                      : (product.adminProgress as any) !== 'COMPLETION'
-                        ? 'Status muss auf Abschluss stehen.'
-                        : undefined
-                }
+                title={!permissions.canSendCompletion ? 'Keine Berechtigung.' : undefined}
               >
                 {sendLoading ? '6. Sende…' : '6. Completion – Send all Files'}
               </button>
@@ -791,10 +785,17 @@ function AdminProductRow({
                 Zertifikat öffnen
               </a>
 	              {product.certificate?.reportUrl ? (
-	                <button
-	                  type="button"
-	                  onClick={() => openSignedAsset('report')}
-	                  disabled={!canAccessAssets}
+	                <a
+	                  href={
+	                    canAccessAssets
+	                      ? `/api/admin/products/${product.id}/asset-url?kind=report&redirect=1`
+	                      : '#'
+	                  }
+	                  target={canAccessAssets ? '_blank' : undefined}
+	                  rel="noreferrer"
+	                  onClick={(e) => {
+	                    if (!canAccessAssets) e.preventDefault();
+	                  }}
 	                  className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-3.5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition ${
 	                    canAccessAssets
 	                      ? 'border border-emerald-700 text-emerald-800 hover:bg-emerald-50'
@@ -802,16 +803,23 @@ function AdminProductRow({
 	                  }`}
 	                >
 	                  Hochgeladener Prüfbericht
-	                </button>
+	                </a>
 	              ) : (
 	                <div className="inline-flex items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
 	                  Kein Upload vorhanden
 	                </div>
 	              )}
-	              <button
-	                type="button"
-	                disabled={!product.certificate?.sealUrl || !canAccessAssets}
-	                onClick={() => openSignedAsset('seal')}
+	              <a
+	                href={
+	                  product.certificate?.sealUrl && canAccessAssets
+	                    ? `/api/admin/products/${product.id}/asset-url?kind=seal&redirect=1`
+	                    : '#'
+	                }
+	                target={product.certificate?.sealUrl && canAccessAssets ? '_blank' : undefined}
+	                rel="noreferrer"
+	                onClick={(e) => {
+	                  if (!product.certificate?.sealUrl || !canAccessAssets) e.preventDefault();
+	                }}
 	                className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-3.5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition ${
 	                  product.certificate?.sealUrl && canAccessAssets
 	                    ? 'border border-amber-700 text-amber-800 hover:bg-amber-50'
@@ -819,7 +827,7 @@ function AdminProductRow({
 	                }`}
 	              >
 	                Siegel öffnen
-	              </button>
+	              </a>
               <a
                 href={canAccessRatings ? `/api/admin/products/${product.id}/rating-sheet` : '#'}
                 onClick={(e) => {

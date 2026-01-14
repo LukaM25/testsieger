@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/cookies';
+import { getSession } from '@/lib/auth';
 import { getCertificateAssetLinks } from '@/lib/certificateAssets';
 import { ensureSignedS3Url } from '@/lib/s3';
 

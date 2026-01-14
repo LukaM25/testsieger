@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { AdminRole } from '@prisma/client';
+import { AdminRole, Plan } from '@prisma/client';
 
 import { requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
@@ -72,6 +72,20 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   });
   if (!product) return NextResponse.json({ error: 'PRODUCT_NOT_FOUND' }, { status: 404 });
 
+  const paidLicenseOrder =
+    !isViewerOnly
+      ? await prisma.order.findFirst({
+          where: {
+            productId,
+            paidAt: { not: null },
+            plan: { in: [Plan.BASIC, Plan.PREMIUM, Plan.LIFETIME] },
+          },
+          select: { id: true },
+        })
+      : null;
+  const licensePaid =
+    Boolean(paidLicenseOrder) || Boolean(product.license?.paidAt) || product.license?.status === 'ACTIVE';
+
   if (isViewerOnly) {
     return NextResponse.json({
       product: {
@@ -82,6 +96,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         status: product.status,
         adminProgress: product.adminProgress,
         paymentStatus: product.paymentStatus,
+        licensePaid,
         createdAt: product.createdAt.toISOString(),
         processNumber: product.processNumber ?? null,
         user: {
@@ -128,6 +143,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       status: product.status,
       adminProgress: product.adminProgress,
       paymentStatus: product.paymentStatus,
+      licensePaid,
       createdAt: product.createdAt.toISOString(),
       processNumber: product.processNumber ?? null,
       user: {
@@ -165,4 +181,3 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     },
   });
 }
-

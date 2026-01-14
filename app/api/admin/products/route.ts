@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { AdminProgress, AdminRole, PaymentStatus, Prisma, ProductStatus } from '@prisma/client';
+import { AdminProgress, AdminRole, PaymentStatus, Plan, Prisma, ProductStatus } from '@prisma/client';
 import { requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 import { ensureSignedS3Url } from '@/lib/s3';
@@ -166,9 +166,26 @@ export async function GET(request: Request) {
       return acc;
     }, {});
 
+    const paidLicenseOrderProductIds = new Set<string>();
+    if (!isViewerOnly && pageProducts.length > 0) {
+      const paidLicenseOrders = await prisma.order.findMany({
+        where: {
+          productId: { in: pageProducts.map((product) => product.id) },
+          paidAt: { not: null },
+          plan: { in: [Plan.BASIC, Plan.PREMIUM, Plan.LIFETIME] },
+        },
+        select: { productId: true },
+      });
+      paidLicenseOrders.forEach((order) => paidLicenseOrderProductIds.add(order.productId));
+    }
+
     const payload = await Promise.all(
       pageProducts.map(async (product) => {
         const processNumber = product.processNumber ?? null;
+        const licensePaid =
+          paidLicenseOrderProductIds.has(product.id) ||
+          Boolean(product.license?.paidAt) ||
+          product.license?.status === 'ACTIVE';
         if (isViewerOnly) {
           return {
             id: product.id,
@@ -178,6 +195,7 @@ export async function GET(request: Request) {
             status: product.status,
             adminProgress: product.adminProgress,
             paymentStatus: product.paymentStatus,
+            licensePaid,
             createdAt: product.createdAt.toISOString(),
             processNumber,
             user: {
@@ -224,6 +242,7 @@ export async function GET(request: Request) {
           status: product.status,
           adminProgress: product.adminProgress,
           paymentStatus: product.paymentStatus,
+          licensePaid,
           createdAt: product.createdAt.toISOString(),
           processNumber,
           user: {

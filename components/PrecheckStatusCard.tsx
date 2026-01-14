@@ -202,7 +202,7 @@ export function PrecheckStatusCard({ state, className = "" }: Props) {
               <div
                 key={step.key}
                 className={`rounded-xl border px-3 py-2 text-xs transition ${
-                  isActive ? "border-slate-300 bg-white shadow-sm" : "border-slate-200 bg-slate-50"
+                  isActive ? "border-sky-200 bg-sky-50 shadow-sm" : "border-slate-200 bg-slate-50"
                 }`}
               >
                 <div className="font-semibold text-slate-900">{step.label}</div>

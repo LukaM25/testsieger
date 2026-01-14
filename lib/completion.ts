@@ -72,7 +72,7 @@ export async function enqueueCompletionJob(
  * Process a single completion job by id. Moves the job to RUNNING, executes the completion pipeline,
  * and updates status to COMPLETED or FAILED accordingly.
  */
-export async function processCompletionJob(jobId: string): Promise<CompletionResult> {
+export async function processCompletionJob(jobId: string, opts?: { force?: boolean }): Promise<CompletionResult> {
   const job = await prisma.completionJob.findUnique({ where: { id: jobId } });
   if (!job) {
     throw new CompletionError('JOB_NOT_FOUND', 404);
@@ -91,7 +91,7 @@ export async function processCompletionJob(jobId: string): Promise<CompletionRes
   });
 
   try {
-    const result = await runCompletion(running.productId);
+    const result = await runCompletion(running.productId, undefined, opts);
     await syncLicenseAfterCompletion(running.productId, result);
     await prisma.completionJob.update({
       where: { id: jobId },
@@ -114,16 +114,17 @@ export async function processCompletionJob(jobId: string): Promise<CompletionRes
   }
 }
 
-async function runCompletion(productId: string, message?: string): Promise<CompletionResult> {
+async function runCompletion(productId: string, message?: string, opts?: { force?: boolean }): Promise<CompletionResult> {
   const product = await prisma.product.findUnique({
     where: { id: productId },
     include: { user: true, certificate: true, orders: true, license: true },
   });
   if (!product) throw new CompletionError('PRODUCT_NOT_FOUND', 404);
-  if (product.status === 'COMPLETED') {
+  if (product.status === 'COMPLETED' && !opts?.force) {
     throw new CompletionError('ALREADY_COMPLETED', 409);
   }
-  if (!['PAID', 'IN_REVIEW'].includes(product.status)) {
+  const allowedStatuses = opts?.force ? ['PAID', 'IN_REVIEW', 'COMPLETED'] : ['PAID', 'IN_REVIEW'];
+  if (!allowedStatuses.includes(product.status)) {
     throw new CompletionError('INVALID_STATUS', 400);
   }
   if (product.paymentStatus !== 'PAID' && product.paymentStatus !== 'MANUAL') {
@@ -136,7 +137,7 @@ async function runCompletion(productId: string, message?: string): Promise<Compl
       (o.plan === 'BASIC' || o.plan === 'PREMIUM' || o.plan === 'LIFETIME'),
   );
   const hasPaidLicense =
-    Boolean(product.license?.paidAt) &&
+    (Boolean(product.license?.paidAt) || product.license?.status === 'ACTIVE') &&
     (product.license?.plan === 'BASIC' || product.license?.plan === 'PREMIUM' || product.license?.plan === 'LIFETIME');
   if (!hasPaidLicenseOrder && !hasPaidLicense) {
     throw new CompletionError('LICENSE_NOT_PAID', 400);
@@ -186,7 +187,7 @@ async function runCompletion(productId: string, message?: string): Promise<Compl
       size: product.size ?? null,
       madeIn: product.madeIn ?? null,
       material: product.material ?? null,
-      status: product.status,
+      status: 'PASS',
       adminProgress: product.adminProgress,
       paymentStatus: product.paymentStatus,
       createdAt: product.createdAt.toISOString(),

@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { cookies } from 'next/headers';
-import { getSession } from '@/lib/cookies';
+import { getSession } from '@/lib/auth';
 import { LOCALE_COOKIE, normalizeLocale } from '@/lib/i18n';
 
 export const metadata = {

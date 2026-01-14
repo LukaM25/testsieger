@@ -30,6 +30,11 @@ Handlebars.registerHelper('statusLabel', (value) => {
   };
   return labels[key] || value;
 });
+Handlebars.registerHelper('isPass', function (value, options) {
+  const key = String(value || '').trim().toUpperCase();
+  if (key === 'PASS') return options.fn(this);
+  return options.inverse(this);
+});
 
 // Normalize incoming payloads so both flat and nested shapes render correctly
 function normalizeCertificateData(data = {}) {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import QRCode from "qrcode";
 
-import { AdminRole, AssetType } from "@prisma/client";
+import { AdminRole, AssetType, Plan } from "@prisma/client";
 import { logAdminAudit, requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { generateCertificatePdf } from "@/pdfGenerator";
@@ -50,6 +50,20 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ error: "PRECHECK_NOT_PAID" }, { status: 400 });
     }
 
+    const paidLicenseOrder = await prisma.order.findFirst({
+      where: {
+        productId: product.id,
+        paidAt: { not: null },
+        plan: { in: [Plan.BASIC, Plan.PREMIUM, Plan.LIFETIME] },
+      },
+      select: { id: true },
+    });
+    const licensePaid =
+      Boolean(paidLicenseOrder) || Boolean(product.license?.paidAt) || product.license?.status === "ACTIVE";
+    if (!licensePaid) {
+      return NextResponse.json({ error: "LICENSE_NOT_PAID" }, { status: 400 });
+    }
+
     const ratingScore = product.certificate?.ratingScore || "";
     const ratingLabel = product.certificate?.ratingLabel || "";
     if (!ratingScore || !ratingLabel) {
@@ -81,7 +95,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       madeIn: product.madeIn ?? null,
       material: product.material ?? null,
       createdAt: product.createdAt.toISOString(),
-      status: product.status ?? product.adminProgress ?? 'PENDING',
+      status: 'PASS',
       seal_number: seal,
       certificateId,
       verify_url: verifyUrl,

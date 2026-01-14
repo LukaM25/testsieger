@@ -13,6 +13,8 @@ model User {
   email               String               @unique
   passwordHash        String
   address             String?
+  active              Boolean              @default(true)
+  deletedAt           DateTime?
   createdAt           DateTime             @default(now())
   company             String?
   orders              Order[]

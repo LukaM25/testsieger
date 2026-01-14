@@ -22,6 +22,7 @@ export type AdminProduct = {
     address?: string | null;
   };
   paymentStatus: string;
+  licensePaid?: boolean;
   certificate?: {
     id: string;
     pdfUrl?: string | null;

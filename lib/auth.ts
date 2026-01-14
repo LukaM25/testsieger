@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
 import { prisma } from './prisma';
-import { setSession, getSession, clearSession } from './cookies';
+import { setSession, getSession as getSessionCookie, clearSession } from './cookies';
 
 const SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
 const TOKEN_EXPIRY = '7d';
@@ -11,7 +11,7 @@ export async function loginUser(email: string, password: string) {
   const user = await prisma.user.findFirst({
     where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
   });
-  if (!user) throw new Error('USER_NOT_FOUND');
+  if (!user || user.active === false || user.deletedAt) throw new Error('USER_NOT_FOUND');
 
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) throw new Error('INVALID_PASSWORD');
@@ -42,4 +42,20 @@ export async function getCurrentUser() {
   if (!session) return null;
   return prisma.user.findUnique({ where: { id: session.userId } });
 }
-export { getSession };
+
+export async function getSession() {
+  const session = await getSessionCookie();
+  if (!session) return null;
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { id: true, email: true, active: true, deletedAt: true },
+  });
+  if (!user || user.active === false || user.deletedAt) {
+    await clearSession();
+    return null;
+  }
+  if (user.email !== session.email) {
+    await setSession({ userId: user.id, email: user.email });
+  }
+  return { userId: user.id, email: user.email };
+}

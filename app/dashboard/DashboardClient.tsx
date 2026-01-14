@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import LogoutButton from "@/components/LogoutButton";
 import { usePrecheckStatusData, type ProductStatusPayload } from "@/hooks/usePrecheckStatusData";
 import { PrecheckStatusCard } from "@/components/PrecheckStatusCard";
@@ -9,6 +9,39 @@ import { useProductStatusPoll } from "@/hooks/useProductStatusPoll";
 interface DashboardClientProps {
   user: any;
 }
+
+const parseAddressParts = (raw: string) => {
+  const cleaned = (raw || "").trim();
+  if (!cleaned) {
+    return { street: "", houseNumber: "", postalCode: "", city: "" };
+  }
+  const commaSplit = cleaned.split(",");
+  const parts = commaSplit.length > 1 ? commaSplit : cleaned.split(/\r?\n/);
+  const streetPart = (parts[0] || "").trim();
+  const cityPart = (parts[1] || "").trim();
+
+  let street = streetPart;
+  let houseNumber = "";
+  const streetMatch = streetPart.match(/^(.*?)(\s+\d+[a-zA-Z0-9/-]*)$/);
+  if (streetMatch) {
+    street = streetMatch[1].trim();
+    houseNumber = streetMatch[2].trim();
+  }
+
+  let postalCode = "";
+  let city = cityPart;
+  const cityMatch = cityPart.match(/^(\d{4,6})\s+(.*)$/);
+  if (cityMatch) {
+    postalCode = cityMatch[1];
+    city = cityMatch[2].trim();
+  }
+
+  if (!cityPart && !streetMatch) {
+    return { street: streetPart, houseNumber: "", postalCode: "", city: "" };
+  }
+
+  return { street, houseNumber, postalCode, city };
+};
 
 export default function DashboardClient({ user }: DashboardClientProps) {
   const initialStatusProducts = useMemo<ProductStatusPayload[]>(
@@ -30,7 +63,9 @@ export default function DashboardClient({ user }: DashboardClientProps) {
   );
 
   const statusState = usePrecheckStatusData({ initialProducts: initialStatusProducts });
-  const { products, selectedProductId, setProducts, setSelectedProductId } = statusState;
+  const { products, selectedProductId, setProducts, setSelectedProductId, productStatus } = statusState;
+  const selectedProduct =
+    productStatus || products.find((product) => product.id === selectedProductId) || null;
   const baseFeeOrdersByProductId = useMemo(() => {
     const orders = Array.isArray(user.orders) ? user.orders : [];
     const byProduct: Record<string, { id: string; paidAt?: string | null }> = {};
@@ -120,8 +155,22 @@ export default function DashboardClient({ user }: DashboardClientProps) {
   const [baseFeePaying, setBaseFeePaying] = useState<string | null>(null);
   const [showBilling, setShowBilling] = useState(false);
   const [showProducts, setShowProducts] = useState(false);
+  const [showAccount, setShowAccount] = useState(false);
   const [billingMounted, setBillingMounted] = useState(false);
   const [productsMounted, setProductsMounted] = useState(false);
+  const accountRef = useRef<HTMLDivElement | null>(null);
+  const initialAddress = useMemo(() => parseAddressParts(user.address || ""), [user.address]);
+  const [accountEmail, setAccountEmail] = useState(user.email || "");
+  const [accountStreet, setAccountStreet] = useState(initialAddress.street);
+  const [accountHouseNumber, setAccountHouseNumber] = useState(initialAddress.houseNumber);
+  const [accountPostalCode, setAccountPostalCode] = useState(initialAddress.postalCode);
+  const [accountCity, setAccountCity] = useState(initialAddress.city);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [accountSaving, setAccountSaving] = useState(false);
+  const [accountDeleting, setAccountDeleting] = useState(false);
+  const [accountMessage, setAccountMessage] = useState<string | null>(null);
   const [newProduct, setNewProduct] = useState({
     productName: "",
     brand: "",
@@ -246,7 +295,8 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     }
   };
 
-  const getProgressLabel = (adminProgress?: string, status?: string) => {
+  const getProgressLabel = (adminProgress?: string, status?: string, hasCertificate?: boolean) => {
+    if (hasCertificate) return "Bestanden";
     switch (adminProgress) {
       case "PRECHECK":
         return "Pre-Check eingereicht";
@@ -276,6 +326,80 @@ export default function DashboardClient({ user }: DashboardClientProps) {
         return "Status folgt";
     }
   };
+
+  const handleAccountSave = async () => {
+    setAccountMessage(null);
+    if (!accountEmail.trim()) {
+      setAccountMessage("Bitte eine E-Mail-Adresse angeben.");
+      return;
+    }
+    setAccountSaving(true);
+    try {
+      const wantsPasswordChange = Boolean(currentPassword || newPassword || confirmPassword);
+      const res = await fetch("/api/account", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: accountEmail.trim().toLowerCase(),
+          street: accountStreet.trim(),
+          houseNumber: accountHouseNumber.trim(),
+          postalCode: accountPostalCode.trim(),
+          city: accountCity.trim(),
+          currentPassword: wantsPasswordChange ? currentPassword : "",
+          newPassword: wantsPasswordChange ? newPassword : "",
+          confirmPassword: wantsPasswordChange ? confirmPassword : "",
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setAccountMessage(data.error || "Änderungen konnten nicht gespeichert werden.");
+        return;
+      }
+      if (wantsPasswordChange) {
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+      setAccountMessage("Account-Einstellungen gespeichert.");
+    } catch {
+      setAccountMessage("Änderungen konnten nicht gespeichert werden.");
+    } finally {
+      setAccountSaving(false);
+    }
+  };
+
+  const handleAccountDelete = async () => {
+    const confirmed = window.confirm(
+      "Möchtest du dein Konto wirklich löschen? Der Zugriff wird deaktiviert."
+    );
+    if (!confirmed) return;
+    setAccountMessage(null);
+    setAccountDeleting(true);
+    try {
+      const res = await fetch("/api/account", { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setAccountMessage(data.error || "Konto konnte nicht gelöscht werden.");
+        return;
+      }
+      window.location.href = "/";
+    } catch {
+      setAccountMessage("Konto konnte nicht gelöscht werden.");
+    } finally {
+      setAccountDeleting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!showAccount) return;
+    const handleOutside = (event: MouseEvent) => {
+      if (accountRef.current && !accountRef.current.contains(event.target as Node)) {
+        setShowAccount(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [showAccount]);
 
   useEffect(() => {
     if (showBilling) {
@@ -327,10 +451,206 @@ export default function DashboardClient({ user }: DashboardClientProps) {
             <h1 className="text-3xl font-bold text-slate-900">Willkommen, {user.name.split(" ")[0]}</h1>
             <p className="text-sm text-slate-600">Status im Blick, Zertifikat sicher abrufen.</p>
           </div>
-          <LogoutButton className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-black" label="Logout" />
+          <div className="relative flex items-center gap-3" ref={accountRef}>
+            <button
+              type="button"
+              onClick={() => setShowAccount((open) => !open)}
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400"
+              aria-expanded={showAccount}
+            >
+              Konto Einstellungen
+            </button>
+            <LogoutButton className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-black" label="Logout" />
+            {showAccount && (
+              <div className="absolute right-0 top-full z-20 mt-3 w-[min(440px,90vw)] rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
+                <div>
+                  <h2 className="text-base font-semibold text-slate-900">Konto Einstellungen</h2>
+                  <p className="text-xs text-slate-500">Adresse ändern, E-Mail bearbeiten oder Konto löschen.</p>
+                </div>
+                <div className="mt-4 grid gap-3">
+                  <input
+                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    placeholder="E-Mail-Adresse"
+                    value={accountEmail}
+                    onChange={(e) => setAccountEmail(e.target.value)}
+                    type="email"
+                  />
+                  <div className="grid gap-3 sm:grid-cols-[1.4fr,0.6fr]">
+                    <input
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      placeholder="Straße"
+                      value={accountStreet}
+                      onChange={(e) => setAccountStreet(e.target.value)}
+                    />
+                    <input
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      placeholder="Hausnr."
+                      value={accountHouseNumber}
+                      onChange={(e) => setAccountHouseNumber(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-[0.7fr,1.3fr]">
+                    <input
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      placeholder="PLZ"
+                      value={accountPostalCode}
+                      onChange={(e) => setAccountPostalCode(e.target.value)}
+                    />
+                    <input
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      placeholder="Stadt"
+                      value={accountCity}
+                      onChange={(e) => setAccountCity(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-3">
+                    <input
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      placeholder="Aktuelles Passwort"
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      autoComplete="current-password"
+                    />
+                    <input
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      placeholder="Neues Passwort"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      autoComplete="new-password"
+                    />
+                    <input
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      placeholder="Neues Passwort bestätigen"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      autoComplete="new-password"
+                    />
+                  </div>
+                  {!accountStreet && !accountHouseNumber && !accountPostalCode && !accountCity && user.address && (
+                    <p className="text-xs text-slate-500">Vorhandene Adresse: {user.address}</p>
+                  )}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleAccountSave}
+                      disabled={accountSaving}
+                      className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-60"
+                    >
+                      {accountSaving ? "Speichere…" : "Änderungen speichern"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleAccountDelete}
+                      disabled={accountDeleting}
+                      className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-600 hover:border-rose-300 disabled:opacity-60"
+                    >
+                      {accountDeleting ? "Löscht…" : "Konto löschen"}
+                    </button>
+                    {accountMessage && <span className="text-xs text-slate-600">{accountMessage}</span>}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </header>
 
         <PrecheckStatusCard state={statusState} />
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Lizenzplan auswählen</h2>
+            <p className="text-sm text-slate-500">Wähle einen Plan für das aktuell ausgewählte Produkt.</p>
+          </div>
+          {selectedProduct ? (
+            <div className="mt-4 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <div className="text-base font-semibold text-slate-900">{selectedProduct.name}</div>
+                  <div className="text-sm text-slate-500">{selectedProduct.brand || "—"}</div>
+                </div>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                  Status: {selectedProduct.status}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <select
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-xs"
+                  value={licenseSelections[selectedProduct.id] || selectedProduct.license?.plan || "BASIC"}
+                  onChange={(e) =>
+                    setLicenseSelections((prev) => ({ ...prev, [selectedProduct.id]: e.target.value }))
+                  }
+                  disabled={
+                    licensePaying === selectedProduct.id ||
+                    selectedProduct.license?.status === "ACTIVE" ||
+                    !["PAID", "MANUAL"].includes(selectedProduct.paymentStatus) ||
+                    selectedProduct.adminProgress !== "PASS"
+                  }
+                >
+                  <option value="BASIC">Basic</option>
+                  <option value="PREMIUM">Premium</option>
+                  <option value="LIFETIME">Lifetime</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleLicensePay(
+                      selectedProduct.id,
+                      licenseSelections[selectedProduct.id] || selectedProduct.license?.plan || "BASIC"
+                    )
+                  }
+                  disabled={
+                    licensePaying === selectedProduct.id ||
+                    selectedProduct.license?.status === "ACTIVE" ||
+                    !["PAID", "MANUAL"].includes(selectedProduct.paymentStatus) ||
+                    selectedProduct.adminProgress !== "PASS"
+                  }
+                  className={`rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition ${
+                    selectedProduct.license?.status === "ACTIVE"
+                      ? "bg-emerald-100 text-emerald-700 cursor-not-allowed"
+                      : ["PAID", "MANUAL"].includes(selectedProduct.paymentStatus) &&
+                        selectedProduct.adminProgress === "PASS"
+                      ? "bg-slate-900 text-white hover:bg-black"
+                      : "bg-slate-200 text-slate-500 cursor-not-allowed"
+                  }`}
+                >
+                  {selectedProduct.license?.status === "ACTIVE"
+                    ? "Lizenz aktiv"
+                    : licensePaying === selectedProduct.id
+                    ? "Starte Zahlung…"
+                    : !["PAID", "MANUAL"].includes(selectedProduct.paymentStatus)
+                    ? "Grundgebühr zuerst zahlen"
+                    : selectedProduct.adminProgress !== "PASS"
+                    ? "Bestanden erforderlich"
+                    : selectedProduct.license?.status === "EXPIRED"
+                    ? "Lizenz verlängern"
+                    : "Lizenzplan zahlen"}
+                </button>
+                {selectedProduct.license?.status === "ACTIVE" && (
+                  <span className="text-xs font-semibold text-emerald-700">
+                    Aktivierter Plan: {selectedProduct.license?.plan || "—"}
+                  </span>
+                )}
+                {selectedProduct.license?.status === "EXPIRED" && (
+                  <span className="text-xs font-semibold text-amber-600">
+                    Lizenz abgelaufen – bitte neu buchen.
+                  </span>
+                )}
+                {!["PAID", "MANUAL"].includes(selectedProduct.paymentStatus) && (
+                  <span className="text-xs text-amber-600">Bitte zuerst Grundgebühr bezahlen.</span>
+                )}
+                {["PAID", "MANUAL"].includes(selectedProduct.paymentStatus) &&
+                  selectedProduct.adminProgress !== "PASS" && (
+                    <span className="text-xs text-amber-600">Prüfergebnis ausstehend.</span>
+                  )}
+              </div>
+            </div>
+          ) : (
+            <p className="mt-3 text-sm text-slate-600">Bitte ein Produkt auswählen, um einen Lizenzplan zu wählen.</p>
+          )}
+        </section>
 
         <section id="billing-licenses" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <button
@@ -505,6 +825,9 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                   const baseFeePaid = ["PAID", "MANUAL"].includes(p.paymentStatus);
                   const hasPassed = p.adminProgress === "PASS";
                   const licenseActive = p.license?.status === "ACTIVE";
+                  const hasCertificate = Boolean(p.certificate?.pdfUrl || p.certificate?.id);
+                  const progressLabel = getProgressLabel(p.adminProgress, p.status, hasCertificate);
+                  const showPassed = progressLabel === "Bestanden";
                   return (
                   <div key={p.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -631,12 +954,38 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                     </a>
                   ) : (
                     <p className="text-sm text-amber-600">
-                      Prüfungsverlauf: {getProgressLabel(p.adminProgress, p.status)}
+                      Prüfungsverlauf: {progressLabel}
+                      {showPassed && (
+                        <svg
+                          className="ml-2 inline-block h-4 w-4 text-emerald-600"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.704 5.29a1 1 0 01.006 1.414l-7.5 7.57a1 1 0 01-1.42 0L3.29 9.77a1 1 0 011.42-1.41l3.08 3.11 6.79-6.86a1 1 0 011.414-.01z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
                     </p>
                   )}
                   <div className="flex justify-center">
                     <span className="rounded-lg bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
-                      Prüfungsverlauf: {getProgressLabel(p.adminProgress, p.status)}
+                      Prüfungsverlauf: {progressLabel}
+                      {showPassed && (
+                        <svg
+                          className="ml-1 inline-block h-3.5 w-3.5 text-emerald-600"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.704 5.29a1 1 0 01.006 1.414l-7.5 7.57a1 1 0 01-1.42 0L3.29 9.77a1 1 0 011.42-1.41l3.08 3.11 6.79-6.86a1 1 0 011.414-.01z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
                     </span>
                   </div>
                 </div>

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import Stripe from 'stripe';
 import { stripe } from '@/lib/stripe';
-import { getSession } from '@/lib/cookies';
+import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export const runtime = 'nodejs';

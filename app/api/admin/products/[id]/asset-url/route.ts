@@ -34,6 +34,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const { id: productId } = await params;
   const url = new URL(req.url);
   const kind = (url.searchParams.get('kind') || '').trim();
+  const redirect = (url.searchParams.get('redirect') || '').trim() === '1';
   if (!productId) return NextResponse.json({ error: 'MISSING_PRODUCT_ID' }, { status: 400 });
   if (!kind) return NextResponse.json({ error: 'MISSING_KIND' }, { status: 400 });
 
@@ -59,10 +60,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
   try {
     const signed = await toSignedUrl(source);
+    if (redirect) {
+      return NextResponse.redirect(signed);
+    }
     return NextResponse.json({ ok: true, url: signed });
   } catch (err) {
     console.error('ASSET_SIGN_ERROR', { productId, kind, err });
     return NextResponse.json({ error: 'FAILED_TO_SIGN' }, { status: 500 });
   }
 }
-

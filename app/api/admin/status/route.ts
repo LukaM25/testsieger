@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ProductStatus, AdminRole } from '@prisma/client';
+import { ProductStatus, AdminRole, Plan } from '@prisma/client';
 import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 import { sendFailureNotification, sendProductReceivedEmail } from '@/lib/email';
@@ -26,9 +26,27 @@ export async function POST(req: Request) {
 
   const product = await prisma.product.findUnique({
     where: { id: productId },
-    include: { user: true, certificate: true },
+    include: {
+      user: true,
+      certificate: true,
+      license: { select: { paidAt: true, status: true } },
+    },
   });
   if (!product) return NextResponse.json({ error: 'PRODUCT_NOT_FOUND' }, { status: 404 });
+
+  const paidLicenseOrder = await prisma.order.findFirst({
+    where: {
+      productId: product.id,
+      paidAt: { not: null },
+      plan: { in: [Plan.BASIC, Plan.PREMIUM, Plan.LIFETIME] },
+    },
+    select: { id: true },
+  });
+  const licensePaid =
+    Boolean(paidLicenseOrder) || Boolean(product.license?.paidAt) || product.license?.status === 'ACTIVE';
+  if (!licensePaid) {
+    return NextResponse.json({ error: 'LICENSE_NOT_PAID' }, { status: 400 });
+  }
 
   const productUpdate: { adminProgress: ValidStatus; status?: ProductStatus } = {
     adminProgress: status as ValidStatus,

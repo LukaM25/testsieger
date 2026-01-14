@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/cookies';
+import { getSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import DashboardClient from './DashboardClient'; 
 
@@ -7,12 +7,13 @@ export default async function DashboardPage() {
   const session = await getSession();
   if (!session) redirect('/login');
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
+  const user = await prisma.user.findFirst({
+    where: { id: session.userId, active: true, deletedAt: null },
     select: {
       id: true,
       name: true,
       email: true,
+      address: true,
       products: {
         select: {
           id: true,
@@ -50,6 +51,7 @@ export default async function DashboardPage() {
         id: user.id,
         name: user.name,
         email: user.email,
+        address: user.address ?? null,
         products: (user.products || []).map((p) => ({
           id: p.id,
           name: p.name,
