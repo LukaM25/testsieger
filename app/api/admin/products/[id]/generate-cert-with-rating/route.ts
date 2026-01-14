@@ -96,6 +96,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       material: product.material ?? null,
       createdAt: product.createdAt.toISOString(),
       status: 'PASS',
+      statusCheck: true,
       seal_number: seal,
       certificateId,
       verify_url: verifyUrl,

@@ -32,7 +32,7 @@ Handlebars.registerHelper('statusLabel', (value) => {
 });
 Handlebars.registerHelper('isPass', function (value, options) {
   const key = String(value || '').trim().toUpperCase();
-  if (key === 'PASS') return options.fn(this);
+  if (key === 'PASS' || this?.statusCheck === true) return options.fn(this);
   return options.inverse(this);
 });
 

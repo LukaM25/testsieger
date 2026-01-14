@@ -62,6 +62,7 @@ export async function POST(req: Request) {
         madeIn: product.madeIn ?? null,
         material: product.material ?? null,
         status: 'PASS',
+        statusCheck: true,
         adminProgress: product.adminProgress,
         paymentStatus: product.paymentStatus,
         createdAt: product.createdAt.toISOString(),
