@@ -226,6 +226,12 @@ function renderFooter() {
 
 async function sendEmail(opts) {
   const { from, to, subject, html, attachments } = opts;
+  const normalizedAttachments = attachments
+    ? attachments.map((attachment) => ({
+        ...attachment,
+        content: normalizeAttachmentContent(attachment.content),
+      }))
+    : null;
 
   if (BREVO_API_KEY) {
     const sender = parseFrom(from || MAIL_FROM);
@@ -235,8 +241,8 @@ async function sendEmail(opts) {
       subject,
       htmlContent: html,
     };
-    if (attachments && attachments.length) {
-      payload.attachment = attachments.map((attachment) => ({
+    if (normalizedAttachments && normalizedAttachments.length) {
+      payload.attachment = normalizedAttachments.map((attachment) => ({
         name: attachment.filename,
         content: attachment.content.toString('base64'),
       }));
@@ -259,11 +265,15 @@ async function sendEmail(opts) {
   }
 
   if (transporter) {
-    await transporter.sendMail({ from, to, subject, html, attachments });
+    await transporter.sendMail({ from, to, subject, html, attachments: normalizedAttachments || undefined });
     return;
   }
 
   console.warn('No email provider configured. Email skipped.');
+}
+
+function normalizeAttachmentContent(content) {
+  return Buffer.isBuffer(content) ? content : Buffer.from(content);
 }
 
 function parseFrom(input) {

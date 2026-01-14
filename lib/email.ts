@@ -22,10 +22,14 @@ const transporter = SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS
     })
   : null;
 
-type Attachment = { filename: string; content: Buffer; contentType?: string };
+type Attachment = { filename: string; content: Buffer | Uint8Array; contentType?: string };
 
 async function sendEmail(opts: { to: string; subject: string; html: string; attachments?: Attachment[]; from?: string }) {
   const { to, subject, html, attachments, from } = opts;
+  const normalizedAttachments = attachments?.map((attachment) => ({
+    ...attachment,
+    content: normalizeAttachmentContent(attachment.content),
+  }));
 
   if (BREVO_API_KEY) {
     const sender = parseFrom(from ?? FROM_EMAIL);
@@ -35,8 +39,8 @@ async function sendEmail(opts: { to: string; subject: string; html: string; atta
       subject,
       htmlContent: html,
     };
-    if (attachments?.length) {
-      payload.attachment = attachments.map((attachment) => ({
+    if (normalizedAttachments?.length) {
+      payload.attachment = normalizedAttachments.map((attachment) => ({
         name: attachment.filename,
         content: attachment.content.toString('base64'),
       }));
@@ -64,12 +68,16 @@ async function sendEmail(opts: { to: string; subject: string; html: string; atta
       to,
       subject,
       html,
-      attachments,
+      attachments: normalizedAttachments,
     });
     return;
   }
 
   console.warn('No email provider configured. Email skipped.');
+}
+
+function normalizeAttachmentContent(content: Buffer | Uint8Array) {
+  return Buffer.isBuffer(content) ? content : Buffer.from(content);
 }
 
 function renderFooter() {
