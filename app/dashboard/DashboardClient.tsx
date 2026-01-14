@@ -184,9 +184,22 @@ export default function DashboardClient({ user }: DashboardClientProps) {
 
   const handleQuickSubmit = async () => {
     setSubmitMessage(null);
-    if (!newProduct.productName || !newProduct.brand) {
-      setSubmitMessage("Bitte Produktname und Marke ausfüllen.");
-      return;
+    const requiredFields = [
+      { key: "productName", label: "Produktname", min: 2 },
+      { key: "brand", label: "Marke", min: 1 },
+      { key: "category", label: "Kategorie", min: 1 },
+      { key: "code", label: "Artikelnummer", min: 2 },
+      { key: "specs", label: "Spezifikationen", min: 5 },
+      { key: "size", label: "Größe / Maße", min: 2 },
+      { key: "madeIn", label: "Hergestellt in", min: 2 },
+      { key: "material", label: "Material", min: 2 },
+    ] as const;
+    for (const field of requiredFields) {
+      const value = (newProduct as Record<string, string>)[field.key] || "";
+      if (value.trim().length < field.min) {
+        setSubmitMessage(`Bitte ${field.label} ausfüllen.`);
+        return;
+      }
     }
     setSubmitLoading(true);
     try {
@@ -754,37 +767,37 @@ export default function DashboardClient({ user }: DashboardClientProps) {
               />
               <input
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                placeholder="Kategorie (optional)"
+                placeholder="Kategorie"
                 value={newProduct.category}
                 onChange={(e) => setNewProduct((p) => ({ ...p, category: e.target.value }))}
               />
               <input
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                placeholder="Artikelnummer (optional)"
+                placeholder="Artikelnummer"
                 value={newProduct.code}
                 onChange={(e) => setNewProduct((p) => ({ ...p, code: e.target.value }))}
               />
               <input
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm md:col-span-2"
-                placeholder="Spezifikationen (optional)"
+                placeholder="Spezifikationen"
                 value={newProduct.specs}
                 onChange={(e) => setNewProduct((p) => ({ ...p, specs: e.target.value }))}
               />
               <input
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                placeholder="Größe / Maße (optional)"
+                placeholder="Größe / Maße"
                 value={newProduct.size}
                 onChange={(e) => setNewProduct((p) => ({ ...p, size: e.target.value }))}
               />
               <input
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                placeholder="Hergestellt in (optional)"
+                placeholder="Hergestellt in"
                 value={newProduct.madeIn}
                 onChange={(e) => setNewProduct((p) => ({ ...p, madeIn: e.target.value }))}
               />
               <input
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm md:col-span-2"
-                placeholder="Material (optional)"
+                placeholder="Material"
                 value={newProduct.material}
                 onChange={(e) => setNewProduct((p) => ({ ...p, material: e.target.value }))}
               />

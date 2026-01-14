@@ -260,21 +260,34 @@ export default function PrecheckPage() {
 
   const handleInlinePrecheckSubmit = async () => {
     setInlineSubmitMessage(null);
-    if (!inlineProduct.productName.trim() || !inlineProduct.brand.trim()) {
-      setInlineSubmitMessage(tr("Bitte Produktname und Marke ausfüllen.", "Please enter product name and brand."));
-      return;
+    const requiredFields = [
+      { key: "productName", label: tr("Produktname", "Product name"), min: 2 },
+      { key: "brand", label: tr("Marke", "Brand"), min: 1 },
+      { key: "category", label: tr("Kategorie", "Category"), min: 1 },
+      { key: "code", label: tr("Artikelnummer", "Item code"), min: 2 },
+      { key: "specs", label: tr("Spezifikationen", "Specs"), min: 5 },
+      { key: "size", label: tr("Größe / Maße", "Size"), min: 2 },
+      { key: "madeIn", label: tr("Hergestellt in", "Made in"), min: 2 },
+      { key: "material", label: tr("Material", "Material"), min: 2 },
+    ] as const;
+    for (const field of requiredFields) {
+      const value = (inlineProduct as Record<string, string>)[field.key] || "";
+      if (value.trim().length < field.min) {
+        setInlineSubmitMessage(tr(`Bitte ${field.label} ausfüllen.`, `Please enter ${field.label}.`));
+        return;
+      }
     }
     setInlineSubmitting(true);
     try {
       const payload = {
         productName: inlineProduct.productName.trim(),
         brand: inlineProduct.brand.trim(),
-        category: inlineProduct.category.trim() || undefined,
-        code: inlineProduct.code.trim() || undefined,
-        specs: inlineProduct.specs.trim() || undefined,
-        size: inlineProduct.size.trim() || undefined,
-        madeIn: inlineProduct.madeIn.trim() || undefined,
-        material: inlineProduct.material.trim() || undefined,
+        category: inlineProduct.category.trim(),
+        code: inlineProduct.code.trim(),
+        specs: inlineProduct.specs.trim(),
+        size: inlineProduct.size.trim(),
+        madeIn: inlineProduct.madeIn.trim(),
+        material: inlineProduct.material.trim(),
       };
       const res = await fetch("/api/products/quick-create", {
         method: "POST",
@@ -819,31 +832,31 @@ export default function PrecheckPage() {
                                     </select>
                                     <input
                                       className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
-                                      placeholder={tr("Artikelnummer (optional)", "Item code (optional)")}
+                                      placeholder={tr("Artikelnummer", "Item code")}
                                       value={inlineProduct.code}
                                       onChange={(e) => setInlineProduct((p) => ({ ...p, code: e.target.value }))}
                                     />
                                     <input
                                       className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 md:col-span-2"
-                                      placeholder={tr("Spezifikationen (optional)", "Specs (optional)")}
+                                      placeholder={tr("Spezifikationen", "Specs")}
                                       value={inlineProduct.specs}
                                       onChange={(e) => setInlineProduct((p) => ({ ...p, specs: e.target.value }))}
                                     />
                                     <input
                                       className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
-                                      placeholder={tr("Größe / Maße (optional)", "Size (optional)")}
+                                      placeholder={tr("Größe / Maße", "Size")}
                                       value={inlineProduct.size}
                                       onChange={(e) => setInlineProduct((p) => ({ ...p, size: e.target.value }))}
                                     />
                                     <input
                                       className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
-                                      placeholder={tr("Hergestellt in (optional)", "Made in (optional)")}
+                                      placeholder={tr("Hergestellt in", "Made in")}
                                       value={inlineProduct.madeIn}
                                       onChange={(e) => setInlineProduct((p) => ({ ...p, madeIn: e.target.value }))}
                                     />
                                     <input
                                       className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 md:col-span-2"
-                                      placeholder={tr("Material (optional)", "Material (optional)")}
+                                      placeholder={tr("Material", "Material")}
                                       value={inlineProduct.material}
                                       onChange={(e) => setInlineProduct((p) => ({ ...p, material: e.target.value }))}
                                     />

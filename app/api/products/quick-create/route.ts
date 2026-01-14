@@ -7,14 +7,14 @@ import { sendPrecheckConfirmation } from '@/lib/email';
 export const runtime = 'nodejs';
 
 const Schema = z.object({
-  productName: z.string().min(2),
-  brand: z.string().min(1),
-  category: z.string().optional().nullable(),
-  code: z.string().optional().nullable(),
-  specs: z.string().optional().nullable(),
-  size: z.string().optional().nullable(),
-  madeIn: z.string().optional().nullable(),
-  material: z.string().optional().nullable(),
+  productName: z.string().trim().min(2),
+  brand: z.string().trim().min(1),
+  category: z.string().trim().min(1),
+  code: z.string().trim().min(2),
+  specs: z.string().trim().min(5),
+  size: z.string().trim().min(2),
+  madeIn: z.string().trim().min(2),
+  material: z.string().trim().min(2),
 });
 
 export async function POST(req: Request) {
@@ -30,12 +30,12 @@ export async function POST(req: Request) {
         userId: session.userId,
         name: data.productName,
         brand: data.brand,
-        category: data.category || undefined,
-        code: data.code || undefined,
-        specs: data.specs || undefined,
-        size: data.size || undefined,
-        madeIn: data.madeIn || undefined,
-        material: data.material || undefined,
+        category: data.category,
+        code: data.code,
+        specs: data.specs,
+        size: data.size,
+        madeIn: data.madeIn,
+        material: data.material,
         status: 'PRECHECK',
         adminProgress: 'PRECHECK',
         paymentStatus: 'UNPAID',
