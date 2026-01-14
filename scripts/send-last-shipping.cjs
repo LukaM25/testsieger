@@ -77,7 +77,7 @@ function createTransporter() {
 function renderFooter(baseUrl) {
   const base = (baseUrl || '').replace(/\/$/, '');
   const logo = `${base}/tclogo.png`;
-  const seal = `${base}/siegel.png`;
+  const seal = `${base}/siegel19.png`;
   return `
     <div style="margin-top:28px;padding-top:18px;border-top:1px solid #e2e8f0;display:flex;align-items:center;gap:16px;color:#475569;font-size:12px;">
       <img src="${logo}" alt="DPI Logo" width="140" height="40" style="display:block;object-fit:contain;" />

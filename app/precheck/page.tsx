@@ -594,12 +594,12 @@ export default function PrecheckPage() {
                 )}
               </div>
 
-              <div className="relative shrink-0 w-40 h-40 md:w-56 md:h-56 lg:w-64 lg:h-64 self-start rounded-3xl bg-gradient-to-b from-white to-slate-50 p-3 shadow-inner ring-1 ring-slate-200">
+              <div className="relative shrink-0 w-40 h-40 md:w-56 md:h-56 lg:w-64 lg:h-64 self-center rounded-3xl bg-gradient-to-b from-white to-slate-50 p-3 flex items-center justify-center">
                 <Image
-                  src="/siegel.png"
+                  src="/siegel19.png"
                   alt={tr("Testsieger Siegel", "Testsieger seal")}
                   fill
-                  className="object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-105"
+                  className="object-contain object-center drop-shadow-2xl transition-transform duration-500 hover:scale-105"
                   priority
                 />
               </div>

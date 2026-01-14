@@ -99,6 +99,7 @@ export async function POST(req: Request) {
         sealUrl = await generateSealImage({
           product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
           certificateId: cert.id,
+          tcCode: product.processNumber ?? undefined,
           ratingScore: cert.ratingScore ?? 'PASS',
           ratingLabel: cert.ratingLabel ?? 'PASS',
           appUrl: baseDomain,

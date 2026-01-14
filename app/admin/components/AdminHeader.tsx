@@ -79,7 +79,7 @@ export default function AdminHeader({
           <input
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Suche Name/Marke/E-Mail · Search name/brand/email"
+            placeholder="Suche Name/Marke/E-Mail/Vorgangsnummer · Search name/brand/email/process"
             className="w-full bg-transparent text-sm text-slate-900 outline-none"
           />
         </div>

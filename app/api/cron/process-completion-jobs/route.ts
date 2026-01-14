@@ -11,10 +11,13 @@ function isAuthorized(req: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
   const header = req.headers.get('authorization') || '';
-  return header === `Bearer ${secret}`;
+  if (header === `Bearer ${secret}`) return true;
+  const url = new URL(req.url);
+  const querySecret = url.searchParams.get('secret');
+  return querySecret === secret;
 }
 
-export async function POST(req: Request) {
+async function handleRequest(req: Request) {
   if (!isAuthorized(req)) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
 
   const url = new URL(req.url);
@@ -38,4 +41,12 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({ ok: true, processed: results.length, results });
+}
+
+export async function POST(req: Request) {
+  return handleRequest(req);
+}
+
+export async function GET(req: Request) {
+  return handleRequest(req);
 }

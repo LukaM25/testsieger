@@ -11,25 +11,26 @@ import { Eye, EyeOff } from 'lucide-react';
 
 const Schema = z
   .object({
-    name: z.string().min(2),
-    company: z.string().optional(),
-    email: z.string().email(),
-    addressStreet: z.string().min(2),
-    addressNumber: z.string().min(1),
-    addressPostal: z.string().min(3),
-    addressCity: z.string().min(2),
-    addressCountry: z.string().min(2),
-    addressLine2: z.string().optional(),
+    firstName: z.string().trim().min(2),
+    lastName: z.string().trim().min(2),
+    company: z.string().trim().min(2),
+    email: z.string().trim().email(),
+    addressStreet: z.string().trim().min(2),
+    addressNumber: z.string().trim().min(1),
+    addressPostal: z.string().trim().min(3),
+    addressCity: z.string().trim().min(2),
+    addressCountry: z.string().trim().min(2),
+    addressLine2: z.string().trim().optional(),
     password: z.string().min(8),
     confirmPassword: z.string().min(8),
-    productName: z.string().min(2),
-    brand: z.string().min(1),
-    category: z.string().optional(),
-    code: z.string().optional(),
-    specs: z.string().optional(),
-    size: z.string().optional(),
-    madeIn: z.string().optional(),
-    material: z.string().optional(),
+    productName: z.string().trim().min(2),
+    brand: z.string().trim().min(1),
+    category: z.string().trim().min(1, 'Kategorie erforderlich'),
+    code: z.string().trim().min(2),
+    specs: z.string().trim().min(5),
+    size: z.string().trim().min(2),
+    madeIn: z.string().trim().min(2),
+    material: z.string().trim().min(2),
   })
   .refine((data) => data.password === data.confirmPassword, {
     path: ['confirmPassword'],
@@ -52,7 +53,8 @@ export default function PrecheckForm() {
   });
 
   const onSubmit = async (values: FormValues) => {
-    const { confirmPassword, ...rest } = values;
+    const { confirmPassword, firstName, lastName, ...rest } = values;
+    const name = `${firstName} ${lastName}`.trim();
     const addressParts = [
       `${rest.addressStreet} ${rest.addressNumber}`.trim(),
       rest.addressLine2?.trim(),
@@ -68,6 +70,7 @@ export default function PrecheckForm() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...rest,
+        name,
         address,
       }),
     });
@@ -113,17 +116,33 @@ export default function PrecheckForm() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" autoComplete="on">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <Label>{tr('Name', 'Name')}</Label>
-            <Input {...register('name')} placeholder={tr('Max Mustermann', 'John Doe')} autoComplete="given-name" />
-            <Error msg={errors.name?.message} />
+            <Label>{tr('Vorname', 'First name')}</Label>
+            <Input
+              {...register('firstName')}
+              placeholder={tr('Max', 'John')}
+              autoComplete="given-name"
+              required
+            />
+            <Error msg={errors.firstName?.message} />
           </div>
           <div>
-            <Label>{tr('Firma (optional)', 'Company (optional)')}</Label>
-            <Input {...register('company')} placeholder={tr('Ihre Firma GmbH', 'Your company LLC')} autoComplete="organization" />
+            <Label>{tr('Nachname', 'Last name')}</Label>
+            <Input
+              {...register('lastName')}
+              placeholder={tr('Mustermann', 'Doe')}
+              autoComplete="family-name"
+              required
+            />
+            <Error msg={errors.lastName?.message} />
+          </div>
+          <div>
+            <Label>{tr('Firma', 'Company')}</Label>
+            <Input {...register('company')} placeholder={tr('Ihre Firma GmbH', 'Your company LLC')} autoComplete="organization" required />
+            <Error msg={errors.company?.message} />
           </div>
           <div>
             <Label>{tr('E-Mail', 'Email')}</Label>
-            <Input {...register('email')} type="email" placeholder="name@domain.tld" autoComplete="email" />
+            <Input {...register('email')} type="email" placeholder="name@domain.tld" autoComplete="email" required />
             <Error msg={errors.email?.message} />
           </div>
           <div>
@@ -135,6 +154,7 @@ export default function PrecheckForm() {
                 placeholder="••••••••"
                 autoComplete="new-password"
                 className="pr-10"
+                required
               />
               <button
                 type="button"
@@ -156,6 +176,7 @@ export default function PrecheckForm() {
                 placeholder="••••••••"
                 autoComplete="new-password"
                 className="pr-10"
+                required
               />
               <button
                 type="button"
@@ -171,27 +192,27 @@ export default function PrecheckForm() {
           <div className="md:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <Label>{tr('Straße', 'Street')}</Label>
-              <Input {...register('addressStreet')} placeholder={tr('Musterstraße', 'Example Street')} autoComplete="address-line1" />
+              <Input {...register('addressStreet')} placeholder={tr('Musterstraße', 'Example Street')} autoComplete="address-line1" required />
               <Error msg={errors.addressStreet?.message} />
             </div>
             <div>
             <Label>{tr('Hausnummer', 'House number')}</Label>
-            <Input {...register('addressNumber')} placeholder="12a" autoComplete="address-line1" />
+            <Input {...register('addressNumber')} placeholder="12a" autoComplete="address-line1" required />
               <Error msg={errors.addressNumber?.message} />
             </div>
             <div>
               <Label>{tr('PLZ', 'ZIP')}</Label>
-              <Input {...register('addressPostal')} placeholder="12345" autoComplete="postal-code" />
+              <Input {...register('addressPostal')} placeholder="12345" autoComplete="postal-code" required />
               <Error msg={errors.addressPostal?.message} />
             </div>
             <div>
               <Label>{tr('Ort', 'City')}</Label>
-              <Input {...register('addressCity')} placeholder={tr('Berlin', 'City')} autoComplete="address-level2" />
+              <Input {...register('addressCity')} placeholder={tr('Berlin', 'City')} autoComplete="address-level2" required />
               <Error msg={errors.addressCity?.message} />
             </div>
             <div>
               <Label>{tr('Land', 'Country')}</Label>
-              <Input {...register('addressCountry')} placeholder={tr('Deutschland', 'Country')} autoComplete="country-name" />
+              <Input {...register('addressCountry')} placeholder={tr('Deutschland', 'Country')} autoComplete="country-name" required />
               <Error msg={errors.addressCountry?.message} />
             </div>
             <div>
@@ -211,6 +232,7 @@ export default function PrecheckForm() {
             <select
               {...register('category')}
               defaultValue=""
+              required
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-800"
             >
               <option value="">{tr('Nichts ausgewählt', 'Nothing selected')}</option>
@@ -240,32 +262,37 @@ export default function PrecheckForm() {
               <option value="Spielzeug">Spielzeug</option>
               <option value="Sport & Freizeit">Sport &amp; Freizeit</option>
             </select>
+            <Error msg={errors.category?.message} />
           </div>
           <div>
             <Label>{tr('Produktname', 'Product name')}</Label>
-            <Input {...register('productName')} placeholder={tr('Beispiel Produkt', 'Sample product')} />
+            <Input {...register('productName')} placeholder={tr('Beispiel Produkt', 'Sample product')} required />
             <Error msg={errors.productName?.message} />
           </div>
           <div>
             <Label>{tr('Marke', 'Brand')}</Label>
-            <Input {...register('brand')} placeholder={tr('Markenname', 'Brand name')} />
+            <Input {...register('brand')} placeholder={tr('Markenname', 'Brand name')} required />
             <Error msg={errors.brand?.message} />
           </div>
           <div>
             <Label>{tr('Hersteller-/Artikelnummer', 'Manufacturer / SKU')}</Label>
-            <Input {...register('code')} placeholder="ABC-123" />
+            <Input {...register('code')} placeholder="ABC-123" required />
+            <Error msg={errors.code?.message} />
           </div>
           <div>
             <Label>{tr('Verpackungsgröße / Maße', 'Package size / dimensions')}</Label>
-            <Input {...register('size')} placeholder={tr('z.B. 30×20×10 cm', 'e.g. 30×20×10 cm')} />
+            <Input {...register('size')} placeholder={tr('z.B. 30×20×10 cm', 'e.g. 30×20×10 cm')} required />
+            <Error msg={errors.size?.message} />
           </div>
           <div>
             <Label>{tr('Wo gefertigt', 'Manufactured in')}</Label>
-            <Input {...register('madeIn')} placeholder={tr('Land', 'Country')} />
+            <Input {...register('madeIn')} placeholder={tr('Land', 'Country')} required />
+            <Error msg={errors.madeIn?.message} />
           </div>
           <div>
             <Label>{tr('Material (hauptsächlich)', 'Material (primary)')}</Label>
-            <Input {...register('material')} placeholder={tr('z.B. Edelstahl', 'e.g. stainless steel')} />
+            <Input {...register('material')} placeholder={tr('z.B. Edelstahl', 'e.g. stainless steel')} required />
+            <Error msg={errors.material?.message} />
           </div>
           <div className="md:col-span-2">
             <Label>{tr('Produktspezifikationen', 'Product specifications')}</Label>
@@ -274,7 +301,9 @@ export default function PrecheckForm() {
               className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-800"
               rows={4}
               placeholder={tr('z.B. wasserdicht, schwer entflammbar, energiesparend …', 'e.g. waterproof, flame retardant, energy saving …')}
+              required
             />
+            <Error msg={errors.specs?.message} />
           </div>
         </div>
 

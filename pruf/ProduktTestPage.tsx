@@ -45,7 +45,7 @@ const verfahrenHighlights = [
 ];
 
 // Add cache-busting query params so updated public images show without hard refresh
-const carouselImages = ['/carosel/prod1.jpeg', '/carosel/prod2.jpeg', '/carosel/prod3.jpeg'];
+const carouselImages = ['/carosel/wertung1.jpeg', '/carosel/wertung2.jpeg'];
 
 // Reuse the full precheck page component here to keep validation and behavior consistent
 
@@ -338,31 +338,10 @@ export default function ProduktTestPage() {
           data-animate="hero-image"
           className="flex flex-1 items-center justify-end relative z-10 overflow-visible"
         >
-          <div
-            className="relative flex items-center justify-start w-[360px] h-[360px] overflow-visible pointer-events-none"
-            style={{ marginLeft: 'auto', marginRight: '-90px' }}
-          >
-            {/* back card */}
             <div
-              className="absolute transition-all duration-[1200ms] ease-in-out will-change-transform"
-              style={{
-                width: '260px',
-                height: '260px',
-                opacity: heroAnim ? 0.85 : 0,
-                transform: heroAnim
-                  ? 'translate(-20%, 10%) scale(0.9)'
-                  : 'translate(-120%, 10%) scale(0.8)',
-              }}
+              className="relative flex items-center justify-start w-[360px] h-[360px] overflow-visible pointer-events-none"
+              style={{ marginLeft: 'auto', marginRight: '-90px' }}
             >
-              <Image
-                src="/siegel21.png"
-                alt="Testsieger Siegel Hintergrund"
-                fill
-                sizes="260px"
-                className="object-contain"
-                priority
-              />
-            </div>
             {/* front card */}
             <div
               className="absolute transition-all duration-[1200ms] ease-in-out will-change-transform drop-shadow-2xl"
@@ -376,7 +355,7 @@ export default function ProduktTestPage() {
               }}
             >
               <Image
-                src="/siegel.png"
+                src="/siegel19.png"
                 alt="Testsieger Siegel"
                 fill
                 sizes="280px"
@@ -553,7 +532,7 @@ export default function ProduktTestPage() {
             className="flex flex-col items-center justify-center rounded-2xl bg-white p-8 text-center text-slate-900"
           >
             <div className="text-5xl font-bold">
-              <Counter start={0} end={1} duration={1000} />
+              <Counter start={0} end={1} duration={1875} />
             </div>
             <div className="mt-2 text-sm font-medium uppercase tracking-wide">
               {tr('Exclusivität', 'Exclusivity')}
@@ -565,7 +544,7 @@ export default function ProduktTestPage() {
             className="flex flex-col items-center justify-center rounded-2xl bg-white p-8 text-center text-slate-900"
           >
             <div className="text-5xl font-bold">
-              <Counter start={1} end={10} duration={1500} />
+              <Counter start={1} end={10} duration={2813} />
             </div>
             <div className="mt-2 text-sm font-medium uppercase tracking-wide">
               {tr('Ranking Top', 'Top ranking')}
@@ -577,7 +556,7 @@ export default function ProduktTestPage() {
             className="flex flex-col items-center justify-center rounded-2xl bg-white p-8 text-center text-slate-900"
           >
             <div className="text-5xl font-bold">
-              <Counter start={0} end={233} duration={2000} />
+              <Counter start={0} end={233} duration={3750} />
             </div>
             <div className="mt-2 text-sm font-medium uppercase tracking-wide">
               {tr('Klienten', 'Clients')}
@@ -589,7 +568,7 @@ export default function ProduktTestPage() {
             className="flex flex-col items-center justify-center rounded-2xl bg-white p-8 text-center text-slate-900"
           >
             <div className="text-5xl font-bold">
-              <Counter start={47} end={477} duration={2500} />
+              <Counter start={47} end={477} duration={4688} />
             </div>
             <div className="mt-2 text-sm font-medium uppercase tracking-wide">
               {tr('Siegel vergaben', 'Seals awarded')}
@@ -604,7 +583,7 @@ export default function ProduktTestPage() {
           <div className="flex justify-center">
             <video
               ref={videoRef}
-              src="/kocher.mp4"
+              src="/kaffe.mp4"
               className="rounded-xl object-cover shadow-lg max-w-full"
               width={700}
               height={440}
@@ -837,6 +816,23 @@ export default function ProduktTestPage() {
                 </div>
               </details>
             ))}
+          </div>
+        </div>
+      </section>
+      <section data-animate="section" className="bg-white py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-6">
+          <div
+            data-animate="card"
+            style={stagger(0)}
+            className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 shadow-sm"
+          >
+            <Image
+              src="/prodtestbild/produkttestunten.jpeg"
+              alt={tr("Produkt Test Eindruck", "Product test impression")}
+              width={1600}
+              height={900}
+              className="h-auto w-full object-cover"
+            />
           </div>
         </div>
       </section>

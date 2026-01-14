@@ -129,6 +129,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const generatedSeal = await generateSealForS3({
       product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
       certificateId,
+      tcCode: product.processNumber ?? undefined,
       ratingScore,
       ratingLabel,
       appUrl: APP_URL,

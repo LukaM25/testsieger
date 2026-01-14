@@ -243,6 +243,7 @@ async function runCompletion(productId: string, message?: string, opts?: { force
       const seal = await generateSealForS3({
         product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
         certificateId: cert.id,
+        tcCode: product.processNumber ?? undefined,
         ratingScore: cert.ratingScore ?? 'PASS',
         ratingLabel: cert.ratingLabel ?? 'PASS',
         appUrl: APP_URL,
@@ -287,6 +288,7 @@ async function runCompletion(productId: string, message?: string, opts?: { force
         const seal = await generateSealForS3({
           product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
           certificateId: cert.id,
+          tcCode: product.processNumber ?? undefined,
           ratingScore: cert.ratingScore ?? 'PASS',
           ratingLabel: cert.ratingLabel ?? 'PASS',
           appUrl: APP_URL,

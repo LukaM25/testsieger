@@ -221,6 +221,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       lockedAt: null,
       lockedByAdminId: null,
       passEmailSentAt: null,
+      licenseReminderSentAt: null,
+      licenseFinalReminderSentAt: null,
     },
   };
 

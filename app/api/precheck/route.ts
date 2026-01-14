@@ -8,27 +8,27 @@ import { sendPrecheckConfirmation } from '@/lib/email';
 import { getSession } from '@/lib/auth';
 
 const PrecheckSchema = z.object({
-  name: z.string().min(2),
-  company: z.string().optional().nullable(),
-  email: z.string().email(),
+  name: z.string().trim().min(2),
+  company: z.string().trim().min(2),
+  email: z.string().trim().email(),
   address: z.string().min(5),
   password: z.string().min(8, 'Passwort min. 8 Zeichen'),
   // product
-  productName: z.string().min(2),
-  brand: z.string().min(1),
-  category: z.string().optional().nullable(),
-  code: z.string().optional().nullable(),
-  specs: z.string().optional().nullable(),
-  size: z.string().optional().nullable(),
-  madeIn: z.string().optional().nullable(),
-  material: z.string().optional().nullable(),
+  productName: z.string().trim().min(2),
+  brand: z.string().trim().min(1),
+  category: z.string().trim().min(1),
+  code: z.string().trim().min(2),
+  specs: z.string().trim().min(5),
+  size: z.string().trim().min(2),
+  madeIn: z.string().trim().min(2),
+  material: z.string().trim().min(2),
 });
 
 export async function POST(req: Request) {
   try {
     const json = await req.json();
     const data = PrecheckSchema.parse(json);
-    const category = data.category?.trim() || undefined;
+    const category = data.category.trim();
     const normalizedEmail = data.email.trim().toLowerCase();
     const session = await getSession();
 

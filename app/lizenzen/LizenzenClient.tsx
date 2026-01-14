@@ -9,6 +9,7 @@ interface Product {
   brand: string;
   category: string | null;
   madeIn: string | null;
+  processNumber?: string | null;
   certificate: {
     seal_number: string | null;
     pdfUrl: string | null;
@@ -47,7 +48,8 @@ export default function LizenzenClient({ products }: { products: any[] }) {
       p.brand.toLowerCase().includes(lowerQ) ||
       (p.category ?? '').toLowerCase().includes(lowerQ) ||
       p.id.toLowerCase().includes(lowerQ) ||
-      p.certificate?.seal_number?.toLowerCase().includes(lowerQ)
+      p.certificate?.seal_number?.toLowerCase().includes(lowerQ) ||
+      (p.processNumber ?? '').toLowerCase().includes(lowerQ)
     );
   }, [query, products]);
 
@@ -55,14 +57,14 @@ export default function LizenzenClient({ products }: { products: any[] }) {
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-900">Lizenzcode prüfen</h2>
       <p className="mt-2 text-sm text-slate-600">
-        Geben Sie Lizenzcode, Produktnamen, Produkt-ID oder Kategorie ein, um die Gültigkeit zu verifizieren.
+        Geben Sie Lizenzcode, Produktnamen, Produkt-ID, Vorgangsnummer oder Kategorie ein, um die Gültigkeit zu verifizieren.
       </p>
       
       {/* SEARCH INPUT */}
       <div className="mt-6">
         <input
           type="text"
-          placeholder="Lizenzcode, Produktname, Kategorie oder ID..."
+          placeholder="Lizenzcode, Vorgangsnummer, Produktname, Kategorie oder ID..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"

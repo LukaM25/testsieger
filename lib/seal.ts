@@ -6,6 +6,7 @@ import sharp from "sharp";
 type SealInput = {
   product: { id: string; name: string; brand: string | null; createdAt: Date };
   certificateId: string;
+  tcCode?: string | null;
   ratingScore: string;
   ratingLabel: string;
   appUrl: string;
@@ -14,42 +15,59 @@ type SealInput = {
   outputDir?: string;
 };
 
-const REF_WIDTH = 1780;
+const REF_WIDTH = 1621;
 const REF_HEIGHT = 2048;
 
 // Fonts configuration
 const FONTS = {
   // Gold bar
-  ratingScore: { size: 430, weight: 900, color: "#000000" },
-  ratingLabel: { size: 115, weight: 900, color: "#000000" },
+  ratingScore: { size: 455, weight: 900, color: "#ffffff" },
+  ratingLabel: { size: 340, weight: 900, color: "#ffffff" },
 
   // Main white box values (Produkt/Marke)
-  body: { size: 78, weight: 700, color: "#000000" },
+  body: { weight: 700, color: "#000000" },
 
   // Meta data
-  metaData: { size: 42, weight: 600, color: "#7F7F7F" },
+  metaData: { weight: 600, color: "#7F7F7F" },
 
   // Footer URL
-  smallMuted: { size: 32, weight: 400, color: "#9B9B9B" },
+  smallMuted: { weight: 400, color: "#7F7F7F" },
 };
+const INFO_FONT_SIZES = {
+  body: 90,
+  metaData: 42,
+  smallMuted: 35,
+};
+const INFO_TEXT_SCALE_X = 0.81;
+const INFO_VALUE_GAP = 20;
 
-const DEFAULT_TEMPLATE = path.join(
-  process.cwd(),
-  "public",
-  "template",
-  "template_siegel.png"
-);
+const DEFAULT_TEMPLATE = path.join(process.cwd(), "siegeltemplate.png");
 const DEFAULT_OUTPUT_DIR = path.join(
   process.cwd(),
   "public",
   "uploads",
   "seals"
 );
+const FONT_PATH = path.join(process.cwd(), "public", "D-DinCondensed.otf");
+
+let cachedFontDataUrl: string | null | undefined;
 
 export type GeneratedSeal = {
   buffer: Buffer;
   key: string; // logical storage key for S3
 };
+
+async function getFontDataUrl() {
+  if (cachedFontDataUrl !== undefined) return cachedFontDataUrl;
+  try {
+    const fontBuffer = await fs.readFile(FONT_PATH);
+    cachedFontDataUrl = `data:font/opentype;base64,${fontBuffer.toString("base64")}`;
+  } catch (err) {
+    console.warn("SEAL_FONT_LOAD_FAILED", err);
+    cachedFontDataUrl = null;
+  }
+  return cachedFontDataUrl;
+}
 
 function formatTestDate(date: Date) {
   try {
@@ -75,11 +93,14 @@ function makeSvgText({
   fontSize,
   fontWeight,
   color,
+  fontDataUrl,
+  scaleX = 1,
   align = "left",
   width,
   height,
   stretch = false,
   letterSpacing = 0,
+  tightenCommaBy = 0,
 }: {
   text: string;
   x: number;
@@ -87,26 +108,46 @@ function makeSvgText({
   fontSize: number;
   fontWeight: number;
   color: string;
+  fontDataUrl?: string | null;
+  scaleX?: number;
   align?: "left" | "center";
   width: number;
   height: number;
   stretch?: boolean;
   letterSpacing?: number;
+  tightenCommaBy?: number;
 }) {
   const anchor = align === "center" ? "middle" : "start";
 
   // Scaling logic for "tall" look
   const scaleY = stretch ? 1.3 : 1;
-  const adjustedY = stretch ? y / scaleY : y;
-  const transform = stretch ? `transform="scale(1, ${scaleY})"` : "";
+  const adjustedY = scaleY === 1 ? y : y / scaleY;
+  const adjustedX = scaleX === 1 ? x : x / scaleX;
+  const transform =
+    scaleX !== 1 || scaleY !== 1 ? `transform="scale(${scaleX}, ${scaleY})"` : "";
 
   // If centering, use the provided X (which might include an offset) as the center point
-  const anchorX = align === "center" ? x : x; 
+  const anchorX = align === "center" ? adjustedX : adjustedX;
+
+  const fontFace = fontDataUrl
+    ? `@font-face { font-family: 'DIN Condensed'; src: url('${fontDataUrl}') format('opentype'); }`
+    : "";
+
+  const escapeXml = (value: string) =>
+    value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  let textContent = escapeXml(text);
+  if (tightenCommaBy > 0 && text.includes(",")) {
+    const commaIndex = text.indexOf(",");
+    const before = escapeXml(text.slice(0, commaIndex));
+    const after = escapeXml(text.slice(commaIndex));
+    textContent = `${before}<tspan dx="-${tightenCommaBy}">${after}</tspan>`;
+  }
 
   return Buffer.from(
     `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
       <style>
-        .t { font-family: 'Arial', 'Helvetica', sans-serif; }
+        ${fontFace}
+        .t { font-family: 'DIN Condensed', 'Arial', 'Helvetica', sans-serif; }
       </style>
       <text 
         x="${anchorX}" 
@@ -119,10 +160,7 @@ function makeSvgText({
         fill="${color}"
         letter-spacing="${letterSpacing}"
       >
-        ${text
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")}
+        ${textContent}
       </text>
     </svg>`
   );
@@ -131,12 +169,14 @@ function makeSvgText({
 export async function generateSealForS3({
   product,
   certificateId,
+  tcCode,
   ratingScore,
   ratingLabel,
   appUrl,
   licenseDate = null,
   templatePath = DEFAULT_TEMPLATE,
 }: SealInput): Promise<GeneratedSeal> {
+  const fontDataUrl = await getFontDataUrl();
   const templateMeta = await sharp(templatePath).metadata();
   const canvasWidth = templateMeta.width ?? REF_WIDTH;
   const canvasHeight = templateMeta.height ?? REF_HEIGHT;
@@ -147,51 +187,58 @@ export async function generateSealForS3({
   // --- FINAL COORDINATES V9 ---
   const COORDS = {
     // Gold Band (Unchanged)
-    ratingScoreY: Math.round(1090 * scaleY), 
-    ratingLabelY: Math.round(1225 * scaleY),
+    ratingCenterX: Math.round(713 * scaleX),
+    ratingScoreY: Math.round(851 * scaleY),
+    ratingLabelY: Math.round(1151 * scaleY),
 
     // White Box Values
     productValue: {
-      x: Math.round(550 * scaleX),
-      y: Math.round(1465 * scaleY), // Moved DOWN 5px (was 1460)
+      x: Math.round((174 + 270 + INFO_VALUE_GAP) * scaleX),
+      y: Math.round(1371 * scaleY),
     },
     brandValue: {
-      x: Math.round(499 * scaleX), // Moved RIGHT by ~2% (was 450)
-      y: Math.round(1572 * scaleY), // Moved UP by ~2% (was 1580)
+      x: Math.round((175 + 220 + INFO_VALUE_GAP) * scaleX),
+      y: Math.round(1469 * scaleY),
     },
 
     // Meta Row (Unchanged)
     testDateValue: {
-      x: Math.round(462 * scaleX),
-      y: Math.round(1673 * scaleY),
+      x: Math.round((161 + 198 + 6) * scaleX),
+      y: Math.round(1568 * scaleY),
     },
     // TC Code (Unchanged)
     tcCodeValue: {
-      x: Math.round(710 * scaleX),
-      y: Math.round(1715 * scaleY),
+      x: Math.round((565 + 157 + 2) * scaleX),
+      y: Math.round(1576 * scaleY),
     },
 
     // Bottom URL (Unchanged)
     reportUrlValue: {
-      x: Math.round(410 * scaleX),
-      y: Math.round(1880 * scaleY),
+      x: Math.round((166 + 261 + INFO_VALUE_GAP - 8) * scaleX),
+      y: Math.round(1734 * scaleY),
     },
 
     // QR Code (Unchanged)
     qr: {
-      x: Math.round(1180 * scaleX),
-      y: Math.round(1420 * scaleY),
-      size: Math.round(320 * scaleX),
+      x: Math.round((943 + 20) * scaleX),
+      y: Math.round(1328 * scaleY),
+      size: Math.round(383 * scaleX * 0.9),
     },
   };
 
   const reportUrl = `${appUrl.replace(/\/$/, "")}/lizenzen?q=${certificateId}`;
+  const tcCodeValue = tcCode ?? certificateId;
+  const infoFontSizes = {
+    body: Math.round(INFO_FONT_SIZES.body * scaleY),
+    metaData: Math.round(INFO_FONT_SIZES.metaData * scaleY),
+    smallMuted: Math.round(INFO_FONT_SIZES.smallMuted * scaleY),
+  };
 
   const templateBuffer = await sharp(templatePath).ensureAlpha().toBuffer();
   const composites: sharp.OverlayOptions[] = [];
 
   // --- 1. RATING (Gold Bar) ---
-  const ratingCenterX = (canvasWidth / 2) - Math.round(40 * scaleX);
+  const ratingCenterX = COORDS.ratingCenterX;
   const displayScore = ratingScore.replace(".", ",");
 
   composites.push({
@@ -202,11 +249,13 @@ export async function generateSealForS3({
       fontSize: FONTS.ratingScore.size,
       fontWeight: FONTS.ratingScore.weight,
       color: FONTS.ratingScore.color,
+      fontDataUrl,
+      scaleX: 0.94,
       align: "center",
       width: canvasWidth,
       height: canvasHeight,
-      stretch: true,
-      letterSpacing: -15,
+      letterSpacing: 4.5,
+      tightenCommaBy: Math.round(FONTS.ratingScore.size * 0.015),
     }),
   });
 
@@ -218,11 +267,12 @@ export async function generateSealForS3({
       fontSize: FONTS.ratingLabel.size,
       fontWeight: FONTS.ratingLabel.weight,
       color: FONTS.ratingLabel.color,
+      fontDataUrl,
+      scaleX: 0.7,
       align: "center",
       width: canvasWidth,
       height: canvasHeight,
-      stretch: true,
-      letterSpacing: -2,
+      letterSpacing: 0,
     }),
   });
 
@@ -232,12 +282,13 @@ export async function generateSealForS3({
       text: shorten(product.name, 28),
       x: COORDS.productValue.x,
       y: COORDS.productValue.y,
-      fontSize: FONTS.body.size,
+      fontSize: infoFontSizes.body,
       fontWeight: FONTS.body.weight,
       color: FONTS.body.color,
+      fontDataUrl,
+      scaleX: INFO_TEXT_SCALE_X,
       width: canvasWidth,
       height: canvasHeight,
-      stretch: true,
     }),
   });
 
@@ -246,12 +297,13 @@ export async function generateSealForS3({
       text: product.brand ? shorten(product.brand, 28) : "",
       x: COORDS.brandValue.x,
       y: COORDS.brandValue.y,
-      fontSize: FONTS.body.size,
+      fontSize: infoFontSizes.body,
       fontWeight: FONTS.body.weight,
       color: FONTS.body.color,
+      fontDataUrl,
+      scaleX: INFO_TEXT_SCALE_X,
       width: canvasWidth,
       height: canvasHeight,
-      stretch: true,
     }),
   });
 
@@ -263,9 +315,11 @@ export async function generateSealForS3({
         text: testDate,
         x: COORDS.testDateValue.x,
         y: COORDS.testDateValue.y,
-        fontSize: FONTS.metaData.size,
+        fontSize: infoFontSizes.metaData,
         fontWeight: FONTS.metaData.weight,
         color: FONTS.metaData.color,
+        fontDataUrl,
+        scaleX: INFO_TEXT_SCALE_X,
         width: canvasWidth,
         height: canvasHeight,
       }),
@@ -274,12 +328,14 @@ export async function generateSealForS3({
 
   composites.push({
     input: makeSvgText({
-      text: certificateId || "",
+      text: tcCodeValue || "",
       x: COORDS.tcCodeValue.x,
       y: COORDS.tcCodeValue.y,
-      fontSize: FONTS.metaData.size,
+      fontSize: infoFontSizes.metaData,
       fontWeight: FONTS.metaData.weight,
       color: FONTS.metaData.color,
+      fontDataUrl,
+      scaleX: INFO_TEXT_SCALE_X,
       width: canvasWidth,
       height: canvasHeight,
     }),
@@ -291,9 +347,11 @@ export async function generateSealForS3({
       text: shorten(reportUrl, 60),
       x: COORDS.reportUrlValue.x,
       y: COORDS.reportUrlValue.y,
-      fontSize: FONTS.smallMuted.size,
+      fontSize: infoFontSizes.smallMuted,
       fontWeight: FONTS.smallMuted.weight,
       color: FONTS.smallMuted.color,
+      fontDataUrl,
+      scaleX: INFO_TEXT_SCALE_X,
       width: canvasWidth,
       height: canvasHeight,
     }),
@@ -335,6 +393,7 @@ export async function generateSealForS3({
 export async function generateSeal({
   product,
   certificateId,
+  tcCode,
   ratingScore,
   ratingLabel,
   appUrl,
@@ -346,6 +405,7 @@ export async function generateSeal({
   const { buffer, key } = await generateSealForS3({
     product,
     certificateId,
+    tcCode,
     ratingScore,
     ratingLabel,
     appUrl,

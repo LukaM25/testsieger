@@ -82,7 +82,7 @@ function normalizeAttachmentContent(content: Buffer | Uint8Array) {
 
 function renderFooter() {
   const logo = `${APP_BASE_URL.replace(/\/$/, '')}/dpilogo-v3.png`;
-  const seal = `${APP_BASE_URL.replace(/\/$/, '')}/siegel.png`;
+  const seal = `${APP_BASE_URL.replace(/\/$/, '')}/siegel19.png`;
   return `
     <div style="margin-top:28px;padding-top:18px;border-top:1px solid #e2e8f0;display:flex;align-items:center;gap:16px;color:#475569;font-size:12px;">
       <img src="${logo}" alt="DPI Logo" width="140" height="40" style="display:block;object-fit:contain;" />
@@ -420,6 +420,58 @@ export async function sendCompletionReadyEmail(opts: {
     subject: `Testsieger Check bestanden – ${productName}`,
     html,
     attachments: attachments.length ? attachments : undefined,
+  });
+}
+
+export async function sendLicensePlanReminderEmail(opts: {
+  to: string;
+  name: string;
+  productName: string;
+}) {
+  const { to, name, productName } = opts;
+  const html = `
+    <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
+      <p>Guten Tag ${escapeHtml(name)},</p>
+      <p>Ihr Produkt <strong>${escapeHtml(productName)}</strong> hat den Test erfolgreich bestanden und erfüllt alle Anforderungen für unser Qualitätssiegel. Dies ist eine kurze Erinnerung:</p>
+      <p>Um das Siegel offiziell zu aktivieren und den Service zu starten, wählen Sie bitte jetzt Ihren Lizenzplan aus.</p>
+      <p>Sobald der Plan aktiviert ist, erhalten Sie die Nutzungsfreigabe für das Siegel sowie alle zugehörigen Leistungen.</p>
+      <p>Bei Fragen helfen wir gerne weiter.</p>
+      <p style="margin-top:18px;">Beste Grüße<br/>Testsieger Check,<br/>ein Service des DPI Deutschen Prüfsiegel Institut</p>
+      ${renderFooter()}
+    </div>
+  `;
+
+  await sendEmail({
+    from: `Pruefsiegel Zentrum UG – Erinnerung <${FROM_EMAIL}>`,
+    to,
+    subject: `Erinnerung: Lizenzplan auswählen – ${productName}`,
+    html,
+  });
+}
+
+export async function sendLicensePlanFinalReminderEmail(opts: {
+  to: string;
+  name: string;
+  productName: string;
+}) {
+  const { to, name, productName } = opts;
+  const html = `
+    <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
+      <p>Guten Tag Kunde ${escapeHtml(name)},</p>
+      <p>dies ist unsere letzte Erinnerung:</p>
+      <p>Ihr Produkt <strong>${escapeHtml(productName)}</strong> hat den Test erfolgreich bestanden – allerdings ist das Qualitätssiegel noch nicht aktiviert. Bitte wählen Sie jetzt Ihren Lizenzplan, damit die Nutzung des Siegels sowie unser Service offiziell starten können.</p>
+      <p>Ohne Auswahl des Lizenzplans können wir die Freigabe leider nicht erteilen.</p>
+      <p>Bei Fragen unterstützen wir Sie jederzeit gern.</p>
+      <p style="margin-top:18px;">Beste Grüße<br/>Testsieger Check,<br/>ein Service des DPI Deutschen Prüfsiegel Institut</p>
+      ${renderFooter()}
+    </div>
+  `;
+
+  await sendEmail({
+    from: `Pruefsiegel Zentrum UG – Erinnerung <${FROM_EMAIL}>`,
+    to,
+    subject: `Letzte Erinnerung: Lizenzplan auswählen – ${productName}`,
+    html,
   });
 }
 

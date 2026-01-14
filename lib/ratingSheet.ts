@@ -22,7 +22,20 @@ function getRatingFromSnapshot(snapshotData: unknown) {
   const pdfSha256 = typeof rating?.pdf?.sha256 === 'string' ? (rating.pdf.sha256 as string) : null;
   const lockedAt = typeof rating?.lockedAt === 'string' ? rating.lockedAt : null;
   const passEmailSentAt = typeof rating?.passEmailSentAt === 'string' ? rating.passEmailSentAt : null;
-  return { csvKey, csvSha256, pdfKey, pdfSha256, lockedAt, passEmailSentAt };
+  const licenseReminderSentAt =
+    typeof rating?.licenseReminderSentAt === 'string' ? rating.licenseReminderSentAt : null;
+  const licenseFinalReminderSentAt =
+    typeof rating?.licenseFinalReminderSentAt === 'string' ? rating.licenseFinalReminderSentAt : null;
+  return {
+    csvKey,
+    csvSha256,
+    pdfKey,
+    pdfSha256,
+    lockedAt,
+    passEmailSentAt,
+    licenseReminderSentAt,
+    licenseFinalReminderSentAt,
+  };
 }
 
 export async function fetchStoredRatingCsvAttachment(productId: string): Promise<RatingCsvAttachment | null> {
@@ -54,6 +67,7 @@ export async function getRatingLockState(productId: string) {
     where: { productId },
     select: { snapshotData: true },
   });
-  const { lockedAt, passEmailSentAt } = getRatingFromSnapshot(cert?.snapshotData);
-  return { lockedAt, passEmailSentAt };
+  const { lockedAt, passEmailSentAt, licenseReminderSentAt, licenseFinalReminderSentAt } =
+    getRatingFromSnapshot(cert?.snapshotData);
+  return { lockedAt, passEmailSentAt, licenseReminderSentAt, licenseFinalReminderSentAt };
 }

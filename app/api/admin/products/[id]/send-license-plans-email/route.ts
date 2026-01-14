@@ -76,6 +76,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
         lockedAt: new Date().toISOString(),
         lockedByAdminId: admin.id,
         passEmailSentAt: new Date().toISOString(),
+        licenseReminderSentAt: null,
+        licenseFinalReminderSentAt: null,
         pdf: {
           ...(ratingV1.pdf || {}),
           key: ratingPdf.key,
