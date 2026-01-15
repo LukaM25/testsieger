@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLocale } from "@/components/LocaleProvider";
-import { useEffect, useState, MouseEvent, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { usePrecheckStatusData } from "@/hooks/usePrecheckStatusData";
 
 // --- Types ---
@@ -17,9 +17,12 @@ type TestOption = {
 
 type Plan = {
   name: string;
-  price: { de: string; en: string };
-  detail: { de: string; en: string };
-  href: string;
+  theme: "sky" | "indigo" | "midnight";
+  usage: { de: string[]; en: string[] };
+  contents: { de: string[]; en: string[] };
+  basePriceEur: number;
+  billing: "daily" | "one-time";
+  footer: { de: string[]; en: string[] };
 };
 
 // --- Data ---
@@ -45,23 +48,83 @@ const testOptions: TestOption[] = [
 const plans: Plan[] = [
   {
     name: "Basic",
-    price: { de: "0,99 € / Tag (jährlich)", en: "€0.99 / day (yearly)" },
-    detail: { de: "DE · 1 Kanal", en: "DE · 1 channel" },
-    href: "/pakete?plan=basic",
+    theme: "sky",
+    usage: {
+      de: ["1 Verkaufskanal (Amazon, Otto...)", "Sprache: Deutsch"],
+      en: ["1 sales channel (Amazon, Otto...)", "Language: German"],
+    },
+    contents: {
+      de: ["Siegel", "Zertifikat", "Prüfbericht"],
+      en: ["Seal", "Certificate", "Test report"],
+    },
+    basePriceEur: 0.99,
+    billing: "daily",
+    footer: {
+      de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+      en: ["Billing 365 days / year", "License renewal yearly."],
+    },
   },
   {
     name: "Premium",
-    price: { de: "1,47 € / Tag (jährlich)", en: "€1.47 / day (yearly)" },
-    detail: { de: "EU-Sprachen · alle Kanäle", en: "EU languages · all channels" },
-    href: "/pakete?plan=premium",
+    theme: "indigo",
+    usage: {
+      de: ["ALLE Verkaufskanäle", "ALLE Sprachen"],
+      en: ["ALL sales channels", "ALL languages"],
+    },
+    contents: {
+      de: ["Siegel", "Zertifikat", "Prüfbericht"],
+      en: ["Seal", "Certificate", "Test report"],
+    },
+    basePriceEur: 1.47,
+    billing: "daily",
+    footer: {
+      de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+      en: ["Billing 365 days / year", "License renewal yearly."],
+    },
   },
   {
     name: "Lifetime",
-    price: { de: "1466,00 € einmalig", en: "€1466,00 one-time" },
-    detail: { de: "Zertifikat & Bericht · alle Kanäle", en: "Certificate & report · all channels" },
-    href: "/pakete?plan=lifetime",
+    theme: "midnight",
+    usage: {
+      de: ["ALLE Verkaufskanäle", "ALLE Sprachen"],
+      en: ["ALL sales channels", "ALL languages"],
+    },
+    contents: {
+      de: ["Siegel", "Zertifikat", "Prüfbericht"],
+      en: ["Seal", "Certificate", "Test report"],
+    },
+    basePriceEur: 1466,
+    billing: "one-time",
+    footer: {
+      de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+      en: ["Billing 365 days / year", "License renewal yearly."],
+    },
   },
 ];
+
+const planThemes = {
+  sky: {
+    card: "bg-gradient-to-b from-sky-300 via-sky-200 to-sky-50",
+    border: "border-sky-200/70",
+    label: "text-slate-900",
+    body: "text-slate-800",
+    muted: "text-slate-700/80",
+  },
+  indigo: {
+    card: "bg-gradient-to-b from-indigo-500 via-indigo-700 to-slate-950",
+    border: "border-indigo-400/30",
+    label: "text-white",
+    body: "text-white/90",
+    muted: "text-white/70",
+  },
+  midnight: {
+    card: "bg-gradient-to-b from-blue-950 via-slate-950 to-black",
+    border: "border-blue-500/20",
+    label: "text-white",
+    body: "text-white/90",
+    muted: "text-white/70",
+  },
+} as const;
 
 // --- Animation Component ---
 const FadeIn = ({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) => {
@@ -98,7 +161,6 @@ export default function PrecheckPage() {
   const isUnauthorized = statusError === "UNAUTHORIZED";
   const search = searchParams?.toString();
   const nextAfterLogin = encodeURIComponent(`/precheck${search ? `?${search}` : ""}`);
-  const [planNotice, setPlanNotice] = useState<string | null>(null);
   const [payError, setPayError] = useState<string | null>(null);
   const [paying, setPaying] = useState<string | null>(null);
   const [heroStage, setHeroStage] = useState<"loading" | "done">("loading");
@@ -126,9 +188,6 @@ export default function PrecheckPage() {
   const checkoutRef = useRef<HTMLDivElement | null>(null);
 
   const isPaid = productStatus ? ["PAID", "MANUAL"].includes(productStatus.paymentStatus) : false;
-  const isPassed = productStatus
-    ? productStatus.adminProgress === "PASS" || productStatus.adminProgress === "COMPLETION" || productStatus.status === "COMPLETED"
-    : false;
   const paidCount = products.filter((p) => ["PAID", "MANUAL"].includes(p.paymentStatus)).length;
   const unpaidCount = products.filter((p) => p.paymentStatus === "UNPAID").length;
   const productDiscountPercent = Number(productStatus?.precheckDiscountPercent ?? 0) || 0;
@@ -162,33 +221,6 @@ export default function PrecheckPage() {
         : heroStage === "loading"
           ? `${tr("Pre-Check", "Pre-check")}${".".repeat((dots % 3) + 1)}`
           : tr("Pre-Check bestanden!", "Pre-check passed!");
-  const planDisabledTitle = tr(
-    "Bitte zuerst den Pre-Check und die Grundgebühr abschließen. Wir leiten dich zum Formular.",
-    "Please finish the pre-check and base fee first. We’ll take you to the form."
-  );
-
-  const handlePlanClick = (e: MouseEvent<HTMLAnchorElement>) => {
-    if (isUnauthorized) {
-      e.preventDefault();
-      setPlanNotice(tr("Bitte melde dich an, um fortzufahren.", "Please sign in to continue."));
-      router.push(`/login?next=${nextAfterLogin}`);
-      return;
-    }
-    const ready = productStatus && isPaid && isPassed;
-    if (ready) {
-      setPlanNotice(null);
-      return;
-    }
-    e.preventDefault();
-    setPlanNotice(
-      tr(
-        "Bitte zuerst den kostenlosen Pre-Check ausfüllen. Wir leiten dich zum Formular.",
-        "Please submit the free pre-check first. We’ll take you to the form."
-      )
-    );
-    router.push("/produkte/produkt-test");
-  };
-
   const handlePayClick = async (optionId: string) => {
     if (isUnauthorized) {
       setPayError(tr("Bitte melde dich an, um die Zahlung zu starten.", "Please sign in to start payment."));
@@ -1005,35 +1037,84 @@ export default function PrecheckPage() {
                 <div className="text-2xl font-semibold text-slate-900" id="license-plans">
                   {tr("4. Lizenzplan auswählen und Siegel erhalten", "4. Choose a license plan and receive your seal")}
                 </div>
-                {planNotice && <p className="text-sm text-amber-700">{planNotice}</p>}
-                <div className="grid gap-6 md:grid-cols-3 pt-4">
-                  {plans.map((plan, i) => (
-                    <div
-                      key={plan.name}
-                      className="flex h-full flex-col justify-between rounded-2xl border border-slate-200 bg-white/90 p-7 shadow-[0_18px_50px_-35px_rgba(15,23,42,0.35)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-                      style={{ animationDelay: `${i * 100}ms` }}
-                    >
-                      <div className="space-y-3">
+                <div className="grid gap-10 md:grid-cols-3 pt-6">
+                  {plans.map((plan) => {
+                    const theme = planThemes[plan.theme];
+                    const usageLines = locale === "en" ? plan.usage.en : plan.usage.de;
+                    const contentLines = locale === "en" ? plan.contents.en : plan.contents.de;
+                    const footerLines = locale === "en" ? plan.footer.en : plan.footer.de;
+                    const priceSuffix = plan.billing === "daily" ? (locale === "en" ? " / day" : " / Tag") : "";
+                    const priceRows =
+                      plan.billing === "daily"
+                        ? [
+                            {
+                              label: `${locale === "en" ? "1 prod." : "1 Prod."}`,
+                              price: `${formatEur(roundEur(plan.basePriceEur))}${priceSuffix}`,
+                            },
+                            {
+                              label: `${locale === "en" ? "2 prod." : "2 Prod."} -20%`,
+                              price: `${formatEur(roundEur(plan.basePriceEur * 0.8))}${priceSuffix}`,
+                            },
+                            {
+                              label: `${locale === "en" ? "3 prod." : "3 Prod."} -30%`,
+                              price: `${formatEur(roundEur(plan.basePriceEur * 0.7))}${priceSuffix}`,
+                            },
+                          ]
+                        : [
+                            {
+                              label: `${locale === "en" ? "1 prod." : "1 Prod."}`,
+                              price: `${formatEur(roundEur(plan.basePriceEur))}`,
+                            },
+                            {
+                              label: `${locale === "en" ? "2 prod." : "2 Prod."} -20%`,
+                              price: `${formatEur(roundEur(plan.basePriceEur * 2 * 0.8))}`,
+                            },
+                            {
+                              label: `${locale === "en" ? "3 prod." : "3 Prod."} -30%`,
+                              price: `${formatEur(roundEur(plan.basePriceEur * 3 * 0.7))}`,
+                            },
+                          ];
+                    return (
+                      <div key={plan.name} className="flex h-full flex-col items-center gap-4">
                         <div className="text-lg font-semibold text-slate-900">{plan.name}</div>
-                        <div className="text-base font-medium text-slate-700">{tr(plan.price.de, plan.price.en)}</div>
-                        <p className="text-sm text-slate-500 leading-relaxed">{tr(plan.detail.de, plan.detail.en)}</p>
+                        <div
+                          className={`flex h-full w-full flex-col justify-between rounded-[28px] border ${theme.border} ${theme.card} p-6 text-center font-semibold shadow-[0_28px_60px_-40px_rgba(15,23,42,0.65)] transition-transform duration-300 hover:-translate-y-1`}
+                        >
+                          <div className="space-y-6">
+                            <div className="space-y-2">
+                              <div className={`text-[15.4px] font-semibold ${theme.label}`}>{tr("Nutzung:", "Usage:")}</div>
+                              <div className={`space-y-1 text-[15.4px] ${theme.body}`}>
+                                {usageLines.map((line) => (
+                                  <div key={line}>{line}</div>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <div className={`text-[15.4px] font-semibold ${theme.label}`}>{tr("Inhalt:", "Contents:")}</div>
+                              <div className={`space-y-1 text-[15.4px] ${theme.body}`}>
+                                {contentLines.map((line) => (
+                                  <div key={line}>- {line}</div>
+                                ))}
+                              </div>
+                            </div>
+                            <div className={`space-y-1 text-[15.4px] ${theme.body} w-full max-w-[240px] mx-auto`}>
+                              {priceRows.map((row) => (
+                                <div key={`${row.label}-${row.price}`} className="flex items-center justify-between gap-4 tabular-nums">
+                                  <span className="text-left">{row.label}</span>
+                                  <span className="text-right">{row.price}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          <div className={`mt-6 space-y-1 text-[12.1px] leading-relaxed ${theme.muted}`}>
+                            {footerLines.map((line) => (
+                              <div key={line}>{line}</div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                      <Link
-                        href={plan.href}
-                        onClick={handlePlanClick}
-                        aria-disabled={!(productStatus && isPaid && isPassed)}
-                        title={!(productStatus && isPaid && isPassed) ? planDisabledTitle : undefined}
-                        className={`mt-8 inline-flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold shadow-sm transition ${
-                          productStatus && isPaid && isPassed
-                            ? "bg-slate-900 text-white hover:bg-black"
-                            : "bg-slate-200 text-slate-500 cursor-not-allowed"
-                        }`}
-                      >
-                        {tr("Lizenzplan wählen", "Select plan")}
-                        <span className="ml-2 transition-transform duration-300 group-hover:translate-x-1">→</span>
-                      </Link>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </FadeIn>

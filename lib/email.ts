@@ -338,7 +338,7 @@ export async function sendPrecheckPaymentSuccess(opts: {
       <p>vielen Dank für die Begleichung der Prüfgebühr. Ihr Auftrag für den Testsieger Check des Deutschen Prüfsiegel Instituts (DPI) ist damit offiziell aktiviert.</p>
       <p>Die Rechnung zu Ihrer Zahlung finden Sie im Anhang dieser E-Mail.</p>
       <p>Damit wir Ihr Produkt unmittelbar in den Prüfprozess übernehmen können, senden Sie es bitte an folgende Versandadresse:</p>
-      <p style="margin:12px 0;line-height:1.5;font-size:14px;">
+      <p style="margin:12px 0;line-height:1.5;font-size:15.4px;font-weight:700;">
         Deutsches Prüfsiegel Institut (DPI)<br/>
         Abteilung Produktprüfung<br/>
         Tölzer Straße 172<br/>
