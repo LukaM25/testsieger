@@ -14,6 +14,16 @@ type StepCard = {
   label: { de: string; en: string };
 };
 
+type Plan = {
+  name: string;
+  theme: "sky" | "indigo" | "midnight";
+  usage: { de: string[]; en: string[] };
+  contents: { de: string[]; en: string[] };
+  basePriceEur: number;
+  billing: "daily" | "one-time";
+  footer: { de: string[]; en: string[] };
+};
+
 const steps: StepCard[] = [
   { src: "/images/ablauf/1free.PNG", label: { de: "Kostenloser Pre-Check", en: "Free pre-check" } },
   { src: "/images/ablauf/3liefer.PNG", label: { de: "Produkt an uns senden", en: "Send product to us" } },
@@ -43,6 +53,89 @@ const verfahrenHighlights = [
   { src: "/images/iconen/glaub.PNG", label: { de: "Vertrauen", en: "Credibility" } },
   { src: "/images/iconen/qualitat.PNG", label: { de: "Qualität", en: "Quality" } },
 ];
+
+const STANDARD_NET_EUR = 229;
+
+const plans: Plan[] = [
+  {
+    name: "Basic",
+    theme: "sky",
+    usage: {
+      de: ["1 Verkaufskanal (Amazon, Otto...)", "Sprache: Deutsch"],
+      en: ["1 sales channel (Amazon, Otto...)", "Language: German"],
+    },
+    contents: {
+      de: ["Siegel", "Zertifikat", "Prüfbericht"],
+      en: ["Seal", "Certificate", "Test report"],
+    },
+    basePriceEur: 0.99,
+    billing: "daily",
+    footer: {
+      de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+      en: ["Billing 365 days / year", "License renewal yearly."],
+    },
+  },
+  {
+    name: "Premium",
+    theme: "indigo",
+    usage: {
+      de: ["ALLE Verkaufskanäle", "ALLE Sprachen"],
+      en: ["ALL sales channels", "ALL languages"],
+    },
+    contents: {
+      de: ["Siegel", "Zertifikat", "Prüfbericht"],
+      en: ["Seal", "Certificate", "Test report"],
+    },
+    basePriceEur: 1.47,
+    billing: "daily",
+    footer: {
+      de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+      en: ["Billing 365 days / year", "License renewal yearly."],
+    },
+  },
+  {
+    name: "Lifetime",
+    theme: "midnight",
+    usage: {
+      de: ["ALLE Verkaufskanäle", "ALLE Sprachen"],
+      en: ["ALL sales channels", "ALL languages"],
+    },
+    contents: {
+      de: ["Siegel", "Zertifikat", "Prüfbericht"],
+      en: ["Seal", "Certificate", "Test report"],
+    },
+    basePriceEur: 1466,
+    billing: "one-time",
+    footer: {
+      de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+      en: ["Billing 365 days / year", "License renewal yearly."],
+    },
+  },
+];
+
+const planThemes = {
+  sky: {
+    card: "bg-gradient-to-b from-sky-300 via-sky-200 to-sky-50",
+    border: "border-sky-200/70",
+    label: "text-slate-900",
+    body: "text-slate-800",
+    muted: "text-slate-700/80",
+  },
+  indigo: {
+    card: "bg-gradient-to-b from-indigo-500 via-indigo-700 to-slate-950",
+    border: "border-indigo-400/30",
+    label: "text-white",
+    body: "text-white/90",
+    muted: "text-white/70",
+  },
+  midnight: {
+    card: "bg-gradient-to-b from-blue-950 via-slate-950 to-black",
+    border: "border-blue-500/20",
+    label: "text-white",
+    body: "text-white/90",
+    muted: "text-white/70",
+  },
+} as const;
 
 // Add cache-busting query params so updated public images show without hard refresh
 const carouselImages = ['/carosel/wertung1.jpeg', '/carosel/wertung2.jpeg'];
@@ -96,8 +189,8 @@ const phasesQa = {
     {
       question: { de: 'Welche Kosten entstehen – und wann?', en: 'What costs arise — and when?' },
       answer: {
-        de: 'Nach dem kostenlosen bestandenen Pre-Check kann das Produkt an uns geschickt werden.\nFür den Prüfungsaufwand, das Erstellen der Zertifikate und Berichte wird eine Grundgebühr von 254 € erhoben.\nNach Abschluss der Prüfung und dem vorliegenden Testergebnis kann der Lizenzplan gewählt werden.\nDer Lizenzplan ist individuell auszuwählen und wird für ein komplettes Jahr bezahlt. Ist das Ergebnis nicht zufriedenstellend, muss kein Lizenzplan ausgewählt werden – somit wird auch kein Siegel und Zertifikat ausgestellt.',
-        en: 'After the free pre-check is passed, the product can be sent to us.\nA base fee of €254 is charged for the testing effort and the creation of certificates and reports.\nAfter the test is completed and the result is available, you can choose a license plan.\nThe license plan is selected individually and paid for a full year.\nIf the result is not satisfactory, no license plan is required — therefore no seal or certificate is issued.',
+        de: 'Nach dem kostenlosen bestandenen Pre-Check kann das Produkt an uns geschickt werden.\nFür den Prüfungsaufwand, das Erstellen der Zertifikate und Berichte wird eine Grundgebühr von 229 € erhoben.\nNach Abschluss der Prüfung und dem vorliegenden Testergebnis kann der Lizenzplan gewählt werden.\nDer Lizenzplan ist individuell auszuwählen und wird für ein komplettes Jahr bezahlt. Ist das Ergebnis nicht zufriedenstellend, muss kein Lizenzplan ausgewählt werden – somit wird auch kein Siegel und Zertifikat ausgestellt.',
+        en: 'After the free pre-check is passed, the product can be sent to us.\nA base fee of €229 is charged for the testing effort and the creation of certificates and reports.\nAfter the test is completed and the result is available, you can choose a license plan.\nThe license plan is selected individually and paid for a full year.\nIf the result is not satisfactory, no license plan is required — therefore no seal or certificate is issued.',
       },
     },
     {
@@ -128,6 +221,21 @@ export default function ProduktTestPage() {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [contentMaxHeight, setContentMaxHeight] = useState<string>('0px');
   const [heroAnim, setHeroAnim] = useState(false);
+  const formatEur = (amountEur: number) =>
+    new Intl.NumberFormat(locale === "en" ? "en-GB" : "de-DE", { style: "currency", currency: "EUR" }).format(amountEur);
+  const roundEur = (n: number) => Math.round(n * 100) / 100;
+  const baseNetPerProduct = STANDARD_NET_EUR;
+  const savingsTiers = [
+    { count: 1, discountPercent: 0 },
+    { count: 2, discountPercent: 20 },
+    { count: 3, discountPercent: 30 },
+  ].map((tier) => {
+    const totalNet = roundEur(baseNetPerProduct * tier.count);
+    const finalNet = roundEur(totalNet * (1 - tier.discountPercent / 100));
+    return { ...tier, totalNet, finalNet };
+  });
+  const productCountLabel = (count: number) =>
+    tr(`${count} Produkt${count === 1 ? "" : "e"}`, `${count} product${count === 1 ? "" : "s"}`);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(
     () => typeof window !== 'undefined' && typeof window.matchMedia === 'function'
       ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -477,7 +585,7 @@ export default function ProduktTestPage() {
       </section>
 
       {/* Vorteile / Highlights */}
-      <section className="mx-auto max-w-6xl px-6 py-16">
+      <section className="mx-auto max-w-6xl px-6 pt-12 pb-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-semibold">{tr('Dein Vorteil', 'Your benefit')}</h2>
           <span className="text-xs uppercase tracking-[0.3em] text-slate-500">{tr('klar & strukturiert', 'clear & structured')}</span>
@@ -531,7 +639,7 @@ export default function ProduktTestPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-16">
+      <section className="mx-auto max-w-6xl px-6 pt-6 pb-6">
         <div className="text-center">
           <h2 className="text-4xl font-bold">
             {tr('Zufriedene Kunden', 'Satisfied customers')}
@@ -542,7 +650,7 @@ export default function ProduktTestPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-16">
+      <section className="mx-auto max-w-6xl px-6 pt-6 pb-6">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Exclusivität */}
           <div
@@ -589,6 +697,139 @@ export default function ProduktTestPage() {
             </div>
             <div className="mt-2 text-sm font-medium uppercase tracking-wide">
               {tr('Siegel vergaben', 'Seals awarded')}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-6 pt-8 pb-16">
+        <div className="space-y-12">
+          <div className="rounded-3xl border border-slate-100 bg-white/90 p-8 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)] md:p-10">
+            <div className="space-y-3 text-center">
+              <h3 className="text-3xl md:text-4xl font-semibold text-slate-900">
+                {tr("Weitere Produkte hinzufügen und sparen.", "Add more products and save.")}
+              </h3>
+              <p className="text-lg md:text-xl text-slate-600">
+                {tr("Für die Prüfung fällt eine einmalige Testgebühr an.", "A one-time test fee applies for the review.")}
+              </p>
+            </div>
+            <div className="mt-8 space-y-5">
+              {savingsTiers.map((tier) => (
+                <div key={tier.count} className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <span className="text-lg font-medium text-slate-900">{productCountLabel(tier.count)}</span>
+                  <div
+                    className="inline-flex flex-wrap items-center gap-3 rounded-full px-6 py-2.5 text-white shadow-md ring-1 ring-blue-200/30"
+                    style={{ backgroundImage: "linear-gradient(90deg, #1d4ed8 0%, #1e3a8a 55%, #0f172a 100%)" }}
+                  >
+                    {tier.discountPercent > 0 && (
+                      <>
+                        <span className="text-sm md:text-base text-white/70 line-through">{formatEur(tier.totalNet)}</span>
+                        <span className="text-sm md:text-base text-white/70">- {tier.discountPercent}%</span>
+                      </>
+                    )}
+                    <span className="text-base md:text-lg font-semibold">
+                      {tr("Testgebühr", "Test fee")} {formatEur(tier.finalNet)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <p className="text-sm md:text-base text-slate-600 max-w-2xl">
+                {tr(
+                  "Bei mehr als 3 Produkten, schreiben Sie uns direkt an und wir unterbreiten Ihnen ein Angebot.",
+                  "For more than 3 products, contact us directly and we will make you an offer."
+                )}
+              </p>
+              <Link
+                href="/kontakt"
+                className="rounded-full bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-black"
+              >
+                {tr("Angebot anfordern", "Request an offer")}
+              </Link>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="text-2xl font-semibold text-slate-900 text-center">{tr("Lizenzpläne", "License plans")}</div>
+            <div className="grid gap-6 md:grid-cols-3">
+              {plans.map((plan) => {
+                const theme = planThemes[plan.theme];
+                const usageLines = locale === "en" ? plan.usage.en : plan.usage.de;
+                const contentLines = locale === "en" ? plan.contents.en : plan.contents.de;
+                const footerLines = locale === "en" ? plan.footer.en : plan.footer.de;
+                const priceSuffix = plan.billing === "daily" ? (locale === "en" ? " / day" : " / Tag") : "";
+                const priceRows =
+                  plan.billing === "daily"
+                    ? [
+                        {
+                          label: `${locale === "en" ? "1 prod." : "1 Prod."}`,
+                          price: `${formatEur(roundEur(plan.basePriceEur))}${priceSuffix}`,
+                        },
+                        {
+                          label: `${locale === "en" ? "2 prod." : "2 Prod."} -20%`,
+                          price: `${formatEur(roundEur(plan.basePriceEur * 0.8))}${priceSuffix}`,
+                        },
+                        {
+                          label: `${locale === "en" ? "3 prod." : "3 Prod."} -30%`,
+                          price: `${formatEur(roundEur(plan.basePriceEur * 0.7))}${priceSuffix}`,
+                        },
+                      ]
+                    : [
+                        {
+                          label: `${locale === "en" ? "1 prod." : "1 Prod."}`,
+                          price: `${formatEur(roundEur(plan.basePriceEur))}`,
+                        },
+                        {
+                          label: `${locale === "en" ? "2 prod." : "2 Prod."} -20%`,
+                          price: `${formatEur(roundEur(plan.basePriceEur * 2 * 0.8))}`,
+                        },
+                        {
+                          label: `${locale === "en" ? "3 prod." : "3 Prod."} -30%`,
+                          price: `${formatEur(roundEur(plan.basePriceEur * 3 * 0.7))}`,
+                        },
+                      ];
+                return (
+                  <div key={plan.name} className="flex h-full flex-col items-center gap-4">
+                    <div className="text-lg font-semibold text-slate-900">{plan.name}</div>
+                    <div
+                      className={`flex h-full w-full flex-col justify-between rounded-[28px] border ${theme.border} ${theme.card} p-6 text-center font-semibold shadow-[0_28px_60px_-40px_rgba(15,23,42,0.65)] transition-transform duration-300 hover:-translate-y-1`}
+                    >
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <div className={`text-[15.4px] font-semibold ${theme.label}`}>{tr("Nutzung:", "Usage:")}</div>
+                          <div className={`space-y-1 text-[15.4px] ${theme.body}`}>
+                            {usageLines.map((line) => (
+                              <div key={line}>{line}</div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className={`text-[15.4px] font-semibold ${theme.label}`}>{tr("Inhalt:", "Contents:")}</div>
+                          <div className={`space-y-1 text-[15.4px] ${theme.body}`}>
+                            {contentLines.map((line) => (
+                              <div key={line}>- {line}</div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className={`space-y-1 text-[15.4px] ${theme.body} w-full max-w-[240px] mx-auto`}>
+                          {priceRows.map((row) => (
+                            <div key={`${row.label}-${row.price}`} className="flex items-center justify-between gap-4 tabular-nums">
+                              <span className="text-left">{row.label}</span>
+                              <span className="text-right">{row.price}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className={`mt-6 space-y-1 text-[12.1px] leading-relaxed ${theme.muted}`}>
+                        {footerLines.map((line) => (
+                          <div key={line}>{line}</div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
