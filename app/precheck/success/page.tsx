@@ -25,13 +25,13 @@ export default async function PrecheckSuccessPage({ searchParams }: Props) {
   const testOptions = [
     {
       title: tr('Produkttest Checkout', 'Product test checkout'),
-      price: tr('254 € zzgl. MwSt.', '€254 plus VAT'),
+      price: tr('229 € zzgl. MwSt.', '€229 plus VAT'),
       timeline: tr('14–17 Werktage nach Wareneingang', '14–17 business days after receipt'),
       detail: tr('Standard-Bearbeitung nach Zahlungseingang und Wareneingang.', 'Standard processing once payment and delivery are received.'),
     },
     {
       title: tr('Produkttest Priority', 'Product test priority'),
-      price: tr('254 € + 64 € zzgl. MwSt.', '€254 + €64 plus VAT'),
+      price: tr('229 € + 60 € zzgl. MwSt.', '€229 + €60 plus VAT'),
       timeline: tr('4–7 Werktage nach Wareneingang', '4–7 business days after receipt'),
       detail: tr('Beschleunigte Prüfung mit priorisierter Auswertung.', 'Accelerated testing with prioritised reporting.'),
     },
@@ -96,8 +96,8 @@ export default async function PrecheckSuccessPage({ searchParams }: Props) {
             </div>
             <p className="mt-3 text-slate-700">
               {tr(
-                'Es wird eine einmalige Testgebühr von 254 € zzgl. MwSt. fällig. Nach der Zahlung erhalten Sie die Rechnung und die Versandadresse per E-Mail.',
-                'A one-time test fee of €254 plus VAT is due. After payment you will receive the invoice and the shipping address via email.'
+                'Es wird eine einmalige Testgebühr von 229 € zzgl. MwSt. fällig. Nach der Zahlung erhalten Sie die Rechnung und die Versandadresse per E-Mail.',
+                'A one-time test fee of €229 plus VAT is due. After payment you will receive the invoice and the shipping address via email.'
               )}
             </p>
           </li>

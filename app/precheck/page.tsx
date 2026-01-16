@@ -26,21 +26,21 @@ type Plan = {
 };
 
 // --- Data ---
-const STANDARD_NET_EUR = 254;
-const PRIORITY_NET_EUR = 318;
+const STANDARD_NET_EUR = 229;
+const PRIORITY_NET_EUR = 289;
 const VAT_RATE = 0.19;
 
 const testOptions: TestOption[] = [
   {
     id: "standard",
     title: { de: "Produkttest Checkout", en: "Product test checkout" },
-    price: { de: "254,00 € zzgl. MwSt.", en: "€254 plus VAT" },
+    price: { de: "229,00 € zzgl. MwSt.", en: "€229 plus VAT" },
     timeline: { de: "14–17 Werktage nach Erhalt", en: "14–17 business days after receipt" },
   },
   {
     id: "priority",
     title: { de: "Produkttest Priority", en: "Product test priority" },
-    price: { de: "(254 € + 64 €) zzgl. MwSt.", en: "(€254 + €64) plus VAT" },
+    price: { de: "(229 € + 60 €) zzgl. MwSt.", en: "(€229 + €60) plus VAT" },
     timeline: { de: "4–7 Werktage nach Erhalt", en: "4–7 business days after receipt" },
   },
 ];
