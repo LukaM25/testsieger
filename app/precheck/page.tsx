@@ -201,7 +201,7 @@ export default function PrecheckPage() {
   const showCtaDiscount = displayDiscountPercent > 0;
   const upsellDiscountPercent = priceDiscountPercent > 0 ? priceDiscountPercent : 30;
   const displayProductName = (productStatus?.name || productNameFromQuery).trim();
-  const productLabel = displayProductName || tr("dein Produkt", "your product");
+  const productLabel = displayProductName || tr("Ihr Produkt", "your product");
   const formatEur = (amountEur: number) =>
     new Intl.NumberFormat(locale === "en" ? "en-GB" : "de-DE", { style: "currency", currency: "EUR" }).format(amountEur);
   const roundEur = (n: number) => Math.round(n * 100) / 100;
@@ -225,7 +225,7 @@ export default function PrecheckPage() {
     tr(`${count} Produkt${count === 1 ? "" : "e"}`, `${count} product${count === 1 ? "" : "s"}`);
   const heroHeading =
     isUnauthorized
-      ? tr("Pre-Check nicht möglich. Bitte melde dich an.", "Pre-check unavailable. Please sign in.")
+      ? tr("Pre-Check nicht möglich. Bitte melden Sie sich an.", "Pre-check unavailable. Please sign in.")
     : isPaid
       ? tr("Zahlung bestätigt.", "Payment confirmed.")
     : checkout === "success" && !isPaid
@@ -235,12 +235,12 @@ export default function PrecheckPage() {
           : tr("Pre-Check bestanden!", "Pre-check passed!");
   const handlePayClick = async (optionId: string) => {
     if (isUnauthorized) {
-      setPayError(tr("Bitte melde dich an, um die Zahlung zu starten.", "Please sign in to start payment."));
+      setPayError(tr("Bitte melden Sie sich an, um die Zahlung zu starten.", "Please sign in to start payment."));
       router.push(`/login?next=${nextAfterLogin}`);
       return;
     }
     if (!productStatus) {
-      setPayError(tr("Bitte zuerst ein Produkt auswählen oder Pre-Check einreichen.", "Please select a product or submit a pre-check first."));
+      setPayError(tr("Bitte wählen Sie zuerst ein Produkt aus oder reichen Sie einen Pre-Check ein.", "Please select a product or submit a pre-check first."));
       return;
     }
     if (isPaid) {
@@ -257,7 +257,7 @@ export default function PrecheckPage() {
       });
       const data = await res.json();
       if (res.status === 401) {
-        setPayError(tr("Bitte einloggen, um die Zahlung zu starten.", "Please sign in to start payment."));
+        setPayError(tr("Bitte melden Sie sich an, um die Zahlung zu starten.", "Please sign in to start payment."));
         router.push(`/login?next=${nextAfterLogin}`);
         return;
       }
@@ -571,7 +571,7 @@ export default function PrecheckPage() {
                     <>
                       <p className="text-base md:text-lg text-slate-600 leading-relaxed">
                         {tr(
-                          "Bitte melde dich an, um deinen Pre-Check einzusehen und fortzufahren.",
+                          "Bitte melden Sie sich an, um Ihren Pre-Check einzusehen und fortzufahren.",
                           "Please sign in to view your pre-check and continue."
                         )}
                       </p>
@@ -591,7 +591,7 @@ export default function PrecheckPage() {
                       </p>
                       <p className="text-base md:text-lg text-slate-600 leading-relaxed">
                         {tr(
-                          `Wir haben die Grundgebühr für „${productLabel}“ erhalten. Als Nächstes bekommst du per E-Mail Rechnung und Versandadresse. Bitte sende dein Produkt an uns, damit wir mit der Prüfung starten können.`,
+                          `Wir haben die Grundgebühr für „${productLabel}“ erhalten. Als Nächstes erhalten Sie per E-Mail Rechnung und Versandadresse. Bitte senden Sie Ihr Produkt an uns, damit wir mit der Prüfung starten können.`,
                           `We’ve received the base fee for “${productLabel}”. Next, you’ll receive the invoice and shipping address by email. Please send your product to us so we can start testing.`
                         )}
                       </p>
@@ -610,7 +610,7 @@ export default function PrecheckPage() {
                       {paymentConfirmTimedOut && (
                         <p className="text-sm text-amber-700">
                           {tr(
-                            "Das dauert länger als erwartet. Bitte lade die Seite neu oder versuche es in einer Minute erneut.",
+                            "Das dauert länger als erwartet. Bitte laden Sie die Seite neu oder versuchen Sie es in einer Minute erneut.",
                             "This is taking longer than expected. Please refresh the page or try again in a minute."
                           )}
                         </p>
@@ -636,7 +636,7 @@ export default function PrecheckPage() {
                       {hasPriceDiscount && (
                         <p className="text-sm text-emerald-700 font-semibold">
                           {tr(
-                            `Du erhältst ${priceDiscountPercent}% Rabatt auf die Grundgebühr für dieses Produkt.`,
+                            `Sie erhalten ${priceDiscountPercent}% Rabatt auf die Grundgebühr für dieses Produkt.`,
                             `You get ${priceDiscountPercent}% off the base fee for this product.`
                           )}
                         </p>
@@ -767,7 +767,7 @@ export default function PrecheckPage() {
                             </div>
                             <p className="mx-auto max-w-2xl text-sm md:text-base text-white/85 leading-relaxed">
                               {tr(
-                                `Reiche jetzt weitere Produkte ein und sichere dir automatisch bis zu 30% Rabatt auf die Grundgebühr pro Produkt. So kommst du schneller zum nächsten Schritt Richtung Prüfsiegel, mit spürbar geringeren Kosten pro Prüfung.`,
+                                `Reichen Sie jetzt weitere Produkte ein und sichern Sie sich automatisch bis zu 30% Rabatt auf die Grundgebühr pro Produkt. So kommen Sie schneller zum nächsten Schritt Richtung Prüfsiegel, mit spürbar geringeren Kosten pro Prüfung.`,
                                 `Submit more products now and automatically secure up to 30% off the base fee per product. This gets you to the next step towards the seal faster with noticeably lower costs per test.`
                               )}
                             </p>
@@ -779,7 +779,7 @@ export default function PrecheckPage() {
                             )}
                             {statusError === "UNAUTHORIZED" && (
                               <p className="text-sm text-amber-200">
-                                {tr("Bitte einloggen, um Produkte auszuwählen.", "Please sign in to select your products.")}
+                                {tr("Bitte melden Sie sich an, um Produkte auszuwählen.", "Please sign in to select your products.")}
                               </p>
                             )}
                             {statusError === "LOAD_FAILED" && (
@@ -789,7 +789,7 @@ export default function PrecheckPage() {
                             )}
                             {!productsLoading && statusError === null && products.length === 0 && (
                               <p className="text-sm text-white/80">
-                                {tr("Noch keine Produkte angelegt. Bitte zuerst ein Produkt einreichen.", "No products yet. Please submit a product first.")}
+                                {tr("Noch keine Produkte angelegt. Bitte reichen Sie zuerst ein Produkt ein.", "No products yet. Please submit a product first.")}
                               </p>
                             )}
                             {products.length > 0 && (
@@ -854,7 +854,7 @@ export default function PrecheckPage() {
                                     </div>
                                     {!selectedProductId && (
                                       <p className="text-xs text-amber-200">
-                                        {tr("Bitte Produkt auswählen, um die Grundgebühr zu zahlen.", "Select a product to pay the base fee.")}
+                                        {tr("Bitte wählen Sie ein Produkt aus, um die Grundgebühr zu zahlen.", "Select a product to pay the base fee.")}
                                       </p>
                                     )}
                                   </div>
@@ -1223,10 +1223,10 @@ export default function PrecheckPage() {
         <FadeIn delay={450}>
           <div className="mx-auto max-w-6xl px-6 py-18 md:py-20 space-y-8">
             <div className="space-y-2">
-              <h2 className="text-2xl font-semibold text-slate-900">{tr("Mach dein Listing sichtbar", "Make your listing stand out")}</h2>
+              <h2 className="text-2xl font-semibold text-slate-900">{tr("Machen Sie Ihr Listing sichtbar", "Make your listing stand out")}</h2>
               <p className="text-slate-600 max-w-2xl text-lg leading-relaxed">
                 {tr(
-                  "Spare Werbebudget gezielt und steigere deine Conversion Rate um bis zu 90 %.",
+                  "Sparen Sie Werbebudget gezielt und steigern Sie Ihre Conversion Rate um bis zu 90 %.",
                   "Use your ad budget efficiently and raise your conversion rate by up to 90%."
                 )}
               </p>
