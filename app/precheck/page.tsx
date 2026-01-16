@@ -211,6 +211,18 @@ export default function PrecheckPage() {
     roundEur(netEur * (displayDiscountPercent / 100) * discountProductCount);
   const standardNetLabel = `${formatEur(discountedNet(STANDARD_NET_EUR))}`;
   const priorityNetLabel = `${formatEur(discountedNet(PRIORITY_NET_EUR))}`;
+  const baseNetPerProduct = discountedNet(STANDARD_NET_EUR);
+  const savingsTiers = [
+    { count: 1, discountPercent: 0 },
+    { count: 2, discountPercent: 20 },
+    { count: 3, discountPercent: 30 },
+  ].map((tier) => {
+    const totalNet = roundEur(baseNetPerProduct * tier.count);
+    const finalNet = roundEur(totalNet * (1 - tier.discountPercent / 100));
+    return { ...tier, totalNet, finalNet };
+  });
+  const productCountLabel = (count: number) =>
+    tr(`${count} Produkt${count === 1 ? "" : "e"}`, `${count} product${count === 1 ? "" : "s"}`);
   const heroHeading =
     isUnauthorized
       ? tr("Pre-Check nicht möglich. Bitte melde dich an.", "Pre-check unavailable. Please sign in.")
@@ -575,7 +587,7 @@ export default function PrecheckPage() {
                   ) : isPaid ? (
                     <>
                       <p className="text-lg md:text-xl font-medium text-slate-800">
-                        {tr("Danke für deine Zahlung!", "Thanks for your payment!")}
+                        {tr("Vielen Dank für Ihre Zahlung.", "Thanks for your payment!")}
                       </p>
                       <p className="text-base md:text-lg text-slate-600 leading-relaxed">
                         {tr(
@@ -654,21 +666,88 @@ export default function PrecheckPage() {
           <div className="space-y-16 md:space-y-18">
             <FadeIn delay={180}>
               <div className="space-y-3" id="checkout-options" ref={checkoutRef}>
-                <div className="text-2xl font-semibold text-slate-900">
-                  {tr("2. Produkt jetzt an uns senden", "2. Send your product to us now")}
-                </div>
-                <p className="text-slate-600 max-w-3xl leading-relaxed text-lg">
-                  {tr(
-                    "Wählen Sie den passenden Prüflauf und schließen Sie den Checkout ab, damit wir Versandadresse und Rechnung bereitstellen können.",
-                    "Choose the processing speed and complete checkout so we can provide shipping details and your invoice."
-                  )}
-                </p>
+                {!isPaid && (
+                  <div className="text-2xl font-semibold text-slate-900">
+                    {tr("2. Produkt jetzt an uns senden", "2. Send your product to us now")}
+                  </div>
+                )}
+                {isPaid ? (
+                  <div className="mt-6 flex flex-col items-start gap-8 md:gap-10">
+                    <p className="text-3xl md:text-4xl font-normal leading-snug text-slate-900 max-w-4xl">
+                      {tr(
+                        "Produkt jetzt an uns senden und Fortschritt im Kundendashboard verfolgen.",
+                        "Send your product now and track progress in the customer dashboard."
+                      )}
+                    </p>
+                    <div className="flex w-full justify-center">
+                      <div
+                        className="relative"
+                        style={{ width: "clamp(18rem, 30vw, 23rem)", height: "clamp(18rem, 30vw, 23rem)" }}
+                      >
+                        <Image
+                          src="/liefer.png"
+                          alt={tr("Lieferung", "Delivery")}
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                {!isPaid && (
+                  <div className="mt-10 rounded-3xl border border-slate-100 bg-white/90 p-8 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)] md:p-10">
+                    <div className="space-y-3">
+                      <h3 className="text-3xl md:text-4xl font-semibold text-slate-900">
+                        {tr("Weitere Produkte hinzufügen und sparen.", "Add more products and save.")}
+                      </h3>
+                      <p className="text-lg md:text-xl text-slate-600">
+                        {tr("Für die Prüfung fällt eine einmalige Testgebühr an.", "A one-time test fee applies for the review.")}
+                      </p>
+                    </div>
+                    <div className="mt-8 space-y-5">
+                      {savingsTiers.map((tier) => (
+                        <div key={tier.count} className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                          <span className="text-lg font-medium text-slate-900">{productCountLabel(tier.count)}</span>
+                          <div
+                            className="inline-flex flex-wrap items-center gap-3 rounded-full px-6 py-2.5 text-white shadow-md ring-1 ring-blue-200/30"
+                            style={{ backgroundImage: "linear-gradient(90deg, #1d4ed8 0%, #1e3a8a 55%, #0f172a 100%)" }}
+                          >
+                            {tier.discountPercent > 0 && (
+                              <>
+                                <span className="text-sm md:text-base text-white/70 line-through">{formatEur(tier.totalNet)}</span>
+                                <span className="text-sm md:text-base text-white/70">- {tier.discountPercent}%</span>
+                              </>
+                            )}
+                            <span className="text-base md:text-lg font-semibold">
+                              {tr("Testgebühr", "Test fee")} {formatEur(tier.finalNet)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      <p className="text-sm md:text-base text-slate-600 max-w-2xl">
+                        {tr(
+                          "Bei mehr als 3 Produkten, schreiben Sie uns direkt an und wir unterbreiten Ihnen ein Angebot.",
+                          "For more than 3 products, contact us directly and we will make you an offer."
+                        )}
+                      </p>
+                      <Link
+                        href="/kontakt"
+                        className="rounded-full bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-black"
+                      >
+                        {tr("Angebot anfordern", "Request an offer")}
+                      </Link>
+                    </div>
+                  </div>
+                )}
 
                 <div className="mt-8 flex justify-center items-start">
                   <div
                     id="discount-upsell"
                     className={`w-full rounded-3xl p-6 md:p-7 shadow-[0_30px_90px_-55px_rgba(15,23,42,0.7)] ring-1 ring-white/10 ${
-                      showInlinePrecheck ? "max-w-5xl h-auto min-h-0" : "max-w-4xl"
+                      showInlinePrecheck ? "h-auto min-h-0" : ""
                     }`}
                     style={{
                       background: "linear-gradient(90deg, #020617 0%, #1e3a8a 52%, #0f172a 100%)",
@@ -680,7 +759,7 @@ export default function PrecheckPage() {
                       <div className="relative isolate rounded-3xl px-6 py-7 text-center text-white ring-1 ring-white/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:px-10 md:py-8">
                         <div className="flex flex-col gap-6">
                           <div className="space-y-2">
-                            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-white/70">
+                            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-white/70">
                               {tr("Produkt auswählen & Grundgebühr zahlen", "Select product & pay base fee")}
                             </p>
                             <div className="text-base md:text-lg font-semibold tracking-tight">
@@ -700,7 +779,7 @@ export default function PrecheckPage() {
                             )}
                             {statusError === "UNAUTHORIZED" && (
                               <p className="text-sm text-amber-200">
-                                {tr("Bitte einloggen, um Produkte zu sehen.", "Please sign in to view your products.")}
+                                {tr("Bitte einloggen, um Produkte auszuwählen.", "Please sign in to select your products.")}
                               </p>
                             )}
                             {statusError === "LOAD_FAILED" && (
@@ -715,35 +794,70 @@ export default function PrecheckPage() {
                             )}
                             {products.length > 0 && (
                               <div className="flex flex-col gap-2">
-                                <div className="flex flex-col gap-3 md:flex-row md:items-center">
-                                  <select
-                                    value={selectedProductId}
-                                    onChange={(e) => setSelectedProductId(e.target.value)}
-                                    className="w-full rounded-xl border border-white/20 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm md:flex-1"
-                                  >
-                                    <option value="">{tr("Bitte wählen", "Please choose")}</option>
-                                    {products.map((p) => {
-                                      const paid = ["PAID", "MANUAL"].includes(p.paymentStatus);
-                                      const pDiscount = Math.max(0, Math.min(30, Number(p.precheckDiscountPercent ?? 0) || 0));
-                                      const date = p.paidAt
-                                        ? new Date(p.paidAt).toLocaleDateString(locale === "en" ? "en-GB" : "de-DE", {
-                                            day: "2-digit",
-                                            month: "2-digit",
-                                            year: "numeric",
-                                          })
-                                        : "";
-                                      return (
-                                        <option key={p.id} value={p.id} disabled={paid}>
-                                          {p.name} {p.brand ? `– ${p.brand}` : ""}{" "}
-                                          {paid
-                                            ? `(${tr("Bezahlt", "Paid")}${date ? ` · ${date}` : ""})`
-                                            : pDiscount > 0
-                                              ? `(${pDiscount}% ${tr("Rabatt", "off")})`
-                                              : ""}
-                                        </option>
-                                      );
-                                    })}
-                                  </select>
+                                <div className="flex flex-col gap-3 md:flex-row md:items-start">
+                                  <div className="w-full space-y-3 md:flex-1">
+                                    <div className="grid gap-2">
+                                      {products.map((p) => {
+                                        const checked = selectedProductId === p.id;
+                                        const paid = ["PAID", "MANUAL"].includes(p.paymentStatus);
+                                        const isDisabled = isUnauthorized;
+                                        const pDiscount = Math.max(0, Math.min(30, Number(p.precheckDiscountPercent ?? 0) || 0));
+                                        const date = p.paidAt
+                                          ? new Date(p.paidAt).toLocaleDateString(locale === "en" ? "en-GB" : "de-DE", {
+                                              day: "2-digit",
+                                              month: "2-digit",
+                                              year: "numeric",
+                                            })
+                                          : "";
+                                        const metaLabel = paid
+                                          ? `${tr("Bezahlt", "Paid")}${date ? ` · ${date}` : ""}`
+                                          : pDiscount > 0
+                                            ? `${pDiscount}% ${tr("Rabatt", "off")}`
+                                            : tr("Offen", "Unpaid");
+                                        const metaClass = paid
+                                          ? "text-emerald-700"
+                                          : pDiscount > 0
+                                            ? "text-amber-700"
+                                            : "text-slate-500";
+                                        return (
+                                          <label
+                                            key={p.id}
+                                            htmlFor={`product-select-${p.id}`}
+                                            className={`flex w-full items-start gap-4 rounded-2xl border px-4 py-3 text-left transition ${
+                                              checked
+                                                ? "border-slate-300 bg-white shadow-sm"
+                                                : "border-white/30 bg-white/90 hover:bg-white"
+                                            } ${isDisabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+                                          >
+                                            <input
+                                              id={`product-select-${p.id}`}
+                                              type="checkbox"
+                                              checked={checked}
+                                              disabled={isDisabled}
+                                              onChange={() => {
+                                                if (!checked && !isDisabled) setSelectedProductId(p.id);
+                                              }}
+                                              className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 accent-slate-900"
+                                            />
+                                            <div className="flex-1 space-y-1">
+                                              <div className="flex items-start justify-between gap-3">
+                                                <span className="text-base font-semibold text-slate-900">{p.name}</span>
+                                                <span className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${metaClass}`}>
+                                                  {metaLabel}
+                                                </span>
+                                              </div>
+                                              <span className="text-xs text-slate-600">{p.brand || "—"}</span>
+                                            </div>
+                                          </label>
+                                        );
+                                      })}
+                                    </div>
+                                    {!selectedProductId && (
+                                      <p className="text-xs text-amber-200">
+                                        {tr("Bitte Produkt auswählen, um die Grundgebühr zu zahlen.", "Select a product to pay the base fee.")}
+                                      </p>
+                                    )}
+                                  </div>
                                   {!isUnauthorized && (
                                     <button
                                       type="button"
@@ -759,11 +873,6 @@ export default function PrecheckPage() {
                                     </button>
                                   )}
                                 </div>
-                                {!selectedProductId && (
-                                  <p className="text-xs text-amber-200">
-                                    {tr("Bitte Produkt auswählen, um die Grundgebühr zu zahlen.", "Select a product to pay the base fee.")}
-                                  </p>
-                                )}
                               </div>
                             )}
                           </div>
@@ -776,7 +885,7 @@ export default function PrecheckPage() {
                                     href={`/login?next=${nextAfterLogin}`}
                                     className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100"
                                   >
-                                    {tr("Einloggen & Rabatt sichern", "Sign in to secure discount")}
+                                    {tr("Einloggen & fortfahren", "Sign in to continue")}
                                   </Link>
                                   <Link
                                     href="/produkte/produkt-test?precheck=open#precheck"
@@ -922,7 +1031,11 @@ export default function PrecheckPage() {
                   </div>
                 </div>
 
-                <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-2">
+                <div className="mt-12 space-y-6">
+                  <div className="text-2xl font-semibold text-slate-900">
+                    {tr("3. Checkout", "3. Checkout")}
+                  </div>
+                  <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                 {testOptions.map((option, idx) => {
                   const net = option.id === "priority" ? PRIORITY_NET_EUR : STANDARD_NET_EUR;
                   const bundleNet = roundEur(net * discountProductCount * (1 - displayDiscountPercent / 100));
@@ -944,9 +1057,12 @@ export default function PrecheckPage() {
                   const timelineClass = isPriority
                     ? "mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-white/95 shadow-sm ring-1 ring-emerald-200/40"
                     : "mt-2 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-white/85";
-                  const timelineStyle = isPriority
-                    ? { backgroundImage: "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #4ade80 100%)" }
-                    : undefined;
+                  const timelineStyle = {
+                    fontSize: "12.1px",
+                    ...(isPriority
+                      ? { backgroundImage: "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #4ade80 100%)" }
+                      : {}),
+                  };
                   return (
                   <button
                     key={option.title.de}
@@ -963,7 +1079,7 @@ export default function PrecheckPage() {
                     }}
                   >
                     <div className="flex flex-col items-center space-y-2">
-                      <div className="text-xl font-semibold leading-tight tracking-tight">
+                      <div className="text-xl font-semibold leading-tight tracking-tight" style={{ fontSize: "1.375rem" }}>
                         {option.id === "priority" ? (
                           <>
                             {tr("Produkttest ", "Product test ")}
@@ -973,14 +1089,17 @@ export default function PrecheckPage() {
                           tr(option.title.de, option.title.en)
                         )}
                       </div>
-                      <div className="text-base font-medium text-white/95">
+                      <div className="text-base font-medium text-white/95" style={{ fontSize: "1.1rem" }}>
                         {priceLabel}
                       </div>
                       <span className={timelineClass} style={timelineStyle}>
                         {tr(option.timeline.de, option.timeline.en)}
                       </span>
                       {showCtaDiscount && (
-                        <div className="mt-3 inline-flex flex-col items-center gap-1 rounded-2xl bg-emerald-400/20 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/90">
+                        <div
+                          className="mt-3 inline-flex flex-col items-center gap-1 rounded-2xl bg-emerald-400/20 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/90"
+                          style={{ fontSize: "12.1px" }}
+                        >
                           <span>{tr(`RABATT: ${displayDiscountPercent}%`, `DISCOUNT: ${displayDiscountPercent}%`)}</span>
                           <span>{tr(`ERSPARNISS: ${savingsLabel}`, `SAVINGS: ${savingsLabel}`)}</span>
                         </div>
@@ -1003,32 +1122,9 @@ export default function PrecheckPage() {
                   </button>
                   );
                 })}
-              </div>
-              {payError && <p className="text-sm text-amber-700">{payError}</p>}
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={260}>
-              <div className="space-y-4">
-                <div className="text-2xl font-semibold text-slate-900">{tr("3. Produktprüfung", "3. Product testing")}</div>
-                <p className="text-slate-600 max-w-3xl text-lg leading-relaxed">
-                  {tr(
-                    "Die Produktprüfung wird innerhalb des angegebenen Zeitraums nach Wareneingang durchgeführt.",
-                    "Testing is carried out within the stated timeframe once your sample arrives."
-                  )}
-                </p>
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={320}>
-              <div className="space-y-4">
-                <div className="text-2xl font-semibold text-slate-900">{tr("Lizenzgebühren", "License fees")}</div>
-                <p className="text-slate-600 max-w-3xl text-lg leading-relaxed">
-                  {tr(
-                    "Lizenzgebühren fallen erst nach Annahme des Siegels und Vorlage der Prüfergebnisse an.",
-                    "License fees only start after the seal is approved and your test results are ready."
-                  )}
-                </p>
+                  </div>
+                  {payError && <p className="text-sm text-amber-700">{payError}</p>}
+                </div>
               </div>
             </FadeIn>
 
