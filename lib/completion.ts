@@ -1,4 +1,5 @@
 import QRCode from 'qrcode';
+import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendCompletionEmail } from '@/lib/email';
 import { generateCertificatePdf } from '@/pdfGenerator';
@@ -161,12 +162,13 @@ async function runCompletion(productId: string, message?: string, opts?: { force
     throw new CompletionError('REPORT_FETCH_FAILED', 502, { reportUrl });
   }
 
-  const seal = product.certificate?.seal_number ?? (await generateSeal());
-  const certificateRecord =
-    product.certificate ??
-    (await prisma.certificate.create({
-      data: { productId: product.id, pdfUrl: '', qrUrl: '', seal_number: seal },
-    }));
+  let certificateRecord = product.certificate;
+  let seal = product.certificate?.seal_number ?? '';
+  if (!certificateRecord) {
+    const created = await allocateCertificateWithSeal(product.id);
+    certificateRecord = created.certificate;
+    seal = created.seal;
+  }
   const certificateId = certificateRecord.id;
   const verifyUrl = `${APP_URL.replace(/\/$/, '')}/lizenzen?q=${encodeURIComponent(certificateId)}`;
   const qrBuffer = await QRCode.toBuffer(verifyUrl, {
@@ -423,12 +425,22 @@ async function fetchBufferFromUrl(url: string) {
   }
 }
 
-async function generateSeal() {
+function makeSealNumber() {
+  return `DPI-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+}
+
+async function allocateCertificateWithSeal(productId: string) {
   for (let attempt = 0; attempt < 5; attempt += 1) {
-    const part = Math.random().toString(36).slice(2, 8).toUpperCase();
-    const seal = `PS-${new Date().getFullYear()}-${part}`;
-    const exists = await prisma.certificate.findUnique({ where: { seal_number: seal } }).catch(() => null);
-    if (!exists) return seal;
+    const seal = makeSealNumber();
+    try {
+      const certificate = await prisma.certificate.create({
+        data: { productId, pdfUrl: '', qrUrl: '', seal_number: seal },
+      });
+      return { certificate, seal };
+    } catch (err: any) {
+      if (err?.code === 'P2002') continue; // unique constraint collision, retry
+      throw err;
+    }
   }
   throw new CompletionError('SEAL_GENERATION_FAILED', 500);
 }

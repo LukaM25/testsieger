@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import QRCode from "qrcode";
+import crypto from "crypto";
 import { AdminRole } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
@@ -30,21 +31,38 @@ export async function POST(req: Request) {
     }
 
     const existingCert = product.certificate;
-    const seal_number = existingCert?.seal_number ?? generateSeal();
     const baseDomain =
       process.env.NEXT_PUBLIC_BASE_URL || process.env.APP_URL || "http://localhost:3000";
 
-    // Ensure a certificate row exists so we can use its id in the QR/verify URL.
-    const cert =
-      existingCert ??
-      (await prisma.certificate.create({
-        data: {
-          productId: product.id,
-          pdfUrl: "",
-          qrUrl: "",
-          seal_number,
-        },
-      }));
+    let cert = existingCert;
+    let seal_number = existingCert?.seal_number ?? '';
+    if (!cert) {
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const candidate = generateSealNumber();
+        try {
+          cert = await prisma.certificate.create({
+            data: {
+              productId: product.id,
+              pdfUrl: "",
+              qrUrl: "",
+              seal_number: candidate,
+            },
+          });
+          seal_number = candidate;
+          break;
+        } catch (err: any) {
+          if (err?.code === 'P2002') {
+            continue; // retry on unique constraint
+          }
+          throw err;
+        }
+      }
+      if (!cert || !seal_number) {
+        throw new Error('SEAL_ALLOCATION_FAILED');
+      }
+    } else {
+      seal_number = cert.seal_number;
+    }
 
     const verifyUrl = `${baseDomain.replace(/\/$/, "")}/lizenzen?q=${encodeURIComponent(cert.id)}`;
     const qrBuffer = await QRCode.toBuffer(verifyUrl, { margin: 1, width: 512 });
@@ -135,6 +153,6 @@ export async function POST(req: Request) {
   }
 }
 
-function generateSeal() {
-  return `ABC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+function generateSealNumber() {
+  return `DPI-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
 }
