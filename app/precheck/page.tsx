@@ -4,8 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLocale } from "@/components/LocaleProvider";
-import { useEffect, useState, useRef } from "react";
-import { usePrecheckStatusData } from "@/hooks/usePrecheckStatusData";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { usePrecheckStatusData, type ProductStatusPayload } from "@/hooks/usePrecheckStatusData";
 
 // --- Types ---
 type TestOption = {
@@ -28,7 +28,6 @@ type Plan = {
 // --- Data ---
 const STANDARD_NET_EUR = 229;
 const PRIORITY_NET_EUR = 289;
-const VAT_RATE = 0.19;
 
 const testOptions: TestOption[] = [
   {
@@ -169,6 +168,7 @@ export default function PrecheckPage() {
   const [paymentConfirming, setPaymentConfirming] = useState(false);
   const [paymentConfirmTimedOut, setPaymentConfirmTimedOut] = useState(false);
   const [showInlinePrecheck, setShowInlinePrecheck] = useState(false);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [inlinePrecheckMounted, setInlinePrecheckMounted] = useState(false);
   const [inlineSubmitMessage, setInlineSubmitMessage] = useState<string | null>(null);
   const [inlineSubmitting, setInlineSubmitting] = useState(false);
@@ -188,41 +188,85 @@ export default function PrecheckPage() {
   const checkoutRef = useRef<HTMLDivElement | null>(null);
 
   const isPaid = productStatus ? ["PAID", "MANUAL"].includes(productStatus.paymentStatus) : false;
-  const paidCount = products.filter((p) => ["PAID", "MANUAL"].includes(p.paymentStatus)).length;
-  const unpaidCount = products.filter((p) => p.paymentStatus === "UNPAID").length;
-  const productDiscountPercent = Number(productStatus?.precheckDiscountPercent ?? 0) || 0;
-  const basePriceDiscountPercent = productDiscountPercent || Math.min(30, Math.max(0, paidCount * 10));
-  const priceDiscountPercent = Math.max(0, Math.min(30, basePriceDiscountPercent));
-  const hasPriceDiscount = priceDiscountPercent > 0;
-  const bundleDiscountPercent = unpaidCount >= 3 ? 30 : unpaidCount === 2 ? 20 : 0;
-  const hasBundleDiscount = bundleDiscountPercent > 0;
-  const displayDiscountPercent = hasBundleDiscount ? bundleDiscountPercent : priceDiscountPercent;
-  const discountProductCount = hasBundleDiscount ? unpaidCount : 1;
-  const showCtaDiscount = displayDiscountPercent > 0;
-  const upsellDiscountPercent = priceDiscountPercent > 0 ? priceDiscountPercent : 30;
+  const isProductPaid = (product: { paymentStatus?: string } | null) =>
+    Boolean(product && ["PAID", "MANUAL"].includes(product.paymentStatus || ""));
   const displayProductName = (productStatus?.name || productNameFromQuery).trim();
   const productLabel = displayProductName || tr("Ihr Produkt", "your product");
   const formatEur = (amountEur: number) =>
     new Intl.NumberFormat(locale === "en" ? "en-GB" : "de-DE", { style: "currency", currency: "EUR" }).format(amountEur);
   const roundEur = (n: number) => Math.round(n * 100) / 100;
-  const discountedNet = (netEur: number) => roundEur(netEur * (1 - priceDiscountPercent / 100));
-  const discountedGross = (netEur: number) => roundEur(discountedNet(netEur) * (1 + VAT_RATE));
-  const discountSavings = (netEur: number) =>
-    roundEur(netEur * (displayDiscountPercent / 100) * discountProductCount);
-  const standardNetLabel = `${formatEur(discountedNet(STANDARD_NET_EUR))}`;
-  const priorityNetLabel = `${formatEur(discountedNet(PRIORITY_NET_EUR))}`;
-  const baseNetPerProduct = discountedNet(STANDARD_NET_EUR);
+  const baseNetCents = Math.round(STANDARD_NET_EUR * 100);
+  const priorityAddonCents = Math.round((PRIORITY_NET_EUR - STANDARD_NET_EUR) * 100);
+  const productsByCreatedAt = useMemo(() => {
+    return [...products].sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return aTime - bTime;
+    });
+  }, [products]);
+  const productOrderIndex = useMemo(() => {
+    const map = new Map<string, number>();
+    productsByCreatedAt.forEach((product, index) => {
+      map.set(product.id, index + 1);
+    });
+    return map;
+  }, [productsByCreatedAt]);
+  const discountPercentForOrder = (orderIndex: number) => (orderIndex <= 1 ? 0 : orderIndex === 2 ? 20 : 30);
+  const discountPercentForProduct = (productId: string) => {
+    const orderIndex = productOrderIndex.get(productId);
+    return orderIndex ? discountPercentForOrder(orderIndex) : 0;
+  };
+  const discountedBaseCentsForProduct = (productId: string) => {
+    const discountPercent = discountPercentForProduct(productId);
+    return Math.round(baseNetCents * (1 - discountPercent / 100));
+  };
+  const primaryProductId = selectedProductId || productStatus?.id || "";
+  const primaryDiscountPercent = primaryProductId ? discountPercentForProduct(primaryProductId) : 0;
+  const hasPrimaryDiscount = primaryDiscountPercent > 0;
+  const standardNetLabel = `${formatEur((primaryProductId ? discountedBaseCentsForProduct(primaryProductId) : baseNetCents) / 100)}`;
+  const selectedProducts = products.filter((product) => selectedProductIds.includes(product.id));
+  const selectedIdsForPricing = selectedProducts.length
+    ? selectedProducts.map((product) => product.id)
+    : primaryProductId
+    ? [primaryProductId]
+    : [];
+  const pricingBaseTotalCents = selectedIdsForPricing.reduce((sum, id) => sum + discountedBaseCentsForProduct(id), 0);
+  const pricingSavingsCents = selectedIdsForPricing.reduce(
+    (sum, id) => sum + (baseNetCents - discountedBaseCentsForProduct(id)),
+    0
+  );
+  const pricingMaxDiscount = selectedIdsForPricing.length
+    ? Math.max(...selectedIdsForPricing.map((id) => discountPercentForProduct(id)))
+    : 0;
+  const selectedIdsForPayment = selectedProductIds;
+  const selectedPayableProducts = selectedIdsForPayment
+    .map((id) => products.find((product) => product.id === id))
+    .filter((product): product is ProductStatusPayload => Boolean(product && !isProductPaid(product)));
+  const selectedPayableIds = selectedPayableProducts.map((product) => product.id);
+  const hasPayableSelection = selectedPayableIds.length > 0;
+  const productCountLabel = (count: number) =>
+    tr(`${count} Produkt${count === 1 ? "" : "e"}`, `${count} product${count === 1 ? "" : "s"}`);
   const savingsTiers = [
     { count: 1, discountPercent: 0 },
     { count: 2, discountPercent: 20 },
     { count: 3, discountPercent: 30 },
   ].map((tier) => {
-    const totalNet = roundEur(baseNetPerProduct * tier.count);
-    const finalNet = roundEur(totalNet * (1 - tier.discountPercent / 100));
+    const totalNet = roundEur((baseNetCents * tier.count) / 100);
+    const finalNetCents = Array.from({ length: tier.count }, (_, idx) => idx + 1).reduce((sum, idx) => {
+      const discountPercent = discountPercentForOrder(idx);
+      return sum + Math.round(baseNetCents * (1 - discountPercent / 100));
+    }, 0);
+    const finalNet = roundEur(finalNetCents / 100);
     return { ...tier, totalNet, finalNet };
   });
-  const productCountLabel = (count: number) =>
-    tr(`${count} Produkt${count === 1 ? "" : "e"}`, `${count} product${count === 1 ? "" : "s"}`);
+  const getCheckoutTotals = (optionId: string) => {
+    const count = selectedIdsForPricing.length || 1;
+    const baseTotalCents = selectedIdsForPricing.length ? pricingBaseTotalCents : baseNetCents;
+    const savingsCents = selectedIdsForPricing.length ? pricingSavingsCents : 0;
+    const maxDiscount = selectedIdsForPricing.length ? pricingMaxDiscount : 0;
+    const totalCents = baseTotalCents + (optionId === "priority" ? priorityAddonCents * count : 0);
+    return { count, totalCents, savingsCents, maxDiscount };
+  };
   const heroHeading =
     isUnauthorized
       ? tr("Pre-Check nicht möglich. Bitte melden Sie sich an.", "Pre-check unavailable. Please sign in.")
@@ -239,12 +283,16 @@ export default function PrecheckPage() {
       router.push(`/login?next=${nextAfterLogin}`);
       return;
     }
-    if (!productStatus) {
-      setPayError(tr("Bitte wählen Sie zuerst ein Produkt aus oder reichen Sie einen Pre-Check ein.", "Please select a product or submit a pre-check first."));
+    if (!selectedIdsForPayment.length) {
+      setPayError(tr("Bitte wählen Sie mindestens ein Produkt aus.", "Please select at least one product."));
       return;
     }
-    if (isPaid) {
-      setPayError(tr("Bereits bezahlt.", "Already paid."));
+    if (!selectedPayableIds.length) {
+      setPayError(tr("Ausgewählte Produkte sind bereits bezahlt.", "Selected products are already paid."));
+      return;
+    }
+    if (selectedPayableIds.length !== selectedIdsForPayment.length) {
+      setPayError(tr("Einige ausgewählte Produkte sind bereits bezahlt.", "Some selected products are already paid."));
       return;
     }
     setPayError(null);
@@ -253,7 +301,7 @@ export default function PrecheckPage() {
       const res = await fetch("/api/precheck/pay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId: productStatus.id, option: optionId }),
+        body: JSON.stringify({ productIds: selectedIdsForPayment, option: optionId }),
       });
       const data = await res.json();
       if (res.status === 401) {
@@ -348,8 +396,6 @@ export default function PrecheckPage() {
         setInlineSubmitMessage(data?.error || tr("Produkt konnte nicht angelegt werden.", "Product could not be created."));
         return;
       }
-      const paidCount = products.filter((p) => ["PAID", "MANUAL"].includes(p.paymentStatus)).length;
-      const nextDiscountPercent = Math.min(30, Math.max(0, paidCount * 10));
       const nextProduct = {
         id: data.product.id as string,
         name: data.product.name as string,
@@ -357,11 +403,12 @@ export default function PrecheckPage() {
         paymentStatus: (data.product.paymentStatus as "UNPAID" | "PAID" | "MANUAL") || "UNPAID",
         adminProgress: (data.product.adminProgress as "PRECHECK" | "RECEIVED" | "ANALYSIS" | "COMPLETION" | "PASS" | "FAIL") || "PRECHECK",
         status: (data.product.status as string) || "PRECHECK",
-        createdAt: data.product.createdAt as string | undefined,
-        precheckDiscountPercent: nextDiscountPercent,
+        createdAt: (data.product.createdAt as string | undefined) || new Date().toISOString(),
+        precheckDiscountPercent: 0,
       };
       setProducts((prev) => [nextProduct, ...prev]);
       setSelectedProductId(nextProduct.id);
+      setSelectedProductIds((prev) => Array.from(new Set([nextProduct.id, ...prev])));
       setInlineSubmitMessage(tr("Produkt angelegt.", "Product created."));
       setInlineProduct({
         productName: "",
@@ -379,6 +426,30 @@ export default function PrecheckPage() {
       setInlineSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (!products.length) {
+      setSelectedProductIds([]);
+      return;
+    }
+    const unpaidIds = products
+      .filter((product) => !["PAID", "MANUAL"].includes(product.paymentStatus))
+      .map((product) => product.id);
+    setSelectedProductIds((prev) => {
+      const next = prev.filter((id) => unpaidIds.includes(id));
+      if (next.length > 0) return next;
+      if (productId && unpaidIds.includes(productId)) return [productId];
+      if (unpaidIds.length > 0) return [unpaidIds[0]];
+      return [];
+    });
+  }, [products, productId]);
+
+  useEffect(() => {
+    if (!selectedProductIds.length) return;
+    if (!selectedProductIds.includes(selectedProductId)) {
+      setSelectedProductId(selectedProductIds[0]);
+    }
+  }, [selectedProductId, selectedProductIds, setSelectedProductId]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -633,11 +704,11 @@ export default function PrecheckPage() {
                           "After payment we will email your invoice and the shipping address."
                         )}
                       </p>
-                      {hasPriceDiscount && (
+                      {hasPrimaryDiscount && (
                         <p className="text-sm text-emerald-700 font-semibold">
                           {tr(
-                            `Sie erhalten ${priceDiscountPercent}% Rabatt auf die Grundgebühr für dieses Produkt.`,
-                            `You get ${priceDiscountPercent}% off the base fee for this product.`
+                            `Sie erhalten ${primaryDiscountPercent}% Rabatt auf die Grundgebühr für dieses Produkt.`,
+                            `You get ${primaryDiscountPercent}% off the base fee for this product.`
                           )}
                         </p>
                       )}
@@ -798,10 +869,10 @@ export default function PrecheckPage() {
                                   <div className="w-full space-y-3 md:flex-1">
                                     <div className="grid gap-2">
                                       {products.map((p) => {
-                                        const checked = selectedProductId === p.id;
+                                        const checked = selectedProductIds.includes(p.id);
                                         const paid = ["PAID", "MANUAL"].includes(p.paymentStatus);
-                                        const isDisabled = isUnauthorized;
-                                        const pDiscount = Math.max(0, Math.min(30, Number(p.precheckDiscountPercent ?? 0) || 0));
+                                        const isDisabled = isUnauthorized || paid;
+                                        const pDiscount = paid ? 0 : discountPercentForProduct(p.id);
                                         const date = p.paidAt
                                           ? new Date(p.paidAt).toLocaleDateString(locale === "en" ? "en-GB" : "de-DE", {
                                               day: "2-digit",
@@ -835,7 +906,18 @@ export default function PrecheckPage() {
                                               checked={checked}
                                               disabled={isDisabled}
                                               onChange={() => {
-                                                if (!checked && !isDisabled) setSelectedProductId(p.id);
+                                                if (isDisabled) return;
+                                                setSelectedProductIds((prev) => {
+                                                  if (prev.includes(p.id)) {
+                                                    const next = prev.filter((id) => id !== p.id);
+                                                    if (selectedProductId === p.id && next.length) {
+                                                      setSelectedProductId(next[0]);
+                                                    }
+                                                    return next;
+                                                  }
+                                                  setSelectedProductId(p.id);
+                                                  return [...prev, p.id];
+                                                });
                                               }}
                                               className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 accent-slate-900"
                                             />
@@ -852,7 +934,7 @@ export default function PrecheckPage() {
                                         );
                                       })}
                                     </div>
-                                    {!selectedProductId && (
+                                    {!selectedProductIds.length && (
                                       <p className="text-xs text-amber-200">
                                         {tr("Bitte wählen Sie ein Produkt aus, um die Grundgebühr zu zahlen.", "Select a product to pay the base fee.")}
                                       </p>
@@ -1024,6 +1106,9 @@ export default function PrecheckPage() {
                             <div className="mt-3 text-center text-[11px] md:text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
                               {tr("Rabatt wird automatisch pro Produkt angewendet", "Discount is applied automatically per product")}
                             </div>
+                            <div className="mt-2 text-center text-[11px] md:text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
+                              {tr("Preisstaffel: Prod. 1 = 100%, Prod. 2 = 80%, Prod. 3+ = 70%", "Tiered pricing: prod. 1 = 100%, prod. 2 = 80%, prod. 3+ = 70%")}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1037,17 +1122,21 @@ export default function PrecheckPage() {
                   </div>
                   <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                 {testOptions.map((option, idx) => {
-                  const net = option.id === "priority" ? PRIORITY_NET_EUR : STANDARD_NET_EUR;
-                  const bundleNet = roundEur(net * discountProductCount * (1 - displayDiscountPercent / 100));
+                  const totals = getCheckoutTotals(option.id);
                   const priceLabel = tr(
-                    hasBundleDiscount
-                      ? `${discountProductCount} Produkte: ${formatEur(bundleNet)} zzgl. MwSt.`
-                      : `${formatEur(discountedNet(net))} zzgl. MwSt.`,
-                    hasBundleDiscount
-                      ? `${discountProductCount} products: ${formatEur(bundleNet)} plus VAT`
-                      : `${formatEur(discountedNet(net))} plus VAT`
+                    totals.count > 1
+                      ? `${totals.count} Produkte: ${formatEur(totals.totalCents / 100)} zzgl. MwSt.`
+                      : `${formatEur(totals.totalCents / 100)} zzgl. MwSt.`,
+                    totals.count > 1
+                      ? `${totals.count} products: ${formatEur(totals.totalCents / 100)} plus VAT`
+                      : `${formatEur(totals.totalCents / 100)} plus VAT`
                   );
-                  const savingsLabel = formatEur(discountSavings(net));
+                  const savingsLabel = formatEur(totals.savingsCents / 100);
+                  const discountLabel =
+                    totals.count > 1
+                      ? tr(`RABATT: bis ${totals.maxDiscount}%`, `DISCOUNT: up to ${totals.maxDiscount}%`)
+                      : tr(`RABATT: ${totals.maxDiscount}%`, `DISCOUNT: ${totals.maxDiscount}%`);
+                  const showCheckoutDiscount = totals.savingsCents > 0;
                   const isPriority = option.id === "priority";
                   const checkoutCtaClass =
                     "text-slate-900 shadow-lg shadow-amber-500/25 ring-1 ring-amber-200/70 group-hover:brightness-110";
@@ -1063,14 +1152,24 @@ export default function PrecheckPage() {
                       ? { backgroundImage: "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #4ade80 100%)" }
                       : {}),
                   };
+                  const disableCheckout = isUnauthorized || !hasPayableSelection || paying === option.id;
+                  const checkoutLabel = isUnauthorized
+                    ? tr("Bitte einloggen", "Please sign in")
+                    : !selectedIdsForPayment.length
+                    ? tr("Produkt wählen", "Select product")
+                    : !hasPayableSelection
+                    ? tr("Bereits bezahlt", "Already paid")
+                    : paying === option.id
+                    ? tr("Starte Zahlung…", "Starting payment…")
+                    : tr("Zum Checkout", "Go to checkout");
                   return (
                   <button
                     key={option.title.de}
                     type="button"
                     onClick={() => handlePayClick(option.id)}
-                    disabled={isUnauthorized || isPaid || paying === option.id}
+                    disabled={disableCheckout}
                     className={`group relative flex h-full flex-col items-center justify-between overflow-hidden rounded-3xl border border-white/15 px-8 py-10 text-center text-white shadow-[0_28px_80px_-45px_rgba(15,23,42,0.55)] ring-1 ring-slate-900/10 transition-all duration-300 ${
-                      isUnauthorized || isPaid ? "opacity-70 cursor-not-allowed" : "hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-blue-900/30"
+                      disableCheckout ? "opacity-70 cursor-not-allowed" : "hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-blue-900/30"
                     }`}
                     style={{
                       backgroundImage: idx === 0
@@ -1095,12 +1194,12 @@ export default function PrecheckPage() {
                       <span className={timelineClass} style={timelineStyle}>
                         {tr(option.timeline.de, option.timeline.en)}
                       </span>
-                      {showCtaDiscount && (
+                      {showCheckoutDiscount && (
                         <div
                           className="mt-3 inline-flex flex-col items-center gap-1 rounded-2xl bg-emerald-400/20 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/90"
                           style={{ fontSize: "12.1px" }}
                         >
-                          <span>{tr(`RABATT: ${displayDiscountPercent}%`, `DISCOUNT: ${displayDiscountPercent}%`)}</span>
+                          <span>{discountLabel}</span>
                           <span>{tr(`ERSPARNISS: ${savingsLabel}`, `SAVINGS: ${savingsLabel}`)}</span>
                         </div>
                       )}
@@ -1110,13 +1209,7 @@ export default function PrecheckPage() {
                       className={`mt-7 inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] transition ${checkoutCtaClass}`}
                       style={checkoutCtaStyle}
                     >
-                      {isUnauthorized
-                        ? tr("Bitte einloggen", "Please sign in")
-                        : isPaid
-                        ? tr("Bereits bezahlt", "Already paid")
-                        : paying === option.id
-                        ? tr("Starte Zahlung…", "Starting payment…")
-                        : tr("Zum Checkout", "Go to checkout")}
+                      {checkoutLabel}
                       <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
                     </div>
                   </button>
