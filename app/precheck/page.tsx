@@ -151,6 +151,16 @@ export default function PrecheckPage() {
   const showLicensePlans = false;
   const showListingSection = false;
   const searchParams = useSearchParams();
+  const previewMulti =
+    process.env.NODE_ENV !== "production" && searchParams?.get("previewMulti") === "1";
+  const previewVariant = previewMulti ? (searchParams?.get("multiVariant") || "1") : "1";
+  const previewProducts = previewMulti
+    ? [
+        { id: "preview-1", name: tr("Kaffeemaschine Pro", "Coffee Machine Pro") },
+        { id: "preview-2", name: tr("Smart Lampe", "Smart Lamp") },
+        { id: "preview-3", name: tr("Bürostuhl Ergo", "Ergo Office Chair") },
+      ]
+    : [];
   const router = useRouter();
   const productId = searchParams?.get("productId") || "";
   const checkout = searchParams?.get("checkout") || "";
@@ -192,6 +202,10 @@ export default function PrecheckPage() {
   const isPaid = productStatus ? ["PAID", "MANUAL"].includes(productStatus.paymentStatus) : false;
   const showPaidView =
     isPaid || (process.env.NODE_ENV !== "production" && searchParams?.get("previewPaid") === "1");
+  const paidProducts = previewMulti
+    ? previewProducts
+    : products.filter((product) => ["PAID", "MANUAL"].includes(product.paymentStatus));
+  const hasMultiPaid = paidProducts.length > 1;
   const isProductPaid = (product: { paymentStatus?: string } | null) =>
     Boolean(product && ["PAID", "MANUAL"].includes(product.paymentStatus || ""));
   const displayProductName = (productStatus?.name || productNameFromQuery).trim();
@@ -670,6 +684,29 @@ export default function PrecheckPage() {
                           `We’ve received the base fee for “${productLabel}”. Next, you’ll receive the invoice and shipping address by email. Please send your product to us so we can start testing.`
                         )}
                       </p>
+                      {previewMulti && previewVariant === "1" && hasMultiPaid && (
+                        <div className="mt-4 rounded-2xl border border-emerald-200/70 bg-emerald-50/80 p-4 text-emerald-900">
+                          <div className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">
+                            {tr("Mehrere Produkte bezahlt", "Multiple products paid")}
+                          </div>
+                          <div className="mt-2 text-sm font-semibold">
+                            {tr(
+                              `Bestätigt für ${paidProducts.length} Produkte`,
+                              `Confirmed for ${paidProducts.length} products`
+                            )}
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {paidProducts.map((product) => (
+                              <span
+                                key={product.id}
+                                className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-emerald-900 shadow-sm"
+                              >
+                                {product.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </>
                   ) : checkout === "success" && !showPaidView ? (
                     <>
@@ -737,6 +774,64 @@ export default function PrecheckPage() {
               </div>
             </div>
           </FadeIn>
+
+          {showPaidView && previewMulti && previewVariant === "3" && hasMultiPaid && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-6 py-10">
+              <div className="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl md:p-8">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                      {tr("Mehrfachzahlung", "Multi-payment")}
+                    </p>
+                    <h2 className="text-2xl font-semibold text-slate-900">
+                      {tr("Zahlung bestätigt", "Payment confirmed")}
+                    </h2>
+                  </div>
+                  <div className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                    {tr("Erfolgreich", "Success")}
+                  </div>
+                </div>
+                <p className="mt-3 text-sm text-slate-600">
+                  {tr(
+                    "Wir haben die Testgebühr für mehrere Produkte erhalten. Bitte senden Sie alle Produkte gemeinsam an uns.",
+                    "We’ve received the test fee for multiple products. Please send all products together."
+                  )}
+                </p>
+                <div className="mt-5 grid gap-3">
+                  {paidProducts.map((product) => (
+                    <div
+                      key={product.id}
+                      className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+                    >
+                      <span className="text-sm font-semibold text-slate-900">{product.name}</span>
+                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                        {tr("Bezahlt", "Paid")}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-sm font-semibold text-slate-900">
+                    {tr("Nächster Schritt", "Next step")}
+                  </p>
+                  <p className="mt-2 text-sm text-slate-600">
+                    {tr(
+                      "Sie erhalten in Kürze eine E-Mail mit Rechnung und Versandadresse. Bitte legen Sie jedem Produkt die passende Artikelnummer bei.",
+                      "You’ll receive an email shortly with the invoice and shipping address. Please include the correct item code with each product."
+                    )}
+                  </p>
+                </div>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <button className="rounded-full bg-slate-900 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-white shadow-sm">
+                    {tr("Zum Dashboard", "Go to dashboard")}
+                  </button>
+                  <button className="rounded-full border border-slate-200 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700">
+                    {tr("Rechnung anzeigen", "View invoice")}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-16 md:space-y-18">
             {showPaidView && (

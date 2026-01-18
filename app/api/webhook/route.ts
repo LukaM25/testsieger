@@ -145,15 +145,15 @@ async function handleCheckoutSession(cs: any) {
         select: { userId: true },
       });
       if (product?.userId) {
-        await prisma.order.createMany({
-          data: productIds.map((productId) => ({
+        await prisma.order.create({
+          data: {
             userId: product.userId,
-            productId,
+            productId: primaryProductId,
             plan: plan as Plan,
             priceCents: metadataPriceCents ?? 0,
             stripeSessionId: cs.id,
             paidAt: new Date(),
-          })),
+          },
         });
       }
     }

@@ -77,14 +77,14 @@ export async function POST(req: Request) {
   });
 
   const orderPlan = opt === 'priority' ? Plan.PRECHECK_PRIORITY : Plan.PRECHECK_FEE;
-  await prisma.order.createMany({
-    data: selectedProducts.map((product) => ({
+  await prisma.order.create({
+    data: {
       userId: session.userId,
-      productId: product.id,
+      productId: primaryProduct.id,
       plan: orderPlan,
       priceCents: 0,
       stripeSessionId: checkout.id,
-    })),
+    },
   });
 
   return NextResponse.json({ ok: true, url: checkout.url });

@@ -17,10 +17,79 @@ export default async function PrecheckSuccessPage({ searchParams }: Props) {
   const locale = normalizeLocale(jar.get(LOCALE_COOKIE)?.value);
   const tr = (de: string, en: string) => (locale === 'en' ? en : de);
   const session = await getSession();
+  const previewMulti =
+    process.env.NODE_ENV !== 'production' &&
+    searchParams?.previewMulti === '1' &&
+    searchParams?.multiVariant === '2';
   const productName =
     typeof searchParams?.product === 'string' && searchParams.product.trim().length > 0
       ? searchParams.product.trim()
       : null;
+  const previewProducts = [
+    tr('Kaffeemaschine Pro', 'Coffee Machine Pro'),
+    tr('Smart Lampe', 'Smart Lamp'),
+    tr('Bürostuhl Ergo', 'Ergo Office Chair'),
+  ];
+
+  if (previewMulti) {
+    return (
+      <main className="bg-slate-950 text-white">
+        <section className="mx-auto max-w-6xl px-6 py-16 md:py-20">
+          <div className="rounded-3xl bg-slate-900/70 p-8 shadow-2xl ring-1 ring-white/10 md:p-12">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-300">
+              {tr('Mehrfachzahlung bestätigt', 'Multi-payment confirmed')}
+            </p>
+            <h1 className="mt-3 text-4xl font-semibold text-white md:text-5xl">
+              {tr('Zahlung bestätigt für 3 Produkte', 'Payment confirmed for 3 products')}
+            </h1>
+            <p className="mt-4 max-w-3xl text-base text-slate-200 md:text-lg">
+              {tr(
+                'Wir haben die Testgebühr erhalten. Bitte senden Sie alle Produkte gemeinsam an uns. Die Versandadresse und Rechnung kommen per E-Mail.',
+                'We’ve received the test fee. Please send all products together. The shipping address and invoice arrive by email.'
+              )}
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-6 md:grid-cols-[1.3fr,1fr]">
+            <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-6 shadow-xl md:p-8">
+              <h2 className="text-xl font-semibold text-white">
+                {tr('Bezahlt für', 'Paid for')}
+              </h2>
+              <div className="mt-4 grid gap-3">
+                {previewProducts.map((name) => (
+                  <div key={name} className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-800/60 px-4 py-3">
+                    <span className="text-sm font-semibold text-white">{name}</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300">
+                      {tr('Bezahlt', 'Paid')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-slate-900 p-6 shadow-xl md:p-8">
+              <h2 className="text-xl font-semibold text-white">
+                {tr('Versandhinweise', 'Shipping instructions')}
+              </h2>
+              <ul className="mt-4 space-y-3 text-sm text-slate-200">
+                <li>{tr('Alle Produkte gemeinsam versenden.', 'Send all products together.')}</li>
+                <li>{tr('Artikelnummer je Produkt beilegen.', 'Include the item code for each product.')}</li>
+                <li>{tr('Wir melden uns nach Wareneingang.', 'We’ll notify you after receipt.')}</li>
+              </ul>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button className="rounded-full bg-emerald-400 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-slate-900">
+                  {tr('Zum Dashboard', 'Go to dashboard')}
+                </button>
+                <button className="rounded-full border border-white/30 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-white">
+                  {tr('Rechnung anzeigen', 'View invoice')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   const testOptions = [
     {
