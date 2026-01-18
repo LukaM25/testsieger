@@ -9,7 +9,7 @@ export const metadata = {
 };
 
 type Props = {
-  searchParams?: { product?: string };
+  searchParams?: { product?: string; previewMulti?: string; multiVariant?: string };
 };
 
 export default async function PrecheckSuccessPage({ searchParams }: Props) {
