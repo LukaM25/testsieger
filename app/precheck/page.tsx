@@ -148,6 +148,8 @@ const FadeIn = ({ children, delay = 0, className = "" }: { children: React.React
 export default function PrecheckPage() {
   const { locale } = useLocale();
   const tr = (de: string, en: string) => (locale === "en" ? en : de);
+  const showLicensePlans = false;
+  const showListingSection = false;
   const searchParams = useSearchParams();
   const router = useRouter();
   const productId = searchParams?.get("productId") || "";
@@ -188,6 +190,8 @@ export default function PrecheckPage() {
   const checkoutRef = useRef<HTMLDivElement | null>(null);
 
   const isPaid = productStatus ? ["PAID", "MANUAL"].includes(productStatus.paymentStatus) : false;
+  const showPaidView =
+    isPaid || (process.env.NODE_ENV !== "production" && searchParams?.get("previewPaid") === "1");
   const isProductPaid = (product: { paymentStatus?: string } | null) =>
     Boolean(product && ["PAID", "MANUAL"].includes(product.paymentStatus || ""));
   const displayProductName = (productStatus?.name || productNameFromQuery).trim();
@@ -270,9 +274,9 @@ export default function PrecheckPage() {
   const heroHeading =
     isUnauthorized
       ? tr("Pre-Check nicht möglich. Bitte melden Sie sich an.", "Pre-check unavailable. Please sign in.")
-    : isPaid
+    : showPaidView
       ? tr("Zahlung bestätigt.", "Payment confirmed.")
-    : checkout === "success" && !isPaid
+    : checkout === "success" && !showPaidView
         ? `${tr("Zahlung wird bestätigt", "Confirming payment")}${".".repeat((dots % 3) + 1)}`
         : heroStage === "loading"
           ? `${tr("Pre-Check", "Pre-check")}${".".repeat((dots % 3) + 1)}`
@@ -627,12 +631,12 @@ export default function PrecheckPage() {
                   <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-slate-900">
                     {heroHeading}
                   </h1>
-                  {checkout === "success" && !isPaid && !isUnauthorized ? (
+                  {checkout === "success" && !showPaidView && !isUnauthorized ? (
                     <div className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600">
                       <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" aria-hidden />
                       {tr("Zahlung wird bestätigt …", "Confirming payment …")}
                     </div>
-                  ) : heroStage === "loading" && !isPaid && !isUnauthorized ? (
+                  ) : heroStage === "loading" && !showPaidView && !isUnauthorized ? (
                     <div className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600">
                       <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" aria-hidden />
                       {tr("Lädt Ergebnis …", "Loading result …")}
@@ -655,7 +659,7 @@ export default function PrecheckPage() {
                         </Link>
                       </div>
                     </>
-                  ) : isPaid ? (
+                  ) : showPaidView ? (
                     <>
                       <p className="text-lg md:text-xl font-medium text-slate-800">
                         {tr("Vielen Dank für Ihre Zahlung.", "Thanks for your payment!")}
@@ -667,7 +671,7 @@ export default function PrecheckPage() {
                         )}
                       </p>
                     </>
-                  ) : checkout === "success" && !isPaid ? (
+                  ) : checkout === "success" && !showPaidView ? (
                     <>
                       <p className="text-lg md:text-xl font-medium text-slate-800">
                         {tr("Wir prüfen den Zahlungseingang …", "We’re confirming your payment …")}
@@ -735,84 +739,83 @@ export default function PrecheckPage() {
           </FadeIn>
 
           <div className="space-y-16 md:space-y-18">
-            <FadeIn delay={180}>
-              <div className="space-y-3" id="checkout-options" ref={checkoutRef}>
-                {!isPaid && (
-                  <div className="text-2xl font-semibold text-slate-900">
-                    {tr("2. Produkt jetzt an uns senden", "2. Send your product to us now")}
+            {showPaidView && (
+              <FadeIn delay={180}>
+                <div className="mt-6 flex flex-col items-center gap-10 md:gap-12 lg:gap-16">
+                  <p className="text-3xl md:text-5xl font-normal leading-snug text-slate-900 max-w-5xl text-center md:text-left">
+                    {tr(
+                      "Produkt jetzt an uns senden und Fortschritt im Kundendashboard verfolgen.",
+                      "Send your product now and track progress in the customer dashboard."
+                    )}
+                  </p>
+                  <div className="flex w-full justify-center">
+                    <div
+                      className="relative"
+                      style={{ width: "clamp(22rem, 48vw, 36rem)", height: "clamp(22rem, 48vw, 36rem)" }}
+                    >
+                      <Image
+                        src="/liefer.png"
+                        alt={tr("Lieferung", "Delivery")}
+                        fill
+                        className="object-contain drop-shadow-2xl"
+                      />
+                    </div>
                   </div>
-                )}
-                {isPaid ? (
-                  <div className="mt-6 flex flex-col items-start gap-8 md:gap-10">
-                    <p className="text-3xl md:text-4xl font-normal leading-snug text-slate-900 max-w-4xl">
+                </div>
+              </FadeIn>
+            )}
+            {!showPaidView && (
+              <FadeIn delay={180}>
+                <div className="space-y-3" id="checkout-options" ref={checkoutRef}>
+                <div className="text-2xl font-semibold text-slate-900">
+                  {tr("2. Produkt jetzt an uns senden", "2. Send your product to us now")}
+                </div>
+
+                <div className="mt-10 rounded-3xl border border-slate-100 bg-white/90 p-8 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)] md:p-10">
+                  <div className="space-y-3">
+                    <h3 className="text-3xl md:text-4xl font-semibold text-slate-900">
+                      {tr("Weitere Produkte hinzufügen und sparen.", "Add more products and save.")}
+                    </h3>
+                    <p className="text-lg md:text-xl text-slate-600">
+                      {tr("Für die Prüfung fällt eine einmalige Testgebühr an.", "A one-time test fee applies for the review.")}
+                    </p>
+                  </div>
+                  <div className="mt-8 space-y-5">
+                    {savingsTiers.map((tier) => (
+                      <div key={tier.count} className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <span className="text-lg font-medium text-slate-900">{productCountLabel(tier.count)}</span>
+                        <div
+                          className="inline-flex flex-wrap items-center gap-3 rounded-full px-6 py-2.5 text-white shadow-md ring-1 ring-blue-200/30"
+                          style={{ backgroundImage: "linear-gradient(90deg, #1d4ed8 0%, #1e3a8a 55%, #0f172a 100%)" }}
+                        >
+                          {tier.discountPercent > 0 && (
+                            <>
+                              <span className="text-sm md:text-base text-white/70 line-through">{formatEur(tier.totalNet)}</span>
+                              <span className="text-sm md:text-base text-white/70">- {tier.discountPercent}%</span>
+                            </>
+                          )}
+                          <span className="text-base md:text-lg font-semibold">
+                            {tr("Testgebühr", "Test fee")} {formatEur(tier.finalNet)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <p className="text-sm md:text-base text-slate-600 max-w-2xl">
                       {tr(
-                        "Produkt jetzt an uns senden und Fortschritt im Kundendashboard verfolgen.",
-                        "Send your product now and track progress in the customer dashboard."
+                        "Bei mehr als 3 Produkten, schreiben Sie uns direkt an und wir unterbreiten Ihnen ein Angebot.",
+                        "For more than 3 products, contact us directly and we will make you an offer."
                       )}
                     </p>
-                    <div className="flex w-full justify-center">
-                      <div
-                        className="relative"
-                        style={{ width: "clamp(18rem, 30vw, 23rem)", height: "clamp(18rem, 30vw, 23rem)" }}
-                      >
-                        <Image
-                          src="/liefer.png"
-                          alt={tr("Lieferung", "Delivery")}
-                          fill
-                          className="object-contain"
-                        />
-                      </div>
-                    </div>
+                    <Link
+                      href="/kontakt"
+                      className="rounded-full bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-black"
+                    >
+                      {tr("Angebot anfordern", "Request an offer")}
+                    </Link>
                   </div>
-                ) : null}
-
-                {!isPaid && (
-                  <div className="mt-10 rounded-3xl border border-slate-100 bg-white/90 p-8 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)] md:p-10">
-                    <div className="space-y-3">
-                      <h3 className="text-3xl md:text-4xl font-semibold text-slate-900">
-                        {tr("Weitere Produkte hinzufügen und sparen.", "Add more products and save.")}
-                      </h3>
-                      <p className="text-lg md:text-xl text-slate-600">
-                        {tr("Für die Prüfung fällt eine einmalige Testgebühr an.", "A one-time test fee applies for the review.")}
-                      </p>
-                    </div>
-                    <div className="mt-8 space-y-5">
-                      {savingsTiers.map((tier) => (
-                        <div key={tier.count} className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                          <span className="text-lg font-medium text-slate-900">{productCountLabel(tier.count)}</span>
-                          <div
-                            className="inline-flex flex-wrap items-center gap-3 rounded-full px-6 py-2.5 text-white shadow-md ring-1 ring-blue-200/30"
-                            style={{ backgroundImage: "linear-gradient(90deg, #1d4ed8 0%, #1e3a8a 55%, #0f172a 100%)" }}
-                          >
-                            {tier.discountPercent > 0 && (
-                              <>
-                                <span className="text-sm md:text-base text-white/70 line-through">{formatEur(tier.totalNet)}</span>
-                                <span className="text-sm md:text-base text-white/70">- {tier.discountPercent}%</span>
-                              </>
-                            )}
-                            <span className="text-base md:text-lg font-semibold">
-                              {tr("Testgebühr", "Test fee")} {formatEur(tier.finalNet)}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                      <p className="text-sm md:text-base text-slate-600 max-w-2xl">
-                        {tr(
-                          "Bei mehr als 3 Produkten, schreiben Sie uns direkt an und wir unterbreiten Ihnen ein Angebot.",
-                          "For more than 3 products, contact us directly and we will make you an offer."
-                        )}
-                      </p>
-                      <Link
-                        href="/kontakt"
-                        className="rounded-full bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-black"
-                      >
-                        {tr("Angebot anfordern", "Request an offer")}
-                      </Link>
-                    </div>
-                  </div>
-                )}
+                </div>
 
                 <div className="mt-8 flex justify-center items-start">
                   <div
@@ -1219,125 +1222,130 @@ export default function PrecheckPage() {
                   {payError && <p className="text-sm text-amber-700">{payError}</p>}
                 </div>
               </div>
-            </FadeIn>
+              </FadeIn>
+            )}
 
-            <FadeIn delay={380}>
-              <div className="space-y-8">
-                <div className="text-2xl font-semibold text-slate-900" id="license-plans">
-                  {tr("4. Lizenzplan auswählen und Siegel erhalten", "4. Choose a license plan and receive your seal")}
-                </div>
-                <div className="grid gap-10 md:grid-cols-3 pt-6">
-                  {plans.map((plan) => {
-                    const theme = planThemes[plan.theme];
-                    const usageLines = locale === "en" ? plan.usage.en : plan.usage.de;
-                    const contentLines = locale === "en" ? plan.contents.en : plan.contents.de;
-                    const footerLines = locale === "en" ? plan.footer.en : plan.footer.de;
-                    const priceSuffix = plan.billing === "daily" ? (locale === "en" ? " / day" : " / Tag") : "";
-                    const priceRows =
-                      plan.billing === "daily"
-                        ? [
-                            {
-                              label: `${locale === "en" ? "1 prod." : "1 Prod."}`,
-                              price: `${formatEur(roundEur(plan.basePriceEur))}${priceSuffix}`,
-                            },
-                            {
-                              label: `${locale === "en" ? "2 prod." : "2 Prod."} -20%`,
-                              price: `${formatEur(roundEur(plan.basePriceEur * 0.8))}${priceSuffix}`,
-                            },
-                            {
-                              label: `${locale === "en" ? "3 prod." : "3 Prod."} -30%`,
-                              price: `${formatEur(roundEur(plan.basePriceEur * 0.7))}${priceSuffix}`,
-                            },
-                          ]
-                        : [
-                            {
-                              label: `${locale === "en" ? "1 prod." : "1 Prod."}`,
-                              price: `${formatEur(roundEur(plan.basePriceEur))}`,
-                            },
-                            {
-                              label: `${locale === "en" ? "2 prod." : "2 Prod."} -20%`,
-                              price: `${formatEur(roundEur(plan.basePriceEur * 2 * 0.8))}`,
-                            },
-                            {
-                              label: `${locale === "en" ? "3 prod." : "3 Prod."} -30%`,
-                              price: `${formatEur(roundEur(plan.basePriceEur * 3 * 0.7))}`,
-                            },
-                          ];
-                    return (
-                      <div key={plan.name} className="flex h-full flex-col items-center gap-4">
-                        <div className="text-lg font-semibold text-slate-900">{plan.name}</div>
-                        <div
-                          className={`flex h-full w-full flex-col justify-between rounded-[28px] border ${theme.border} ${theme.card} p-6 text-center font-semibold shadow-[0_28px_60px_-40px_rgba(15,23,42,0.65)] transition-transform duration-300 hover:-translate-y-1`}
-                        >
-                          <div className="space-y-6">
-                            <div className="space-y-2">
-                              <div className={`text-[15.4px] font-semibold ${theme.label}`}>{tr("Nutzung:", "Usage:")}</div>
-                              <div className={`space-y-1 text-[15.4px] ${theme.body}`}>
-                                {usageLines.map((line) => (
-                                  <div key={line}>{line}</div>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <div className={`text-[15.4px] font-semibold ${theme.label}`}>{tr("Inhalt:", "Contents:")}</div>
-                              <div className={`space-y-1 text-[15.4px] ${theme.body}`}>
-                                {contentLines.map((line) => (
-                                  <div key={line}>- {line}</div>
-                                ))}
-                              </div>
-                            </div>
-                            <div className={`space-y-1 text-[15.4px] ${theme.body} w-full max-w-[240px] mx-auto`}>
-                              {priceRows.map((row) => (
-                                <div key={`${row.label}-${row.price}`} className="flex items-center justify-between gap-4 tabular-nums">
-                                  <span className="text-left">{row.label}</span>
-                                  <span className="text-right">{row.price}</span>
+            {!showPaidView && showLicensePlans && (
+              <FadeIn delay={380}>
+                <div className="space-y-8">
+                  <div className="text-2xl font-semibold text-slate-900" id="license-plans">
+                    {tr("4. Lizenzplan auswählen und Siegel erhalten", "4. Choose a license plan and receive your seal")}
+                  </div>
+                  <div className="grid gap-10 md:grid-cols-3 pt-6">
+                    {plans.map((plan) => {
+                      const theme = planThemes[plan.theme];
+                      const usageLines = locale === "en" ? plan.usage.en : plan.usage.de;
+                      const contentLines = locale === "en" ? plan.contents.en : plan.contents.de;
+                      const footerLines = locale === "en" ? plan.footer.en : plan.footer.de;
+                      const priceSuffix = plan.billing === "daily" ? (locale === "en" ? " / day" : " / Tag") : "";
+                      const priceRows =
+                        plan.billing === "daily"
+                          ? [
+                              {
+                                label: `${locale === "en" ? "1 prod." : "1 Prod."}`,
+                                price: `${formatEur(roundEur(plan.basePriceEur))}${priceSuffix}`,
+                              },
+                              {
+                                label: `${locale === "en" ? "2 prod." : "2 Prod."} -20%`,
+                                price: `${formatEur(roundEur(plan.basePriceEur * 0.8))}${priceSuffix}`,
+                              },
+                              {
+                                label: `${locale === "en" ? "3 prod." : "3 Prod."} -30%`,
+                                price: `${formatEur(roundEur(plan.basePriceEur * 0.7))}${priceSuffix}`,
+                              },
+                            ]
+                          : [
+                              {
+                                label: `${locale === "en" ? "1 prod." : "1 Prod."}`,
+                                price: `${formatEur(roundEur(plan.basePriceEur))}`,
+                              },
+                              {
+                                label: `${locale === "en" ? "2 prod." : "2 Prod."} -20%`,
+                                price: `${formatEur(roundEur(plan.basePriceEur * 2 * 0.8))}`,
+                              },
+                              {
+                                label: `${locale === "en" ? "3 prod." : "3 Prod."} -30%`,
+                                price: `${formatEur(roundEur(plan.basePriceEur * 3 * 0.7))}`,
+                              },
+                            ];
+                      return (
+                        <div key={plan.name} className="flex h-full flex-col items-center gap-4">
+                          <div className="text-lg font-semibold text-slate-900">{plan.name}</div>
+                          <div
+                            className={`flex h-full w-full flex-col justify-between rounded-[28px] border ${theme.border} ${theme.card} p-6 text-center font-semibold shadow-[0_28px_60px_-40px_rgba(15,23,42,0.65)] transition-transform duration-300 hover:-translate-y-1`}
+                          >
+                            <div className="space-y-6">
+                              <div className="space-y-2">
+                                <div className={`text-[15.4px] font-semibold ${theme.label}`}>{tr("Nutzung:", "Usage:")}</div>
+                                <div className={`space-y-1 text-[15.4px] ${theme.body}`}>
+                                  {usageLines.map((line) => (
+                                    <div key={line}>{line}</div>
+                                  ))}
                                 </div>
+                              </div>
+                              <div className="space-y-2">
+                                <div className={`text-[15.4px] font-semibold ${theme.label}`}>{tr("Inhalt:", "Contents:")}</div>
+                                <div className={`space-y-1 text-[15.4px] ${theme.body}`}>
+                                  {contentLines.map((line) => (
+                                    <div key={line}>- {line}</div>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className={`space-y-1 text-[15.4px] ${theme.body} w-full max-w-[240px] mx-auto`}>
+                                {priceRows.map((row) => (
+                                  <div key={`${row.label}-${row.price}`} className="flex items-center justify-between gap-4 tabular-nums">
+                                    <span className="text-left">{row.label}</span>
+                                    <span className="text-right">{row.price}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div className={`mt-6 space-y-1 text-[12.1px] leading-relaxed ${theme.muted}`}>
+                              {footerLines.map((line) => (
+                                <div key={line}>{line}</div>
                               ))}
                             </div>
                           </div>
-                          <div className={`mt-6 space-y-1 text-[12.1px] leading-relaxed ${theme.muted}`}>
-                            {footerLines.map((line) => (
-                              <div key={line}>{line}</div>
-                            ))}
-                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            </FadeIn>
+              </FadeIn>
+            )}
           </div>
 
         </div>
       </section>
 
-      <section className="border-t border-slate-200 bg-slate-50/80">
-        <FadeIn delay={450}>
-          <div className="mx-auto max-w-6xl px-6 py-18 md:py-20 space-y-8">
-            <div className="space-y-2">
-              <h2 className="text-2xl font-semibold text-slate-900">{tr("Machen Sie Ihr Listing sichtbar", "Make your listing stand out")}</h2>
-              <p className="text-slate-600 max-w-2xl text-lg leading-relaxed">
-                {tr(
-                  "Sparen Sie Werbebudget gezielt und steigern Sie Ihre Conversion Rate um bis zu 90 %.",
-                  "Use your ad budget efficiently and raise your conversion rate by up to 90%."
-                )}
-              </p>
-            </div>
-            <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl transition-transform duration-700 hover:scale-[1.01]">
-              <div className="relative aspect-[16/9] w-full">
-                <Image
-                  src="/images/amazonsiegel.jpeg"
-                  alt={tr("Listing mit Testsieger-Siegel", "Listing with Testsieger seal")}
-                  fill
-                  className="object-cover"
-                  sizes="(min-width: 1280px) 1100px, (min-width: 768px) 80vw, 100vw"
-                />
+      {showListingSection && (
+        <section className="border-t border-slate-200 bg-slate-50/80">
+          <FadeIn delay={450}>
+            <div className="mx-auto max-w-6xl px-6 py-18 md:py-20 space-y-8">
+              <div className="space-y-2">
+                <h2 className="text-2xl font-semibold text-slate-900">{tr("Machen Sie Ihr Listing sichtbar", "Make your listing stand out")}</h2>
+                <p className="text-slate-600 max-w-2xl text-lg leading-relaxed">
+                  {tr(
+                    "Sparen Sie Werbebudget gezielt und steigern Sie Ihre Conversion Rate um bis zu 90 %.",
+                    "Use your ad budget efficiently and raise your conversion rate by up to 90%."
+                  )}
+                </p>
+              </div>
+              <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl transition-transform duration-700 hover:scale-[1.01]">
+                <div className="relative aspect-[16/9] w-full">
+                  <Image
+                    src="/images/amazonsiegel.jpeg"
+                    alt={tr("Listing mit Testsieger-Siegel", "Listing with Testsieger seal")}
+                    fill
+                    className="object-cover"
+                    sizes="(min-width: 1280px) 1100px, (min-width: 768px) 80vw, 100vw"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        </FadeIn>
-      </section>
+          </FadeIn>
+        </section>
+      )}
     </main>
   );
 }
