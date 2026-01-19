@@ -1280,7 +1280,7 @@ export default function PrecheckPage() {
                     }}
                   >
                     <div className="flex flex-col items-center space-y-2">
-                      <div className="text-xl font-semibold leading-tight tracking-tight" style={{ fontSize: "1.67rem" }}>
+                      <div className="text-xl font-semibold leading-tight tracking-tight" style={{ fontSize: "2.22rem" }}>
                         {option.id === "priority" ? (
                           <>
                             {tr("Produkttest ", "Product test ")}
