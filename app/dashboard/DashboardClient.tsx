@@ -552,6 +552,9 @@ export default function DashboardClient({ user }: DashboardClientProps) {
 
   const formatEur = (cents: number) =>
     new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(cents / 100);
+  const VAT_RATE = 0.19;
+  const formatNetEur = (grossCents: number) =>
+    formatEur(Math.round(grossCents / (1 + VAT_RATE)));
 
   const cartItemsByProductId = useMemo(() => {
     const map = new Map<string, LicenseCartItem>();
@@ -849,10 +852,10 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                     </div>
                     <div className="text-right space-y-1">
                       <div className="text-sm font-semibold text-slate-900">
-                        {formatEur(item.finalPriceCents)}
+                        {formatNetEur(item.finalPriceCents)}
                       </div>
                       {item.savingsCents > 0 && (
-                        <div className="text-xs text-emerald-700">- {formatEur(item.savingsCents)}</div>
+                        <div className="text-xs text-emerald-700">- {formatNetEur(item.savingsCents)}</div>
                       )}
                     </div>
                     <button
@@ -873,15 +876,15 @@ export default function DashboardClient({ user }: DashboardClientProps) {
             <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-slate-700">
               <div className="flex items-center justify-between">
                 <span>Zwischensumme</span>
-                <span className="font-semibold">{formatEur(licenseCart.totals.baseCents)}</span>
+                <span className="font-semibold">{formatNetEur(licenseCart.totals.baseCents)}</span>
               </div>
               <div className="mt-1 flex items-center justify-between text-emerald-700">
                 <span>Ersparnis</span>
-                <span className="font-semibold">- {formatEur(licenseCart.totals.savingsCents)}</span>
+                <span className="font-semibold">- {formatNetEur(licenseCart.totals.savingsCents)}</span>
               </div>
               <div className="mt-2 flex items-center justify-between text-base font-semibold text-slate-900">
                 <span>Gesamt</span>
-                <span>{formatEur(licenseCart.totals.totalCents)}</span>
+                <span>{formatNetEur(licenseCart.totals.totalCents)}</span>
               </div>
             </div>
           )}
