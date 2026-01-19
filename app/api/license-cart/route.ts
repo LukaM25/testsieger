@@ -2,65 +2,46 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { Plan } from "@prisma/client";
-import {
-  LICENSE_PLAN_SET,
-  discountPercentForOrderIndex,
-  getPlanPriceCentsMap,
-  normalizeLicensePlan,
-} from "@/lib/licensePricing";
+import { LICENSE_PLAN_SET, getPlanPriceCentsMap, normalizeLicensePlan } from "@/lib/licensePricing";
 
 export const runtime = "nodejs";
 
 const isPaidStatus = (status: string | null | undefined) => status === "PAID" || status === "MANUAL";
 
-function buildOrderIndexMap(products: Array<{ id: string; createdAt: Date }>) {
-  const sorted = [...products].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-  const map = new Map<string, number>();
-  sorted.forEach((p, index) => {
-    map.set(p.id, index + 1);
-  });
-  return map;
-}
+const discountPercentForCount = (count: number) => (count <= 1 ? 0 : count === 2 ? 20 : 30);
 
 async function loadCartState(userId: string) {
-  const [cart, products] = await Promise.all([
-    prisma.licenseCart.findUnique({
-      where: { userId },
-      include: {
-        items: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                brand: true,
-                createdAt: true,
-                paymentStatus: true,
-                adminProgress: true,
-                license: { select: { status: true, plan: true } },
-              },
+  const cart = await prisma.licenseCart.findUnique({
+    where: { userId },
+    include: {
+      items: {
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+              brand: true,
+              createdAt: true,
+              paymentStatus: true,
+              adminProgress: true,
+              license: { select: { status: true, plan: true } },
             },
           },
         },
       },
-    }),
-    prisma.product.findMany({
-      where: { userId },
-      select: { id: true, createdAt: true },
-    }),
-  ]);
+    },
+  });
 
-  const orderIndexMap = buildOrderIndexMap(products);
+  const cartItemCount = cart?.items.length ?? 0;
+  const cartDiscountPercent = discountPercentForCount(cartItemCount);
   const planList = (cart?.items || [])
     .map((item) => item.plan)
     .filter((plan) => LICENSE_PLAN_SET.has(plan));
   const priceMap = await getPlanPriceCentsMap(planList as Plan[]);
 
   const items = (cart?.items || []).map((item) => {
-    const orderIndex = orderIndexMap.get(item.productId) ?? 1;
-    const discountPercent = discountPercentForOrderIndex(orderIndex);
     const basePriceCents = priceMap[item.plan as Plan] ?? 0;
-    const finalPriceCents = Math.round(basePriceCents * (1 - discountPercent / 100));
+    const finalPriceCents = Math.round(basePriceCents * (1 - cartDiscountPercent / 100));
     const savingsCents = Math.max(basePriceCents - finalPriceCents, 0);
     const paid = isPaidStatus(item.product.paymentStatus);
     const hasPassed = item.product.adminProgress === "PASS";
@@ -77,7 +58,7 @@ async function loadCartState(userId: string) {
       productBrand: item.product.brand,
       plan: item.plan,
       basePriceCents,
-      discountPercent,
+      discountPercent: cartDiscountPercent,
       finalPriceCents,
       savingsCents,
       eligible,

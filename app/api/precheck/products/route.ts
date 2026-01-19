@@ -29,15 +29,6 @@ export async function GET() {
     orderBy: { createdAt: 'desc' },
   });
 
-  const productsByCreatedAt = [...products].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-  const discountByProductId = new Map<string, number>();
-  productsByCreatedAt.forEach((p, index) => {
-    const orderIndex = index + 1;
-    const tierDiscount = orderIndex <= 1 ? 0 : orderIndex === 2 ? 20 : 30;
-    const discount = p.paymentStatus === 'PAID' || p.paymentStatus === 'MANUAL' ? 0 : tierDiscount;
-    discountByProductId.set(p.id, discount);
-  });
-
   const payload = await Promise.all(
     products.map(async (p) => {
       const lastPayment = await prisma.order.findFirst({
@@ -68,7 +59,7 @@ export async function GET() {
         paymentStatus: p.paymentStatus,
         createdAt: p.createdAt,
         paidAt: lastPayment?.paidAt ?? null,
-        precheckDiscountPercent: discountByProductId.get(p.id) ?? 0,
+        precheckDiscountPercent: 0,
         certificate: p.certificate
           ? {
               id: p.certificate.id,

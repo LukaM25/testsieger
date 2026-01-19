@@ -36,17 +36,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, alreadyPaid: true, error: 'ALREADY_PAID' }, { status: 409 });
   }
 
-  const orderByCreated = [...allProducts].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-  const orderIndexById = new Map<string, number>();
-  orderByCreated.forEach((p, index) => {
-    orderIndexById.set(p.id, index + 1);
-  });
+  const discountPercent =
+    selectedProducts.length <= 1 ? 0 : selectedProducts.length === 2 ? 20 : 30;
+  const discountedPerItemCents = Math.round(PRECHECK_BASE_FEE_CENTS * (1 - discountPercent / 100));
 
   const lineItems = selectedProducts.map((product) => {
-    const orderIndex = orderIndexById.get(product.id) ?? 1;
-    const discountPercent = orderIndex <= 1 ? 0 : orderIndex === 2 ? 20 : 30;
-    const discountedBase = Math.round(PRECHECK_BASE_FEE_CENTS * (1 - discountPercent / 100));
-    const unitAmount = discountedBase + (opt === 'priority' ? PRECHECK_PRIORITY_ADDON_CENTS : 0);
+    const unitAmount = discountedPerItemCents;
     const name = opt === 'priority' ? `Produkttest Priority – ${product.name}` : `Produkttest – ${product.name}`;
     return {
       price_data: {
@@ -57,6 +52,16 @@ export async function POST(req: Request) {
       quantity: 1,
     };
   });
+  if (opt === 'priority') {
+    lineItems.push({
+      price_data: {
+        currency: 'eur',
+        unit_amount: PRECHECK_PRIORITY_ADDON_CENTS,
+        product_data: { name: 'Priority Add-on' },
+      },
+      quantity: 1,
+    });
+  }
 
   const baseUrl = getPublicBaseUrl();
   const primaryProduct = selectedProducts[0];

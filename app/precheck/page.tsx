@@ -215,47 +215,19 @@ export default function PrecheckPage() {
   const roundEur = (n: number) => Math.round(n * 100) / 100;
   const baseNetCents = Math.round(STANDARD_NET_EUR * 100);
   const priorityAddonCents = Math.round((PRIORITY_NET_EUR - STANDARD_NET_EUR) * 100);
-  const productsByCreatedAt = useMemo(() => {
-    return [...products].sort((a, b) => {
-      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return aTime - bTime;
-    });
-  }, [products]);
-  const productOrderIndex = useMemo(() => {
-    const map = new Map<string, number>();
-    productsByCreatedAt.forEach((product, index) => {
-      map.set(product.id, index + 1);
-    });
-    return map;
-  }, [productsByCreatedAt]);
-  const discountPercentForOrder = (orderIndex: number) => (orderIndex <= 1 ? 0 : orderIndex === 2 ? 20 : 30);
-  const discountPercentForProduct = (productId: string) => {
-    const orderIndex = productOrderIndex.get(productId);
-    return orderIndex ? discountPercentForOrder(orderIndex) : 0;
-  };
-  const discountedBaseCentsForProduct = (productId: string) => {
-    const discountPercent = discountPercentForProduct(productId);
-    return Math.round(baseNetCents * (1 - discountPercent / 100));
-  };
+  const discountPercentForCount = (count: number) => (count <= 1 ? 0 : count === 2 ? 20 : 30);
   const primaryProductId = selectedProductId || productStatus?.id || "";
-  const primaryDiscountPercent = primaryProductId ? discountPercentForProduct(primaryProductId) : 0;
-  const hasPrimaryDiscount = primaryDiscountPercent > 0;
-  const standardNetLabel = `${formatEur((primaryProductId ? discountedBaseCentsForProduct(primaryProductId) : baseNetCents) / 100)}`;
   const selectedProducts = products.filter((product) => selectedProductIds.includes(product.id));
   const selectedIdsForPricing = selectedProducts.length
     ? selectedProducts.map((product) => product.id)
     : primaryProductId
     ? [primaryProductId]
     : [];
-  const pricingBaseTotalCents = selectedIdsForPricing.reduce((sum, id) => sum + discountedBaseCentsForProduct(id), 0);
-  const pricingSavingsCents = selectedIdsForPricing.reduce(
-    (sum, id) => sum + (baseNetCents - discountedBaseCentsForProduct(id)),
-    0
-  );
-  const pricingMaxDiscount = selectedIdsForPricing.length
-    ? Math.max(...selectedIdsForPricing.map((id) => discountPercentForProduct(id)))
-    : 0;
+  const cartCountForPricing = selectedIdsForPricing.length || 1;
+  const cartDiscountPercent = discountPercentForCount(cartCountForPricing);
+  const discountedBaseCents = Math.round(baseNetCents * (1 - cartDiscountPercent / 100));
+  const standardNetLabel = `${formatEur(discountedBaseCents / 100)}`;
+  const hasCartDiscount = cartDiscountPercent > 0;
   const selectedIdsForPayment = selectedProductIds;
   const selectedPayableProducts = selectedIdsForPayment
     .map((id) => products.find((product) => product.id === id))
@@ -270,20 +242,20 @@ export default function PrecheckPage() {
     { count: 3, discountPercent: 30 },
   ].map((tier) => {
     const totalNet = roundEur((baseNetCents * tier.count) / 100);
-    const finalNetCents = Array.from({ length: tier.count }, (_, idx) => idx + 1).reduce((sum, idx) => {
-      const discountPercent = discountPercentForOrder(idx);
-      return sum + Math.round(baseNetCents * (1 - discountPercent / 100));
-    }, 0);
+    const discountPercent = discountPercentForCount(tier.count);
+    const discountedPerItem = Math.round(baseNetCents * (1 - discountPercent / 100));
+    const finalNetCents = discountedPerItem * tier.count;
     const finalNet = roundEur(finalNetCents / 100);
     return { ...tier, totalNet, finalNet };
   });
   const getCheckoutTotals = (optionId: string) => {
     const count = selectedIdsForPricing.length || 1;
-    const baseTotalCents = selectedIdsForPricing.length ? pricingBaseTotalCents : baseNetCents;
-    const savingsCents = selectedIdsForPricing.length ? pricingSavingsCents : 0;
-    const maxDiscount = selectedIdsForPricing.length ? pricingMaxDiscount : 0;
-    const totalCents = baseTotalCents + (optionId === "priority" ? priorityAddonCents * count : 0);
-    return { count, totalCents, savingsCents, maxDiscount };
+    const discountPercent = discountPercentForCount(count);
+    const discountedPerItem = Math.round(baseNetCents * (1 - discountPercent / 100));
+    const totalCents =
+      discountedPerItem * count + (optionId === "priority" ? priorityAddonCents : 0);
+    const savingsCents = (baseNetCents - discountedPerItem) * count;
+    return { count, totalCents, savingsCents, maxDiscount: discountPercent };
   };
   const heroHeading =
     isUnauthorized
@@ -745,11 +717,11 @@ export default function PrecheckPage() {
                           "After payment we will email your invoice and the shipping address."
                         )}
                       </p>
-                      {hasPrimaryDiscount && (
+                      {hasCartDiscount && (
                         <p className="text-sm text-emerald-700 font-semibold">
                           {tr(
-                            `Sie erhalten ${primaryDiscountPercent}% Rabatt auf die Grundgebühr für dieses Produkt.`,
-                            `You get ${primaryDiscountPercent}% off the base fee for this product.`
+                            `Sie erhalten ${cartDiscountPercent}% Rabatt auf die Testgebühr für alle ausgewählten Produkte.`,
+                            `You get ${cartDiscountPercent}% off the test fee for all selected products.`
                           )}
                         </p>
                       )}
@@ -932,7 +904,7 @@ export default function PrecheckPage() {
                               {tr("Produkt auswählen & Grundgebühr zahlen", "Select product & pay base fee")}
                             </p>
                             <div className="text-base md:text-lg font-semibold tracking-tight">
-                              {tr("Rabatt auf jede weitere Grundgebühr", "Discount on every additional base fee")}
+                              {tr("Rabatt auf die Grundgebühr bei mehreren Produkten", "Discount on the base fee for multiple products")}
                             </div>
                             <p className="mx-auto max-w-2xl text-sm md:text-base text-white/85 leading-relaxed">
                               {tr(
@@ -970,7 +942,7 @@ export default function PrecheckPage() {
                                         const checked = selectedProductIds.includes(p.id);
                                         const paid = ["PAID", "MANUAL"].includes(p.paymentStatus);
                                         const isDisabled = isUnauthorized || paid;
-                                        const pDiscount = paid ? 0 : discountPercentForProduct(p.id);
+                                        const pDiscount = paid ? 0 : checked ? cartDiscountPercent : 0;
                                         const date = p.paidAt
                                           ? new Date(p.paidAt).toLocaleDateString(locale === "en" ? "en-GB" : "de-DE", {
                                               day: "2-digit",
@@ -1202,10 +1174,10 @@ export default function PrecheckPage() {
                             )}
 
                             <div className="mt-3 text-center text-[11px] md:text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
-                              {tr("Rabatt wird automatisch pro Produkt angewendet", "Discount is applied automatically per product")}
+                              {tr("Rabatt wird automatisch pro Warenkorb angewendet", "Discount is applied automatically per cart")}
                             </div>
                             <div className="mt-2 text-center text-[11px] md:text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
-                              {tr("Preisstaffel: Prod. 1 = 100%, Prod. 2 = 80%, Prod. 3+ = 70%", "Tiered pricing: prod. 1 = 100%, prod. 2 = 80%, prod. 3+ = 70%")}
+                              {tr("Preisstaffel: 2 Produkte = 20%, 3+ = 30%", "Tiered pricing: 2 products = 20%, 3+ = 30%")}
                             </div>
                           </div>
                         </div>
@@ -1230,10 +1202,7 @@ export default function PrecheckPage() {
                       : `${formatEur(totals.totalCents / 100)} plus VAT`
                   );
                   const savingsLabel = formatEur(totals.savingsCents / 100);
-                  const discountLabel =
-                    totals.count > 1
-                      ? tr(`RABATT: bis ${totals.maxDiscount}%`, `DISCOUNT: up to ${totals.maxDiscount}%`)
-                      : tr(`RABATT: ${totals.maxDiscount}%`, `DISCOUNT: ${totals.maxDiscount}%`);
+                  const discountLabel = tr(`RABATT: ${totals.maxDiscount}%`, `DISCOUNT: ${totals.maxDiscount}%`);
                   const showCheckoutDiscount = totals.savingsCents > 0;
                   const isPriority = option.id === "priority";
                   const checkoutCtaClass =
