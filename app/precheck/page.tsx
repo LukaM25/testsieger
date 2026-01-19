@@ -1276,7 +1276,7 @@ export default function PrecheckPage() {
                     }}
                   >
                     <div className="flex flex-col items-center space-y-2">
-                      <div className="text-xl font-semibold leading-tight tracking-tight" style={{ fontSize: "1.375rem" }}>
+                      <div className="text-xl font-semibold leading-tight tracking-tight" style={{ fontSize: "1.67rem" }}>
                         {option.id === "priority" ? (
                           <>
                             {tr("Produkttest ", "Product test ")}
@@ -1286,7 +1286,7 @@ export default function PrecheckPage() {
                           tr(option.title.de, option.title.en)
                         )}
                       </div>
-                      <div className="text-base font-medium text-white/95" style={{ fontSize: "1.1rem" }}>
+                      <div className="text-base font-medium text-white/95" style={{ fontSize: "1.21rem" }}>
                         {priceLabel}
                       </div>
                       <span className={timelineClass} style={timelineStyle}>
@@ -1294,8 +1294,7 @@ export default function PrecheckPage() {
                       </span>
                       {showCheckoutDiscount && (
                         <div
-                          className="mt-3 inline-flex flex-col items-center gap-1 rounded-2xl bg-emerald-400/20 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/90"
-                          style={{ fontSize: "12.1px" }}
+                          className="mt-4 inline-flex flex-col items-center gap-3 rounded-2xl bg-emerald-400/20 px-8 py-[1.1rem] text-[1.06rem] md:text-[1.21rem] font-semibold uppercase tracking-[0.18em] text-white/95"
                         >
                           <span>{discountLabel}</span>
                           <span>{tr(`ERSPARNISS: ${savingsLabel}`, `SAVINGS: ${savingsLabel}`)}</span>
@@ -1304,7 +1303,7 @@ export default function PrecheckPage() {
                     </div>
 
                     <div
-                      className={`mt-7 inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] transition ${checkoutCtaClass}`}
+                      className={`mt-7 inline-flex items-center gap-2 rounded-full px-[1.375rem] py-[0.6875rem] text-[0.95rem] font-semibold uppercase tracking-[0.22em] transition ${checkoutCtaClass}`}
                       style={checkoutCtaStyle}
                     >
                       {checkoutLabel}
