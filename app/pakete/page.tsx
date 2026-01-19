@@ -159,12 +159,6 @@ export default function Packages() {
               >
                 Pre-Check starten
               </Link>
-              <Link
-                href="/precheck"
-                className="rounded-full border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
-              >
-                Produkt Test (Testsieger Check)
-              </Link>
             </div>
           </Reveal>
 
