@@ -52,7 +52,7 @@ const plans: Plan[] = [
     contents: ["Siegel", "Zertifikat", "Prüfbericht"],
     basePriceEur: 1466,
     billing: "one-time",
-    footer: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+    footer: ["Abrechnung Einmalig", "Lizenzverlängerung jährlich."],
   },
 ];
 
