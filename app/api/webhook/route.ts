@@ -14,6 +14,7 @@ function parseCheckoutSession(cs: any) {
   const planFromMetadata = (cs.metadata && typeof cs.metadata.plan === 'string') ? cs.metadata.plan : '';
   const plan = planFromRef || planFromMetadata || '';
   const productIdFromMetadata = (cs.metadata && typeof cs.metadata.productId === 'string') ? cs.metadata.productId : '';
+  const cartId = (cs.metadata && typeof cs.metadata.cartId === 'string') ? cs.metadata.cartId : '';
   const productIdsRaw = cs.metadata && typeof cs.metadata.productIds === 'string' ? cs.metadata.productIds : '';
   let productIdsFromMetadata: string[] = [];
   if (productIdsRaw) {
@@ -44,7 +45,7 @@ function parseCheckoutSession(cs: any) {
     (err as any).payload = { reference, metadata: cs.metadata };
     throw err;
   }
-  return { reference, productIds: uniqueProductIds, plan, metadataPriceCents };
+  return { reference, productIds: uniqueProductIds, plan, metadataPriceCents, cartId };
 }
 
 async function markProductsPaid(productIds: string[]) {
@@ -61,7 +62,7 @@ async function markProductsPaid(productIds: string[]) {
 }
 
 async function handleCheckoutSession(cs: any) {
-  const { reference, productIds, plan, metadataPriceCents } = parseCheckoutSession(cs);
+  const { reference, productIds, plan, metadataPriceCents, cartId } = parseCheckoutSession(cs);
   const primaryProductId = productIds[0];
   console.info('STRIPE_CHECKOUT_SESSION_COMPLETED', { sessionId: cs.id, productIds, plan });
 
@@ -69,61 +70,51 @@ async function handleCheckoutSession(cs: any) {
   if (orders.length) {
     const now = new Date();
     const stripeSubId = typeof cs.subscription === 'string' ? (cs.subscription as string) : null;
-    const primaryOrderId = orders[0]?.id;
+    const orderProductIds = orders.map((order) => order.productId);
+    const paidProductIds = [...new Set([...productIds, ...orderProductIds])];
     await prisma.$transaction(async (tx) => {
       await tx.order.updateMany({ where: { stripeSessionId: cs.id }, data: { paidAt: now, stripeSubId } });
       await tx.product.updateMany({
-        where: { id: { in: productIds } },
+        where: { id: { in: paidProductIds } },
         data: { status: 'PAID', paymentStatus: 'PAID' },
       });
     });
     // License activation based on plan payment
     const VALID_LICENSE_PLANS: Plan[] = ['BASIC', 'PREMIUM', 'LIFETIME'];
-    const planFromReference = plan as Plan;
-    const planFromOrder = orders[0]?.plan;
-    const planMismatch =
-      plan &&
-      planFromOrder &&
-      VALID_LICENSE_PLANS.includes(planFromReference) &&
-      planFromReference !== planFromOrder;
-    if (planMismatch) {
-      console.error('WEBHOOK_PLAN_MISMATCH', { planFromReference, planFromOrder, reference });
-    }
-    const licensePlan = VALID_LICENSE_PLANS.includes(planFromReference) ? planFromReference : planFromOrder;
-    const isValidLicensePlan = VALID_LICENSE_PLANS.includes(licensePlan as Plan);
     const priceIdMap: Record<string, string | undefined> = {
       BASIC: process.env.STRIPE_PRICE_BASIC,
       PREMIUM: process.env.STRIPE_PRICE_PREMIUM,
       LIFETIME: process.env.STRIPE_PRICE_LIFETIME,
     };
-    const stripePriceId = priceIdMap[licensePlan] ?? undefined;
     if (metadataPriceCents && Number.isFinite(metadataPriceCents) && orders.length === 1 && orders[0]?.id) {
       await prisma.order.update({ where: { id: orders[0].id }, data: { priceCents: metadataPriceCents } });
     }
-    const expiresAt =
-      licensePlan === 'LIFETIME' ? null : new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
-    if (isValidLicensePlan && primaryOrderId) {
-      const existingLicense = await prisma.license.findUnique({ where: { productId: primaryProductId } });
-      const statusForUpdate = 'ACTIVE';
+    const licenseOrders = orders.filter((order) => VALID_LICENSE_PLANS.includes(order.plan as Plan));
+    for (const order of licenseOrders) {
+      const licensePlan = order.plan as Plan;
+      const expiresAt =
+        licensePlan === 'LIFETIME' ? null : new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+      const stripePriceId = priceIdMap[licensePlan] ?? undefined;
+      const existingLicense = await prisma.license.findUnique({ where: { productId: order.productId } });
       const startsAtForUpdate = existingLicense?.startsAt ?? now;
       await prisma.license.upsert({
-        where: { productId: primaryProductId },
+        where: { productId: order.productId },
         update: {
-          plan: licensePlan as Plan,
-          status: statusForUpdate,
+          plan: licensePlan,
+          status: 'ACTIVE',
           paidAt: now,
           startsAt: startsAtForUpdate,
           expiresAt,
           stripeSubId,
           stripePriceId,
-          orderId: primaryOrderId,
+          orderId: order.id,
         },
         create: {
-          productId: primaryProductId,
-          orderId: primaryOrderId,
-          plan: licensePlan as Plan,
+          productId: order.productId,
+          orderId: order.id,
+          plan: licensePlan,
           status: 'ACTIVE',
-          licenseCode: `PENDING-${primaryProductId}`,
+          licenseCode: `PENDING-${order.productId}`,
           paidAt: now,
           startsAt: now,
           expiresAt,
@@ -131,8 +122,22 @@ async function handleCheckoutSession(cs: any) {
           stripePriceId,
         },
       });
-    } else {
-      console.warn('WEBHOOK_LICENSE_PLAN_INVALID_SKIP_UPSERT', { licensePlan, reference, orderPlan: orders[0]?.plan });
+    }
+    if (!licenseOrders.length && plan) {
+      const planFromReference = plan as Plan;
+      const planFromOrder = orders[0]?.plan;
+      const planMismatch =
+        plan &&
+        planFromOrder &&
+        VALID_LICENSE_PLANS.includes(planFromReference) &&
+        planFromReference !== planFromOrder;
+      if (planMismatch) {
+        console.error('WEBHOOK_PLAN_MISMATCH', { planFromReference, planFromOrder, reference });
+      }
+    }
+
+    if (cartId) {
+      await prisma.licenseCartItem.deleteMany({ where: { cartId } });
     }
 
     // Completion is only triggered manually by admins.

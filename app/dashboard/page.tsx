@@ -1,9 +1,83 @@
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import DashboardClient from './DashboardClient'; 
+import DashboardClient from './DashboardClient';
 
-export default async function DashboardPage() {
+type Props = {
+  searchParams?: Promise<{ preview?: string }> | { preview?: string };
+};
+
+export default async function DashboardPage({ searchParams }: Props) {
+  const resolvedSearchParams = await Promise.resolve(searchParams);
+  const preview =
+    process.env.NODE_ENV !== 'production' && resolvedSearchParams?.preview === '1';
+  if (preview) {
+    const now = Date.now();
+    const mockUser = {
+      id: 'preview-user',
+      name: 'Max Mustermann',
+      email: 'max@example.com',
+      address: 'Musterstraße 5, 12345 Berlin',
+      products: [
+        {
+          id: 'prod-1',
+          name: 'Kaffeemaschine Pro',
+          brand: 'AromaTech',
+          status: 'PAID',
+          adminProgress: 'PASS',
+          paymentStatus: 'PAID',
+          createdAt: new Date(now - 1000 * 60 * 60 * 24 * 120).toISOString(),
+          certificate: { id: 'cert-1', pdfUrl: null },
+          license: { status: 'ACTIVE', plan: 'BASIC' },
+        },
+        {
+          id: 'prod-2',
+          name: 'Smart Lampe',
+          brand: 'LumenCo',
+          status: 'PAID',
+          adminProgress: 'PASS',
+          paymentStatus: 'PAID',
+          createdAt: new Date(now - 1000 * 60 * 60 * 24 * 80).toISOString(),
+          certificate: { id: 'cert-2', pdfUrl: null },
+          license: { status: 'EXPIRED', plan: 'PREMIUM' },
+        },
+        {
+          id: 'prod-3',
+          name: 'Buerostuhl Ergo',
+          brand: 'ErgoWorks',
+          status: 'PRECHECK',
+          adminProgress: 'PRECHECK',
+          paymentStatus: 'UNPAID',
+          createdAt: new Date(now - 1000 * 60 * 60 * 24 * 20).toISOString(),
+          certificate: null,
+          license: null,
+        },
+      ],
+      orders: [
+        {
+          id: 'order-1',
+          productId: 'prod-1',
+          plan: 'PRECHECK_FEE',
+          priceCents: 22900,
+          createdAt: new Date(now - 1000 * 60 * 60 * 24 * 115).toISOString(),
+          paidAt: new Date(now - 1000 * 60 * 60 * 24 * 114).toISOString(),
+          product: { id: 'prod-1', name: 'Kaffeemaschine Pro' },
+        },
+        {
+          id: 'order-2',
+          productId: 'prod-2',
+          plan: 'PREMIUM',
+          priceCents: 0,
+          createdAt: new Date(now - 1000 * 60 * 60 * 24 * 70).toISOString(),
+          paidAt: new Date(now - 1000 * 60 * 60 * 24 * 69).toISOString(),
+          product: { id: 'prod-2', name: 'Smart Lampe' },
+        },
+      ],
+    };
+
+    return <DashboardClient user={mockUser} />;
+  }
+
   const session = await getSession();
   if (!session) redirect('/login');
 

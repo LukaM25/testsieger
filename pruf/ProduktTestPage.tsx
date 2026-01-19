@@ -751,7 +751,7 @@ export default function ProduktTestPage() {
           </div>
 
           <div className="text-center text-2xl font-semibold text-slate-900">
-            {tr("Lizenzpläne werden erst nach bestanden Test fällig.", "License plans are only due after a passed test.")}
+            {tr("Lizenzpläne werden erst nach bestandenen Test fällig.", "License plans are only due after a passed test.")}
           </div>
 
           <div className="space-y-6">

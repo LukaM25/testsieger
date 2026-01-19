@@ -10,6 +10,26 @@ interface DashboardClientProps {
   user: any;
 }
 
+type LicenseCartItem = {
+  id: string;
+  productId: string;
+  productName: string;
+  productBrand?: string | null;
+  plan: string;
+  basePriceCents: number;
+  discountPercent: number;
+  finalPriceCents: number;
+  savingsCents: number;
+  eligible: boolean;
+  reason?: string;
+};
+
+type LicenseCartState = {
+  cartId: string | null;
+  items: LicenseCartItem[];
+  totals: { baseCents: number; savingsCents: number; totalCents: number; itemCount: number };
+};
+
 const parseAddressParts = (raw: string) => {
   const cleaned = (raw || "").trim();
   if (!cleaned) {
@@ -150,7 +170,15 @@ export default function DashboardClient({ user }: DashboardClientProps) {
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [licenseSelections, setLicenseSelections] = useState<Record<string, string>>({});
-  const [licensePaying, setLicensePaying] = useState<string | null>(null);
+  const [licenseCart, setLicenseCart] = useState<LicenseCartState>({
+    cartId: null,
+    items: [],
+    totals: { baseCents: 0, savingsCents: 0, totalCents: 0, itemCount: 0 },
+  });
+  const [cartLoading, setCartLoading] = useState(false);
+  const [cartMessage, setCartMessage] = useState<string | null>(null);
+  const [cartBusyId, setCartBusyId] = useState<string | null>(null);
+  const [cartCheckoutBusy, setCartCheckoutBusy] = useState(false);
   const [baseFeeSelections, setBaseFeeSelections] = useState<Record<string, string>>({});
   const [baseFeePaying, setBaseFeePaying] = useState<string | null>(null);
   const [showBilling, setShowBilling] = useState(false);
@@ -283,28 +311,101 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     }
   };
 
-  const handleLicensePay = async (productId: string, plan: string) => {
+  const loadLicenseCart = async () => {
+    setCartLoading(true);
+    setCartMessage(null);
+    try {
+      const res = await fetch("/api/license-cart", { cache: "no-store" });
+      if (!res.ok) {
+        setCartMessage(res.status === 401 ? "Bitte einloggen, um den Warenkorb zu sehen." : "Warenkorb konnte nicht geladen werden.");
+        return;
+      }
+      const data = await res.json();
+      setLicenseCart({
+        cartId: data.cartId || null,
+        items: Array.isArray(data.items) ? data.items : [],
+        totals: data.totals || { baseCents: 0, savingsCents: 0, totalCents: 0, itemCount: 0 },
+      });
+    } catch {
+      setCartMessage("Warenkorb konnte nicht geladen werden.");
+    } finally {
+      setCartLoading(false);
+    }
+  };
+
+  const handleCartAdd = async (productId: string, plan: string) => {
     if (!plan) {
-      alert("Bitte Lizenzplan auswählen.");
+      setCartMessage("Bitte Lizenzplan auswählen.");
       return;
     }
-    setLicensePaying(productId);
+    setCartBusyId(productId);
+    setCartMessage(null);
     try {
-      const res = await fetch("/api/payment", {
+      const res = await fetch("/api/license-cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, productId }),
+        body: JSON.stringify({ productId, plan }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setCartMessage(
+          data.error === "BASE_FEE_REQUIRED"
+            ? "Bitte zuerst die Grundgebühr bezahlen."
+            : data.error === "NOT_PASSED"
+            ? "Produkt muss bestanden sein."
+            : data.error === "LICENSE_ACTIVE"
+            ? "Lizenz bereits aktiv."
+            : "Produkt konnte nicht hinzugefügt werden."
+        );
+        return;
+      }
+      await loadLicenseCart();
+    } catch {
+      setCartMessage("Produkt konnte nicht hinzugefügt werden.");
+    } finally {
+      setCartBusyId(null);
+    }
+  };
+
+  const handleCartRemove = async (productId: string) => {
+    setCartBusyId(productId);
+    setCartMessage(null);
+    try {
+      const res = await fetch("/api/license-cart", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId }),
+      });
+      if (!res.ok) {
+        setCartMessage("Produkt konnte nicht entfernt werden.");
+        return;
+      }
+      await loadLicenseCart();
+    } catch {
+      setCartMessage("Produkt konnte nicht entfernt werden.");
+    } finally {
+      setCartBusyId(null);
+    }
+  };
+
+  const handleCartCheckout = async () => {
+    setCartCheckoutBusy(true);
+    setCartMessage(null);
+    try {
+      const res = await fetch("/api/license-cart/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.url) {
-        alert(data.error || "Zahlung konnte nicht gestartet werden.");
+        setCartMessage(data.error || "Checkout konnte nicht gestartet werden.");
         return;
       }
       window.location.href = data.url as string;
     } catch {
-      alert("Zahlung konnte nicht gestartet werden.");
+      setCartMessage("Checkout konnte nicht gestartet werden.");
     } finally {
-      setLicensePaying(null);
+      setCartCheckoutBusy(false);
     }
   };
 
@@ -434,6 +535,10 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     return () => clearTimeout(timer);
   }, [showProducts, productsMounted]);
 
+  useEffect(() => {
+    loadLicenseCart();
+  }, []);
+
   const paidOrders = useMemo(() => {
     const orders = Array.isArray(user.orders) ? user.orders : [];
     return orders.filter((order: any) => Boolean(order?.paidAt));
@@ -445,6 +550,23 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
   };
 
+  const formatEur = (cents: number) =>
+    new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(cents / 100);
+
+  const cartItemsByProductId = useMemo(() => {
+    const map = new Map<string, LicenseCartItem>();
+    licenseCart.items.forEach((item) => {
+      map.set(item.productId, item);
+    });
+    return map;
+  }, [licenseCart.items]);
+
+  const selectedLicensePlan = selectedProduct
+    ? licenseSelections[selectedProduct.id] || selectedProduct.license?.plan || "BASIC"
+    : "BASIC";
+  const selectedCartItem = selectedProduct ? cartItemsByProductId.get(selectedProduct.id) : undefined;
+  const selectedPlanMatches = selectedCartItem?.plan === selectedLicensePlan;
+
   const orderLabel = (order: any) => {
     const plan = order?.plan;
     if (plan === "PRECHECK_PRIORITY") return "Grundgebühr (Priority)";
@@ -453,6 +575,16 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     if (plan === "PREMIUM") return "Lizenz Premium";
     if (plan === "LIFETIME") return "Lizenz Lifetime";
     return "Rechnung";
+  };
+
+  const cartHasItems = licenseCart.items.length > 0;
+  const cartHasEligibleItems = licenseCart.totals.itemCount > 0;
+  const cartHasIneligibleItems = licenseCart.items.some((item) => !item.eligible);
+  const cartReasonLabel = (reason?: string) => {
+    if (reason === "GRUNDGEBUEHR_OFFEN") return "Grundgebühr offen";
+    if (reason === "PRUEFUNG_OFFEN") return "Prüfung noch offen";
+    if (reason === "LIZENZ_AKTIV") return "Lizenz bereits aktiv";
+    return "Nicht verfügbar";
   };
 
   return (
@@ -575,7 +707,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Lizenzplan auswählen</h2>
-            <p className="text-sm text-slate-500">Wähle einen Plan für das aktuell ausgewählte Produkt.</p>
+            <p className="text-sm text-slate-500">Wähle einen Plan und lege ihn in den Lizenz-Warenkorb.</p>
           </div>
           {selectedProduct ? (
             <div className="mt-4 space-y-3">
@@ -591,12 +723,12 @@ export default function DashboardClient({ user }: DashboardClientProps) {
               <div className="flex flex-wrap items-center gap-3">
                 <select
                   className="rounded-lg border border-slate-200 px-3 py-2 text-xs"
-                  value={licenseSelections[selectedProduct.id] || selectedProduct.license?.plan || "BASIC"}
+                  value={selectedLicensePlan}
                   onChange={(e) =>
                     setLicenseSelections((prev) => ({ ...prev, [selectedProduct.id]: e.target.value }))
                   }
                   disabled={
-                    licensePaying === selectedProduct.id ||
+                    cartBusyId === selectedProduct.id ||
                     selectedProduct.license?.status === "ACTIVE" ||
                     !["PAID", "MANUAL"].includes(selectedProduct.paymentStatus) ||
                     selectedProduct.adminProgress !== "PASS"
@@ -608,17 +740,13 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                 </select>
                 <button
                   type="button"
-                  onClick={() =>
-                    handleLicensePay(
-                      selectedProduct.id,
-                      licenseSelections[selectedProduct.id] || selectedProduct.license?.plan || "BASIC"
-                    )
-                  }
+                  onClick={() => handleCartAdd(selectedProduct.id, selectedLicensePlan)}
                   disabled={
-                    licensePaying === selectedProduct.id ||
+                    cartBusyId === selectedProduct.id ||
                     selectedProduct.license?.status === "ACTIVE" ||
                     !["PAID", "MANUAL"].includes(selectedProduct.paymentStatus) ||
-                    selectedProduct.adminProgress !== "PASS"
+                    selectedProduct.adminProgress !== "PASS" ||
+                    selectedPlanMatches
                   }
                   className={`rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition ${
                     selectedProduct.license?.status === "ACTIVE"
@@ -631,16 +759,32 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                 >
                   {selectedProduct.license?.status === "ACTIVE"
                     ? "Lizenz aktiv"
-                    : licensePaying === selectedProduct.id
-                    ? "Starte Zahlung…"
+                    : cartBusyId === selectedProduct.id
+                    ? "Wird hinzugefügt…"
                     : !["PAID", "MANUAL"].includes(selectedProduct.paymentStatus)
                     ? "Grundgebühr zuerst zahlen"
                     : selectedProduct.adminProgress !== "PASS"
                     ? "Bestanden erforderlich"
                     : selectedProduct.license?.status === "EXPIRED"
-                    ? "Lizenz verlängern"
-                    : "Lizenzplan zahlen"}
+                    ? selectedPlanMatches
+                      ? "Im Warenkorb"
+                      : "Zum Warenkorb"
+                    : selectedCartItem
+                    ? selectedPlanMatches
+                      ? "Im Warenkorb"
+                      : "Plan aktualisieren"
+                    : "Zum Warenkorb hinzufügen"}
                 </button>
+                {selectedCartItem && (
+                  <button
+                    type="button"
+                    onClick={() => handleCartRemove(selectedProduct.id)}
+                    disabled={cartBusyId === selectedProduct.id}
+                    className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-800 disabled:opacity-60"
+                  >
+                    Entfernen
+                  </button>
+                )}
                 {selectedProduct.license?.status === "ACTIVE" && (
                   <span className="text-xs font-semibold text-emerald-700">
                     Aktivierter Plan: {selectedProduct.license?.plan || "—"}
@@ -663,6 +807,105 @@ export default function DashboardClient({ user }: DashboardClientProps) {
           ) : (
             <p className="mt-3 text-sm text-slate-600">Bitte ein Produkt auswählen, um einen Lizenzplan zu wählen.</p>
           )}
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Lizenz-Warenkorb</h2>
+              <p className="text-sm text-slate-500">
+                Mehrere Lizenzpläne zusammen bezahlen. Rabatte werden automatisch pro Produkt berechnet.
+              </p>
+            </div>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+              {licenseCart.items.length} Produkte
+            </span>
+          </div>
+
+          {cartLoading ? (
+            <p className="mt-4 text-sm text-slate-500">Warenkorb wird geladen…</p>
+          ) : !cartHasItems ? (
+            <p className="mt-4 text-sm text-slate-500">Noch keine Lizenzpläne im Warenkorb.</p>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {licenseCart.items.map((item) => {
+                const planLabel =
+                  item.plan === "BASIC" ? "Basic" : item.plan === "PREMIUM" ? "Premium" : "Lifetime";
+                return (
+                  <div
+                    key={item.id}
+                    className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 ${
+                      item.eligible ? "border-slate-200 bg-white" : "border-amber-200 bg-amber-50/60"
+                    }`}
+                  >
+                    <div className="space-y-1">
+                      <div className="text-sm font-semibold text-slate-900">{item.productName}</div>
+                      <div className="text-xs text-slate-500">
+                        {planLabel} · Rabatt {item.discountPercent}%
+                      </div>
+                      {!item.eligible && (
+                        <div className="text-xs font-semibold text-amber-700">{cartReasonLabel(item.reason)}</div>
+                      )}
+                    </div>
+                    <div className="text-right space-y-1">
+                      <div className="text-sm font-semibold text-slate-900">
+                        {formatEur(item.finalPriceCents)}
+                      </div>
+                      {item.savingsCents > 0 && (
+                        <div className="text-xs text-emerald-700">- {formatEur(item.savingsCents)}</div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCartRemove(item.productId)}
+                      disabled={cartBusyId === item.productId}
+                      className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-800 disabled:opacity-60"
+                    >
+                      Entfernen
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {cartHasItems && (
+            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-slate-700">
+              <div className="flex items-center justify-between">
+                <span>Zwischensumme</span>
+                <span className="font-semibold">{formatEur(licenseCart.totals.baseCents)}</span>
+              </div>
+              <div className="mt-1 flex items-center justify-between text-emerald-700">
+                <span>Ersparnis</span>
+                <span className="font-semibold">- {formatEur(licenseCart.totals.savingsCents)}</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-base font-semibold text-slate-900">
+                <span>Gesamt</span>
+                <span>{formatEur(licenseCart.totals.totalCents)}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={handleCartCheckout}
+              disabled={!cartHasEligibleItems || cartCheckoutBusy || cartLoading || cartHasIneligibleItems}
+              className={`rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition ${
+                cartHasEligibleItems && !cartHasIneligibleItems
+                  ? "bg-slate-900 text-white hover:bg-black"
+                  : "bg-slate-200 text-slate-500 cursor-not-allowed"
+              }`}
+            >
+              {cartCheckoutBusy ? "Starte Checkout…" : "Lizenzpläne bezahlen"}
+            </button>
+            {cartHasIneligibleItems && (
+              <span className="text-xs text-amber-600">
+                Entfernen Sie nicht verfügbare Produkte, um fortzufahren.
+              </span>
+            )}
+            {cartMessage && <span className="text-xs text-amber-700">{cartMessage}</span>}
+          </div>
         </section>
 
         <section id="billing-licenses" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -899,12 +1142,18 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-center gap-3">
+                  {(() => {
+                    const selectedPlan = licenseSelections[p.id] || p.license?.plan || "BASIC";
+                    const cartItem = cartItemsByProductId.get(p.id);
+                    const planMatches = cartItem?.plan === selectedPlan;
+                    return (
+                      <>
                   <select
                     className="rounded-lg border border-slate-200 px-3 py-2 text-xs"
-                    value={licenseSelections[p.id] || p.license?.plan || "BASIC"}
+                    value={selectedPlan}
                     onChange={(e) => setLicenseSelections((prev) => ({ ...prev, [p.id]: e.target.value }))}
                     disabled={
-                      licensePaying === p.id || licenseActive || !baseFeePaid || !hasPassed
+                      cartBusyId === p.id || licenseActive || !baseFeePaid || !hasPassed
                     }
                   >
                     <option value="BASIC">Basic</option>
@@ -913,9 +1162,9 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                   </select>
                   <button
                     type="button"
-                    onClick={() => handleLicensePay(p.id, licenseSelections[p.id] || p.license?.plan || "BASIC")}
+                    onClick={() => handleCartAdd(p.id, selectedPlan)}
                     disabled={
-                      licensePaying === p.id || licenseActive || !baseFeePaid || !hasPassed
+                      cartBusyId === p.id || licenseActive || !baseFeePaid || !hasPassed || planMatches
                     }
                     className={`rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition ${
                       licenseActive
@@ -927,18 +1176,31 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                   >
                     {licenseActive
                       ? "Lizenz aktiv"
-                      : licensePaying === p.id
-                      ? "Starte Zahlung…"
+                      : cartBusyId === p.id
+                      ? "Wird hinzugefügt…"
                       : !baseFeePaid
                       ? "Grundgebühr zuerst zahlen"
                       : !hasPassed
                       ? "Bestanden erforderlich"
-                      : baseFeePaid
-                      ? p.license?.status === "EXPIRED"
-                        ? "Lizenz verlängern"
-                        : "Lizenzplan zahlen"
-                      : "Lizenzplan zahlen"}
+                      : cartItem
+                      ? planMatches
+                        ? "Im Warenkorb"
+                        : "Plan aktualisieren"
+                      : "Zum Warenkorb"}
                   </button>
+                  {cartItem && (
+                    <button
+                      type="button"
+                      onClick={() => handleCartRemove(p.id)}
+                      disabled={cartBusyId === p.id}
+                      className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-800 disabled:opacity-60"
+                    >
+                      Entfernen
+                    </button>
+                  )}
+                      </>
+                    );
+                  })()}
                   {p.license?.status === "ACTIVE" && (
                     <span className="text-xs font-semibold text-emerald-700">
                       Aktivierter Plan: {p.license?.plan || "—"}

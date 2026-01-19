@@ -377,11 +377,7 @@ export async function sendCompletionReadyEmail(opts: {
   ratingPdfBuffer?: Buffer | null;
 }) {
   const { to, name, productName, licenseUrl, ratingPdfBuffer } = opts;
-  const plansLink = (licenseUrl || `${APP_BASE_URL.replace(/\/$/, '')}/pakete`).replace(/\/$/, '');
-  const join = plansLink.includes('?') ? '&' : '?';
-  const basicLink = `${plansLink}${join}plan=basic`;
-  const premiumLink = `${plansLink}${join}plan=premium`;
-  const lifetimeLink = `${plansLink}${join}plan=lifetime`;
+  const dashboardLink = `${APP_BASE_URL.replace(/\/$/, '')}/dashboard`;
   const attachments: Attachment[] = [];
   if (ratingPdfBuffer) {
     attachments.push({
@@ -398,14 +394,8 @@ export async function sendCompletionReadyEmail(opts: {
 		      <p>Das vollständige Prüfergebnis finden Sie im Anhang dieser E-Mail (PDF).</p>
 		      <p style="margin:14px 0;">Um das Siegel, den Prüfbericht und das Zertifikat offiziell zu aktivieren und nutzen zu dürfen, wählen Sie jetzt Ihren passenden Lizenzplan aus:</p>
 	        <div style="margin:16px 0;max-width:520px;">
-	          <a href="${basicLink}" style="display:block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;text-align:center;margin-bottom:10px;">
-            Basic wählen (0,99 € / Tag)
-          </a>
-          <a href="${premiumLink}" style="display:block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;text-align:center;margin-bottom:10px;">
-            Premium wählen (1,47 € / Tag)
-          </a>
-          <a href="${lifetimeLink}" style="display:block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;text-align:center;">
-            Lifetime wählen (1466 € einmalig)
+	          <a href="${dashboardLink}" style="display:block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;text-align:center;">
+            Zum Kundendashboard
           </a>
         </div>
 	      <p style="margin:12px 0;">Nach Abschluss wird Ihr Produkt automatisch für die Nutzung des Testsieger-Siegels freigegeben.</p>

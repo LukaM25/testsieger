@@ -1237,7 +1237,7 @@ export default function PrecheckPage() {
                   const showCheckoutDiscount = totals.savingsCents > 0;
                   const isPriority = option.id === "priority";
                   const checkoutCtaClass =
-                    "text-slate-900 shadow-lg shadow-amber-500/25 ring-1 ring-amber-200/70 group-hover:brightness-110";
+                    "text-slate-900 shadow-[0_18px_45px_-18px_rgba(245,158,11,0.85)] ring-2 ring-amber-200/90 group-hover:brightness-110 group-hover:shadow-[0_22px_55px_-18px_rgba(245,158,11,0.95)] group-hover:scale-[1.02]";
                   const checkoutCtaStyle = {
                     backgroundImage: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 55%, #d97706 100%)",
                   };
@@ -1260,6 +1260,10 @@ export default function PrecheckPage() {
                     : paying === option.id
                     ? tr("Starte Zahlung…", "Starting payment…")
                     : tr("Zum Checkout", "Go to checkout");
+                  const checkoutTotalLabel = tr(
+                    `${formatEur(totals.totalCents / 100)} zzgl. MwSt.`,
+                    `${formatEur(totals.totalCents / 100)} plus VAT`
+                  );
                   return (
                   <button
                     key={option.title.de}
@@ -1303,10 +1307,31 @@ export default function PrecheckPage() {
                     </div>
 
                     <div
-                      className={`mt-7 inline-flex items-center gap-2 rounded-full px-[1.375rem] py-[0.6875rem] text-[0.95rem] font-semibold uppercase tracking-[0.22em] transition ${checkoutCtaClass}`}
+                      className={`mt-7 inline-flex items-center gap-3 rounded-full px-[1.9rem] py-[0.95rem] text-[1.25rem] font-bold uppercase tracking-[0.22em] transition ${checkoutCtaClass}`}
                       style={checkoutCtaStyle}
                     >
-                      {checkoutLabel}
+                      <span className="flex items-center gap-3 text-left">
+                        <svg
+                          aria-hidden
+                          className="h-6 w-6"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M3 5h2l2.2 10.4a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L21 8H7" />
+                          <circle cx="9.5" cy="20" r="1.5" />
+                          <circle cx="17.5" cy="20" r="1.5" />
+                        </svg>
+                        <span className="flex flex-col items-start leading-tight">
+                          <span>{checkoutLabel}</span>
+                          <span className="text-[0.98rem] font-semibold normal-case tracking-[0.16em] text-slate-900/80">
+                            {checkoutTotalLabel}
+                          </span>
+                        </span>
+                      </span>
                       <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
                     </div>
                   </button>
