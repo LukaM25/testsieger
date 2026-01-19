@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { usePrecheckEligibility } from "@/hooks/usePrecheckEligibility";
 
 const steps = [
   { title: "Pre-Check ausfüllen", body: "Kostenloser Pre-Check. Wir prüfen Unterlagen und schätzen den Aufwand." },
@@ -13,11 +12,73 @@ const steps = [
   { title: "Lizenzpläne aktivieren", body: "Du zahlst erst, wenn dein Produkt bestanden hat." },
 ];
 
-const plans = [
-  { key: "BASIC", name: "Basic", price: "0,99 € / Tag (jährlich)", detail: "DE · 1 Kanal" },
-  { key: "PREMIUM", name: "Premium", price: "1,47 € / Tag (jährlich)", detail: "EU-Sprachen · alle Kanäle" },
-  { key: "LIFETIME", name: "Lifetime", price: "1466 € einmalig", detail: "Zertifikat & Bericht · alle Kanäle" },
+type Plan = {
+  key: "BASIC" | "PREMIUM" | "LIFETIME";
+  name: string;
+  theme: "sky" | "indigo" | "midnight";
+  usage: string[];
+  contents: string[];
+  basePriceEur: number;
+  billing: "daily" | "one-time";
+  footer: string[];
+};
+
+const plans: Plan[] = [
+  {
+    key: "BASIC",
+    name: "Basic",
+    theme: "sky",
+    usage: ["1 Verkaufskanal (Amazon, Otto...)", "Sprache: Deutsch"],
+    contents: ["Siegel", "Zertifikat", "Prüfbericht"],
+    basePriceEur: 0.99,
+    billing: "daily",
+    footer: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+  },
+  {
+    key: "PREMIUM",
+    name: "Premium",
+    theme: "indigo",
+    usage: ["ALLE Verkaufskanäle", "ALLE Sprachen"],
+    contents: ["Siegel", "Zertifikat", "Prüfbericht"],
+    basePriceEur: 1.47,
+    billing: "daily",
+    footer: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+  },
+  {
+    key: "LIFETIME",
+    name: "Lifetime",
+    theme: "midnight",
+    usage: ["ALLE Verkaufskanäle", "ALLE Sprachen"],
+    contents: ["Siegel", "Zertifikat", "Prüfbericht"],
+    basePriceEur: 1466,
+    billing: "one-time",
+    footer: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+  },
 ];
+
+const planThemes = {
+  sky: {
+    card: "bg-gradient-to-b from-sky-300 via-sky-200 to-sky-50",
+    border: "border-sky-200/70",
+    label: "text-slate-900",
+    body: "text-slate-800",
+    muted: "text-slate-700/80",
+  },
+  indigo: {
+    card: "bg-gradient-to-b from-indigo-500 via-indigo-700 to-slate-950",
+    border: "border-indigo-400/30",
+    label: "text-white",
+    body: "text-white/90",
+    muted: "text-white/70",
+  },
+  midnight: {
+    card: "bg-gradient-to-b from-blue-950 via-slate-950 to-black",
+    border: "border-blue-500/20",
+    label: "text-white",
+    body: "text-white/90",
+    muted: "text-white/70",
+  },
+} as const;
 
 function Reveal({
   children,
@@ -71,70 +132,12 @@ function Reveal({
 }
 
 export default function Packages() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const preselectedProductId = searchParams.get("productId");
   const preselectedPlanRaw = (searchParams.get("plan") || "").toUpperCase();
   const preselectedPlan = ["BASIC", "PREMIUM", "LIFETIME"].includes(preselectedPlanRaw) ? preselectedPlanRaw : null;
-  const { hasPrecheck, paidAndPassed, loading, productId, licensePaid, unauthorized } = usePrecheckEligibility({
-    productId: preselectedProductId,
-  });
-  const [notice, setNotice] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState<string | null>(null);
-  const guardMessage = "Bitte Pre-Check abschließen, Grundgebühr bezahlen und Prüfung abwarten. Wir leiten dich zum Formular.";
-  const paidMessage = "Lizenzplan bereits bezahlt. Du kannst nicht erneut zahlen.";
-  const loginMessage = "Bitte einloggen, um einen Lizenzplan zu bezahlen.";
-
-  async function choose(plan: string) {
-    if (!productId) {
-      setNotice(guardMessage);
-      router.push("/produkte/produkt-test");
-      return;
-    }
-    setSubmitting(plan);
-    try {
-      const res = await fetch("/api/payment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, productId }),
-      });
-      if (res.status === 401) {
-        setNotice(loginMessage);
-        const next = encodeURIComponent(`/pakete${typeof window !== "undefined" ? window.location.search : ""}`);
-        router.push(`/login?next=${next}`);
-        return;
-      }
-      const data = await res.json();
-      if (!res.ok || !data.url) {
-        setNotice(data.error || "Zahlung konnte nicht gestartet werden.");
-        return;
-      }
-      window.location.href = data.url;
-    } catch (err) {
-      setNotice("Zahlung konnte nicht gestartet werden.");
-    } finally {
-      setSubmitting(null);
-    }
-  }
-
-  const handleGuardedSelect = (plan: string) => {
-    if (licensePaid) {
-      setNotice(paidMessage);
-      return;
-    }
-    if (unauthorized) {
-      setNotice(loginMessage);
-      const next = encodeURIComponent(`/pakete${typeof window !== "undefined" ? window.location.search : ""}`);
-      router.push(`/login?next=${next}`);
-      return;
-    }
-    if (!hasPrecheck || !paidAndPassed || !productId) {
-      setNotice(guardMessage);
-      router.push("/produkte/produkt-test");
-      return;
-    }
-    choose(plan);
-  };
+  const formatEur = (amount: number) =>
+    new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(amount);
+  const roundEur = (n: number) => Math.round(n * 100) / 100;
 
   return (
     <main className="text-slate-900" style={{ backgroundColor: '#EEF4ED' }}>
@@ -163,7 +166,6 @@ export default function Packages() {
                 Produkt Test (Testsieger Check)
               </Link>
             </div>
-            {notice && <p className="text-sm text-amber-700">{notice}</p>}
           </Reveal>
 
           <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4 items-stretch">
@@ -227,84 +229,92 @@ export default function Packages() {
             </p>
           </Reveal>
 
-          {notice && (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
-              {notice}
-            </div>
-          )}
-
           <div className="grid gap-6 md:grid-cols-3">
             {plans.map((plan, idx) => {
-              const guardState = licensePaid
-                ? "PAID"
-                : unauthorized
-                  ? "LOGIN"
-                  : !hasPrecheck || !paidAndPassed || !productId
-                    ? "PRECHECK"
-                    : "PAY";
-              const isLoading = loading || submitting === plan.key;
+              const theme = planThemes[plan.theme];
+              const priceSuffix = plan.billing === "daily" ? " / Tag" : "";
+              const priceRows =
+                plan.billing === "daily"
+                  ? [
+                      {
+                        label: "1 Prod.",
+                        price: `${formatEur(roundEur(plan.basePriceEur))}${priceSuffix}`,
+                      },
+                      {
+                        label: "2 Prod. -20%",
+                        price: `${formatEur(roundEur(plan.basePriceEur * 0.8))}${priceSuffix}`,
+                      },
+                      {
+                        label: "3 Prod. -30%",
+                        price: `${formatEur(roundEur(plan.basePriceEur * 0.7))}${priceSuffix}`,
+                      },
+                    ]
+                  : [
+                      {
+                        label: "1 Prod.",
+                        price: `${formatEur(roundEur(plan.basePriceEur))}`,
+                      },
+                      {
+                        label: "2 Prod. -20%",
+                        price: `${formatEur(roundEur(plan.basePriceEur * 2 * 0.8))}`,
+                      },
+                      {
+                        label: "3 Prod. -30%",
+                        price: `${formatEur(roundEur(plan.basePriceEur * 3 * 0.7))}`,
+                      },
+                    ];
               const highlighted = preselectedPlan === plan.key;
-              const label =
-                guardState === "PAID"
-                  ? "Bereits bezahlt"
-                  : guardState === "LOGIN"
-                    ? "Einloggen & bezahlen"
-                    : guardState === "PRECHECK"
-                      ? "Zum Pre-Check"
-                      : submitting === plan.key
-                        ? "Wird geöffnet…"
-                        : highlighted
-                          ? "Weiter mit Auswahl"
-                          : "Lizenzplan wählen";
               return (
                 <Reveal key={plan.key} delay={idx * 60 + 60}>
                   <div
-                    className={`flex h-full flex-col justify-between rounded-2xl border bg-white p-7 shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)] ${
-                      highlighted ? "border-slate-900 ring-2 ring-slate-900/10" : "border-slate-200"
-                    }`}
+                    className="flex h-full flex-col items-center gap-4"
                   >
-                    <div className="space-y-3">
-                      <div className="text-lg font-semibold text-slate-900">{plan.name}</div>
-                      <div className="text-base font-semibold text-slate-800">{plan.price}</div>
-                      <p className="text-sm text-slate-700 leading-relaxed">{plan.detail}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (guardState === "PAID") return;
-                        if (guardState === "LOGIN") {
-                          setNotice(loginMessage);
-                          const next = encodeURIComponent(`/pakete${typeof window !== "undefined" ? window.location.search : ""}`);
-                          router.push(`/login?next=${next}`);
-                          return;
-                        }
-                        if (guardState === "PRECHECK") {
-                          setNotice(guardMessage);
-                          router.push("/produkte/produkt-test");
-                          return;
-                        }
-                        handleGuardedSelect(plan.key);
-                      }}
-                      disabled={isLoading || guardState === "PAID"}
-                      className={`mt-8 rounded-full px-4 py-2 text-sm font-semibold ${
-                        guardState === "PAID" || isLoading
-                          ? "bg-slate-200 text-slate-600 cursor-not-allowed"
-                          : guardState === "LOGIN" || guardState === "PRECHECK"
-                            ? "bg-slate-900 text-white transition hover:bg-black"
-                            : "bg-slate-900 text-white transition hover:bg-black"
+                    <div className="text-lg font-semibold text-slate-900">{plan.name}</div>
+                    <div
+                      className={`flex h-full w-full flex-col justify-between rounded-[28px] border ${theme.border} ${theme.card} p-6 text-center font-semibold shadow-[0_28px_60px_-40px_rgba(15,23,42,0.65)] transition-transform duration-300 hover:-translate-y-1 ${
+                        highlighted ? "ring-2 ring-slate-900/10 border-slate-900/50" : ""
                       }`}
-                      title={
-                        licensePaid
-                          ? paidMessage
-                          : unauthorized
-                            ? loginMessage
-                          : !hasPrecheck || !paidAndPassed
-                            ? guardMessage
-                            : undefined
-                      }
                     >
-                      {label}
-                    </button>
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <div className={`text-[15.4px] font-semibold ${theme.label}`}>Nutzung:</div>
+                          <div className={`space-y-1 text-[15.4px] ${theme.body}`}>
+                            {plan.usage.map((line) => (
+                              <div key={line}>{line}</div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className={`text-[15.4px] font-semibold ${theme.label}`}>Inhalt:</div>
+                          <div className={`space-y-1 text-[15.4px] ${theme.body}`}>
+                            {plan.contents.map((line) => (
+                              <div key={line}>- {line}</div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className={`space-y-1 text-[15.4px] ${theme.body} w-full max-w-[240px] mx-auto`}>
+                          {priceRows.map((row) => (
+                            <div key={`${row.label}-${row.price}`} className="flex items-center justify-between gap-4 tabular-nums">
+                              <span className="text-left">{row.label}</span>
+                              <span className="text-right">{row.price}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className={`mt-6 space-y-1 text-[12.1px] leading-relaxed ${theme.muted}`}>
+                        {plan.footer.map((line) => (
+                          <div key={line}>{line}</div>
+                        ))}
+                      </div>
+                    </div>
+                    <Link
+                      href="/dashboard"
+                      className={`mt-2 w-full rounded-full bg-slate-900 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-black ${
+                        highlighted ? "ring-2 ring-slate-900/15" : ""
+                      }`}
+                    >
+                      Zum Kundendashboard
+                    </Link>
                   </div>
                 </Reveal>
               );
