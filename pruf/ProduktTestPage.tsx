@@ -107,8 +107,8 @@ const plans: Plan[] = [
     basePriceEur: 1466,
     billing: "one-time",
     footer: {
-      de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
-      en: ["Billing 365 days / year", "License renewal yearly."],
+      de: ["Abrechnung einmalig", "Lizenzverlängerung jährlich."],
+      en: ["Billing once", "License renewal yearly."],
     },
   },
 ];
