@@ -884,7 +884,10 @@ export default function DashboardClient({ user }: DashboardClientProps) {
               </div>
               <div className="mt-2 flex items-center justify-between text-base font-semibold text-slate-900">
                 <span>Gesamt</span>
-                <span>{formatNetEur(licenseCart.totals.totalCents)}</span>
+                <span>
+                  {formatNetEur(licenseCart.totals.totalCents)}{" "}
+                  <span className="text-xs font-semibold text-slate-500">(zzgl. MwSt.)</span>
+                </span>
               </div>
             </div>
           )}
