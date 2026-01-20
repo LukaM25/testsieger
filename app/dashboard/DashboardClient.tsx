@@ -163,7 +163,7 @@ function PlanComparePopover({ className = "" }: { className?: string }) {
             >
               <div className="absolute inset-0 bg-slate-950/30 backdrop-blur-sm" />
               <div
-                className="relative z-10 aspect-video w-[96vw] max-w-none max-h-[90vh] origin-center scale-50"
+                className="relative z-10 aspect-video w-[min(880px,86vw)] max-h-[80vh]"
                 onClick={(event) => event.stopPropagation()}
                 onMouseEnter={handleHoverOpen}
                 onMouseLeave={handleHoverClose}
