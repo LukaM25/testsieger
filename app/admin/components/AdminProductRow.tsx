@@ -340,6 +340,7 @@ function AdminProductRow({
   const canAccessAssets = permissions.role !== 'VIEWER';
   const licensePaid =
     Boolean(product.licensePaid) || Boolean(product.license?.paidAt) || product.license?.status === 'ACTIVE';
+  const isDone = product.status === 'COMPLETED';
   const ratingReady = Boolean(product.certificate?.ratingScore && product.certificate?.ratingLabel);
   const reportUploaded = Boolean(product.certificate?.reportUrl);
   const canSendLicensePlansEmail =
@@ -486,6 +487,11 @@ function AdminProductRow({
               <span className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ring-1 ${STATUS_TONE[product.status] ?? 'bg-slate-100 text-slate-700 ring-slate-200'}`}>
                 Status: {statusLabel(product.status)}
               </span>
+              {isDone && (
+                <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-800 ring-1 ring-emerald-200">
+                  FERTIG
+                </span>
+              )}
               <span className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ring-1 ${PAYMENT_TONE[paymentStatusValue] ?? 'bg-slate-100 text-slate-700 ring-slate-200'}`}>
                 Zahlung: {paymentStatusValue === 'PAID' ? 'Bezahlt' : paymentStatusValue === 'MANUAL' ? 'Manuell' : 'Offen'}
               </span>
@@ -494,11 +500,10 @@ function AdminProductRow({
               </span>
               {product.license ? (
                 <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-700 ring-1 ring-blue-100">
-                  Lizenz: {product.license.plan} · {product.license.status}
+                  Lizenz: {product.license.plan}
                   {product.license.expiresAt
                     ? ` · gültig bis ${new Date(product.license.expiresAt).toLocaleDateString('de-DE')}`
                     : ' · Lifetime'}
-                  {typeof expiresInDays === 'number' ? ` · ${expiresInDays} Tage` : ''}
                 </span>
               ) : null}
               {!licensePaid && (
@@ -788,11 +793,11 @@ function AdminProductRow({
                 className="rounded-lg border border-emerald-800 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-800 transition hover:bg-emerald-50 disabled:opacity-70"
                 title={!permissions.canSendCompletion ? 'Keine Berechtigung.' : undefined}
               >
-                {sendLoading ? '6. Sende…' : '6. Completion – Send all Files'}
+                {sendLoading ? '6. Sende…' : 'Abschluss – Alle Dateien senden'}
               </button>
 
               <p className="text-xs text-slate-500">
-                Hinweis: Der Versand an den Kunden erfolgt erst über die Aktion &ldquo;Completion – Send all Files&rdquo;.
+                Hinweis: Der Versand an den Kunden erfolgt erst über die Aktion &ldquo;Abschluss – Alle Dateien senden&rdquo;.
               </p>
             </div>
           </CollapsibleSection>

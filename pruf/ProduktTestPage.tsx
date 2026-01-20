@@ -702,6 +702,20 @@ export default function ProduktTestPage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-6xl px-6 pb-8">
+        <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)]">
+          <div className="relative aspect-[16/9] w-full">
+            <Image
+              src="/prodtestbild/emotion.jpeg"
+              alt={tr("Emotionale Produktmomente", "Emotional product moments")}
+              fill
+              className="object-cover"
+              sizes="(min-width: 1024px) 960px, (min-width: 640px) 90vw, 100vw"
+            />
+          </div>
+        </div>
+      </section>
+
       <section className="mx-auto max-w-6xl px-6 pt-8 pb-16">
         <div className="space-y-12">
           <div className="rounded-3xl border border-slate-100 bg-white/90 p-8 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)] md:p-10">
