@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import LogoutButton from "@/components/LogoutButton";
 import { usePrecheckStatusData, type ProductStatusPayload } from "@/hooks/usePrecheckStatusData";
 import { PrecheckStatusCard } from "@/components/PrecheckStatusCard";
@@ -29,6 +30,231 @@ type LicenseCartState = {
   items: LicenseCartItem[];
   totals: { baseCents: number; savingsCents: number; totalCents: number; itemCount: number };
 };
+
+const PLAN_COMPARISON = [
+  {
+    name: "Basic",
+    theme: "sky",
+    usage: ["1 Verkaufskanal", "Sprache: Deutsch"],
+    contents: ["Siegel", "Zertifikat", "Prüfbericht"],
+    basePriceEur: 0.99,
+    billing: "daily",
+    footer: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+  },
+  {
+    name: "Premium",
+    theme: "indigo",
+    usage: ["Alle Verkaufskanäle", "Alle Sprachen"],
+    contents: ["Siegel", "Zertifikat", "Prüfbericht"],
+    basePriceEur: 1.47,
+    billing: "daily",
+    footer: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+  },
+  {
+    name: "Lifetime",
+    theme: "midnight",
+    usage: ["Alle Verkaufskanäle", "Alle Sprachen"],
+    contents: ["Siegel", "Zertifikat", "Prüfbericht"],
+    basePriceEur: 1466,
+    billing: "one-time",
+    footer: ["Abrechnung einmalig", "Lizenzverlängerung jährlich."],
+  },
+] as const;
+
+const PLAN_COMPARE_THEMES = {
+  sky: {
+    card: "bg-gradient-to-b from-sky-300 via-sky-200 to-sky-50",
+    border: "border-sky-200/70",
+    label: "text-slate-900",
+    body: "text-slate-800",
+    muted: "text-slate-700/80",
+  },
+  indigo: {
+    card: "bg-gradient-to-b from-indigo-500 via-indigo-700 to-slate-950",
+    border: "border-indigo-400/30",
+    label: "text-white",
+    body: "text-white/90",
+    muted: "text-white/70",
+  },
+  midnight: {
+    card: "bg-gradient-to-b from-blue-950 via-slate-950 to-black",
+    border: "border-blue-500/20",
+    label: "text-white",
+    body: "text-white/90",
+    muted: "text-white/70",
+  },
+} as const;
+
+function PlanComparePopover({ className = "" }: { className?: string }) {
+  const [hovered, setHovered] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const isOpen = hovered || pinned;
+  const hoverTimeoutRef = useRef<number | null>(null);
+  const formatEur = (amount: number) =>
+    new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(amount);
+  const roundEur = (n: number) => Math.round(n * 100) / 100;
+
+  const clearHoverTimeout = () => {
+    if (hoverTimeoutRef.current) {
+      window.clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+  };
+
+  const handleHoverOpen = () => {
+    clearHoverTimeout();
+    setHovered(true);
+  };
+
+  const handleHoverClose = () => {
+    clearHoverTimeout();
+    if (!pinned) {
+      hoverTimeoutRef.current = window.setTimeout(() => setHovered(false), 120);
+    }
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setPinned(false);
+      setHovered(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen]);
+
+  useEffect(() => {
+    return () => clearHoverTimeout();
+  }, []);
+
+  return (
+    <div
+      className={`relative inline-flex ${className}`}
+      onMouseEnter={handleHoverOpen}
+      onMouseLeave={handleHoverClose}
+    >
+      <button
+        type="button"
+        onClick={() => {
+          setPinned((prev) => {
+            const next = !prev;
+            if (!next) setHovered(false);
+            return next;
+          });
+        }}
+        onFocus={handleHoverOpen}
+        onBlur={handleHoverClose}
+        aria-expanded={isOpen}
+        className="rounded-full border border-slate-200 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-600 transition hover:border-slate-300"
+      >
+        PLANVERGLEICH
+      </button>
+      {isOpen && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center"
+              onClick={() => {
+                setPinned(false);
+                setHovered(false);
+              }}
+              onMouseEnter={handleHoverOpen}
+              onMouseLeave={handleHoverClose}
+            >
+              <div className="absolute inset-0 bg-slate-950/30 backdrop-blur-sm" />
+              <div
+                className="relative z-10 aspect-video w-[96vw] max-w-none max-h-[90vh] origin-center scale-50"
+                onClick={(event) => event.stopPropagation()}
+                onMouseEnter={handleHoverOpen}
+                onMouseLeave={handleHoverClose}
+              >
+                <div className="flex h-full flex-col rounded-3xl bg-white p-6 shadow-2xl">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-500">
+                        PLANVERGLEICH
+                      </div>
+                      <div className="text-xl font-semibold text-slate-900">Lizenzpläne im Überblick</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPinned(false);
+                        setHovered(false);
+                      }}
+                      className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:border-slate-300"
+                    >
+                      Schließen
+                    </button>
+                  </div>
+
+                  <div className="mt-5 grid flex-1 items-stretch gap-6 overflow-y-auto md:grid-cols-3">
+                    {PLAN_COMPARISON.map((plan) => {
+                      const theme = PLAN_COMPARE_THEMES[plan.theme];
+                      const priceSuffix = plan.billing === "daily" ? " / Tag" : "";
+                      const priceRows =
+                        plan.billing === "daily"
+                          ? [
+                              { label: "1 Prod.", price: `${formatEur(roundEur(plan.basePriceEur))}${priceSuffix}` },
+                              { label: "2 Prod. -20%", price: `${formatEur(roundEur(plan.basePriceEur * 0.8))}${priceSuffix}` },
+                              { label: "3 Prod. -30%", price: `${formatEur(roundEur(plan.basePriceEur * 0.7))}${priceSuffix}` },
+                            ]
+                          : [
+                              { label: "1 Prod.", price: `${formatEur(roundEur(plan.basePriceEur))}` },
+                              { label: "2 Prod. -20%", price: `${formatEur(roundEur(plan.basePriceEur * 2 * 0.8))}` },
+                              { label: "3 Prod. -30%", price: `${formatEur(roundEur(plan.basePriceEur * 3 * 0.7))}` },
+                            ];
+                      return (
+                        <div key={plan.name} className="flex h-full flex-col items-center gap-4">
+                          <div className="text-lg font-semibold text-slate-900">{plan.name}</div>
+                          <div
+                            className={`flex h-full w-full flex-col justify-between rounded-[28px] border ${theme.border} ${theme.card} p-6 text-center font-semibold shadow-[0_28px_60px_-40px_rgba(15,23,42,0.65)]`}
+                          >
+                            <div className="space-y-6">
+                              <div className="space-y-2">
+                                <div className={`text-[15.4px] font-semibold ${theme.label}`}>Nutzung:</div>
+                                <div className={`space-y-1 text-[15.4px] ${theme.body}`}>
+                                  {plan.usage.map((line) => (
+                                    <div key={line}>{line}</div>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <div className={`text-[15.4px] font-semibold ${theme.label}`}>Inhalt:</div>
+                                <div className={`space-y-1 text-[15.4px] ${theme.body}`}>
+                                  {plan.contents.map((line) => (
+                                    <div key={line}>- {line}</div>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className={`space-y-1 text-[15.4px] ${theme.body} w-full max-w-[240px] mx-auto`}>
+                                {priceRows.map((row) => (
+                                  <div key={row.label} className="flex items-center justify-between gap-4 tabular-nums">
+                                    <span className="text-left">{row.label}</span>
+                                    <span className="text-right">{row.price}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div className={`mt-6 space-y-1 text-[12.1px] leading-relaxed ${theme.muted}`}>
+                              {plan.footer.map((line) => (
+                                <div key={line}>{line}</div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
+    </div>
+  );
+}
 
 const parseAddressParts = (raw: string) => {
   const cleaned = (raw || "").trim();
@@ -83,9 +309,11 @@ export default function DashboardClient({ user }: DashboardClientProps) {
   );
 
   const statusState = usePrecheckStatusData({ initialProducts: initialStatusProducts });
-  const { products, selectedProductId, setProducts, setSelectedProductId, productStatus } = statusState;
-  const selectedProduct =
-    productStatus || products.find((product) => product.id === selectedProductId) || null;
+  const { products, selectedProductId, setProducts, setSelectedProductId } = statusState;
+  const selectedProduct = useMemo(
+    () => products.find((product) => product.id === selectedProductId) || null,
+    [products, selectedProductId]
+  );
   const baseFeeOrdersByProductId = useMemo(() => {
     const orders = Array.isArray(user.orders) ? user.orders : [];
     const byProduct: Record<string, { id: string; paidAt?: string | null }> = {};
@@ -536,6 +764,11 @@ export default function DashboardClient({ user }: DashboardClientProps) {
   }, [showProducts, productsMounted]);
 
   useEffect(() => {
+    if (!selectedProductId) return;
+    setShowProducts(true);
+  }, [selectedProductId]);
+
+  useEffect(() => {
     loadLicenseCart();
   }, []);
 
@@ -564,12 +797,6 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     return map;
   }, [licenseCart.items]);
 
-  const selectedLicensePlan = selectedProduct
-    ? licenseSelections[selectedProduct.id] || selectedProduct.license?.plan || "BASIC"
-    : "BASIC";
-  const selectedCartItem = selectedProduct ? cartItemsByProductId.get(selectedProduct.id) : undefined;
-  const selectedPlanMatches = selectedCartItem?.plan === selectedLicensePlan;
-
   const orderLabel = (order: any) => {
     const plan = order?.plan;
     if (plan === "PRECHECK_PRIORITY") return "Grundgebühr (Priority)";
@@ -583,6 +810,10 @@ export default function DashboardClient({ user }: DashboardClientProps) {
   const cartHasItems = licenseCart.items.length > 0;
   const cartHasEligibleItems = licenseCart.totals.itemCount > 0;
   const cartHasIneligibleItems = licenseCart.items.some((item) => !item.eligible);
+  const cartEligibleCount = licenseCart.items.filter((item) => item.eligible).length;
+  const cartIneligibleCount = Math.max(0, licenseCart.items.length - cartEligibleCount);
+  const cartNetTotalCents = Math.round(licenseCart.totals.totalCents / (1 + VAT_RATE));
+  const cartVatCents = Math.max(0, licenseCart.totals.totalCents - cartNetTotalCents);
   const cartReasonLabel = (reason?: string) => {
     if (reason === "GRUNDGEBUEHR_OFFEN") return "Grundgebühr offen";
     if (reason === "PRUEFUNG_OFFEN") return "Prüfung noch offen";
@@ -590,8 +821,273 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     return "Nicht verfügbar";
   };
 
+  const productsPanel = (
+    <section
+      id="products-section"
+      className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
+    >
+      <button
+        type="button"
+        onClick={() => setShowProducts((open) => !open)}
+        className="flex w-full items-center justify-between gap-3 text-left"
+        aria-expanded={showProducts}
+      >
+        <h2 className="text-lg font-semibold text-slate-900">Ihre Produkte</h2>
+        <span className={`text-slate-400 transition ${showProducts ? "rotate-180" : ""}`}>▾</span>
+      </button>
+      {productsMounted && (
+        <div
+          className={`mt-3 overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${
+            showProducts ? "max-h-[2200px] opacity-100" : "max-h-0 opacity-0"
+          }`}
+        >
+          {products.length === 0 ? (
+            <p className="text-slate-600">Noch keine Produkte erfasst.</p>
+          ) : !selectedProduct ? (
+            <p className="text-slate-600">Bitte links ein Produkt auswählen.</p>
+          ) : (
+            <div className="grid gap-4">
+              {(() => {
+                const p = selectedProduct;
+                const baseFeePaid = ["PAID", "MANUAL"].includes(p.paymentStatus);
+                const hasPassed = p.adminProgress === "PASS";
+                const licenseActive = p.license?.status === "ACTIVE";
+                const hasCertificate = Boolean(p.certificate?.pdfUrl || p.certificate?.id);
+                const progressLabel = getProgressLabel(p.adminProgress, p.status, hasCertificate);
+                const showPassed = progressLabel === "Bestanden";
+                return (
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div className="text-lg font-semibold text-slate-900">{p.name}</div>
+                      <div className="text-sm text-slate-500">{p.brand}</div>
+                    </div>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                      Status: {p.status}
+                    </span>
+                  </div>
+
+                  <div id={`base-fee-${p.id}`} className="mt-3 flex flex-wrap items-center gap-3">
+                    {baseFeePaid ? (
+                      <>
+                        <span className="text-xs font-semibold text-emerald-700">Grundgebühr bezahlt</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const order = baseFeeOrdersByProductId[p.id];
+                            if (order?.id) handleReceipt(order.id);
+                          }}
+                          disabled={!baseFeeOrdersByProductId[p.id]?.id}
+                          className={`rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition ${
+                            baseFeeOrdersByProductId[p.id]?.id
+                              ? "bg-slate-900 text-white hover:bg-black"
+                              : "bg-slate-200 text-slate-500 cursor-not-allowed"
+                          }`}
+                        >
+                          Rechnung Grundgebühr
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <select
+                          className="rounded-lg border border-slate-200 px-3 py-2 text-xs"
+                          value={baseFeeSelections[p.id] || "standard"}
+                          onChange={(e) => setBaseFeeSelections((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                          disabled={baseFeePaying === p.id}
+                        >
+                          <option value="standard">Grundgebühr (Standard)</option>
+                          <option value="priority">Priority</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => handleBaseFeePay(p.id, baseFeeSelections[p.id] || "standard")}
+                          disabled={baseFeePaying === p.id}
+                          className={`rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition ${
+                            baseFeePaying === p.id
+                              ? "bg-slate-300 text-slate-600"
+                              : "bg-slate-900 text-white hover:bg-black"
+                          }`}
+                        >
+                          {baseFeePaying === p.id ? "Starte Zahlung…" : "Grundgebühr zahlen"}
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      <span>Lizenzplan</span>
+                      <PlanComparePopover />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      {(() => {
+                        const selectedPlan = licenseSelections[p.id] || p.license?.plan || "BASIC";
+                        const cartItem = cartItemsByProductId.get(p.id);
+                        const planMatches = cartItem?.plan === selectedPlan;
+                        return (
+                          <>
+                            <select
+                              className="rounded-lg border border-slate-200 px-3 py-2 text-xs"
+                              value={selectedPlan}
+                              onChange={(e) => setLicenseSelections((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                              disabled={cartBusyId === p.id || licenseActive || !baseFeePaid || !hasPassed}
+                            >
+                              <option value="BASIC">Basic</option>
+                              <option value="PREMIUM">Premium</option>
+                              <option value="LIFETIME">Lifetime</option>
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => handleCartAdd(p.id, selectedPlan)}
+                              disabled={cartBusyId === p.id || licenseActive || !baseFeePaid || !hasPassed || planMatches}
+                              className={`rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition ${
+                                licenseActive
+                                  ? "bg-emerald-100 text-emerald-700 cursor-not-allowed"
+                                  : baseFeePaid && hasPassed
+                                  ? "bg-slate-900 text-white hover:bg-black"
+                                  : "bg-slate-200 text-slate-500 cursor-not-allowed"
+                              }`}
+                            >
+                              {licenseActive
+                                ? "Lizenz aktiv"
+                                : cartBusyId === p.id
+                                ? "Wird hinzugefügt…"
+                                : !baseFeePaid
+                                ? "Grundgebühr zuerst zahlen"
+                                : !hasPassed
+                                ? "Bestanden erforderlich"
+                                : cartItem
+                                ? planMatches
+                                  ? "Im Warenkorb"
+                                  : "Plan aktualisieren"
+                                : "Zum Warenkorb"}
+                            </button>
+                            {cartItem && (
+                              <button
+                                type="button"
+                                onClick={() => handleCartRemove(p.id)}
+                                disabled={cartBusyId === p.id}
+                                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-800 disabled:opacity-60"
+                              >
+                                Entfernen
+                              </button>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      {p.license?.status === "ACTIVE" && (
+                        <span className="rounded-full bg-emerald-100 px-3 py-1 font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                          Aktivierter Plan: {p.license?.plan || "—"}
+                        </span>
+                      )}
+                      {p.license?.status === "EXPIRED" && (
+                        <span className="rounded-full bg-amber-100 px-3 py-1 font-semibold text-amber-700 ring-1 ring-amber-200">
+                          Lizenz abgelaufen – bitte neu buchen
+                        </span>
+                      )}
+                      {!baseFeePaid && (
+                        <button
+                          type="button"
+                        onClick={() => scrollToProduct(p.id)}
+                          className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 font-semibold text-amber-700 transition hover:border-amber-300"
+                        >
+                          Grundgebühr offen → Jetzt zahlen
+                        </button>
+                      )}
+                      {baseFeePaid && !hasPassed && (
+                        <button
+                          type="button"
+                          onClick={() => focusProductStatus(p.id)}
+                          className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 font-semibold text-sky-700 transition hover:border-sky-300"
+                        >
+                          Prüfung offen → Status ansehen
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-3 space-y-2">
+                    {p.certificate ? (
+                      <a
+                        href={`/api/certificates/${p.id}/download`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-black"
+                      >
+                        Zertifikat öffnen (PDF)
+                      </a>
+                    ) : (
+                      <p className="text-sm text-amber-600">
+                        Prüfungsverlauf: {progressLabel}
+                        {showPassed && (
+                          <svg
+                            className="ml-2 inline-block h-4 w-4 text-emerald-600"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.704 5.29a1 1 0 01.006 1.414l-7.5 7.57a1 1 0 01-1.42 0L3.29 9.77a1 1 0 011.42-1.41l3.08 3.11 6.79-6.86a1 1 0 011.414-.01z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        )}
+                      </p>
+                    )}
+                    <div className="flex justify-center">
+                      <span className="rounded-lg bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+                        Prüfungsverlauf: {progressLabel}
+                        {showPassed && (
+                          <svg
+                            className="ml-1 inline-block h-3.5 w-3.5 text-emerald-600"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.704 5.29a1 1 0 01.006 1.414l-7.5 7.57a1 1 0 01-1.42 0L3.29 9.77a1 1 0 011.42-1.41l3.08 3.11 6.79-6.86a1 1 0 011.414-.01z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+
+  const scrollToProduct = (productId: string) => {
+    setSelectedProductId(productId);
+    setShowProducts(true);
+    if (typeof window === "undefined") return;
+    window.setTimeout(() => {
+      const el = document.getElementById(`base-fee-${productId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 200);
+  };
+
+  const focusProductStatus = (productId: string) => {
+    setSelectedProductId(productId);
+    if (typeof window === "undefined") return;
+    const top = document.getElementById("dashboard-top");
+    if (top) {
+      top.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-8">
+    <div id="dashboard-top" className="min-h-screen bg-slate-50 px-4 py-8">
       <div className="mx-auto max-w-5xl space-y-8">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -705,112 +1201,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
           </div>
         </header>
 
-        <PrecheckStatusCard state={statusState} />
-
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">Lizenzplan auswählen</h2>
-            <p className="text-sm text-slate-500">Wähle einen Plan und lege ihn in den Lizenz-Warenkorb.</p>
-          </div>
-          {selectedProduct ? (
-            <div className="mt-4 space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <div className="text-base font-semibold text-slate-900">{selectedProduct.name}</div>
-                  <div className="text-sm text-slate-500">{selectedProduct.brand || "—"}</div>
-                </div>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
-                  Status: {selectedProduct.status}
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <select
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-xs"
-                  value={selectedLicensePlan}
-                  onChange={(e) =>
-                    setLicenseSelections((prev) => ({ ...prev, [selectedProduct.id]: e.target.value }))
-                  }
-                  disabled={
-                    cartBusyId === selectedProduct.id ||
-                    selectedProduct.license?.status === "ACTIVE" ||
-                    !["PAID", "MANUAL"].includes(selectedProduct.paymentStatus) ||
-                    selectedProduct.adminProgress !== "PASS"
-                  }
-                >
-                  <option value="BASIC">Basic</option>
-                  <option value="PREMIUM">Premium</option>
-                  <option value="LIFETIME">Lifetime</option>
-                </select>
-                <button
-                  type="button"
-                  onClick={() => handleCartAdd(selectedProduct.id, selectedLicensePlan)}
-                  disabled={
-                    cartBusyId === selectedProduct.id ||
-                    selectedProduct.license?.status === "ACTIVE" ||
-                    !["PAID", "MANUAL"].includes(selectedProduct.paymentStatus) ||
-                    selectedProduct.adminProgress !== "PASS" ||
-                    selectedPlanMatches
-                  }
-                  className={`rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition ${
-                    selectedProduct.license?.status === "ACTIVE"
-                      ? "bg-emerald-100 text-emerald-700 cursor-not-allowed"
-                      : ["PAID", "MANUAL"].includes(selectedProduct.paymentStatus) &&
-                        selectedProduct.adminProgress === "PASS"
-                      ? "bg-slate-900 text-white hover:bg-black"
-                      : "bg-slate-200 text-slate-500 cursor-not-allowed"
-                  }`}
-                >
-                  {selectedProduct.license?.status === "ACTIVE"
-                    ? "Lizenz aktiv"
-                    : cartBusyId === selectedProduct.id
-                    ? "Wird hinzugefügt…"
-                    : !["PAID", "MANUAL"].includes(selectedProduct.paymentStatus)
-                    ? "Grundgebühr zuerst zahlen"
-                    : selectedProduct.adminProgress !== "PASS"
-                    ? "Bestanden erforderlich"
-                    : selectedProduct.license?.status === "EXPIRED"
-                    ? selectedPlanMatches
-                      ? "Im Warenkorb"
-                      : "Zum Warenkorb"
-                    : selectedCartItem
-                    ? selectedPlanMatches
-                      ? "Im Warenkorb"
-                      : "Plan aktualisieren"
-                    : "Zum Warenkorb hinzufügen"}
-                </button>
-                {selectedCartItem && (
-                  <button
-                    type="button"
-                    onClick={() => handleCartRemove(selectedProduct.id)}
-                    disabled={cartBusyId === selectedProduct.id}
-                    className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-800 disabled:opacity-60"
-                  >
-                    Entfernen
-                  </button>
-                )}
-                {selectedProduct.license?.status === "ACTIVE" && (
-                  <span className="text-xs font-semibold text-emerald-700">
-                    Aktivierter Plan: {selectedProduct.license?.plan || "—"}
-                  </span>
-                )}
-                {selectedProduct.license?.status === "EXPIRED" && (
-                  <span className="text-xs font-semibold text-amber-600">
-                    Lizenz abgelaufen – bitte neu buchen.
-                  </span>
-                )}
-                {!["PAID", "MANUAL"].includes(selectedProduct.paymentStatus) && (
-                  <span className="text-xs text-amber-600">Bitte zuerst Grundgebühr bezahlen.</span>
-                )}
-                {["PAID", "MANUAL"].includes(selectedProduct.paymentStatus) &&
-                  selectedProduct.adminProgress !== "PASS" && (
-                    <span className="text-xs text-amber-600">Prüfergebnis ausstehend.</span>
-                  )}
-              </div>
-            </div>
-          ) : (
-            <p className="mt-3 text-sm text-slate-600">Bitte ein Produkt auswählen, um einen Lizenzplan zu wählen.</p>
-          )}
-        </section>
+        <PrecheckStatusCard state={statusState} rightColumn={productsPanel} />
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -820,98 +1211,168 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                 Mehrere Lizenzpläne zusammen bezahlen. Rabatte werden automatisch pro Produkt berechnet.
               </p>
             </div>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
-              {licenseCart.items.length} Produkte
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                {licenseCart.items.length} Produkte
+              </span>
+              {cartHasItems && (
+                <>
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
+                    {cartEligibleCount} verfügbar
+                  </span>
+                  {cartIneligibleCount > 0 && (
+                    <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-100">
+                      {cartIneligibleCount} nicht verfügbar
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
           </div>
 
           {cartLoading ? (
             <p className="mt-4 text-sm text-slate-500">Warenkorb wird geladen…</p>
           ) : !cartHasItems ? (
-            <p className="mt-4 text-sm text-slate-500">Noch keine Lizenzpläne im Warenkorb.</p>
+            <div className="mt-4 space-y-2">
+              <p className="text-sm text-slate-500">Noch keine Lizenzpläne im Warenkorb.</p>
+              {cartMessage && <p className="text-xs text-amber-700">{cartMessage}</p>}
+            </div>
           ) : (
-            <div className="mt-4 space-y-3">
-              {licenseCart.items.map((item) => {
-                const planLabel =
-                  item.plan === "BASIC" ? "Basic" : item.plan === "PREMIUM" ? "Premium" : "Lifetime";
-                return (
-                  <div
-                    key={item.id}
-                    className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 ${
-                      item.eligible ? "border-slate-200 bg-white" : "border-amber-200 bg-amber-50/60"
-                    }`}
-                  >
-                    <div className="space-y-1">
-                      <div className="text-sm font-semibold text-slate-900">{item.productName}</div>
-                      <div className="text-xs text-slate-500">
-                        {planLabel} · Rabatt {item.discountPercent}%
-                      </div>
-                      {!item.eligible && (
-                        <div className="text-xs font-semibold text-amber-700">{cartReasonLabel(item.reason)}</div>
-                      )}
-                    </div>
-                    <div className="text-right space-y-1">
-                      <div className="text-sm font-semibold text-slate-900">
-                        {formatNetEur(item.finalPriceCents)}
-                      </div>
-                      {item.savingsCents > 0 && (
-                        <div className="text-xs text-emerald-700">- {formatNetEur(item.savingsCents)}</div>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleCartRemove(item.productId)}
-                      disabled={cartBusyId === item.productId}
-                      className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-800 disabled:opacity-60"
+            <div className="mt-4 grid gap-4 lg:grid-cols-[1.6fr,0.8fr]">
+              <div className="space-y-3">
+                {licenseCart.items.map((item) => {
+                  const cartPlanSelection = licenseSelections[item.productId] || item.plan;
+                  const planChanged = cartPlanSelection !== item.plan;
+                  const chip =
+                    item.reason === "GRUNDGEBUEHR_OFFEN"
+                      ? {
+                          label: "Grundgebühr offen → Jetzt zahlen",
+                          onClick: () => scrollToProduct(item.productId),
+                        }
+                      : item.reason === "PRUEFUNG_OFFEN"
+                      ? {
+                          label: "Prüfung offen → Status ansehen",
+                          onClick: () => focusProductStatus(item.productId),
+                        }
+                      : null;
+                  return (
+                    <div
+                      key={item.id}
+                      className={`flex flex-wrap items-start justify-between gap-3 rounded-xl border px-4 py-3 ${
+                        item.eligible ? "border-slate-200 bg-white" : "border-amber-200 bg-amber-50/60"
+                      }`}
                     >
-                      Entfernen
-                    </button>
+                      <div className="min-w-[220px] space-y-2">
+                        <div>
+                          <div className="text-sm font-semibold text-slate-900">{item.productName}</div>
+                          <div className="text-xs text-slate-500">{item.productBrand || "—"}</div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                          <span>Rabatt {item.discountPercent}%</span>
+                          {!item.eligible && (
+                            <span className="font-semibold text-amber-700">{cartReasonLabel(item.reason)}</span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <select
+                            className="rounded-lg border border-slate-200 px-3 py-2 text-xs"
+                            value={cartPlanSelection}
+                            onChange={(e) =>
+                              setLicenseSelections((prev) => ({ ...prev, [item.productId]: e.target.value }))
+                            }
+                            disabled={cartBusyId === item.productId || item.reason === "LIZENZ_AKTIV"}
+                          >
+                            <option value="BASIC">Basic</option>
+                            <option value="PREMIUM">Premium</option>
+                            <option value="LIFETIME">Lifetime</option>
+                          </select>
+                          <PlanComparePopover />
+                          {planChanged && (
+                            <button
+                              type="button"
+                              onClick={() => handleCartAdd(item.productId, cartPlanSelection)}
+                              disabled={cartBusyId === item.productId}
+                              className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-black disabled:opacity-60"
+                            >
+                              {cartBusyId === item.productId ? "Aktualisiere…" : "Plan aktualisieren"}
+                            </button>
+                          )}
+                        </div>
+                        {chip && (
+                          <button
+                            type="button"
+                            onClick={chip.onClick}
+                            className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold text-amber-700 transition hover:border-amber-300"
+                          >
+                            {chip.label}
+                          </button>
+                        )}
+                      </div>
+                      <div className="space-y-2 text-right">
+                        <div className="text-sm font-semibold text-slate-900">
+                          {formatNetEur(item.finalPriceCents)}
+                        </div>
+                        {item.savingsCents > 0 && (
+                          <div className="text-xs text-emerald-700">- {formatNetEur(item.savingsCents)}</div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleCartRemove(item.productId)}
+                          disabled={cartBusyId === item.productId}
+                          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-800 disabled:opacity-60"
+                        >
+                          Entfernen
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="h-fit rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-4 text-sm text-slate-700 lg:sticky lg:top-6">
+                <div className="text-sm font-semibold text-slate-900">Zusammenfassung</div>
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span>Netto</span>
+                    <span className="font-semibold">{formatEur(cartNetTotalCents)}</span>
                   </div>
-                );
-              })}
+                  <div className="flex items-center justify-between">
+                    <span>MwSt. (19%)</span>
+                    <span className="font-semibold">{formatEur(cartVatCents)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-base font-semibold text-slate-900">
+                    <span>Brutto</span>
+                    <span>{formatEur(licenseCart.totals.totalCents)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-emerald-700">
+                    <span>Ersparnis</span>
+                    <span className="font-semibold">- {formatEur(licenseCart.totals.savingsCents)}</span>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                  <span>{cartEligibleCount} verfügbar</span>
+                  {cartIneligibleCount > 0 && <span>· {cartIneligibleCount} nicht verfügbar</span>}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCartCheckout}
+                  disabled={!cartHasEligibleItems || cartCheckoutBusy || cartLoading || cartHasIneligibleItems}
+                  className={`mt-4 w-full rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition ${
+                    cartHasEligibleItems && !cartHasIneligibleItems
+                      ? "bg-slate-900 text-white hover:bg-black"
+                      : "bg-slate-200 text-slate-500 cursor-not-allowed"
+                  }`}
+                >
+                  {cartCheckoutBusy ? "Starte Checkout…" : "Lizenzpläne bezahlen"}
+                </button>
+                {cartHasIneligibleItems && (
+                  <p className="mt-3 text-xs text-amber-600">
+                    Entfernen Sie nicht verfügbare Produkte, um fortzufahren.
+                  </p>
+                )}
+                {cartMessage && <p className="mt-2 text-xs text-amber-700">{cartMessage}</p>}
+              </div>
             </div>
           )}
-
-          {cartHasItems && (
-            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-slate-700">
-              <div className="flex items-center justify-between">
-                <span>Zwischensumme</span>
-                <span className="font-semibold">{formatNetEur(licenseCart.totals.baseCents)}</span>
-              </div>
-              <div className="mt-1 flex items-center justify-between text-emerald-700">
-                <span>Ersparnis</span>
-                <span className="font-semibold">- {formatNetEur(licenseCart.totals.savingsCents)}</span>
-              </div>
-              <div className="mt-2 flex items-center justify-between text-base font-semibold text-slate-900">
-                <span>Gesamt</span>
-                <span className="text-right">
-                  <span className="block">{formatNetEur(licenseCart.totals.totalCents)}</span>
-                  <span className="block text-xs font-semibold text-slate-500">(zzgl. MwSt.)</span>
-                </span>
-              </div>
-            </div>
-          )}
-
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={handleCartCheckout}
-              disabled={!cartHasEligibleItems || cartCheckoutBusy || cartLoading || cartHasIneligibleItems}
-              className={`rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition ${
-                cartHasEligibleItems && !cartHasIneligibleItems
-                  ? "bg-slate-900 text-white hover:bg-black"
-                  : "bg-slate-200 text-slate-500 cursor-not-allowed"
-              }`}
-            >
-              {cartCheckoutBusy ? "Starte Checkout…" : "Lizenzpläne bezahlen"}
-            </button>
-            {cartHasIneligibleItems && (
-              <span className="text-xs text-amber-600">
-                Entfernen Sie nicht verfügbare Produkte, um fortzufahren.
-              </span>
-            )}
-            {cartMessage && <span className="text-xs text-amber-700">{cartMessage}</span>}
-          </div>
         </section>
 
         <section id="billing-licenses" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -1007,48 +1468,82 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                 placeholder="Produktname"
                 value={newProduct.productName}
                 onChange={(e) => setNewProduct((p) => ({ ...p, productName: e.target.value }))}
+                required
               />
               <input
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
                 placeholder="Marke"
                 value={newProduct.brand}
                 onChange={(e) => setNewProduct((p) => ({ ...p, brand: e.target.value }))}
+                required
               />
-              <input
+              <select
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                placeholder="Kategorie"
                 value={newProduct.category}
                 onChange={(e) => setNewProduct((p) => ({ ...p, category: e.target.value }))}
-              />
+                required
+              >
+                <option value="">Kategorie auswählen</option>
+                <option value="Ausbildung">Ausbildung</option>
+                <option value="Auto & Motorrad">Auto &amp; Motorrad</option>
+                <option value="Baby">Baby</option>
+                <option value="Baumarkt">Baumarkt</option>
+                <option value="Beleuchtung">Beleuchtung</option>
+                <option value="Bücher">Bücher</option>
+                <option value="Bürobedarf & Schreibwaren">Bürobedarf &amp; Schreibwaren</option>
+                <option value="Computer & Zubehör">Computer &amp; Zubehör</option>
+                <option value="DVD & Blu-ray">DVD &amp; Blu-ray</option>
+                <option value="Elektro-Großgeräte">Elektro-Großgeräte</option>
+                <option value="Elektronik & Foto">Elektronik &amp; Foto</option>
+                <option value="Garten">Garten</option>
+                <option value="Gewerbe, Industrie & Wissenschaft">Gewerbe, Industrie &amp; Wissenschaft</option>
+                <option value="Handgefertigte Produkte">Handgefertigte Produkte</option>
+                <option value="Haustierbedarf">Haustierbedarf</option>
+                <option value="Kamera & Foto">Kamera &amp; Foto</option>
+                <option value="Kosmetik & Pflege">Kosmetik &amp; Pflege</option>
+                <option value="Küche, Haushalt & Wohnen">Küche, Haushalt &amp; Wohnen</option>
+                <option value="Lebensmittel & Getränke">Lebensmittel &amp; Getränke</option>
+                <option value="Mode">Mode</option>
+                <option value="Musikinstrumente & DJ-Equipment">Musikinstrumente &amp; DJ-Equipment</option>
+                <option value="Software">Software</option>
+                <option value="Spiele & Gaming">Spiele &amp; Gaming</option>
+                <option value="Spielzeug">Spielzeug</option>
+                <option value="Sport & Freizeit">Sport &amp; Freizeit</option>
+              </select>
               <input
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
                 placeholder="Artikelnummer"
                 value={newProduct.code}
                 onChange={(e) => setNewProduct((p) => ({ ...p, code: e.target.value }))}
+                required
               />
               <input
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm md:col-span-2"
                 placeholder="Spezifikationen"
                 value={newProduct.specs}
                 onChange={(e) => setNewProduct((p) => ({ ...p, specs: e.target.value }))}
+                required
               />
               <input
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
                 placeholder="Größe / Maße"
                 value={newProduct.size}
                 onChange={(e) => setNewProduct((p) => ({ ...p, size: e.target.value }))}
+                required
               />
               <input
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
                 placeholder="Hergestellt in"
                 value={newProduct.madeIn}
                 onChange={(e) => setNewProduct((p) => ({ ...p, madeIn: e.target.value }))}
+                required
               />
               <input
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm md:col-span-2"
                 placeholder="Material"
                 value={newProduct.material}
                 onChange={(e) => setNewProduct((p) => ({ ...p, material: e.target.value }))}
+                required
               />
               <div className="md:col-span-2 flex items-center gap-3">
                 <button
@@ -1065,220 +1560,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
           )}
         </section>
 
-        <section className="space-y-3" id="products-section">
-          <button
-            type="button"
-            onClick={() => setShowProducts((open) => !open)}
-            className="flex w-full items-center justify-between gap-3 text-left"
-            aria-expanded={showProducts}
-          >
-            <h2 className="text-lg font-semibold text-slate-900">Ihre Produkte</h2>
-            <span className={`text-slate-400 transition ${showProducts ? "rotate-180" : ""}`}>▾</span>
-          </button>
-          {productsMounted && (
-            <div
-              className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${
-                showProducts ? "max-h-[2200px] opacity-100" : "max-h-0 opacity-0"
-              }`}
-            >
-              {products.length === 0 && <p className="text-slate-600">Noch keine Produkte erfasst.</p>}
-              <div className="grid gap-4">
-                {products.map((p: any) => {
-                  const baseFeePaid = ["PAID", "MANUAL"].includes(p.paymentStatus);
-                  const hasPassed = p.adminProgress === "PASS";
-                  const licenseActive = p.license?.status === "ACTIVE";
-                  const hasCertificate = Boolean(p.certificate?.pdfUrl || p.certificate?.id);
-                  const progressLabel = getProgressLabel(p.adminProgress, p.status, hasCertificate);
-                  const showPassed = progressLabel === "Bestanden";
-                  return (
-                  <div key={p.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <div className="text-lg font-semibold text-slate-900">{p.name}</div>
-                    <div className="text-sm text-slate-500">{p.brand}</div>
-                  </div>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
-                    Status: {p.status}
-                  </span>
-                </div>
-
-                <div className="mt-3 flex flex-wrap items-center gap-3">
-                  {baseFeePaid ? (
-                    <>
-                      <span className="text-xs font-semibold text-emerald-700">Grundgebühr bezahlt</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const order = baseFeeOrdersByProductId[p.id];
-                          if (order?.id) handleReceipt(order.id);
-                        }}
-                        disabled={!baseFeeOrdersByProductId[p.id]?.id}
-                        className={`rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition ${
-                          baseFeeOrdersByProductId[p.id]?.id
-                            ? "bg-slate-900 text-white hover:bg-black"
-                            : "bg-slate-200 text-slate-500 cursor-not-allowed"
-                        }`}
-                      >
-                        Rechnung Grundgebühr
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <select
-                        className="rounded-lg border border-slate-200 px-3 py-2 text-xs"
-                        value={baseFeeSelections[p.id] || "standard"}
-                        onChange={(e) => setBaseFeeSelections((prev) => ({ ...prev, [p.id]: e.target.value }))}
-                        disabled={baseFeePaying === p.id}
-                      >
-                        <option value="standard">Grundgebühr (Standard)</option>
-                        <option value="priority">Priority</option>
-                      </select>
-                      <button
-                        type="button"
-                        onClick={() => handleBaseFeePay(p.id, baseFeeSelections[p.id] || "standard")}
-                        disabled={baseFeePaying === p.id}
-                        className={`rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition ${
-                          baseFeePaying === p.id ? "bg-slate-300 text-slate-600" : "bg-slate-900 text-white hover:bg-black"
-                        }`}
-                      >
-                        {baseFeePaying === p.id ? "Starte Zahlung…" : "Grundgebühr zahlen"}
-                      </button>
-                    </>
-                  )}
-                </div>
-
-                <div className="mt-3 flex flex-wrap items-center gap-3">
-                  {(() => {
-                    const selectedPlan = licenseSelections[p.id] || p.license?.plan || "BASIC";
-                    const cartItem = cartItemsByProductId.get(p.id);
-                    const planMatches = cartItem?.plan === selectedPlan;
-                    return (
-                      <>
-                  <select
-                    className="rounded-lg border border-slate-200 px-3 py-2 text-xs"
-                    value={selectedPlan}
-                    onChange={(e) => setLicenseSelections((prev) => ({ ...prev, [p.id]: e.target.value }))}
-                    disabled={
-                      cartBusyId === p.id || licenseActive || !baseFeePaid || !hasPassed
-                    }
-                  >
-                    <option value="BASIC">Basic</option>
-                    <option value="PREMIUM">Premium</option>
-                    <option value="LIFETIME">Lifetime</option>
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => handleCartAdd(p.id, selectedPlan)}
-                    disabled={
-                      cartBusyId === p.id || licenseActive || !baseFeePaid || !hasPassed || planMatches
-                    }
-                    className={`rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition ${
-                      licenseActive
-                        ? "bg-emerald-100 text-emerald-700 cursor-not-allowed"
-                        : baseFeePaid && hasPassed
-                        ? "bg-slate-900 text-white hover:bg-black"
-                        : "bg-slate-200 text-slate-500 cursor-not-allowed"
-                    }`}
-                  >
-                    {licenseActive
-                      ? "Lizenz aktiv"
-                      : cartBusyId === p.id
-                      ? "Wird hinzugefügt…"
-                      : !baseFeePaid
-                      ? "Grundgebühr zuerst zahlen"
-                      : !hasPassed
-                      ? "Bestanden erforderlich"
-                      : cartItem
-                      ? planMatches
-                        ? "Im Warenkorb"
-                        : "Plan aktualisieren"
-                      : "Zum Warenkorb"}
-                  </button>
-                  {cartItem && (
-                    <button
-                      type="button"
-                      onClick={() => handleCartRemove(p.id)}
-                      disabled={cartBusyId === p.id}
-                      className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-800 disabled:opacity-60"
-                    >
-                      Entfernen
-                    </button>
-                  )}
-                      </>
-                    );
-                  })()}
-                  {p.license?.status === "ACTIVE" && (
-                    <span className="text-xs font-semibold text-emerald-700">
-                      Aktivierter Plan: {p.license?.plan || "—"}
-                    </span>
-                  )}
-                  {p.license?.status === "EXPIRED" && (
-                    <span className="text-xs font-semibold text-amber-600">Lizenz abgelaufen – bitte neu buchen.</span>
-                  )}
-                  {!baseFeePaid && (
-                    <span className="text-xs text-amber-600">Bitte zuerst Grundgebühr bezahlen.</span>
-                  )}
-                  {baseFeePaid && !hasPassed && (
-                    <span className="text-xs text-amber-600">Prüfergebnis ausstehend.</span>
-                  )}
-                </div>
-
-                <div className="mt-3 space-y-2">
-                  {p.certificate ? (
-                    <a
-                      href={`/api/certificates/${p.id}/download`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-black"
-                    >
-                      Zertifikat öffnen (PDF)
-                    </a>
-                  ) : (
-                    <p className="text-sm text-amber-600">
-                      Prüfungsverlauf: {progressLabel}
-                      {showPassed && (
-                        <svg
-                          className="ml-2 inline-block h-4 w-4 text-emerald-600"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.704 5.29a1 1 0 01.006 1.414l-7.5 7.57a1 1 0 01-1.42 0L3.29 9.77a1 1 0 011.42-1.41l3.08 3.11 6.79-6.86a1 1 0 011.414-.01z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      )}
-                    </p>
-                  )}
-                  <div className="flex justify-center">
-                    <span className="rounded-lg bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
-                      Prüfungsverlauf: {progressLabel}
-                      {showPassed && (
-                        <svg
-                          className="ml-1 inline-block h-3.5 w-3.5 text-emerald-600"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.704 5.29a1 1 0 01.006 1.414l-7.5 7.57a1 1 0 01-1.42 0L3.29 9.77a1 1 0 011.42-1.41l3.08 3.11 6.79-6.86a1 1 0 011.414-.01z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      )}
-                    </span>
-                  </div>
-                </div>
               </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </section>
-
-      </div>
     </div>
   );
 }

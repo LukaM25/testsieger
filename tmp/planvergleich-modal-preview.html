@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Planvergleich Modal Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-screen bg-slate-50">
+    <div class="min-h-screen p-8">
+      <div class="mx-auto max-w-5xl rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h1 class="text-2xl font-semibold text-slate-900">Dashboard Mock</h1>
+        <p class="mt-2 text-sm text-slate-500">Planvergleich overlay preview</p>
+        <div class="mt-6 h-40 rounded-2xl border border-dashed border-slate-200 bg-slate-50"></div>
+      </div>
+    </div>
+
+    <!-- Modal overlay preview -->
+    <div class="fixed inset-0 z-50 flex items-center justify-center">
+      <div class="absolute inset-0 bg-slate-950/30 backdrop-blur-sm"></div>
+      <div class="relative z-10 aspect-video w-[96vw] max-w-none max-h-[90vh] origin-center scale-50">
+        <div class="flex h-full flex-col rounded-3xl bg-white p-6 shadow-2xl">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div class="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-500">PLANVERGLEICH</div>
+              <div class="text-xl font-semibold text-slate-900">Lizenzpläne im Überblick</div>
+            </div>
+            <button class="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">Schließen</button>
+          </div>
+
+          <div class="mt-5 grid flex-1 items-stretch gap-6 overflow-y-auto md:grid-cols-3">
+            <div class="flex h-full flex-col items-center gap-4">
+              <div class="text-lg font-semibold text-slate-900">Basic</div>
+              <div class="flex h-full w-full flex-col justify-between rounded-[28px] border border-sky-200/70 bg-gradient-to-b from-sky-300 via-sky-200 to-sky-50 p-6 text-center font-semibold shadow-[0_28px_60px_-40px_rgba(15,23,42,0.65)]">
+                <div class="space-y-6">
+                  <div class="space-y-2">
+                    <div class="text-[15.4px] font-semibold text-slate-900">Nutzung:</div>
+                    <div class="space-y-1 text-[15.4px] text-slate-800">
+                      <div>1 Verkaufskanal</div>
+                      <div>Sprache: Deutsch</div>
+                    </div>
+                  </div>
+                  <div class="space-y-2">
+                    <div class="text-[15.4px] font-semibold text-slate-900">Inhalt:</div>
+                    <div class="space-y-1 text-[15.4px] text-slate-800">
+                      <div>- Siegel</div>
+                      <div>- Zertifikat</div>
+                      <div>- Prüfbericht</div>
+                    </div>
+                  </div>
+                  <div class="space-y-1 text-[15.4px] text-slate-800 w-full max-w-[240px] mx-auto">
+                    <div class="flex items-center justify-between gap-4 tabular-nums">
+                      <span class="text-left">1 Prod.</span>
+                      <span class="text-right">0,99 € / Tag</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-4 tabular-nums">
+                      <span class="text-left">2 Prod. -20%</span>
+                      <span class="text-right">0,79 € / Tag</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-4 tabular-nums">
+                      <span class="text-left">3 Prod. -30%</span>
+                      <span class="text-right">0,69 € / Tag</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-6 space-y-1 text-[12.1px] leading-relaxed text-slate-700/80">
+                  <div>Abrechnung 365 Tage / Jahr</div>
+                  <div>Lizenzverlängerung jährlich.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex h-full flex-col items-center gap-4">
+              <div class="text-lg font-semibold text-slate-900">Premium</div>
+              <div class="flex h-full w-full flex-col justify-between rounded-[28px] border border-indigo-400/30 bg-gradient-to-b from-indigo-500 via-indigo-700 to-slate-950 p-6 text-center font-semibold shadow-[0_28px_60px_-40px_rgba(15,23,42,0.65)]">
+                <div class="space-y-6">
+                  <div class="space-y-2">
+                    <div class="text-[15.4px] font-semibold text-white">Nutzung:</div>
+                    <div class="space-y-1 text-[15.4px] text-white/90">
+                      <div>Alle Verkaufskanäle</div>
+                      <div>Alle Sprachen</div>
+                    </div>
+                  </div>
+                  <div class="space-y-2">
+                    <div class="text-[15.4px] font-semibold text-white">Inhalt:</div>
+                    <div class="space-y-1 text-[15.4px] text-white/90">
+                      <div>- Siegel</div>
+                      <div>- Zertifikat</div>
+                      <div>- Prüfbericht</div>
+                    </div>
+                  </div>
+                  <div class="space-y-1 text-[15.4px] text-white/90 w-full max-w-[240px] mx-auto">
+                    <div class="flex items-center justify-between gap-4 tabular-nums">
+                      <span class="text-left">1 Prod.</span>
+                      <span class="text-right">1,47 € / Tag</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-4 tabular-nums">
+                      <span class="text-left">2 Prod. -20%</span>
+                      <span class="text-right">1,18 € / Tag</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-4 tabular-nums">
+                      <span class="text-left">3 Prod. -30%</span>
+                      <span class="text-right">1,03 € / Tag</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-6 space-y-1 text-[12.1px] leading-relaxed text-white/70">
+                  <div>Abrechnung 365 Tage / Jahr</div>
+                  <div>Lizenzverlängerung jährlich.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex h-full flex-col items-center gap-4">
+              <div class="text-lg font-semibold text-slate-900">Lifetime</div>
+              <div class="flex h-full w-full flex-col justify-between rounded-[28px] border border-blue-500/20 bg-gradient-to-b from-blue-950 via-slate-950 to-black p-6 text-center font-semibold shadow-[0_28px_60px_-40px_rgba(15,23,42,0.65)]">
+                <div class="space-y-6">
+                  <div class="space-y-2">
+                    <div class="text-[15.4px] font-semibold text-white">Nutzung:</div>
+                    <div class="space-y-1 text-[15.4px] text-white/90">
+                      <div>Alle Verkaufskanäle</div>
+                      <div>Alle Sprachen</div>
+                    </div>
+                  </div>
+                  <div class="space-y-2">
+                    <div class="text-[15.4px] font-semibold text-white">Inhalt:</div>
+                    <div class="space-y-1 text-[15.4px] text-white/90">
+                      <div>- Siegel</div>
+                      <div>- Zertifikat</div>
+                      <div>- Prüfbericht</div>
+                    </div>
+                  </div>
+                  <div class="space-y-1 text-[15.4px] text-white/90 w-full max-w-[240px] mx-auto">
+                    <div class="flex items-center justify-between gap-4 tabular-nums">
+                      <span class="text-left">1 Prod.</span>
+                      <span class="text-right">1.466 €</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-4 tabular-nums">
+                      <span class="text-left">2 Prod. -20%</span>
+                      <span class="text-right">2.346 €</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-4 tabular-nums">
+                      <span class="text-left">3 Prod. -30%</span>
+                      <span class="text-right">3.079 €</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-6 space-y-1 text-[12.1px] leading-relaxed text-white/70">
+                  <div>Abrechnung einmalig</div>
+                  <div>Lizenzverlängerung jährlich.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

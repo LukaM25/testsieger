@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useLocale } from "@/components/LocaleProvider";
 import ProductPayButton from "@/app/dashboard/ProductPayButton";
 import { usePrecheckStatusData, ProductStatusPayload } from "@/hooks/usePrecheckStatusData";
@@ -8,6 +9,7 @@ import { useProductStatusPoll } from "@/hooks/useProductStatusPoll";
 type Props = {
   state: ReturnType<typeof usePrecheckStatusData>;
   className?: string;
+  rightColumn?: ReactNode;
 };
 
 const deriveStage = (product: ProductStatusPayload | null) => {
@@ -21,7 +23,7 @@ const deriveStage = (product: ProductStatusPayload | null) => {
   return { key: "PRECHECK", percent: 0 } as const;
 };
 
-export function PrecheckStatusCard({ state, className = "" }: Props) {
+export function PrecheckStatusCard({ state, className = "", rightColumn }: Props) {
   const { locale } = useLocale();
   const tr = (de: string, en: string) => (locale === "en" ? en : de);
   const { products, selectedProductId, setSelectedProductId, productStatus, productsLoading, statusLoading, statusError } = state;
@@ -103,85 +105,89 @@ export function PrecheckStatusCard({ state, className = "" }: Props) {
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[1.4fr,1fr]">
-        <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 shadow-inner">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-slate-900">{tr("Produkt auswählen", "Choose a product")}</span>
-            <span className="text-xs text-slate-500">{products.length || 0} {tr("Produkte", "products")}</span>
-          </div>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            {productsLoading
-              ? Array.from({ length: 4 }).map((_, idx) => (
-                  <div
-                    key={idx}
-                    className="h-[68px] w-full animate-pulse rounded-xl border border-slate-200 bg-white px-3 py-2"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="h-3 w-24 rounded bg-slate-200" />
-                      <div className="h-3 w-12 rounded bg-slate-200" />
-                    </div>
-                    <div className="mt-2 h-3 w-32 rounded bg-slate-200" />
-                  </div>
-                ))
-              : products.map((p) => {
-                  const checked = selectedProductId === p.id;
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setSelectedProductId(checked ? "" : p.id)}
-                      className={`flex w-full flex-col items-start rounded-xl border px-3 py-2 text-left transition ${
-                        checked ? "border-blue-500 bg-white shadow-sm" : "border-slate-200 bg-white hover:border-slate-300"
-                      }`}
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 shadow-inner">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-slate-900">{tr("Produkt auswählen", "Choose a product")}</span>
+              <span className="text-xs text-slate-500">{products.length || 0} {tr("Produkte", "products")}</span>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {productsLoading
+                ? Array.from({ length: 4 }).map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="h-[68px] w-full animate-pulse rounded-xl border border-slate-200 bg-white px-3 py-2"
                     >
-                      <div className="flex w-full items-center justify-between">
-                        <span className="text-sm font-semibold text-slate-900">{p.name}</span>
-                        <span className={`text-[11px] font-semibold uppercase tracking-[0.16em] ${checked ? "text-blue-600" : "text-slate-500"}`}>
-                          {p.adminProgress}
-                        </span>
+                      <div className="flex items-center justify-between">
+                        <div className="h-3 w-24 rounded bg-slate-200" />
+                        <div className="h-3 w-12 rounded bg-slate-200" />
                       </div>
-                      <span className="text-xs text-slate-500">{p.brand || "—"}</span>
-                    </button>
-                  );
-                })}
-            {!productsLoading && products.length === 0 && (
-              <p className="text-sm text-slate-600">
-                {tr("Bitte melden oder Pre-Check starten, um Produkte zu sehen.", "Sign in or submit a pre-check to see your products.")}
+                      <div className="mt-2 h-3 w-32 rounded bg-slate-200" />
+                    </div>
+                  ))
+                : products.map((p) => {
+                    const checked = selectedProductId === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setSelectedProductId(checked ? "" : p.id)}
+                        className={`flex w-full flex-col items-start rounded-xl border px-3 py-2 text-left transition ${
+                          checked ? "border-blue-500 bg-white shadow-sm" : "border-slate-200 bg-white hover:border-slate-300"
+                        }`}
+                      >
+                        <div className="flex w-full items-center justify-between">
+                          <span className="text-sm font-semibold text-slate-900">{p.name}</span>
+                          <span className={`text-[11px] font-semibold uppercase tracking-[0.16em] ${checked ? "text-blue-600" : "text-slate-500"}`}>
+                            {p.adminProgress}
+                          </span>
+                        </div>
+                        <span className="text-xs text-slate-500">{p.brand || "—"}</span>
+                      </button>
+                    );
+                  })}
+              {!productsLoading && products.length === 0 && (
+                <p className="text-sm text-slate-600">
+                  {tr("Bitte melden oder Pre-Check starten, um Produkte zu sehen.", "Sign in or submit a pre-check to see your products.")}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+            <div className="text-sm font-semibold text-slate-900">{tr("Aktionen", "Actions")}</div>
+            {!productStatus && (
+              <p className="mt-2 text-sm text-slate-600">
+                {tr("Wähle ein Produkt, um zu bezahlen oder das Zertifikat zu sehen.", "Select a product to pay or view the certificate.")}
               </p>
             )}
+            {productStatus && isOptimistic ? (
+              <p className="mt-2 text-sm text-slate-600">
+                {tr("Bitte kurz warten, das Produkt wird gespeichert.", "Please wait a moment while we save your product.")}
+              </p>
+            ) : productStatus ? (
+              <div className="mt-3 space-y-2">
+                <ProductPayButton
+                  productId={productStatus.id}
+                  status={productStatus.status}
+                  paymentStatus={productStatus.paymentStatus}
+                  forceEnabled
+                />
+                <CertificateAction
+                  productId={productStatus.id}
+                  initialCertificate={productStatus.certificate}
+                  status={productStatus.status}
+                  paymentStatus={productStatus.paymentStatus}
+                  statusLabel={statusBadgeLabel}
+                  showStatusLabel={showStatusBadge}
+                  tr={tr}
+                />
+              </div>
+            ) : null}
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-          <div className="text-sm font-semibold text-slate-900">{tr("Aktionen", "Actions")}</div>
-          {!productStatus && (
-            <p className="mt-2 text-sm text-slate-600">
-              {tr("Wähle ein Produkt, um zu bezahlen oder das Zertifikat zu sehen.", "Select a product to pay or view the certificate.")}
-            </p>
-          )}
-          {productStatus && isOptimistic ? (
-            <p className="mt-2 text-sm text-slate-600">
-              {tr("Bitte kurz warten, das Produkt wird gespeichert.", "Please wait a moment while we save your product.")}
-            </p>
-          ) : productStatus ? (
-            <div className="mt-3 space-y-2">
-              <ProductPayButton
-                productId={productStatus.id}
-                status={productStatus.status}
-                paymentStatus={productStatus.paymentStatus}
-                forceEnabled
-              />
-              <CertificateAction
-                productId={productStatus.id}
-                initialCertificate={productStatus.certificate}
-                status={productStatus.status}
-                paymentStatus={productStatus.paymentStatus}
-                statusLabel={statusBadgeLabel}
-                showStatusLabel={showStatusBadge}
-                tr={tr}
-              />
-            </div>
-          ) : null}
-        </div>
+        {rightColumn ? <div>{rightColumn}</div> : null}
       </div>
 
       <div className="mt-8 space-y-3">

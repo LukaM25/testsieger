@@ -537,15 +537,19 @@ export default function ProduktTestPage() {
             type="button"
             onClick={() => setShowPrecheck((s) => !s)}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowPrecheck((s) => !s); }}
-            className="relative flex w-full flex-col items-center gap-2 rounded-full px-14 py-6 text-center text-white shadow-[0_18px_40px_-16px_rgba(30,96,145,0.5),0_10px_20px_-12px_rgba(11,37,69,0.35)] transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_22px_48px_-14px_rgba(30,96,145,0.5),0_12px_24px_-12px_rgba(11,37,69,0.35)] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1E6091] bg-[linear-gradient(135deg,_#1E6091,_#134074)]"
-            style={{ background: 'linear-gradient(135deg, #1E6091, #134074)' }}
+            className="group relative flex w-full flex-col items-center gap-2 rounded-full px-14 py-6 text-center text-white shadow-[0_18px_40px_-16px_rgba(29,78,216,0.5),0_10px_20px_-12px_rgba(30,58,138,0.35)] transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_22px_48px_-14px_rgba(29,78,216,0.5),0_12px_24px_-12px_rgba(30,58,138,0.35)] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600"
+            style={{ backgroundImage: "linear-gradient(90deg, #1d4ed8 0%, #1e3a8a 55%, #0f172a 100%)" }}
             aria-expanded={showPrecheck}
             aria-controls="precheck-content"
           >
-            <span className="text-2xl font-semibold tracking-[0.18em]">
+            <span
+              className="pointer-events-none absolute inset-0 rounded-full opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+              style={{ backgroundImage: "linear-gradient(90deg, #2563eb 0%, #1e40af 55%, #0f172a 100%)" }}
+            />
+            <span className="relative z-10 text-2xl font-semibold tracking-[0.18em]">
               {tr('Kostenloser Pre-Check', 'Free pre-check')}
             </span>
-            <span className="text-sm font-semibold uppercase tracking-[0.28em] text-white/90 inline-flex items-center justify-center gap-2">
+            <span className="relative z-10 text-sm font-semibold uppercase tracking-[0.28em] text-white/90 inline-flex items-center justify-center gap-2">
               {tr('(Dauert nur 3 Minuten)', '(Takes only 3 minutes)')}
               <svg
                 aria-hidden="true"
@@ -561,7 +565,7 @@ export default function ProduktTestPage() {
               </svg>
             </span>
             <svg
-              className={`h-6 w-6 transition-transform duration-200 ${showPrecheck ? 'rotate-180' : 'rotate-0'}`}
+              className={`relative z-10 h-6 w-6 transition-transform duration-200 ${showPrecheck ? 'rotate-180' : 'rotate-0'}`}
               viewBox="0 0 20 20"
               fill="currentColor"
               aria-hidden="true"
