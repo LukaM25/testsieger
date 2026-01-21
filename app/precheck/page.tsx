@@ -1270,7 +1270,7 @@ export default function PrecheckPage() {
                           className="mt-4 inline-flex flex-col items-center gap-3 rounded-2xl bg-emerald-400/20 px-8 py-[1.1rem] text-[1.06rem] md:text-[1.21rem] font-semibold uppercase tracking-[0.18em] text-white/95"
                         >
                           <span>{discountLabel}</span>
-                          <span>{tr(`ERSPARNISS: ${savingsLabel}`, `SAVINGS: ${savingsLabel}`)}</span>
+                          <span>{tr(`ERSPARNIS: ${savingsLabel}`, `SAVINGS: ${savingsLabel}`)}</span>
                         </div>
                       )}
                     </div>
