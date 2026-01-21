@@ -138,6 +138,27 @@ export function PrecheckStatusCard({ state, className = "", rightColumn, cartPla
     return plan;
   };
 
+  const cartIcon = (
+    <svg
+      aria-hidden="true"
+      className="h-3 w-3"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="8" cy="21" r="1" />
+      <circle cx="19" cy="21" r="1" />
+      <path d="M2 2h3l2.6 12.6a2 2 0 0 0 2 1.4h7.6a2 2 0 0 0 2-1.6L21 6H6" />
+    </svg>
+  );
+
+  const cartPillStyle = {
+    backgroundImage: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 55%, #d97706 100%)",
+  };
+
   const stageTagLabel = labelForStage(stage.key);
   const stageTagTone = toneForStage(stage.key);
   const newProductCount = products.filter((product) => deriveStage(product).key === "PRECHECK").length;
@@ -226,10 +247,23 @@ export function PrecheckStatusCard({ state, className = "", rightColumn, cartPla
                         <div className="mt-1 flex w-full items-center justify-between gap-2 text-xs text-slate-500">
                           <span>{p.brand || "—"}</span>
                           {plan && (
-                            <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ring-1 ${
-                              activePlan ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-slate-100 text-slate-700 ring-slate-200"
-                            }`}>
-                              {activePlan ? `${tr("Lizenz", "License")} ${plan}` : `${tr("Warenkorb", "Cart")} ${plan}`}
+                            <span
+                              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ring-1 ${
+                                activePlan
+                                  ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                                  : "text-slate-900 ring-amber-200/90 shadow-[0_10px_30px_-18px_rgba(245,158,11,0.65)]"
+                              }`}
+                              style={activePlan ? undefined : cartPillStyle}
+                            >
+                              {activePlan ? (
+                                `${tr("Lizenz", "License")} ${plan}`
+                              ) : (
+                                <>
+                                  {cartIcon}
+                                  <span className="sr-only">{tr("Warenkorb", "Cart")}</span>
+                                  <span>{plan}</span>
+                                </>
+                              )}
                             </span>
                           )}
                         </div>
