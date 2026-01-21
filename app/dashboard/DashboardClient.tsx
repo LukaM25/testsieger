@@ -978,7 +978,6 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                   <div className="mt-4 space-y-3">
                     <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                       <span>Lizenzplan</span>
-                      <PlanComparePopover />
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                       {(() => {
@@ -1244,7 +1243,6 @@ export default function DashboardClient({ user }: DashboardClientProps) {
           ) : (
             <span className="text-xs text-slate-500">Kein Produkt ausgewählt</span>
           )}
-          <PlanComparePopover />
         </div>
       </div>
       {planHint && <p className="mt-3 text-sm text-amber-700">{planHint}</p>}
@@ -1288,6 +1286,12 @@ export default function DashboardClient({ user }: DashboardClientProps) {
             !selectedProductHasPassed ||
             planMatchesCart ||
             isBusy;
+
+          const ctaGoldClass =
+            "text-slate-900 shadow-[0_18px_45px_-18px_rgba(245,158,11,0.85)] ring-2 ring-amber-200/90 hover:brightness-110 hover:shadow-[0_22px_55px_-18px_rgba(245,158,11,0.95)]";
+          const ctaGoldStyle = {
+            backgroundImage: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 55%, #d97706 100%)",
+          };
 
           return (
             <div key={plan.name} className="flex h-full flex-col items-center gap-4">
@@ -1345,8 +1349,9 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                 className={`w-full rounded-full px-4 py-2 text-sm font-semibold transition ${
                   actionDisabled
                     ? "bg-slate-200 text-slate-500 cursor-not-allowed"
-                    : "bg-slate-900 text-white hover:bg-black"
+                    : ctaGoldClass
                 }`}
+                style={actionDisabled ? undefined : ctaGoldStyle}
               >
                 {actionLabel}
               </button>
