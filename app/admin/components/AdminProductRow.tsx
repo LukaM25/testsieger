@@ -74,6 +74,7 @@ function AdminProductRow({
   const [sendLoading, setSendLoading] = useState(false);
   const [licensePlansEmailLoading, setLicensePlansEmailLoading] = useState(false);
   const [licensePlansEmailMessage, setLicensePlansEmailMessage] = useState<string | null>(null);
+  const [licensePlansEmailSent, setLicensePlansEmailSent] = useState(false);
   
   const [paymentStatusValue, setPaymentStatusValue] = useState<PaymentStatusOption>(
     (product.paymentStatus as PaymentStatusOption) || 'UNPAID'
@@ -82,6 +83,10 @@ function AdminProductRow({
   useEffect(() => {
     setPaymentStatusValue((product.paymentStatus as PaymentStatusOption) || 'UNPAID');
   }, [product.paymentStatus]);
+
+  useEffect(() => {
+    setLicensePlansEmailSent(false);
+  }, [product.id]);
 
   const [paymentStatusLoading, setPaymentStatusLoading] = useState(false);
   const [paymentStatusMessage, setPaymentStatusMessage] = useState<string | null>(null);
@@ -629,6 +634,7 @@ function AdminProductRow({
                 disabled={licensePlansEmailLoading || !canSendLicensePlansEmail}
                 onClick={async () => {
 	                  setLicensePlansEmailMessage(null);
+                    setLicensePlansEmailSent(false);
 	                  if (!canSendLicensePlansEmail) {
 	                    if (!permissions.canUpdateStatus) {
 	                      setLicensePlansEmailMessage('Keine Berechtigung.');
@@ -660,6 +666,7 @@ function AdminProductRow({
 	                      setLicensePlansEmailMessage(data.error || 'Senden fehlgeschlagen.');
 	                      return;
 	                    }
+                      setLicensePlansEmailSent(true);
 	                    setLicensePlansEmailMessage('E-Mail “Testsieger bestanden + Lizenzpläne” gesendet.');
 	                  } catch (err) {
 	                    console.error(err);
@@ -686,8 +693,24 @@ function AdminProductRow({
 	                        : undefined
 	                }
 	              >
+              <span className="inline-flex items-center gap-2">
                 {licensePlansEmailLoading ? '2. Sende…' : '2. Bestanden - Mail senden'}
-              </button>
+                {licensePlansEmailSent && !licensePlansEmailLoading ? (
+                  <svg
+                    aria-hidden="true"
+                    className="h-3.5 w-3.5 text-emerald-600"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.704 5.29a1 1 0 01.006 1.414l-7.5 7.57a1 1 0 01-1.42 0L3.29 9.77a1 1 0 011.42-1.41l3.08 3.11 6.79-6.86a1 1 0 011.414-.01z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                ) : null}
+              </span>
+            </button>
               {licensePlansEmailMessage && <p className="text-xs text-slate-500">{licensePlansEmailMessage}</p>}
 
               <button
