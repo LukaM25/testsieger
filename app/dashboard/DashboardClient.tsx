@@ -539,26 +539,48 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     }
   };
 
-  const loadLicenseCart = async () => {
+  const loadLicenseCart = async (): Promise<LicenseCartState | null> => {
     setCartLoading(true);
     setCartMessage(null);
     try {
       const res = await fetch("/api/license-cart", { cache: "no-store" });
       if (!res.ok) {
         setCartMessage(res.status === 401 ? "Bitte einloggen, um den Warenkorb zu sehen." : "Warenkorb konnte nicht geladen werden.");
-        return;
+        return null;
       }
       const data = await res.json();
-      setLicenseCart({
+      const nextCart: LicenseCartState = {
         cartId: data.cartId || null,
         items: Array.isArray(data.items) ? data.items : [],
         totals: data.totals || { baseCents: 0, savingsCents: 0, totalCents: 0, itemCount: 0 },
-      });
+      };
+      setLicenseCart(nextCart);
+      return nextCart;
     } catch {
       setCartMessage("Warenkorb konnte nicht geladen werden.");
+      return null;
     } finally {
       setCartLoading(false);
     }
+  };
+
+  const findNextLicenseProductId = (currentId: string, cartItems: LicenseCartItem[]) => {
+    if (products.length === 0) return "";
+    const cartProductIds = new Set(cartItems.map((item) => item.productId));
+    const isEligible = (product: ProductStatusPayload) => {
+      const baseFeePaid = ["PAID", "MANUAL"].includes(product.paymentStatus);
+      const hasPassed = product.adminProgress === "PASS" || Boolean(product.certificate?.id);
+      const licenseActive = product.license?.status === "ACTIVE";
+      return baseFeePaid && hasPassed && !licenseActive && !cartProductIds.has(product.id);
+    };
+    const currentIndex = products.findIndex((product) => product.id === currentId);
+    const startIndex = currentIndex >= 0 ? currentIndex : -1;
+    for (let offset = 1; offset <= products.length; offset += 1) {
+      const index = (startIndex + offset) % products.length;
+      const candidate = products[index];
+      if (candidate && isEligible(candidate)) return candidate.id;
+    }
+    return "";
   };
 
   const handleCartAdd = async (productId: string, plan: string) => {
@@ -587,7 +609,13 @@ export default function DashboardClient({ user }: DashboardClientProps) {
         );
         return;
       }
-      await loadLicenseCart();
+      const updatedCart = await loadLicenseCart();
+      if (updatedCart && productId === selectedProductId) {
+        const nextId = findNextLicenseProductId(productId, updatedCart.items);
+        if (nextId && nextId !== productId) {
+          setSelectedProductId(nextId);
+        }
+      }
     } catch {
       setCartMessage("Produkt konnte nicht hinzugefügt werden.");
     } finally {
