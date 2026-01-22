@@ -881,6 +881,12 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     : !selectedProductHasPassed
     ? "Prüfung noch offen."
     : null;
+  const hasOpenLicensePayments = products.some((product) => {
+    const baseFeePaid = ["PAID", "MANUAL"].includes(product.paymentStatus);
+    const hasPassed = product.adminProgress === "PASS" || Boolean(product.certificate?.id);
+    const licenseActive = product.license?.status === "ACTIVE";
+    return baseFeePaid && hasPassed && !licenseActive;
+  });
 
   const productsPanel = (
     <section
@@ -1226,6 +1232,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
       )}
     </section>
   );
+  const rightColumnPanel = hasOpenLicensePayments ? cartPanel : productsPanel;
 
   const planSelectionSection = (
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -1500,13 +1507,13 @@ export default function DashboardClient({ user }: DashboardClientProps) {
 
         <PrecheckStatusCard
           state={statusState}
-          rightColumn={cartPanel}
+          rightColumn={rightColumnPanel}
           cartPlanByProductId={cartPlanByProductId}
         />
 
-        {planSelectionSection}
+        {hasOpenLicensePayments ? planSelectionSection : null}
 
-        {productsPanel}
+        {hasOpenLicensePayments ? productsPanel : null}
 
         <section id="billing-licenses" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <button
