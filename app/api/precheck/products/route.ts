@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
-import { getCertificateAssetLinks } from '@/lib/certificateAssets';
-import { ensureSignedS3Url } from '@/lib/s3';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -22,63 +20,56 @@ export async function GET() {
       paymentStatus: true,
       createdAt: true,
       certificate: {
-        select: { id: true, status: true, pdfUrl: true, qrUrl: true, reportUrl: true, sealUrl: true },
+        select: { id: true, status: true },
       },
       license: { select: { status: true, plan: true } },
     },
     orderBy: { createdAt: 'desc' },
   });
 
-  const payload = await Promise.all(
-    products.map(async (p) => {
-      const lastPayment = await prisma.order.findFirst({
-        where: { productId: p.id, paidAt: { not: null } },
-        orderBy: { paidAt: 'desc' },
-        select: { paidAt: true },
-      });
-      const assets = p.certificate ? await getCertificateAssetLinks(p.certificate.id) : null;
-      const pdfUrl =
-        assets?.OFFICIAL_PDF ??
-        (p.certificate?.pdfUrl ? await ensureSignedS3Url(p.certificate.pdfUrl) : null);
-      const reportUrl =
-        assets?.UPLOADED_PDF ??
-        (p.certificate?.reportUrl ? await ensureSignedS3Url(p.certificate.reportUrl) : null);
-      const qrUrl =
-        assets?.CERTIFICATE_QR ??
-        (p.certificate?.qrUrl ? await ensureSignedS3Url(p.certificate.qrUrl) : null);
-      const sealUrl =
-        assets?.SEAL_IMAGE ??
-        (p.certificate?.sealUrl ? await ensureSignedS3Url(p.certificate.sealUrl) : null);
+  const productIds = products.map((product) => product.id);
+  const paidAtByProductId: Record<string, Date> = {};
+  if (productIds.length) {
+    const paidOrders = await prisma.order.findMany({
+      where: { productId: { in: productIds }, paidAt: { not: null } },
+      select: { productId: true, paidAt: true },
+      orderBy: { paidAt: 'desc' },
+    });
+    paidOrders.forEach((order) => {
+      if (!order.paidAt) return;
+      if (!paidAtByProductId[order.productId]) {
+        paidAtByProductId[order.productId] = order.paidAt;
+      }
+    });
+  }
 
-      return {
-        id: p.id,
-        name: p.name,
-        brand: p.brand,
-        status: p.status,
-        adminProgress: p.adminProgress,
-        paymentStatus: p.paymentStatus,
-        createdAt: p.createdAt,
-        paidAt: lastPayment?.paidAt ?? null,
-        precheckDiscountPercent: 0,
-        certificate: p.certificate
-          ? {
-              id: p.certificate.id,
-              status: p.certificate.status ?? null,
-              pdfUrl,
-              reportUrl,
-              qrUrl,
-              sealUrl,
-            }
-          : null,
-        license: p.license
-          ? {
-              status: p.license.status,
-              plan: p.license.plan,
-            }
-          : null,
-      };
-    }),
-  );
+  const payload = products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    brand: p.brand,
+    status: p.status,
+    adminProgress: p.adminProgress,
+    paymentStatus: p.paymentStatus,
+    createdAt: p.createdAt,
+    paidAt: paidAtByProductId[p.id] ?? null,
+    precheckDiscountPercent: 0,
+    certificate: p.certificate
+      ? {
+          id: p.certificate.id,
+          status: p.certificate.status ?? null,
+          pdfUrl: null,
+          reportUrl: null,
+          qrUrl: null,
+          sealUrl: null,
+        }
+      : null,
+    license: p.license
+      ? {
+          status: p.license.status,
+          plan: p.license.plan,
+        }
+      : null,
+  }));
 
   return NextResponse.json({
     ok: true,
