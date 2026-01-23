@@ -190,7 +190,7 @@ export function PrecheckStatusCard({ state, className = "", rightColumn, cartPla
         </div>
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-[1.4fr,1fr]">
+      <div className={`mt-6 grid gap-4 ${rightColumn ? "lg:grid-cols-[1.4fr,1fr]" : "lg:grid-cols-1"}`}>
         <div className="space-y-4">
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-400">

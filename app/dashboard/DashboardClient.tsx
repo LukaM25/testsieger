@@ -309,7 +309,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
   );
 
   const statusState = usePrecheckStatusData({ initialProducts: initialStatusProducts });
-  const { products, selectedProductId, setProducts, setSelectedProductId } = statusState;
+  const { products, selectedProductId, setProducts, setSelectedProductId, refresh: refreshStatus } = statusState;
   const selectedProduct = useMemo(
     () => products.find((product) => product.id === selectedProductId) || null,
     [products, selectedProductId]
@@ -337,6 +337,15 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     document.addEventListener("visibilitychange", handleVisibility);
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, []);
+
+  useEffect(() => {
+    if (!isTabVisible) return;
+    refreshStatus();
+    const interval = window.setInterval(() => {
+      refreshStatus();
+    }, 30000);
+    return () => window.clearInterval(interval);
+  }, [isTabVisible, refreshStatus]);
 
   const pollingEnabled = Boolean(selectedProductId) && isTabVisible;
   const { data: polledStatus } = useProductStatusPoll(selectedProductId || null, {
@@ -791,10 +800,6 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     return () => clearTimeout(timer);
   }, [showProducts, productsMounted]);
 
-  useEffect(() => {
-    if (!selectedProductId) return;
-    setShowProducts(true);
-  }, [selectedProductId]);
 
   useEffect(() => {
     loadLicenseCart();
@@ -916,10 +921,10 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     return baseFeePaid && hasPassed && !licenseActive;
   });
 
-  const productsPanel = (
+  const certificationsPanel = (
     <section
-      id="products-section"
-      className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
+      id="certifications-section"
+      className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
     >
       <button
         type="button"
@@ -927,231 +932,144 @@ export default function DashboardClient({ user }: DashboardClientProps) {
         className="flex w-full items-center justify-between gap-3 text-left"
         aria-expanded={showProducts}
       >
-        <h2 className="text-lg font-semibold text-slate-900">Ihre Produkte</h2>
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">Meine Zertifizierungen</h2>
+          <p className="text-sm text-slate-500">Produkte und Lizenzen kompakt im Überblick.</p>
+        </div>
         <span className={`text-slate-400 transition ${showProducts ? "rotate-180" : ""}`}>▾</span>
       </button>
       {productsMounted && (
         <div
-          className={`mt-3 overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${
-            showProducts ? "max-h-[2200px] opacity-100" : "max-h-0 opacity-0"
+          className={`mt-4 overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${
+            showProducts ? "max-h-[2400px] opacity-100" : "max-h-0 opacity-0"
           }`}
         >
           {products.length === 0 ? (
-            <p className="text-slate-600">Noch keine Produkte erfasst.</p>
-          ) : !selectedProduct ? (
-            <p className="text-slate-600">Bitte links ein Produkt auswählen.</p>
+            <p className="text-slate-600">Noch keine Zertifizierungen vorhanden.</p>
           ) : (
-            <div className="grid gap-4">
-              {(() => {
-                const p = selectedProduct;
+            <div className="grid gap-3">
+              {products.map((p) => {
                 const baseFeePaid = ["PAID", "MANUAL"].includes(p.paymentStatus);
-                const licenseActive = p.license?.status === "ACTIVE";
+                const licenseStatus = p.license?.status ?? null;
+                const licensePlan = p.license?.plan ?? null;
+                const licenseLabelText = licensePlan ? planLabel(licensePlan) : "Keine Lizenz";
                 const hasCertificate = Boolean(p.certificate?.pdfUrl || p.certificate?.id);
                 const hasPassed = p.adminProgress === "PASS" || hasCertificate;
                 const progressLabel = getProgressLabel(p.adminProgress, p.status, hasCertificate);
                 const showPassed = progressLabel === "Bestanden";
+                const receiptId = baseFeeOrdersByProductId[p.id]?.id;
                 return (
-                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <div className="text-lg font-semibold text-slate-900">{p.name}</div>
-                      <div className="text-sm text-slate-500">{p.brand}</div>
+                  <div key={p.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <div className="text-base font-semibold text-slate-900">{p.name}</div>
+                        <div className="text-sm text-slate-500">{p.brand || "—"}</div>
+                      </div>
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                        Status: {progressLabel}
+                      </span>
                     </div>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
-                      Status: {p.status}
-                    </span>
-                  </div>
 
-                  <div id={`base-fee-${p.id}`} className="mt-3 flex flex-wrap items-center gap-3">
-                    {baseFeePaid ? (
-                      <>
-                        <span className="text-xs font-semibold text-emerald-700">Grundgebühr bezahlt</span>
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                      <span className="rounded-full bg-slate-50 px-3 py-1 font-semibold text-slate-700 ring-1 ring-slate-200">
+                        Lizenz: {licenseLabelText}
+                      </span>
+                      {licenseStatus === "ACTIVE" && (
+                        <span className="rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                          Lizenz aktiv
+                        </span>
+                      )}
+                      {licenseStatus === "EXPIRED" && (
+                        <span className="rounded-full bg-amber-50 px-3 py-1 font-semibold text-amber-700 ring-1 ring-amber-200">
+                          Lizenz abgelaufen
+                        </span>
+                      )}
+                      <span
+                        className={`rounded-full px-3 py-1 font-semibold ring-1 ${
+                          baseFeePaid
+                            ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                            : "bg-amber-50 text-amber-700 ring-amber-200"
+                        }`}
+                      >
+                        {baseFeePaid ? "Grundgebühr bezahlt" : "Grundgebühr offen"}
+                      </span>
+                      {baseFeePaid && receiptId && (
                         <button
                           type="button"
-                          onClick={() => {
-                            const order = baseFeeOrdersByProductId[p.id];
-                            if (order?.id) handleReceipt(order.id);
-                          }}
-                          disabled={!baseFeeOrdersByProductId[p.id]?.id}
-                          className={`rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition ${
-                            baseFeeOrdersByProductId[p.id]?.id
-                              ? "bg-slate-900 text-white hover:bg-black"
-                              : "bg-slate-200 text-slate-500 cursor-not-allowed"
-                          }`}
+                          onClick={() => handleReceipt(receiptId)}
+                          className="rounded-full border border-slate-200 px-3 py-1 font-semibold text-slate-700 transition hover:border-slate-300"
                         >
                           Rechnung Grundgebühr
                         </button>
-                      </>
-                    ) : (
-                      <>
-                        <select
-                          className="rounded-lg border border-slate-200 px-3 py-2 text-xs"
-                          value={baseFeeSelections[p.id] || "standard"}
-                          onChange={(e) => setBaseFeeSelections((prev) => ({ ...prev, [p.id]: e.target.value }))}
-                          disabled={baseFeePaying === p.id}
-                        >
-                          <option value="standard">Grundgebühr (Standard)</option>
-                          <option value="priority">Priority</option>
-                        </select>
-                        <button
-                          type="button"
-                          onClick={() => handleBaseFeePay(p.id, baseFeeSelections[p.id] || "standard")}
-                          disabled={baseFeePaying === p.id}
-                          className={`rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition ${
-                            baseFeePaying === p.id
-                              ? "bg-slate-300 text-slate-600"
-                              : "bg-slate-900 text-white hover:bg-black"
-                          }`}
-                        >
-                          {baseFeePaying === p.id ? "Starte Zahlung…" : "Grundgebühr zahlen"}
-                        </button>
-                      </>
-                    )}
-                  </div>
-
-                  <div className="mt-4 space-y-3">
-                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                      <span>Lizenzplan</span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3">
-                      {(() => {
-                        const selectedPlan = licenseSelections[p.id] || p.license?.plan || "BASIC";
-                        const cartItem = cartItemsByProductId.get(p.id);
-                        const planMatches = cartItem?.plan === selectedPlan;
-                        return (
-                          <>
-                            <select
-                              className="rounded-lg border border-slate-200 px-3 py-2 text-xs"
-                              value={selectedPlan}
-                              onChange={(e) => handlePlanSelect(p.id, e.target.value)}
-                              disabled={cartBusyId === p.id || licenseActive || !baseFeePaid || !hasPassed}
-                            >
-                              <option value="BASIC">Basic</option>
-                              <option value="PREMIUM">Premium</option>
-                              <option value="LIFETIME">Lifetime</option>
-                            </select>
-                            <button
-                              type="button"
-                              onClick={() => handleCartAdd(p.id, selectedPlan)}
-                              disabled={cartBusyId === p.id || licenseActive || !baseFeePaid || !hasPassed || planMatches}
-                              className={`rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition ${
-                                licenseActive
-                                  ? "bg-emerald-100 text-emerald-700 cursor-not-allowed"
-                                  : baseFeePaid && hasPassed
-                                  ? "bg-slate-900 text-white hover:bg-black"
-                                  : "bg-slate-200 text-slate-500 cursor-not-allowed"
-                              }`}
-                            >
-                              {licenseActive
-                                ? "Lizenz aktiv"
-                                : cartBusyId === p.id
-                                ? "Wird hinzugefügt…"
-                                : !baseFeePaid
-                                ? "Grundgebühr zuerst zahlen"
-                                : !hasPassed
-                                ? "Bestanden erforderlich"
-                                : cartItem
-                                ? planMatches
-                                  ? "Im Warenkorb"
-                                  : "Plan aktualisieren"
-                                : "Zum Warenkorb"}
-                            </button>
-                            {cartItem && (
-                              <button
-                                type="button"
-                                onClick={() => handleCartRemove(p.id)}
-                                disabled={cartBusyId === p.id}
-                                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-800 disabled:opacity-60"
-                              >
-                                Entfernen
-                              </button>
-                            )}
-                          </>
-                        );
-                      })()}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                      {p.license?.status === "ACTIVE" && (
-                        <span className="rounded-full bg-emerald-100 px-3 py-1 font-semibold text-emerald-700 ring-1 ring-emerald-200">
-                          Aktivierter Plan: {p.license?.plan || "—"}
-                        </span>
                       )}
-                      {p.license?.status === "EXPIRED" && (
-                        <span className="rounded-full bg-amber-100 px-3 py-1 font-semibold text-amber-700 ring-1 ring-amber-200">
-                          Lizenz abgelaufen – bitte neu buchen
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {hasCertificate ? (
+                        <a
+                          href={`/api/certificates/${p.id}/download`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-black"
+                        >
+                          Zertifikat öffnen (PDF)
+                        </a>
+                      ) : (
+                        <span className="text-xs font-semibold text-amber-700">
+                          Prüfungsverlauf: {progressLabel}
+                          {showPassed && (
+                            <svg
+                              className="ml-1 inline-block h-3.5 w-3.5 text-emerald-600"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.704 5.29a1 1 0 01.006 1.414l-7.5 7.57a1 1 0 01-1.42 0L3.29 9.77a1 1 0 011.42-1.41l3.08 3.11 6.79-6.86a1 1 0 011.414-.01z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          )}
                         </span>
                       )}
                       {!baseFeePaid && (
-                        <button
-                          type="button"
-                        onClick={() => scrollToProduct(p.id)}
-                          className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 font-semibold text-amber-700 transition hover:border-amber-300"
-                        >
-                          Grundgebühr offen → Jetzt zahlen
-                        </button>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <select
+                            className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold text-amber-800"
+                            value={baseFeeSelections[p.id] || "standard"}
+                            onChange={(e) => setBaseFeeSelections((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                            disabled={baseFeePaying === p.id}
+                          >
+                            <option value="standard">Grundgebühr (Standard)</option>
+                            <option value="priority">Priority</option>
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => handleBaseFeePay(p.id, baseFeeSelections[p.id] || "standard")}
+                            disabled={baseFeePaying === p.id}
+                            className={`rounded-full px-3 py-1 text-[11px] font-semibold transition ${
+                              baseFeePaying === p.id
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-amber-600 text-white hover:bg-amber-700"
+                            }`}
+                          >
+                            {baseFeePaying === p.id ? "Zahlung läuft…" : "Grundgebühr zahlen"}
+                          </button>
+                        </div>
                       )}
                       {baseFeePaid && !hasPassed && (
                         <button
                           type="button"
                           onClick={() => focusProductStatus(p.id)}
-                          className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 font-semibold text-sky-700 transition hover:border-sky-300"
+                          className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold text-sky-700 transition hover:border-sky-300"
                         >
                           Prüfung offen → Status ansehen
                         </button>
                       )}
                     </div>
                   </div>
-
-                  <div className="mt-3 space-y-2">
-                    {p.certificate ? (
-                      <a
-                        href={`/api/certificates/${p.id}/download`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-black"
-                      >
-                        Zertifikat öffnen (PDF)
-                      </a>
-                    ) : (
-                      <p className="text-sm text-amber-600">
-                        Prüfungsverlauf: {progressLabel}
-                        {showPassed && (
-                          <svg
-                            className="ml-2 inline-block h-4 w-4 text-emerald-600"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.704 5.29a1 1 0 01.006 1.414l-7.5 7.57a1 1 0 01-1.42 0L3.29 9.77a1 1 0 011.42-1.41l3.08 3.11 6.79-6.86a1 1 0 011.414-.01z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        )}
-                      </p>
-                    )}
-                    <div className="flex justify-center">
-                      <span className="rounded-lg bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
-                        Prüfungsverlauf: {progressLabel}
-                        {showPassed && (
-                          <svg
-                            className="ml-1 inline-block h-3.5 w-3.5 text-emerald-600"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.704 5.29a1 1 0 01.006 1.414l-7.5 7.57a1 1 0 01-1.42 0L3.29 9.77a1 1 0 011.42-1.41l3.08 3.11 6.79-6.86a1 1 0 011.414-.01z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                  </div>
                 );
-              })()}
+              })}
             </div>
           )}
         </div>
@@ -1260,7 +1178,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
       )}
     </section>
   );
-  const rightColumnPanel = hasOpenLicensePayments ? cartPanel : productsPanel;
+  const rightColumnPanel = hasOpenLicensePayments ? cartPanel : null;
 
   const planSelectionSection = (
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -1397,18 +1315,6 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     </section>
   );
 
-  const scrollToProduct = (productId: string) => {
-    setSelectedProductId(productId);
-    setShowProducts(true);
-    if (typeof window === "undefined") return;
-    window.setTimeout(() => {
-      const el = document.getElementById(`base-fee-${productId}`);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-    }, 200);
-  };
-
   const focusProductStatus = (productId: string) => {
     setSelectedProductId(productId);
     if (typeof window === "undefined") return;
@@ -1533,91 +1439,6 @@ export default function DashboardClient({ user }: DashboardClientProps) {
           </div>
         </header>
 
-        <PrecheckStatusCard
-          state={statusState}
-          rightColumn={rightColumnPanel}
-          cartPlanByProductId={cartPlanByProductId}
-        />
-
-        {hasOpenLicensePayments ? planSelectionSection : null}
-
-        {hasOpenLicensePayments ? productsPanel : null}
-
-        <section id="billing-licenses" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <button
-            type="button"
-            onClick={() => setShowBilling((open) => !open)}
-            className="flex w-full items-center justify-between gap-3 text-left"
-            aria-expanded={showBilling}
-          >
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">Abrechnung & Lizenzen</h2>
-              <p className="text-sm text-slate-500">Rechnungen und Lizenzstatus im Überblick.</p>
-            </div>
-            <span className={`text-slate-400 transition ${showBilling ? "rotate-180" : ""}`}>▾</span>
-          </button>
-          {billingMounted && (
-            <div
-              className={`mt-4 overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${
-                showBilling ? "max-h-[1200px] opacity-100" : "max-h-0 opacity-0"
-              }`}
-            >
-              <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-              <div className="text-sm font-semibold text-slate-800">Rechnungen</div>
-              <div className="mt-3 space-y-2">
-                {paidOrders.length === 0 && <p className="text-sm text-slate-500">Noch keine Rechnungen.</p>}
-                {paidOrders.map((order: any) => (
-                  <div key={order.id} className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 shadow-sm">
-                    <div className="text-xs text-slate-600">
-                      <div className="font-semibold text-slate-800">{orderLabel(order)}</div>
-                      <div>{order.product?.name || "Produkt"} · {formatDate(order.paidAt)}</div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleReceipt(order.id)}
-                      className="rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-black"
-                    >
-                      Rechnung PDF
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-              <div className="text-sm font-semibold text-slate-800">Lizenzen</div>
-              <div className="mt-3 space-y-2">
-                {products.filter((p: any) => p.license?.status).length === 0 && (
-                  <p className="text-sm text-slate-500">Noch keine Lizenzen aktiv.</p>
-                )}
-                {products.map((p: any) => {
-                  const status = p.license?.status;
-                  if (!status) return null;
-                  return (
-                    <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 text-xs font-semibold shadow-sm">
-                      <span className="text-slate-700">{p.name}</span>
-                      {status === "ACTIVE" ? (
-                        <a
-                          href={`/kontakt?topic=lizenz-kuendigen&productId=${encodeURIComponent(p.id)}`}
-                          className="rounded-full border border-slate-200 px-3 py-1 text-[11px] font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-800"
-                        >
-                          Lizenz kündigen
-                        </a>
-                      ) : status === "EXPIRED" ? (
-                        <span className="text-amber-600">Lizenz abgelaufen</span>
-                      ) : (
-                        <span className="text-slate-500">Status: {status}</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-            </div>
-          )}
-        </section>
-
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-900">Neues Produkt einreichen</h2>
@@ -1727,6 +1548,92 @@ export default function DashboardClient({ user }: DashboardClientProps) {
             </div>
           )}
         </section>
+
+        <PrecheckStatusCard
+          state={statusState}
+          rightColumn={rightColumnPanel}
+          cartPlanByProductId={cartPlanByProductId}
+        />
+
+        {hasOpenLicensePayments ? planSelectionSection : null}
+
+        {certificationsPanel}
+
+        <section id="billing-licenses" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setShowBilling((open) => !open)}
+            className="flex w-full items-center justify-between gap-3 text-left"
+            aria-expanded={showBilling}
+          >
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Abrechnung & Lizenzen</h2>
+              <p className="text-sm text-slate-500">Rechnungen und Lizenzstatus im Überblick.</p>
+            </div>
+            <span className={`text-slate-400 transition ${showBilling ? "rotate-180" : ""}`}>▾</span>
+          </button>
+          {billingMounted && (
+            <div
+              className={`mt-4 overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${
+                showBilling ? "max-h-[1200px] opacity-100" : "max-h-0 opacity-0"
+              }`}
+            >
+              <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+              <div className="text-sm font-semibold text-slate-800">Rechnungen</div>
+              <div className="mt-3 space-y-2">
+                {paidOrders.length === 0 && <p className="text-sm text-slate-500">Noch keine Rechnungen.</p>}
+                {paidOrders.map((order: any) => (
+                  <div key={order.id} className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 shadow-sm">
+                    <div className="text-xs text-slate-600">
+                      <div className="font-semibold text-slate-800">{orderLabel(order)}</div>
+                      <div>{order.product?.name || "Produkt"} · {formatDate(order.paidAt)}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleReceipt(order.id)}
+                      className="rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-black"
+                    >
+                      Rechnung PDF
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+              <div className="text-sm font-semibold text-slate-800">Lizenzen</div>
+              <div className="mt-3 space-y-2">
+                {products.filter((p: any) => p.license?.status).length === 0 && (
+                  <p className="text-sm text-slate-500">Noch keine Lizenzen aktiv.</p>
+                )}
+                {products.map((p: any) => {
+                  const status = p.license?.status;
+                  if (!status) return null;
+                  return (
+                    <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 text-xs font-semibold shadow-sm">
+                      <span className="text-slate-700">{p.name}</span>
+                      {status === "ACTIVE" ? (
+                        <a
+                          href={`/kontakt?topic=lizenz-kuendigen&productId=${encodeURIComponent(p.id)}`}
+                          className="rounded-full border border-slate-200 px-3 py-1 text-[11px] font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-800"
+                        >
+                          Lizenz kündigen
+                        </a>
+                      ) : status === "EXPIRED" ? (
+                        <span className="text-amber-600">Lizenz abgelaufen</span>
+                      ) : (
+                        <span className="text-slate-500">Status: {status}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+            </div>
+          )}
+        </section>
+
 
               </div>
     </div>

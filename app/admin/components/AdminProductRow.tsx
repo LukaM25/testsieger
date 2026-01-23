@@ -483,6 +483,25 @@ function AdminProductRow({
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div className="space-y-2">
+            {isDone && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-800 ring-1 ring-emerald-200">
+                  <svg
+                    aria-hidden="true"
+                    className="h-3 w-3"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.704 5.29a1 1 0 01.006 1.414l-7.5 7.57a1 1 0 01-1.42 0L3.29 9.77a1 1 0 011.42-1.41l3.08 3.11 6.79-6.86a1 1 0 011.414-.01z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  ERLEDIGT
+                </span>
+              </div>
+            )}
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-lg font-semibold text-slate-900">{product.name}</span>
               <span className="text-sm text-slate-500">{product.brand}</span>
@@ -492,11 +511,6 @@ function AdminProductRow({
               <span className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ring-1 ${STATUS_TONE[product.status] ?? 'bg-slate-100 text-slate-700 ring-slate-200'}`}>
                 Status: {statusLabel(product.status)}
               </span>
-              {isDone && (
-                <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-800 ring-1 ring-emerald-200">
-                  FERTIG
-                </span>
-              )}
               <span className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ring-1 ${PAYMENT_TONE[paymentStatusValue] ?? 'bg-slate-100 text-slate-700 ring-slate-200'}`}>
                 Zahlung: {paymentStatusValue === 'PAID' ? 'Bezahlt' : paymentStatusValue === 'MANUAL' ? 'Manuell' : 'Offen'}
               </span>
