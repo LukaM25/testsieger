@@ -40,3 +40,6 @@ public/qr/*
 
 # Misc
 .webm
+
+# local model weights
+/tmp/whisper-models/
