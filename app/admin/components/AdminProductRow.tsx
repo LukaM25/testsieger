@@ -1,7 +1,7 @@
 'use client';
 
 import { memo, ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { PAYMENT_STATUS_OPTIONS, PAYMENT_TONE, STATUS_OPTIONS, STATUS_TONE, statusLabel } from '../constants';
+import { PAYMENT_STATUS_OPTIONS, STATUS_OPTIONS, STATUS_TONE, statusLabel } from '../constants';
 import { AdminPermissions, AdminProduct, PaymentStatusOption, StatusOption } from '../types';
 
 type Props = {
@@ -113,6 +113,15 @@ function AdminProductRow({
     const diff = new Date(product.license.expiresAt).getTime() - Date.now();
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   }, [product.license?.expiresAt]);
+
+  const baseFeePaid = paymentStatusValue === 'PAID' || paymentStatusValue === 'MANUAL';
+  const baseFeeIsPriority = product.baseFeePlan === 'PRECHECK_PRIORITY';
+  const baseFeeStatus = baseFeePaid ? (baseFeeIsPriority ? 'PRIORITY' : 'NORMAL') : 'OFFEN';
+  const baseFeeTone = baseFeePaid
+    ? baseFeeIsPriority
+      ? 'bg-amber-50 text-amber-700 ring-amber-200'
+      : 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+    : 'bg-rose-50 text-rose-700 ring-rose-100';
 
   useEffect(() => {
     setLicensePlan(product.license?.plan || 'BASIC');
@@ -511,8 +520,23 @@ function AdminProductRow({
               <span className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ring-1 ${STATUS_TONE[product.status] ?? 'bg-slate-100 text-slate-700 ring-slate-200'}`}>
                 Status: {statusLabel(product.status)}
               </span>
-              <span className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ring-1 ${PAYMENT_TONE[paymentStatusValue] ?? 'bg-slate-100 text-slate-700 ring-slate-200'}`}>
-                Zahlung: {paymentStatusValue === 'PAID' ? 'Bezahlt' : paymentStatusValue === 'MANUAL' ? 'Manuell' : 'Offen'}
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ring-1 ${baseFeeTone}`}>
+                GRUNDGEBÜHR:
+                {baseFeeStatus === 'NORMAL' && (
+                  <svg aria-hidden="true" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                    <path
+                      fillRule="evenodd"
+                      d="M16.704 5.29a1 1 0 01.006 1.414l-7.5 7.57a1 1 0 01-1.42 0L3.29 9.77a1 1 0 011.42-1.41l3.08 3.11 6.79-6.86a1 1 0 011.414-.01z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
+                {baseFeeStatus === 'PRIORITY' && (
+                  <svg aria-hidden="true" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M11.4 1.5 4.5 11h4.7l-1.1 7.5 7-9.8h-4.7l1-7.2z" />
+                  </svg>
+                )}
+                <span>{baseFeeStatus}</span>
               </span>
               <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-700 ring-1 ring-slate-200">
                 Vor.Nr.: {product.processNumber ?? '—'}

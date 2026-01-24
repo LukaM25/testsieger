@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useRouter, useSearchParams } from "next/navigation";
 import LogoutButton from "@/components/LogoutButton";
 import { usePrecheckStatusData, type ProductStatusPayload } from "@/hooks/usePrecheckStatusData";
 import { PrecheckStatusCard } from "@/components/PrecheckStatusCard";
@@ -290,6 +291,8 @@ const parseAddressParts = (raw: string) => {
 };
 
 export default function DashboardClient({ user }: DashboardClientProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const initialStatusProducts = useMemo<ProductStatusPayload[]>(
     () =>
       (user.products || []).map(
@@ -328,6 +331,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     return byProduct;
   }, [user.orders]);
 
+  const [showLicenseSuccess, setShowLicenseSuccess] = useState(false);
   const [isTabVisible, setIsTabVisible] = useState(true);
   useEffect(() => {
     const handleVisibility = () => {
@@ -800,6 +804,29 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     return () => clearTimeout(timer);
   }, [showProducts, productsMounted]);
 
+  useEffect(() => {
+    const checkoutStatus = searchParams.get("licenseCheckout");
+    if (checkoutStatus !== "success") return;
+    setShowLicenseSuccess(true);
+    refreshStatus();
+    loadLicenseCart();
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("licenseCheckout");
+    const nextSearch = url.searchParams.toString();
+    router.replace(nextSearch ? `${url.pathname}?${nextSearch}` : url.pathname, { scroll: false });
+  }, [searchParams, router, refreshStatus]);
+
+  useEffect(() => {
+    if (!showLicenseSuccess) return;
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowLicenseSuccess(false);
+      }
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [showLicenseSuccess]);
 
   useEffect(() => {
     loadLicenseCart();
@@ -1326,6 +1353,46 @@ export default function DashboardClient({ user }: DashboardClientProps) {
 
   return (
     <div id="dashboard-top" className="min-h-screen bg-slate-50 px-4 py-8">
+      {showLicenseSuccess && typeof document !== "undefined"
+        ? createPortal(
+            <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true">
+              <div
+                className="absolute inset-0 bg-slate-950/30 backdrop-blur-sm"
+                onClick={() => setShowLicenseSuccess(false)}
+              />
+              <div className="relative z-10 w-full max-w-md rounded-3xl border border-slate-100 bg-white p-6 shadow-2xl">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-500">Lizenzzahlung</p>
+                    <h2 className="text-xl font-semibold text-slate-900">Zahlung bestätigt</h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowLicenseSuccess(false)}
+                    className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:border-slate-300"
+                  >
+                    Schließen
+                  </button>
+                </div>
+                <p className="mt-4 text-sm text-slate-600 leading-relaxed">
+                  Vielen Dank, Ihre Zahlung ist bestätigt ✅
+                  <br />
+                  In Kürze erhalten Sie die Lizenz und Siegel für den aktuellen Nutzungszeitraum per Email.
+                </p>
+                <div className="mt-6 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowLicenseSuccess(false)}
+                    className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-black"
+                  >
+                    Weiter
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
       <div className="mx-auto max-w-6xl space-y-8">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>

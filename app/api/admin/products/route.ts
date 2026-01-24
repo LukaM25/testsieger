@@ -167,16 +167,39 @@ export async function GET(request: Request) {
     }, {});
 
     const paidLicenseOrderProductIds = new Set<string>();
-    if (!isViewerOnly && pageProducts.length > 0) {
-      const paidLicenseOrders = await prisma.order.findMany({
+    const baseFeePlanByProductId = new Map<string, Plan>();
+    if (pageProducts.length > 0) {
+      const productIds = pageProducts.map((product) => product.id);
+      if (!isViewerOnly) {
+        const paidLicenseOrders = await prisma.order.findMany({
+          where: {
+            productId: { in: productIds },
+            paidAt: { not: null },
+            plan: { in: [Plan.BASIC, Plan.PREMIUM, Plan.LIFETIME] },
+          },
+          select: { productId: true },
+        });
+        paidLicenseOrders.forEach((order) => paidLicenseOrderProductIds.add(order.productId));
+      }
+
+      const baseFeeOrders = await prisma.order.findMany({
         where: {
-          productId: { in: pageProducts.map((product) => product.id) },
+          productId: { in: productIds },
           paidAt: { not: null },
-          plan: { in: [Plan.BASIC, Plan.PREMIUM, Plan.LIFETIME] },
+          plan: { in: [Plan.PRECHECK_FEE, Plan.PRECHECK_PRIORITY] },
         },
-        select: { productId: true },
+        select: { productId: true, plan: true },
       });
-      paidLicenseOrders.forEach((order) => paidLicenseOrderProductIds.add(order.productId));
+      baseFeeOrders.forEach((order) => {
+        const existing = baseFeePlanByProductId.get(order.productId);
+        if (order.plan === Plan.PRECHECK_PRIORITY) {
+          baseFeePlanByProductId.set(order.productId, order.plan);
+          return;
+        }
+        if (!existing) {
+          baseFeePlanByProductId.set(order.productId, order.plan);
+        }
+      });
     }
 
     const payload = await Promise.all(
@@ -186,6 +209,7 @@ export async function GET(request: Request) {
           paidLicenseOrderProductIds.has(product.id) ||
           Boolean(product.license?.paidAt) ||
           product.license?.status === 'ACTIVE';
+        const baseFeePlan = baseFeePlanByProductId.get(product.id) ?? null;
         if (isViewerOnly) {
           return {
             id: product.id,
@@ -195,6 +219,7 @@ export async function GET(request: Request) {
             status: product.status,
             adminProgress: product.adminProgress,
             paymentStatus: product.paymentStatus,
+            baseFeePlan,
             licensePaid,
             createdAt: product.createdAt.toISOString(),
             processNumber,
@@ -242,6 +267,7 @@ export async function GET(request: Request) {
           status: product.status,
           adminProgress: product.adminProgress,
           paymentStatus: product.paymentStatus,
+          baseFeePlan,
           licensePaid,
           createdAt: product.createdAt.toISOString(),
           processNumber,
