@@ -317,15 +317,15 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     () => products.find((product) => product.id === selectedProductId) || null,
     [products, selectedProductId]
   );
-  const baseFeeOrdersByProductId = useMemo(() => {
+  const baseFeePlanByProductId = useMemo(() => {
     const orders = Array.isArray(user.orders) ? user.orders : [];
-    const byProduct: Record<string, { id: string; paidAt?: string | null }> = {};
+    const byProduct: Record<string, { plan: string; paidAt?: string | null }> = {};
     orders.forEach((order: any) => {
       if (!order?.productId || !order?.paidAt) return;
       if (order.plan !== "PRECHECK_FEE" && order.plan !== "PRECHECK_PRIORITY") return;
       const existing = byProduct[order.productId];
       if (!existing || (existing.paidAt && new Date(order.paidAt) > new Date(existing.paidAt))) {
-        byProduct[order.productId] = { id: order.id, paidAt: order.paidAt };
+        byProduct[order.productId] = { plan: order.plan, paidAt: order.paidAt };
       }
     });
     return byProduct;
@@ -984,7 +984,16 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                 const hasPassed = p.adminProgress === "PASS" || hasCertificate;
                 const progressLabel = getProgressLabel(p.adminProgress, p.status, hasCertificate);
                 const showPassed = progressLabel === "Bestanden";
-                const receiptId = baseFeeOrdersByProductId[p.id]?.id;
+                const baseFeePlan = baseFeePlanByProductId[p.id]?.plan ?? null;
+                const baseFeeIsPriority = baseFeePlan === "PRECHECK_PRIORITY";
+                const baseFeeStatus = baseFeePaid ? (baseFeeIsPriority ? "PRIORITY" : "NORMAL") : "OFFEN";
+                const baseFeeTone = baseFeePaid
+                  ? baseFeeIsPriority
+                    ? "bg-amber-50 text-amber-700 ring-amber-200"
+                    : "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                  : "bg-amber-50 text-amber-700 ring-amber-200";
+                const baseFeeLabel =
+                  baseFeeStatus === "PRIORITY" ? "Priority" : baseFeeStatus === "NORMAL" ? "Normal" : "Offen";
                 return (
                   <div key={p.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1012,23 +1021,25 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                         </span>
                       )}
                       <span
-                        className={`rounded-full px-3 py-1 font-semibold ring-1 ${
-                          baseFeePaid
-                            ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-                            : "bg-amber-50 text-amber-700 ring-amber-200"
-                        }`}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-semibold ring-1 ${baseFeeTone}`}
                       >
-                        {baseFeePaid ? "Grundgebühr bezahlt" : "Grundgebühr offen"}
+                        Grundgebühr:
+                        {baseFeeStatus === "NORMAL" && (
+                          <svg aria-hidden="true" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                            <path
+                              fillRule="evenodd"
+                              d="M16.704 5.29a1 1 0 01.006 1.414l-7.5 7.57a1 1 0 01-1.42 0L3.29 9.77a1 1 0 011.42-1.41l3.08 3.11 6.79-6.86a1 1 0 011.414-.01z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        )}
+                        {baseFeeStatus === "PRIORITY" && (
+                          <svg aria-hidden="true" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M11.4 1.5 4.5 11h4.7l-1.1 7.5 7-9.8h-4.7l1-7.2z" />
+                          </svg>
+                        )}
+                        <span>{baseFeeLabel}</span>
                       </span>
-                      {baseFeePaid && receiptId && (
-                        <button
-                          type="button"
-                          onClick={() => handleReceipt(receiptId)}
-                          className="rounded-full border border-slate-200 px-3 py-1 font-semibold text-slate-700 transition hover:border-slate-300"
-                        >
-                          Rechnung Grundgebühr
-                        </button>
-                      )}
                     </div>
 
                     <div className="mt-3 flex flex-wrap items-center gap-2">
