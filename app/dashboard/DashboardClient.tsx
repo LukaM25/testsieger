@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import LogoutButton from "@/components/LogoutButton";
 import { usePrecheckStatusData, type ProductStatusPayload } from "@/hooks/usePrecheckStatusData";
@@ -407,9 +408,6 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     });
   }, [polledStatus, selectedProductId, setProducts]);
 
-  const [showSubmit, setShowSubmit] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState<string | null>(null);
-  const [submitLoading, setSubmitLoading] = useState(false);
   const [licenseSelections, setLicenseSelections] = useState<Record<string, string>>({});
   const [licenseCart, setLicenseCart] = useState<LicenseCartState>({
     cartId: null,
@@ -440,75 +438,6 @@ export default function DashboardClient({ user }: DashboardClientProps) {
   const [accountSaving, setAccountSaving] = useState(false);
   const [accountDeleting, setAccountDeleting] = useState(false);
   const [accountMessage, setAccountMessage] = useState<string | null>(null);
-  const [newProduct, setNewProduct] = useState({
-    productName: "",
-    brand: "",
-    category: "",
-    code: "",
-    specs: "",
-    size: "",
-    madeIn: "",
-    material: "",
-  });
-
-  const handleQuickSubmit = async () => {
-    setSubmitMessage(null);
-    const requiredFields = [
-      { key: "productName", label: "Produktname", min: 2 },
-      { key: "brand", label: "Marke", min: 1 },
-      { key: "category", label: "Kategorie", min: 1 },
-      { key: "code", label: "Artikelnummer", min: 2 },
-      { key: "specs", label: "Spezifikationen", min: 5 },
-      { key: "size", label: "Größe / Maße", min: 2 },
-      { key: "madeIn", label: "Hergestellt in", min: 2 },
-      { key: "material", label: "Material", min: 2 },
-    ] as const;
-    for (const field of requiredFields) {
-      const value = (newProduct as Record<string, string>)[field.key] || "";
-      if (value.trim().length < field.min) {
-        setSubmitMessage(`Bitte ${field.label} ausfüllen.`);
-        return;
-      }
-    }
-    setSubmitLoading(true);
-    try {
-      const res = await fetch("/api/products/quick-create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newProduct),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.product) {
-        setSubmitMessage(data.error || "Produkt konnte nicht angelegt werden.");
-        return;
-      }
-      const mapped: ProductStatusPayload = {
-        id: data.product.id,
-        name: data.product.name,
-        brand: data.product.brand ?? null,
-        paymentStatus: "UNPAID",
-        adminProgress: "PRECHECK",
-        status: "PRECHECK",
-        certificate: null,
-      };
-      setProducts((prev) => [mapped, ...prev]);
-      setSelectedProductId(data.product.id);
-      setSubmitMessage("Produkt angelegt.");
-      setNewProduct({
-        productName: "",
-        brand: "",
-        category: "",
-        code: "",
-        specs: "",
-        size: "",
-        madeIn: "",
-        material: "",
-      });
-    } finally {
-      setSubmitLoading(false);
-    }
-  };
-
   const handleReceipt = async (orderId: string) => {
     try {
       const res = await fetch("/api/orders/receipt", {
@@ -1518,113 +1447,18 @@ export default function DashboardClient({ user }: DashboardClientProps) {
         </header>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">Neues Produkt einreichen</h2>
-            <button
-              type="button"
-              onClick={() => setShowSubmit((s) => !s)}
-              className="text-sm font-semibold text-slate-600 hover:text-slate-900"
-            >
-              {showSubmit ? "Eingabe schließen" : "Formular öffnen"}
-            </button>
-          </div>
-          {showSubmit && (
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <input
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                placeholder="Produktname"
-                value={newProduct.productName}
-                onChange={(e) => setNewProduct((p) => ({ ...p, productName: e.target.value }))}
-                required
-              />
-              <input
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                placeholder="Marke"
-                value={newProduct.brand}
-                onChange={(e) => setNewProduct((p) => ({ ...p, brand: e.target.value }))}
-                required
-              />
-              <select
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                value={newProduct.category}
-                onChange={(e) => setNewProduct((p) => ({ ...p, category: e.target.value }))}
-                required
-              >
-                <option value="">Kategorie auswählen</option>
-                <option value="Ausbildung">Ausbildung</option>
-                <option value="Auto & Motorrad">Auto &amp; Motorrad</option>
-                <option value="Baby">Baby</option>
-                <option value="Baumarkt">Baumarkt</option>
-                <option value="Beleuchtung">Beleuchtung</option>
-                <option value="Bücher">Bücher</option>
-                <option value="Bürobedarf & Schreibwaren">Bürobedarf &amp; Schreibwaren</option>
-                <option value="Computer & Zubehör">Computer &amp; Zubehör</option>
-                <option value="DVD & Blu-ray">DVD &amp; Blu-ray</option>
-                <option value="Elektro-Großgeräte">Elektro-Großgeräte</option>
-                <option value="Elektronik & Foto">Elektronik &amp; Foto</option>
-                <option value="Garten">Garten</option>
-                <option value="Gewerbe, Industrie & Wissenschaft">Gewerbe, Industrie &amp; Wissenschaft</option>
-                <option value="Handgefertigte Produkte">Handgefertigte Produkte</option>
-                <option value="Haustierbedarf">Haustierbedarf</option>
-                <option value="Kamera & Foto">Kamera &amp; Foto</option>
-                <option value="Kosmetik & Pflege">Kosmetik &amp; Pflege</option>
-                <option value="Küche, Haushalt & Wohnen">Küche, Haushalt &amp; Wohnen</option>
-                <option value="Lebensmittel & Getränke">Lebensmittel &amp; Getränke</option>
-                <option value="Mode">Mode</option>
-                <option value="Musikinstrumente & DJ-Equipment">Musikinstrumente &amp; DJ-Equipment</option>
-                <option value="Software">Software</option>
-                <option value="Spiele & Gaming">Spiele &amp; Gaming</option>
-                <option value="Spielzeug">Spielzeug</option>
-                <option value="Sport & Freizeit">Sport &amp; Freizeit</option>
-              </select>
-              <input
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                placeholder="Artikelnummer"
-                value={newProduct.code}
-                onChange={(e) => setNewProduct((p) => ({ ...p, code: e.target.value }))}
-                required
-              />
-              <input
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm md:col-span-2"
-                placeholder="Spezifikationen"
-                value={newProduct.specs}
-                onChange={(e) => setNewProduct((p) => ({ ...p, specs: e.target.value }))}
-                required
-              />
-              <input
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                placeholder="Größe / Maße"
-                value={newProduct.size}
-                onChange={(e) => setNewProduct((p) => ({ ...p, size: e.target.value }))}
-                required
-              />
-              <input
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                placeholder="Hergestellt in"
-                value={newProduct.madeIn}
-                onChange={(e) => setNewProduct((p) => ({ ...p, madeIn: e.target.value }))}
-                required
-              />
-              <input
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm md:col-span-2"
-                placeholder="Material"
-                value={newProduct.material}
-                onChange={(e) => setNewProduct((p) => ({ ...p, material: e.target.value }))}
-                required
-              />
-              <div className="md:col-span-2 flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleQuickSubmit}
-                  disabled={submitLoading}
-                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-60"
-                >
-                  {submitLoading ? "Wird gesendet…" : "Produkt einreichen"}
-                </button>
-                {submitMessage && <span className="text-sm text-slate-600">{submitMessage}</span>}
-              </div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Neues Produkt einreichen</h2>
+              <p className="text-sm text-slate-500">Weitere Produkte hinzufügen und automatisch Rabatt erhalten.</p>
             </div>
-          )}
+            <Link
+              href="/precheck"
+              className="rounded-full border border-slate-900 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+            >
+              +hinzufügen
+            </Link>
+          </div>
         </section>
 
         <PrecheckStatusCard

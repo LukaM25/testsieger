@@ -67,12 +67,29 @@ async function handleCheckoutSession(cs: any) {
   console.info('STRIPE_CHECKOUT_SESSION_COMPLETED', { sessionId: cs.id, productIds, plan });
 
   const orders = await prisma.order.findMany({ where: { stripeSessionId: cs.id } });
+  const isPrecheckPlan = plan === 'PRECHECK_FEE' || plan === 'PRECHECK_PRIORITY';
   if (orders.length) {
     const now = new Date();
     const stripeSubId = typeof cs.subscription === 'string' ? (cs.subscription as string) : null;
     const orderProductIds = orders.map((order) => order.productId);
     const paidProductIds = [...new Set([...productIds, ...orderProductIds])];
+    const missingPrecheckProductIds =
+      isPrecheckPlan ? productIds.filter((id) => !orderProductIds.includes(id)) : [];
     await prisma.$transaction(async (tx) => {
+      if (missingPrecheckProductIds.length) {
+        const userId = orders[0]?.userId;
+        if (userId) {
+          await tx.order.createMany({
+            data: missingPrecheckProductIds.map((productId) => ({
+              userId,
+              productId,
+              plan: plan as Plan,
+              priceCents: metadataPriceCents ?? 0,
+              stripeSessionId: cs.id,
+            })),
+          });
+        }
+      }
       await tx.order.updateMany({ where: { stripeSessionId: cs.id }, data: { paidAt: now, stripeSubId } });
       await tx.product.updateMany({
         where: { id: { in: paidProductIds } },
@@ -144,21 +161,21 @@ async function handleCheckoutSession(cs: any) {
   } else {
     // fallback: no order record (pre-check fee). Still mark product(s) as paid.
     await markProductsPaid(productIds);
-    if (plan === 'PRECHECK_FEE' || plan === 'PRECHECK_PRIORITY') {
+    if (isPrecheckPlan) {
       const product = await prisma.product.findUnique({
         where: { id: primaryProductId },
         select: { userId: true },
       });
       if (product?.userId) {
-        await prisma.order.create({
-          data: {
+        await prisma.order.createMany({
+          data: productIds.map((productId) => ({
             userId: product.userId,
-            productId: primaryProductId,
+            productId,
             plan: plan as Plan,
             priceCents: metadataPriceCents ?? 0,
             stripeSessionId: cs.id,
             paidAt: new Date(),
-          },
+          })),
         });
       }
     }

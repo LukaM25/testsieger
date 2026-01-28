@@ -21,6 +21,18 @@ const FLOW_STEPS: { key: StatusOption; label: string }[] = [
   { key: 'FAIL', label: 'Nicht bestanden' },
 ];
 
+function CheckIcon({ className = 'h-3.5 w-3.5 text-emerald-600' }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path
+        fillRule="evenodd"
+        d="M16.704 5.29a1 1 0 01.006 1.414l-7.5 7.57a1 1 0 01-1.42 0L3.29 9.77a1 1 0 011.42-1.41l3.08 3.11 6.79-6.86a1 1 0 011.414-.01z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
+
 function CollapsibleSection({
   title,
   subtitle,
@@ -370,6 +382,8 @@ function AdminProductRow({
   const hasRatingData = ratingReady;
   const hasCertificatePdf = Boolean(product.certificate?.pdfUrl);
   const hasSeal = Boolean(product.certificate?.sealUrl);
+  const statusSaved = selectedStatus === product.adminProgress;
+  const completionDone = (product.adminProgress as any) === 'COMPLETION' || isDone;
   const statusBlockReason = (() => {
     if (selectedStatus === 'PASS' && !ratingReady) {
       return 'Prüfergebnis fehlt – bitte Ergebnis speichern.';
@@ -645,7 +659,10 @@ function AdminProductRow({
                   onClick={handleUpdate}
                   className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-black disabled:opacity-70"
                 >
-                  {loading ? 'Status wird gespeichert…' : 'STATUS SPEICHERN'}
+                  <span className="inline-flex items-center gap-2">
+                    {loading ? 'Status wird gespeichert…' : 'STATUS SPEICHERN'}
+                    {statusSaved && !loading ? <CheckIcon /> : null}
+                  </span>
                 </button>
               </div>
               {statusBlockReason ? (
@@ -664,7 +681,10 @@ function AdminProductRow({
                     : 'border-slate-900 text-slate-900 hover:bg-slate-50'
                 }`}
               >
-                1. Prüfergebnis bearbeiten
+                <span className="inline-flex items-center gap-2">
+                  1. Prüfergebnis bearbeiten
+                  {hasRatingData ? <CheckIcon className="h-3.5 w-3.5 text-emerald-500" /> : null}
+                </span>
               </a>
 
               <button
@@ -762,7 +782,10 @@ function AdminProductRow({
                     : 'border-emerald-600 text-emerald-700 hover:bg-emerald-50 disabled:opacity-70'
                 }`}
               >
-                {sendLoading ? '3. Zertifikat wird generiert…' : '3. Zertifikat generieren'}
+                <span className="inline-flex items-center gap-2">
+                  {sendLoading ? '3. Zertifikat wird generiert…' : '3. Zertifikat generieren'}
+                  {hasCertificatePdf && !sendLoading ? <CheckIcon className="h-3.5 w-3.5 text-emerald-200" /> : null}
+                </span>
               </button>
 
               <button
@@ -777,7 +800,10 @@ function AdminProductRow({
                     : 'border-amber-700 text-amber-800 hover:bg-amber-50 disabled:opacity-70'
                 }`}
               >
-                {genLoading ? '4. Siegel wird generiert…' : '4. Siegel generieren'}
+                <span className="inline-flex items-center gap-2">
+                  {genLoading ? '4. Siegel wird generiert…' : '4. Siegel generieren'}
+                  {hasSeal && !genLoading ? <CheckIcon className="h-3.5 w-3.5 text-emerald-500" /> : null}
+                </span>
               </button>
 
               {!licensePaid && (
@@ -804,14 +830,17 @@ function AdminProductRow({
 	                    disabled={!permissions.canUploadReport}
 	                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-[11px] file:font-semibold file:uppercase file:tracking-[0.18em] file:text-white disabled:opacity-60"
 	                  />
-	                  <button
-	                    type="button"
-	                    onClick={handleReportUpload}
-	                    disabled={!reportFile || uploadingReport || !permissions.canUploadReport}
-	                    className="inline-flex min-h-[44px] w-full items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-emerald-800 disabled:opacity-70"
-	                  >
-	                    {uploadingReport ? 'Lade hoch...' : 'Prüfbericht hochladen'}
-	                  </button>
+                  <button
+                    type="button"
+                    onClick={handleReportUpload}
+                    disabled={!reportFile || uploadingReport || !permissions.canUploadReport}
+                    className="inline-flex min-h-[44px] w-full items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-emerald-800 disabled:opacity-70"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      {uploadingReport ? 'Lade hoch...' : 'Prüfbericht hochladen'}
+                      {reportUploaded && !uploadingReport ? <CheckIcon className="h-3.5 w-3.5 text-emerald-200" /> : null}
+                    </span>
+                  </button>
 	                </div>
 	                {reportMessage && <p className="text-xs text-slate-500">{reportMessage}</p>}
 	              </div>
@@ -854,7 +883,10 @@ function AdminProductRow({
                 className="rounded-lg border border-emerald-800 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-800 transition hover:bg-emerald-50 disabled:opacity-70"
                 title={!permissions.canSendCompletion ? 'Keine Berechtigung.' : undefined}
               >
-                {sendLoading ? '6. Sende…' : 'Abschluss – Alle Dateien senden'}
+                <span className="inline-flex items-center gap-2">
+                  {sendLoading ? '6. Sende…' : 'Abschluss – Alle Dateien senden'}
+                  {completionDone && !sendLoading ? <CheckIcon className="h-3.5 w-3.5 text-emerald-600" /> : null}
+                </span>
               </button>
 
               <p className="text-xs text-slate-500">
@@ -865,10 +897,10 @@ function AdminProductRow({
 
 	          <CollapsibleSection title="Assets & Downloads" subtitle="Links" defaultOpen={false}>
 	            <div className="grid gap-3 sm:grid-cols-2">
-	              <a
-	                href={product.certificate?.pdfUrl && canAccessAssets ? `/api/certificates/${product.id}/download` : '#'}
-	                target={product.certificate?.pdfUrl && canAccessAssets ? '_blank' : undefined}
-	                rel="noreferrer"
+              <a
+                href={product.certificate?.pdfUrl && canAccessAssets ? `/api/certificates/${product.id}/download` : '#'}
+                target={product.certificate?.pdfUrl && canAccessAssets ? '_blank' : undefined}
+                rel="noreferrer"
                 className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-3.5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition ${
                   product.certificate?.pdfUrl && canAccessAssets
                     ? 'border border-slate-900 text-slate-900 hover:bg-slate-50'
@@ -878,52 +910,61 @@ function AdminProductRow({
                   if (!product.certificate?.pdfUrl || !canAccessAssets) e.preventDefault();
                 }}
               >
-                Zertifikat öffnen
+                <span className="inline-flex items-center gap-2">
+                  Zertifikat öffnen
+                  {hasCertificatePdf ? <CheckIcon className="h-3.5 w-3.5 text-emerald-600" /> : null}
+                </span>
               </a>
 	              {product.certificate?.reportUrl ? (
-	                <a
-	                  href={
-	                    canAccessAssets
-	                      ? `/api/admin/products/${product.id}/asset-url?kind=report&redirect=1`
-	                      : '#'
-	                  }
-	                  target={canAccessAssets ? '_blank' : undefined}
-	                  rel="noreferrer"
-	                  onClick={(e) => {
-	                    if (!canAccessAssets) e.preventDefault();
-	                  }}
-	                  className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-3.5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition ${
-	                    canAccessAssets
-	                      ? 'border border-emerald-700 text-emerald-800 hover:bg-emerald-50'
-	                      : 'border border-slate-200 text-slate-400 cursor-not-allowed'
-	                  }`}
-	                >
-	                  Hochgeladener Prüfbericht
-	                </a>
+                <a
+                  href={
+                    canAccessAssets
+                      ? `/api/admin/products/${product.id}/asset-url?kind=report&redirect=1`
+                      : '#'
+                  }
+                  target={canAccessAssets ? '_blank' : undefined}
+                  rel="noreferrer"
+                  onClick={(e) => {
+                    if (!canAccessAssets) e.preventDefault();
+                  }}
+                  className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-3.5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition ${
+                    canAccessAssets
+                      ? 'border border-emerald-700 text-emerald-800 hover:bg-emerald-50'
+                      : 'border border-slate-200 text-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    Hochgeladener Prüfbericht
+                    {reportUploaded ? <CheckIcon className="h-3.5 w-3.5 text-emerald-600" /> : null}
+                  </span>
+                </a>
 	              ) : (
 	                <div className="inline-flex items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
 	                  Kein Upload vorhanden
 	                </div>
 	              )}
-	              <a
-	                href={
-	                  product.certificate?.sealUrl && canAccessAssets
-	                    ? `/api/admin/products/${product.id}/asset-url?kind=seal&redirect=1`
-	                    : '#'
-	                }
-	                target={product.certificate?.sealUrl && canAccessAssets ? '_blank' : undefined}
-	                rel="noreferrer"
-	                onClick={(e) => {
-	                  if (!product.certificate?.sealUrl || !canAccessAssets) e.preventDefault();
-	                }}
-	                className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-3.5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition ${
-	                  product.certificate?.sealUrl && canAccessAssets
-	                    ? 'border border-amber-700 text-amber-800 hover:bg-amber-50'
-	                    : 'border border-slate-200 text-slate-400 cursor-not-allowed'
-	                }`}
-	              >
-	                Siegel öffnen
-	              </a>
+              <a
+                href={
+                  product.certificate?.sealUrl && canAccessAssets
+                    ? `/api/admin/products/${product.id}/asset-url?kind=seal&redirect=1`
+                    : '#'
+                }
+                target={product.certificate?.sealUrl && canAccessAssets ? '_blank' : undefined}
+                rel="noreferrer"
+                onClick={(e) => {
+                  if (!product.certificate?.sealUrl || !canAccessAssets) e.preventDefault();
+                }}
+                className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-3.5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition ${
+                  product.certificate?.sealUrl && canAccessAssets
+                    ? 'border border-amber-700 text-amber-800 hover:bg-amber-50'
+                    : 'border border-slate-200 text-slate-400 cursor-not-allowed'
+                }`}
+              >
+                <span className="inline-flex items-center gap-2">
+                  Siegel öffnen
+                  {hasSeal ? <CheckIcon className="h-3.5 w-3.5 text-emerald-600" /> : null}
+                </span>
+              </a>
               <a
                 href={canAccessRatings ? `/api/admin/products/${product.id}/rating-sheet` : '#'}
                 onClick={(e) => {
@@ -934,9 +975,12 @@ function AdminProductRow({
                     ? 'border border-slate-300 text-slate-800 hover:bg-slate-50'
                     : 'border border-slate-200 text-slate-400 cursor-not-allowed'
                 }`}
-	              >
-	                Rating CSV herunterladen
-	              </a>
+              >
+                <span className="inline-flex items-center gap-2">
+                  Rating CSV herunterladen
+                  {hasRatingData ? <CheckIcon className="h-3.5 w-3.5 text-emerald-600" /> : null}
+                </span>
+              </a>
 	              {product.license?.licenseCode && (
 	                <div className="col-span-2 flex flex-col rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
 	                  <span>Lizenzcode</span>

@@ -270,17 +270,22 @@ export default function AdminPageClient({ initialAdmin }: AdminPageClientProps) 
   }, [authed, fetchProducts, paymentFilter, search, statusFilter]);
 
   const grouped = useMemo(() => {
-    return products.reduce<Record<string, AdminProduct[]>>((acc, product) => {
-      const date = new Date(product.createdAt).toLocaleDateString('de-DE', {
-        weekday: 'long',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      });
-      acc[date] = acc[date] || [];
-      acc[date].push(product);
-      return acc;
-    }, {});
+    return products.reduce<Record<string, Record<string, { user: AdminProduct['user']; items: AdminProduct[] }>>>(
+      (acc, product) => {
+        const date = new Date(product.createdAt).toLocaleDateString('de-DE', {
+          weekday: 'long',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        });
+        if (!acc[date]) acc[date] = {};
+        const userKey = product.user.email || product.user.name;
+        if (!acc[date][userKey]) acc[date][userKey] = { user: product.user, items: [] };
+        acc[date][userKey].items.push(product);
+        return acc;
+      },
+      {},
+    );
   }, [products]);
 
 	  const handleLogin = async () => {
@@ -400,24 +405,46 @@ export default function AdminPageClient({ initialAdmin }: AdminPageClientProps) 
             Keine Produkte oder Filter-Treffer. Bitte Filter anpassen oder Liste aktualisieren.
           </div>
         ) : (
-          Object.entries(grouped).map(([date, entries]) => (
+          Object.entries(grouped).map(([date, userGroups]) => {
+            const totalEntries = Object.values(userGroups).reduce((sum, group) => sum + group.items.length, 0);
+            return (
             <section key={date} className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-slate-900">{date}</h2>
-                <span className="text-xs uppercase tracking-[0.3em] text-slate-500">Batch: {entries.length}</span>
+                <span className="text-xs uppercase tracking-[0.3em] text-slate-500">Batch: {totalEntries}</span>
               </div>
-	              {entries.map((product) => (
-	                <AdminProductRow
-	                  key={product.id}
-	                  product={product}
-	                  onUpdated={applyProductPatch}
-	                  onPreview={onPreviewClick}
-	                  isPreviewLoading={isPreviewLoading && activePreviewId === (product.certificate?.id || 'temp')}
-	                  permissions={permissions}
-	                />
-	              ))}
+              {Object.entries(userGroups).map(([userKey, group]) => {
+                const title = group.user.company
+                  ? `${group.user.company} · ${group.user.name}`
+                  : group.user.name || group.user.email;
+                return (
+                  <div key={userKey} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <div className="text-sm font-semibold text-slate-900">{title}</div>
+                        <div className="text-xs text-slate-500">{group.user.email}</div>
+                      </div>
+                      <span className="text-[11px] uppercase tracking-[0.3em] text-slate-500">
+                        User: {group.items.length}
+                      </span>
+                    </div>
+                    <div className="mt-3 space-y-3">
+                      {group.items.map((product) => (
+                        <AdminProductRow
+                          key={product.id}
+                          product={product}
+                          onUpdated={applyProductPatch}
+                          onPreview={onPreviewClick}
+                          isPreviewLoading={isPreviewLoading && activePreviewId === (product.certificate?.id || 'temp')}
+                          permissions={permissions}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </section>
-          ))
+          )})
         )}
         {nextCursor ? (
           <div className="flex items-center justify-center">
