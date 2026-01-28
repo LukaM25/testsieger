@@ -33,6 +33,24 @@ function CheckIcon({ className = 'h-3.5 w-3.5 text-emerald-600' }: { className?:
   );
 }
 
+function CtaLabel({
+  children,
+  showCheck,
+  checkClassName,
+}: {
+  children: ReactNode;
+  showCheck?: boolean;
+  checkClassName?: string;
+}) {
+  return (
+    <span className="grid w-full grid-cols-[1fr_auto_1fr] items-center">
+      <span aria-hidden="true" />
+      <span className="text-center">{children}</span>
+      <span className="flex justify-end">{showCheck ? <CheckIcon className={checkClassName} /> : null}</span>
+    </span>
+  );
+}
+
 function CollapsibleSection({
   title,
   subtitle,
@@ -659,10 +677,9 @@ function AdminProductRow({
                   onClick={handleUpdate}
                   className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-black disabled:opacity-70"
                 >
-                  <span className="inline-flex items-center gap-2">
+                  <CtaLabel showCheck={statusSaved && !loading} checkClassName="h-3.5 w-3.5 text-emerald-500">
                     {loading ? 'Status wird gespeichert…' : 'STATUS SPEICHERN'}
-                    {statusSaved && !loading ? <CheckIcon /> : null}
-                  </span>
+                  </CtaLabel>
                 </button>
               </div>
               {statusBlockReason ? (
@@ -681,10 +698,9 @@ function AdminProductRow({
                     : 'border-slate-900 text-slate-900 hover:bg-slate-50'
                 }`}
               >
-                <span className="inline-flex items-center gap-2">
+                <CtaLabel showCheck={hasRatingData} checkClassName="h-3.5 w-3.5 text-emerald-500">
                   1. Prüfergebnis bearbeiten
-                  {hasRatingData ? <CheckIcon className="h-3.5 w-3.5 text-emerald-500" /> : null}
-                </span>
+                </CtaLabel>
               </a>
 
               <button
@@ -751,23 +767,12 @@ function AdminProductRow({
 	                        : undefined
 	                }
 	              >
-              <span className="inline-flex items-center gap-2">
+              <CtaLabel
+                showCheck={licensePlansEmailSent && !licensePlansEmailLoading}
+                checkClassName="h-3.5 w-3.5 text-emerald-600"
+              >
                 {licensePlansEmailLoading ? '2. Sende…' : '2. Bestanden - Mail senden'}
-                {licensePlansEmailSent && !licensePlansEmailLoading ? (
-                  <svg
-                    aria-hidden="true"
-                    className="h-3.5 w-3.5 text-emerald-600"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.704 5.29a1 1 0 01.006 1.414l-7.5 7.57a1 1 0 01-1.42 0L3.29 9.77a1 1 0 011.42-1.41l3.08 3.11 6.79-6.86a1 1 0 011.414-.01z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                ) : null}
-              </span>
+              </CtaLabel>
             </button>
               {licensePlansEmailMessage && <p className="text-xs text-slate-500">{licensePlansEmailMessage}</p>}
 
@@ -782,10 +787,12 @@ function AdminProductRow({
                     : 'border-emerald-600 text-emerald-700 hover:bg-emerald-50 disabled:opacity-70'
                 }`}
               >
-                <span className="inline-flex items-center gap-2">
+                <CtaLabel
+                  showCheck={hasCertificatePdf && !sendLoading}
+                  checkClassName="h-3.5 w-3.5 text-emerald-200"
+                >
                   {sendLoading ? '3. Zertifikat wird generiert…' : '3. Zertifikat generieren'}
-                  {hasCertificatePdf && !sendLoading ? <CheckIcon className="h-3.5 w-3.5 text-emerald-200" /> : null}
-                </span>
+                </CtaLabel>
               </button>
 
               <button
@@ -800,10 +807,9 @@ function AdminProductRow({
                     : 'border-amber-700 text-amber-800 hover:bg-amber-50 disabled:opacity-70'
                 }`}
               >
-                <span className="inline-flex items-center gap-2">
+                <CtaLabel showCheck={hasSeal && !genLoading} checkClassName="h-3.5 w-3.5 text-emerald-500">
                   {genLoading ? '4. Siegel wird generiert…' : '4. Siegel generieren'}
-                  {hasSeal && !genLoading ? <CheckIcon className="h-3.5 w-3.5 text-emerald-500" /> : null}
-                </span>
+                </CtaLabel>
               </button>
 
               {!licensePaid && (
@@ -836,10 +842,12 @@ function AdminProductRow({
                     disabled={!reportFile || uploadingReport || !permissions.canUploadReport}
                     className="inline-flex min-h-[44px] w-full items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-emerald-800 disabled:opacity-70"
                   >
-                    <span className="inline-flex items-center gap-2">
+                    <CtaLabel
+                      showCheck={reportUploaded && !uploadingReport}
+                      checkClassName="h-3.5 w-3.5 text-emerald-200"
+                    >
                       {uploadingReport ? 'Lade hoch...' : 'Prüfbericht hochladen'}
-                      {reportUploaded && !uploadingReport ? <CheckIcon className="h-3.5 w-3.5 text-emerald-200" /> : null}
-                    </span>
+                    </CtaLabel>
                   </button>
 	                </div>
 	                {reportMessage && <p className="text-xs text-slate-500">{reportMessage}</p>}
@@ -883,10 +891,9 @@ function AdminProductRow({
                 className="rounded-lg border border-emerald-800 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-800 transition hover:bg-emerald-50 disabled:opacity-70"
                 title={!permissions.canSendCompletion ? 'Keine Berechtigung.' : undefined}
               >
-                <span className="inline-flex items-center gap-2">
+                <CtaLabel showCheck={completionDone && !sendLoading} checkClassName="h-3.5 w-3.5 text-emerald-600">
                   {sendLoading ? '6. Sende…' : 'Abschluss – Alle Dateien senden'}
-                  {completionDone && !sendLoading ? <CheckIcon className="h-3.5 w-3.5 text-emerald-600" /> : null}
-                </span>
+                </CtaLabel>
               </button>
 
               <p className="text-xs text-slate-500">
@@ -910,10 +917,9 @@ function AdminProductRow({
                   if (!product.certificate?.pdfUrl || !canAccessAssets) e.preventDefault();
                 }}
               >
-                <span className="inline-flex items-center gap-2">
+                <CtaLabel showCheck={hasCertificatePdf} checkClassName="h-3.5 w-3.5 text-emerald-600">
                   Zertifikat öffnen
-                  {hasCertificatePdf ? <CheckIcon className="h-3.5 w-3.5 text-emerald-600" /> : null}
-                </span>
+                </CtaLabel>
               </a>
 	              {product.certificate?.reportUrl ? (
                 <a
@@ -933,10 +939,9 @@ function AdminProductRow({
                       : 'border border-slate-200 text-slate-400 cursor-not-allowed'
                   }`}
                 >
-                  <span className="inline-flex items-center gap-2">
+                  <CtaLabel showCheck={reportUploaded} checkClassName="h-3.5 w-3.5 text-emerald-600">
                     Hochgeladener Prüfbericht
-                    {reportUploaded ? <CheckIcon className="h-3.5 w-3.5 text-emerald-600" /> : null}
-                  </span>
+                  </CtaLabel>
                 </a>
 	              ) : (
 	                <div className="inline-flex items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
@@ -960,10 +965,9 @@ function AdminProductRow({
                     : 'border border-slate-200 text-slate-400 cursor-not-allowed'
                 }`}
               >
-                <span className="inline-flex items-center gap-2">
+                <CtaLabel showCheck={hasSeal} checkClassName="h-3.5 w-3.5 text-emerald-600">
                   Siegel öffnen
-                  {hasSeal ? <CheckIcon className="h-3.5 w-3.5 text-emerald-600" /> : null}
-                </span>
+                </CtaLabel>
               </a>
               <a
                 href={canAccessRatings ? `/api/admin/products/${product.id}/rating-sheet` : '#'}
@@ -976,10 +980,9 @@ function AdminProductRow({
                     : 'border border-slate-200 text-slate-400 cursor-not-allowed'
                 }`}
               >
-                <span className="inline-flex items-center gap-2">
+                <CtaLabel showCheck={hasRatingData} checkClassName="h-3.5 w-3.5 text-emerald-600">
                   Rating CSV herunterladen
-                  {hasRatingData ? <CheckIcon className="h-3.5 w-3.5 text-emerald-600" /> : null}
-                </span>
+                </CtaLabel>
               </a>
 	              {product.license?.licenseCode && (
 	                <div className="col-span-2 flex flex-col rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
