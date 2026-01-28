@@ -37,15 +37,23 @@ function CtaLabel({
   children,
   showCheck,
   checkClassName,
+  textClassName,
+  compactTextClassName,
 }: {
   children: ReactNode;
   showCheck?: boolean;
   checkClassName?: string;
+  textClassName?: string;
+  compactTextClassName?: string;
 }) {
   return (
     <span className="grid w-full grid-cols-[1fr_auto_1fr] items-center">
       <span aria-hidden="true" />
-      <span className="text-center">{children}</span>
+      <span
+        className={`text-center ${showCheck ? compactTextClassName || '' : textClassName || ''}`.trim()}
+      >
+        {children}
+      </span>
       <span className="flex justify-end">{showCheck ? <CheckIcon className={checkClassName} /> : null}</span>
     </span>
   );
@@ -939,7 +947,11 @@ function AdminProductRow({
                       : 'border border-slate-200 text-slate-400 cursor-not-allowed'
                   }`}
                 >
-                  <CtaLabel showCheck={reportUploaded} checkClassName="h-3.5 w-3.5 text-emerald-600">
+                  <CtaLabel
+                    showCheck={reportUploaded}
+                    checkClassName="h-3.5 w-3.5 text-emerald-600"
+                    compactTextClassName="text-[10px] leading-tight sm:text-[11px]"
+                  >
                     Hochgeladener Prüfbericht
                   </CtaLabel>
                 </a>
@@ -980,7 +992,11 @@ function AdminProductRow({
                     : 'border border-slate-200 text-slate-400 cursor-not-allowed'
                 }`}
               >
-                <CtaLabel showCheck={hasRatingData} checkClassName="h-3.5 w-3.5 text-emerald-600">
+                <CtaLabel
+                  showCheck={hasRatingData}
+                  checkClassName="h-3.5 w-3.5 text-emerald-600"
+                  compactTextClassName="text-[10px] leading-tight sm:text-[11px]"
+                >
                   Rating CSV herunterladen
                 </CtaLabel>
               </a>
