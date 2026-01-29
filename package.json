@@ -12,7 +12,9 @@
     "postinstall": "prisma generate",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "test": "vitest",
+    "test": "vitest --config vitest.local.config.ts",
+    "pretest:storybook": "node scripts/ensure-storybook-builder-vite.cjs",
+    "test:storybook": "vitest --config vitest.config.ts",
     "aws:whoami": "node scripts/check-aws-sts.js",
     "seed:admin": "node scripts/seed-admin.cjs"
   },
@@ -54,6 +56,7 @@
     "@storybook/addon-a11y": "^10.0.6",
     "@storybook/addon-docs": "^10.0.6",
     "@storybook/addon-vitest": "^10.0.6",
+    "@storybook/builder-vite": "^10.2.1",
     "@storybook/nextjs-vite": "^10.0.6",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^14.0.0",

@@ -40,7 +40,7 @@ async function main() {
   await sendPrecheckPaymentSuccess({
     to: product.user.email,
     name: product.user.name,
-    productName: product.name,
+    productNames: [product.name],
     processNumber,
     receiptPdf: undefined,
   });
