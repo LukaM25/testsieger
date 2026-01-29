@@ -511,6 +511,25 @@ export default function PrecheckPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (checkout !== "success") return;
+    if (!searchParams) return;
+    if (!productId) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("checkout");
+      const qs = params.toString();
+      router.replace(`/precheck${qs ? `?${qs}` : ""}`);
+      return;
+    }
+    if (products.length && !products.some((product) => product.id === productId)) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("checkout");
+      const qs = params.toString();
+      router.replace(`/precheck${qs ? `?${qs}` : ""}`);
+    }
+  }, [checkout, productId, products, router, searchParams]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
     if (isUnauthorized) {
       setPaymentConfirming(false);
       setPaymentConfirmTimedOut(false);

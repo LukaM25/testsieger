@@ -113,6 +113,9 @@ function AdminProductRow({
   const [licensePlansEmailLoading, setLicensePlansEmailLoading] = useState(false);
   const [licensePlansEmailMessage, setLicensePlansEmailMessage] = useState<string | null>(null);
   const [licensePlansEmailSent, setLicensePlansEmailSent] = useState(false);
+  const [statusPopupOpen, setStatusPopupOpen] = useState(false);
+  const [statusPopupTitle, setStatusPopupTitle] = useState('Status muss Aktualisiert werden');
+  const [statusPopupBody, setStatusPopupBody] = useState('Bitte Status auf „Bestanden“ setzen und speichern.');
   
   const [paymentStatusValue, setPaymentStatusValue] = useState<PaymentStatusOption>(
     (product.paymentStatus as PaymentStatusOption) || 'UNPAID'
@@ -713,24 +716,37 @@ function AdminProductRow({
 
               <button
                 type="button"
-                disabled={licensePlansEmailLoading || !canSendLicensePlansEmail}
+                disabled={licensePlansEmailLoading}
                 onClick={async () => {
-	                  setLicensePlansEmailMessage(null);
-                    setLicensePlansEmailSent(false);
-	                  if (!canSendLicensePlansEmail) {
-	                    if (!permissions.canUpdateStatus) {
-	                      setLicensePlansEmailMessage('Keine Berechtigung.');
-	                    } else if (!ratingReady) {
-	                      setLicensePlansEmailMessage('Prüfergebnis fehlt – bitte Ergebnis speichern.');
-	                    } else if (!['PAID', 'MANUAL'].includes(product.paymentStatus)) {
-	                      setLicensePlansEmailMessage('Grundgebühr muss bezahlt sein.');
-	                    } else if ((product.adminProgress as any) !== 'PASS') {
-	                      setLicensePlansEmailMessage('Status muss auf Bestanden stehen.');
-	                    } else {
-	                      setLicensePlansEmailMessage('Voraussetzungen fehlen.');
-	                    }
-	                    return;
-	                  }
+                  setLicensePlansEmailMessage(null);
+                  setLicensePlansEmailSent(false);
+                  if (!canSendLicensePlansEmail) {
+                    let popupTitle = 'Aktion nicht möglich';
+                    let popupBody = 'Bitte Voraussetzungen prüfen und erneut versuchen.';
+                    if (!permissions.canUpdateStatus) {
+                      popupTitle = 'Keine Berechtigung';
+                      popupBody = 'Sie haben keine Berechtigung, diese Aktion auszuführen.';
+                      setLicensePlansEmailMessage('Keine Berechtigung.');
+                    } else if (!ratingReady) {
+                      popupTitle = 'Prüfergebnis fehlt';
+                      popupBody = 'Bitte Prüfergebnis speichern, bevor Sie die E-Mail senden.';
+                      setLicensePlansEmailMessage('Prüfergebnis fehlt – bitte Ergebnis speichern.');
+                    } else if (!['PAID', 'MANUAL'].includes(product.paymentStatus)) {
+                      popupTitle = 'Grundgebühr offen';
+                      popupBody = 'Die Grundgebühr muss bezahlt sein, bevor die E-Mail gesendet werden kann.';
+                      setLicensePlansEmailMessage('Grundgebühr muss bezahlt sein.');
+                    } else if ((product.adminProgress as any) !== 'PASS') {
+                      popupTitle = 'Status muss Aktualisiert werden';
+                      popupBody = 'Bitte Status auf „Bestanden“ setzen und speichern.';
+                      setLicensePlansEmailMessage('Status muss auf Bestanden stehen.');
+                    } else {
+                      setLicensePlansEmailMessage('Voraussetzungen fehlen.');
+                    }
+                    setStatusPopupTitle(popupTitle);
+                    setStatusPopupBody(popupBody);
+                    setStatusPopupOpen(true);
+                    return;
+                  }
 	                  setLicensePlansEmailLoading(true);
 	                  try {
 	                    const res = await fetch(`/api/admin/products/${product.id}/send-license-plans-email`, {
@@ -758,11 +774,13 @@ function AdminProductRow({
 		                    onUpdated({ id: product.id });
 		                  }
 		                }}
-	                className={`rounded-lg px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition ${
-	                  !canSendLicensePlansEmail || licensePlansEmailLoading
-	                    ? 'border border-slate-200 text-slate-400 cursor-not-allowed'
-	                    : 'border border-indigo-700 text-indigo-800 hover:bg-indigo-50'
-	                }`}
+                className={`rounded-lg px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition ${
+                  licensePlansEmailSent && !licensePlansEmailLoading
+                    ? 'border border-emerald-600 bg-emerald-600 text-white'
+                    : !canSendLicensePlansEmail || licensePlansEmailLoading
+                      ? 'border border-slate-200 text-slate-400 cursor-not-allowed'
+                      : 'border border-indigo-700 text-indigo-800 hover:bg-indigo-50'
+                }`}
 	                title={
 	                  !permissions.canUpdateStatus
 	                    ? 'Keine Berechtigung.'
@@ -779,9 +797,28 @@ function AdminProductRow({
                 showCheck={licensePlansEmailSent && !licensePlansEmailLoading}
                 checkClassName="h-3.5 w-3.5 text-emerald-600"
               >
-                {licensePlansEmailLoading ? '2. Sende…' : '2. Bestanden - Mail senden'}
+                {licensePlansEmailLoading
+                  ? '2. Sende…'
+                  : licensePlansEmailSent
+                    ? 'BESTANDEN - MAIL SENT'
+                    : '2. Bestanden - Mail senden'}
               </CtaLabel>
             </button>
+              {statusPopupOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">
+                  <div className="w-full max-w-xs rounded-2xl bg-white p-5 shadow-xl">
+                    <div className="text-sm font-semibold text-slate-900">{statusPopupTitle}</div>
+                    <p className="mt-2 text-xs text-slate-600">{statusPopupBody}</p>
+                    <button
+                      type="button"
+                      onClick={() => setStatusPopupOpen(false)}
+                      className="mt-4 w-full rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white hover:bg-black"
+                    >
+                      OK
+                    </button>
+                  </div>
+                </div>
+              )}
               {licensePlansEmailMessage && <p className="text-xs text-slate-500">{licensePlansEmailMessage}</p>}
 
               <button

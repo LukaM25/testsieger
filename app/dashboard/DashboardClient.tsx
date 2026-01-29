@@ -1100,17 +1100,9 @@ export default function DashboardClient({ user }: DashboardClientProps) {
             })}
           </div>
           <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
-            <div className="flex items-center justify-between">
-              <span>Netto</span>
-              <span className="font-semibold text-slate-800">{formatEur(cartNetTotalCents)}</span>
-            </div>
-            <div className="mt-1 flex items-center justify-between">
-              <span>MwSt. (19%)</span>
-              <span className="font-semibold text-slate-800">{formatEur(cartVatCents)}</span>
-            </div>
-            <div className="mt-1 flex items-center justify-between text-sm font-semibold text-slate-900">
-              <span>Brutto</span>
-              <span>{formatEur(licenseCart.totals.totalCents)}</span>
+            <div className="flex items-center justify-between text-sm font-semibold text-slate-900">
+              <span>Gesamt (Netto)</span>
+              <span>{formatEur(cartNetTotalCents)}</span>
             </div>
             {licenseCart.totals.savingsCents > 0 && (
               <div className="mt-1 flex items-center justify-between text-emerald-700">
@@ -1118,6 +1110,12 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                 <span className="font-semibold">- {formatEur(licenseCart.totals.savingsCents)}</span>
               </div>
             )}
+            <div className="mt-1 flex items-center justify-between text-slate-500">
+              <span>MwSt. Info</span>
+              <span className="font-semibold text-slate-500">
+                zzgl. 19% MwSt. ({formatEur(cartVatCents)})
+              </span>
+            </div>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
               <span>{cartEligibleCount} verfügbar</span>
               {cartIneligibleCount > 0 && <span>· {cartIneligibleCount} nicht verfügbar</span>}
