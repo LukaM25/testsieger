@@ -1204,6 +1204,11 @@ export default function DashboardClient({ user }: DashboardClientProps) {
             !selectedProductHasPassed ||
             planMatchesCart ||
             isBusy;
+          const canShowGoldCta =
+            Boolean(selectedProduct) &&
+            selectedProductBaseFeePaid &&
+            selectedProductHasPassed &&
+            !selectedProductLicenseActive;
 
           const ctaGoldClass =
             "text-slate-900 shadow-[0_18px_45px_-18px_rgba(245,158,11,0.85)] ring-2 ring-amber-200/90 hover:brightness-110 hover:shadow-[0_22px_55px_-18px_rgba(245,158,11,0.95)]";
@@ -1265,11 +1270,11 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                 onClick={() => selectedProduct && handlePlanSelect(selectedProduct.id, planKey, true)}
                 disabled={actionDisabled}
                 className={`w-full rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  actionDisabled
+                  !canShowGoldCta
                     ? "bg-slate-200 text-slate-500 cursor-not-allowed"
                     : ctaGoldClass
                 }`}
-                style={actionDisabled ? undefined : ctaGoldStyle}
+                style={canShowGoldCta ? ctaGoldStyle : undefined}
               >
                 {actionLabel}
               </button>
@@ -1465,7 +1470,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
           cartPlanByProductId={cartPlanByProductId}
         />
 
-        {hasOpenLicensePayments ? planSelectionSection : null}
+        {planSelectionSection}
 
         {certificationsPanel}
 

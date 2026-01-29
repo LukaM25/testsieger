@@ -86,7 +86,7 @@ const plans: Plan[] = [
       de: ["Siegel", "Zertifikat", "Prüfbericht"],
       en: ["Seal", "Certificate", "Test report"],
     },
-    basePriceEur: 1.47,
+    basePriceEur: 1.09,
     billing: "daily",
     footer: {
       de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
@@ -104,7 +104,7 @@ const plans: Plan[] = [
       de: ["Siegel", "Zertifikat", "Prüfbericht"],
       en: ["Seal", "Certificate", "Test report"],
     },
-    basePriceEur: 1466,
+    basePriceEur: 1460,
     billing: "one-time",
     footer: {
       de: ["Abrechnung einmalig", "Lizenzverlängerung jährlich."],
@@ -211,13 +211,44 @@ export default function ProduktTestPage() {
   const { locale } = useLocale();
   const tr = (de: string, en: string) => (locale === 'en' ? en : de);
   const [showPrecheck, setShowPrecheck] = useState(false);
+  const [precheckSticky, setPrecheckSticky] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
+  const precheckCtaRef = useRef<HTMLButtonElement | null>(null);
   const precheckSectionRef = useRef<HTMLElement | null>(null);
   const previewRef = useRef<HTMLElement | null>(null);
   const procedureTopRef = useRef<HTMLDivElement | null>(null);
   const procedureDetailRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const hasPlayedVideoRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const updateSticky = () => {
+      const node = precheckCtaRef.current;
+      if (!node) return;
+      const rect = node.getBoundingClientRect();
+      const threshold = rect.top + window.scrollY + rect.height;
+      setPrecheckSticky(window.scrollY > threshold);
+    };
+    updateSticky();
+    window.addEventListener('scroll', updateSticky, { passive: true });
+    window.addEventListener('resize', updateSticky);
+    return () => {
+      window.removeEventListener('scroll', updateSticky);
+      window.removeEventListener('resize', updateSticky);
+    };
+  }, [showPrecheck]);
+
+  const handlePrecheckToggle = () => {
+    setShowPrecheck((s) => !s);
+  };
+
+  const handleStickyClick = () => {
+    if (!showPrecheck) setShowPrecheck(true);
+    if (precheckSectionRef.current) {
+      precheckSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [contentMaxHeight, setContentMaxHeight] = useState<string>('0px');
   const [heroAnim, setHeroAnim] = useState(false);
@@ -413,6 +444,27 @@ export default function ProduktTestPage() {
 
   return (
     <main className="bg-white text-slate-900">
+      {precheckSticky && (
+        <div className="fixed top-16 left-0 right-0 z-40 flex justify-center px-4">
+          <button
+            type="button"
+            onClick={handleStickyClick}
+            className="group flex items-center gap-3 rounded-full px-5 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white shadow-[0_16px_30px_-18px_rgba(29,78,216,0.45)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-16px_rgba(29,78,216,0.5)] opacity-90 scale-[1.15]"
+            style={{ backgroundImage: "linear-gradient(90deg, #1d4ed8 0%, #1e3a8a 55%, #0f172a 100%)" }}
+            aria-label={tr('Kostenloser Pre-Check', 'Free pre-check')}
+          >
+            <span>{tr('Kostenloser Pre-Check', 'Free pre-check')}</span>
+            <svg
+              className="h-4 w-4 transition-transform duration-200 group-hover:translate-y-[-1px]"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.06z" />
+            </svg>
+          </button>
+        </div>
+      )}
       <section className="relative mx-auto flex max-w-6xl flex-col gap-10 px-6 py-16 sm:flex-row sm:items-center sm:justify-between lg:py-20">
   <div className="space-y-6 max-w-xl">
           <div className="flex items-center gap-4">
@@ -534,9 +586,10 @@ export default function ProduktTestPage() {
       <section id="precheck" ref={precheckSectionRef} className="mx-auto max-w-3xl px-4 py-10">
         <div className="flex flex-col items-center gap-4 text-slate-900">
           <button
+            ref={precheckCtaRef}
             type="button"
-            onClick={() => setShowPrecheck((s) => !s)}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowPrecheck((s) => !s); }}
+            onClick={handlePrecheckToggle}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handlePrecheckToggle(); }}
             className="group relative flex w-full flex-col items-center gap-2 rounded-full px-14 py-6 text-center text-white shadow-[0_18px_40px_-16px_rgba(29,78,216,0.5),0_10px_20px_-12px_rgba(30,58,138,0.35)] transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_22px_48px_-14px_rgba(29,78,216,0.5),0_12px_24px_-12px_rgba(30,58,138,0.35)] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600"
             style={{ backgroundImage: "linear-gradient(90deg, #1d4ed8 0%, #1e3a8a 55%, #0f172a 100%)" }}
             aria-expanded={showPrecheck}
