@@ -1008,6 +1008,18 @@ export default function ProduktTestPage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-6xl px-6 py-6">
+        <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_20px_50px_-40px_rgba(15,23,42,0.4)]">
+          <Image
+            src="/images/neuetestsieger.jpeg"
+            alt={tr('Neuer Testsieger', 'New Testsieger')}
+            width={1400}
+            height={900}
+            className="h-[260px] w-full rounded-2xl object-contain bg-slate-50 sm:h-[320px] md:h-[380px] lg:h-[440px]"
+          />
+        </div>
+      </section>
+
       {/* Prüfverfahren and FAQ */}
       <section className="mx-auto max-w-6xl px-6 py-16">
         <div className="grid gap-8" id="unser-pruefverfahren" ref={procedureTopRef}>
