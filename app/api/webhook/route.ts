@@ -205,20 +205,23 @@ async function handleCheckoutSession(cs: any) {
       }
     }
 
-    for (const product of products) {
-      if (!product?.user) continue;
-      try {
-        const processNumber = await ensureProcessNumber(product.id);
-        await sendPrecheckPaymentSuccess({
-          to: product.user.email,
-          name: product.user.name,
-          productName: product.name,
-          processNumber,
-          receiptPdf,
-        });
-      } catch (err) {
-        console.error('PRECHECK_PAYMENT_EMAIL_ERROR', err);
-      }
+    const recipient = products.find((product) => product.user)?.user;
+    const productNames = products.map((product) => product.name);
+    if (!recipient) return;
+    try {
+      const primaryProductId = productIds[0] ?? products[0]?.id;
+      const processNumber = primaryProductId
+        ? await ensureProcessNumber(primaryProductId)
+        : await ensureProcessNumber(products[0].id);
+      await sendPrecheckPaymentSuccess({
+        to: recipient.email,
+        name: recipient.name,
+        productNames,
+        processNumber,
+        receiptPdf,
+      });
+    } catch (err) {
+      console.error('PRECHECK_PAYMENT_EMAIL_ERROR', err);
     }
   }
 }

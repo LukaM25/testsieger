@@ -114,12 +114,12 @@ export default async function PrecheckSuccessPage({ searchParams }: Props) {
     },
     {
       name: 'Premium',
-      price: tr('1,47 € / Tag (jährlich)', '€1.47 / day (yearly)'),
+      price: tr('1,09 € / Tag (jährlich)', '€1.09 / day (yearly)'),
       reach: tr('EU-Sprachen · alle Kanäle', 'EU languages · all channels'),
     },
     {
       name: 'Lifetime',
-      price: tr('1466 € einmalig', '€1466 one-time'),
+      price: tr('1460 € einmalig', '€1460 one-time'),
       reach: tr('Zertifikat & Bericht · alle Kanäle', 'Certificate & report · all channels'),
     },
   ];

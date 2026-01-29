@@ -74,7 +74,7 @@ const plans: Plan[] = [
       de: ["Siegel", "Zertifikat", "Prüfbericht"],
       en: ["Seal", "Certificate", "Test report"],
     },
-    basePriceEur: 1.47,
+    basePriceEur: 1.09,
     billing: "daily",
     footer: {
       de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
@@ -92,7 +92,7 @@ const plans: Plan[] = [
       de: ["Siegel", "Zertifikat", "Prüfbericht"],
       en: ["Seal", "Certificate", "Test report"],
     },
-    basePriceEur: 1466,
+    basePriceEur: 1460,
     billing: "one-time",
     footer: {
       de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],

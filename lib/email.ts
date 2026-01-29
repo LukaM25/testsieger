@@ -327,17 +327,24 @@ export async function sendFailureNotification(opts: {
 export async function sendPrecheckPaymentSuccess(opts: {
   to: string;
   name: string;
-  productName: string;
+  productNames: string[];
   processNumber: string;
   receiptPdf?: Buffer | null;
 }) {
-  const { to, name, productName, processNumber, receiptPdf } = opts;
+  const { to, name, productNames, processNumber, receiptPdf } = opts;
+  const safeProductNames = productNames.map((value) => escapeHtml(value));
+  const productList = safeProductNames.join(', ');
+  const isPlural = productNames.length !== 1;
+  const productNoun = isPlural ? 'Produkte' : 'Produkt';
+  const productPronoun = isPlural ? 'Ihre' : 'Ihr';
+  const objectPronoun = isPlural ? 'sie' : 'es';
   const html = `
     <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
       <p>Guten Tag ${escapeHtml(name)},</p>
       <p>vielen Dank für die Begleichung der Prüfgebühr. Ihr Auftrag für den Testsieger Check des Deutschen Prüfsiegel Instituts (DPI) ist damit offiziell aktiviert.</p>
+      <p>${productNoun}: <strong>${productList}</strong></p>
       <p>Die Rechnung zu Ihrer Zahlung finden Sie im Anhang dieser E-Mail.</p>
-      <p>Damit wir Ihr Produkt unmittelbar in den Prüfprozess übernehmen können, senden Sie es bitte an folgende Versandadresse:</p>
+      <p>Damit wir ${productPronoun.toLowerCase()} ${productNoun.toLowerCase()} unmittelbar in den Prüfprozess übernehmen können, senden Sie ${objectPronoun} bitte an folgende Versandadresse:</p>
       <p style="margin:12px 0;line-height:1.5;font-size:15.4px;font-weight:700;">
         Deutsches Prüfsiegel Institut (DPI)<br/>
         Abteilung Produktprüfung<br/>
@@ -345,7 +352,7 @@ export async function sendPrecheckPaymentSuccess(opts: {
         83703 Gmund<br/>
         Adresszusatz: Vorgangsnummer ${escapeHtml(processNumber)} (Betreff)
       </p>
-      <p>Die Vorgangsnummer ist zwingend erforderlich, damit Ihr Produkt korrekt zugeordnet werden kann.</p>
+      <p>Die Vorgangsnummer ist zwingend erforderlich, damit ${productPronoun.toLowerCase()} ${productNoun.toLowerCase()} korrekt zugeordnet werden ${isPlural ? 'können' : 'kann'}.</p>
       <p>Sobald das Produkt bei uns eingeht, erhalten Sie die Eingangsbestätigung sowie das geplante Prüfzeitfenster. Bei Fragen stehen wir jederzeit zur Verfügung.</p>
       <p style="margin-top:18px;">Mit besten Grüßen<br/>Deutsches Prüfsiegel Institut (DPI)</p>
       ${renderFooter()}
@@ -360,7 +367,7 @@ export async function sendPrecheckPaymentSuccess(opts: {
     attachments: receiptPdf
       ? [
           {
-            filename: `Rechnung-${productName}.pdf`,
+            filename: `Rechnung-${productNames.length === 1 ? productNames[0] : processNumber}.pdf`,
             content: receiptPdf,
             contentType: 'application/pdf',
           },
@@ -570,13 +577,22 @@ export async function sendPassAndLicenseRequest(opts: {
 export async function sendProductReceivedEmail(opts: {
   to: string;
   name: string;
-  productName: string;
+  productNames: string[];
+  processNumber?: string;
 }) {
-  const { to, name, productName } = opts;
+  const { to, name, productNames, processNumber } = opts;
+  const safeProductNames = productNames.map((value) => escapeHtml(value));
+  const productList = safeProductNames.join(', ');
+  const isPlural = productNames.length !== 1;
+  const productNoun = isPlural ? 'Produkte' : 'Produkt';
+  const processLine = processNumber
+    ? `<p>Vorgangsnummer: <strong>${escapeHtml(processNumber)}</strong></p>`
+    : '';
   const html = `
     <div style="font-family:system-ui,Arial;line-height:1.6;color:#111">
       <p>Guten Tag${name ? ' ' + escapeHtml(name) : ''},</p>
-      <p>Ihr Produkt <strong>${escapeHtml(productName)}</strong> ist bei uns eingetroffen und für den Testsieger Check des DPI registriert. Die Prüfung läuft im vereinbarten Zeitfenster an.</p>
+      <p>Ihr ${productNoun} <strong>${productList}</strong> ${isPlural ? 'sind' : 'ist'} bei uns eingetroffen und für den Testsieger Check des DPI registriert. Die Prüfung läuft im vereinbarten Zeitfenster an.</p>
+      ${processLine}
       <p>Sie erhalten automatisch ein Update, sobald die Analyse abgeschlossen ist.</p>
       <p style="margin-top:16px;">Mit besten Grüßen<br/>Deutsches Prüfsiegel Institut (DPI)</p>
       ${renderFooter()}

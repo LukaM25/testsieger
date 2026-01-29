@@ -3,6 +3,7 @@ import { ProductStatus, AdminRole, Plan } from '@prisma/client';
 import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 import { sendFailureNotification, sendProductReceivedEmail } from '@/lib/email';
+import { ensureProcessNumber } from '@/lib/processNumber';
 
 export const runtime = 'nodejs';
 
@@ -97,11 +98,64 @@ export async function POST(req: Request) {
       console.error('FAILURE_EMAIL_ERROR', err);
     });
   } else if (status === 'RECEIVED') {
-    await sendProductReceivedEmail({
-      to: product.user.email,
-      name: product.user.name,
-      productName: product.name,
-    }).catch((err) => console.error('RECEIVED_EMAIL_ERROR', err));
+    try {
+      const precheckOrder = await prisma.order.findFirst({
+        where: {
+          productId: product.id,
+          paidAt: { not: null },
+          plan: { in: [Plan.PRECHECK_FEE, Plan.PRECHECK_PRIORITY] },
+        },
+        select: { stripeSessionId: true },
+        orderBy: { createdAt: 'asc' },
+      });
+      if (precheckOrder?.stripeSessionId) {
+        const groupOrders = await prisma.order.findMany({
+          where: {
+            stripeSessionId: precheckOrder.stripeSessionId,
+            plan: { in: [Plan.PRECHECK_FEE, Plan.PRECHECK_PRIORITY] },
+          },
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                adminProgress: true,
+                processNumber: true,
+                user: { select: { name: true, email: true } },
+              },
+            },
+          },
+          orderBy: { createdAt: 'asc' },
+        });
+
+        const alreadyNotified = groupOrders.some(
+          (order) =>
+            order.product.id !== product.id &&
+            ['RECEIVED', 'ANALYSIS', 'COMPLETION', 'PASS', 'FAIL'].includes(order.product.adminProgress)
+        );
+
+        if (!alreadyNotified) {
+          const primaryProduct = groupOrders[0]?.product ?? product;
+          const processNumber =
+            primaryProduct.processNumber ?? (await ensureProcessNumber(primaryProduct.id));
+          const productNames = groupOrders.map((order) => order.product.name);
+          await sendProductReceivedEmail({
+            to: product.user.email,
+            name: product.user.name,
+            productNames,
+            processNumber,
+          });
+        }
+      } else {
+        await sendProductReceivedEmail({
+          to: product.user.email,
+          name: product.user.name,
+          productNames: [product.name],
+        });
+      }
+    } catch (err) {
+      console.error('RECEIVED_EMAIL_ERROR', err);
+    }
   }
 
   const nextProductStatus = productUpdate.status ?? product.status;
