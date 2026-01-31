@@ -22,6 +22,7 @@ const PrecheckSchema = z.object({
   size: z.string().trim().min(2),
   madeIn: z.string().trim().min(2),
   material: z.string().trim().min(2),
+  privacyAccepted: z.literal(true),
 });
 
 export async function POST(req: Request) {

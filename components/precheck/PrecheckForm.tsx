@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useLocale } from '@/components/LocaleProvider';
 import { forwardRef } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
@@ -31,6 +32,9 @@ const Schema = z
     size: z.string().trim().min(2),
     madeIn: z.string().trim().min(2),
     material: z.string().trim().min(2),
+    privacyAccepted: z.boolean().refine((value) => value === true, {
+      message: 'Bitte Datenschutzerklärung akzeptieren',
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     path: ['confirmPassword'],
@@ -50,6 +54,7 @@ export default function PrecheckForm() {
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(Schema),
+    defaultValues: { privacyAccepted: false },
   });
 
   const onSubmit = async (values: FormValues) => {
@@ -306,6 +311,26 @@ export default function PrecheckForm() {
             <Error msg={errors.specs?.message} />
           </div>
         </div>
+
+        <div className="flex items-start gap-2">
+          <input
+            id="privacyAccepted"
+            type="checkbox"
+            {...register('privacyAccepted')}
+            className="mt-1 h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-800"
+            required
+          />
+          <label htmlFor="privacyAccepted" className="text-xs text-gray-700">
+            <span className="font-semibold">{tr('DSGVO', 'GDPR')}</span>
+            <span className="text-gray-500"> – </span>
+            {tr('Ich akzeptiere die ', 'I accept the ')}
+            <Link href="/datenschutz" className="underline underline-offset-2 hover:text-gray-900">
+              {tr('Datenschutzerklärung', 'privacy policy')}
+            </Link>
+            .
+          </label>
+        </div>
+        <Error msg={errors.privacyAccepted?.message} />
 
         <button
           type="submit"
