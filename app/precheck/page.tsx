@@ -695,8 +695,8 @@ export default function PrecheckPage() {
                       </p>
                       <p className="text-base md:text-lg text-slate-600 leading-relaxed">
                         {tr(
-                          `Wir haben die Grundgebühr für „${productLabel}“ erhalten. Als Nächstes erhalten Sie per E-Mail Rechnung und Versandadresse. Bitte senden Sie Ihr Produkt an uns, damit wir mit der Prüfung starten können.`,
-                          `We’ve received the base fee for “${productLabel}”. Next, you’ll receive the invoice and shipping address by email. Please send your product to us so we can start testing.`
+                          `Wir haben Ihren Auftrag erhalten. Als Nächstes erhalten Sie per E-Mail Rechnung und Versandadresse. Bitte senden Sie Ihr Produkt an uns, damit wir mit der Prüfung starten können.`,
+                          `We’ve received your order. Next, you’ll receive the invoice and shipping address by email. Please send your product to us so we can start testing.`
                         )}
                       </p>
                       {previewMulti && previewVariant === "1" && hasMultiPaid && (
@@ -1331,7 +1331,7 @@ export default function PrecheckPage() {
                           className="mt-4 inline-flex flex-col items-center gap-3 rounded-2xl bg-emerald-400/20 px-8 py-[1.1rem] text-[1.06rem] md:text-[1.21rem] font-semibold uppercase tracking-[0.18em] text-white/95"
                         >
                           <span>{discountLabel}</span>
-                          <span>{tr(`ERSPARNIS: ${savingsLabel}`, `SAVINGS: ${savingsLabel}`)}</span>
+                          <span className="text-emerald-300">{tr(`ERSPARNIS: ${savingsLabel}`, `SAVINGS: ${savingsLabel}`)}</span>
                         </div>
                       )}
                     </div>
