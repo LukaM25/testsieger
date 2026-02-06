@@ -4,7 +4,7 @@ import { getSession } from "@/lib/auth";
 import { stripe } from "@/lib/stripe";
 import { getPublicBaseUrl } from "@/lib/baseUrl";
 import { Plan } from "@prisma/client";
-import { LICENSE_PLAN_SET, getPlanPriceCentsMap } from "@/lib/licensePricing";
+import { LICENSE_PLAN_SET, computeDiscountedPlanPriceCents, getPlanPriceCentsMap } from "@/lib/licensePricing";
 
 export const runtime = "nodejs";
 
@@ -58,8 +58,9 @@ export async function POST() {
   const priceMap = await getPlanPriceCentsMap(planList as Plan[]);
 
   const lineItems = cart.items.map((item) => {
-    const basePriceCents = priceMap[item.plan as Plan] ?? 0;
-    const unitAmount = Math.round(basePriceCents * (1 - cartDiscountPercent / 100));
+    const plan = item.plan as Plan;
+    const basePriceCents = priceMap[plan] ?? 0;
+    const unitAmount = computeDiscountedPlanPriceCents(plan, basePriceCents, cartDiscountPercent);
     const planLabel =
       item.plan === "BASIC" ? "Lizenz Basic" : item.plan === "PREMIUM" ? "Lizenz Premium" : "Lizenz Lifetime";
     return {
@@ -91,8 +92,9 @@ export async function POST() {
 
   await prisma.order.createMany({
     data: cart.items.map((item) => {
-      const basePriceCents = priceMap[item.plan as Plan] ?? 0;
-      const priceCents = Math.round(basePriceCents * (1 - cartDiscountPercent / 100));
+      const plan = item.plan as Plan;
+      const basePriceCents = priceMap[plan] ?? 0;
+      const priceCents = computeDiscountedPlanPriceCents(plan, basePriceCents, cartDiscountPercent);
       return {
         userId: session.userId,
         productId: item.productId,

@@ -10,7 +10,14 @@ const PRICE_IDS: Partial<Record<Plan, string>> = {
   LIFETIME: process.env.STRIPE_PRICE_LIFETIME,
 };
 
-const priceCache = new Map<Plan, number>();
+const VAT_RATE = 0.19;
+type CachedStripePrice = {
+  unitAmount: number;
+  taxBehavior: "inclusive" | "exclusive" | "unspecified" | null;
+};
+const priceCache = new Map<Plan, CachedStripePrice>();
+const ANNUAL_BILLING_DAYS = 365;
+const DISCOUNT_DAILY_ROUNDED_PLANS = new Set<Plan>([Plan.BASIC, Plan.PREMIUM]);
 
 export function normalizeLicensePlan(raw: unknown): Plan | null {
   if (typeof raw !== "string") return null;
@@ -29,7 +36,11 @@ export async function getPlanPriceCents(plan: Plan) {
     throw new Error(`INVALID_LICENSE_PLAN:${plan}`);
   }
   const cached = priceCache.get(plan);
-  if (typeof cached === "number") return cached;
+  if (cached) {
+    return cached.taxBehavior === "inclusive"
+      ? Math.round(cached.unitAmount / (1 + VAT_RATE))
+      : cached.unitAmount;
+  }
   const priceId = PRICE_IDS[plan];
   if (!priceId) {
     throw new Error(`MISSING_PRICE_ID:${plan}`);
@@ -38,8 +49,12 @@ export async function getPlanPriceCents(plan: Plan) {
   if (typeof price.unit_amount !== "number") {
     throw new Error(`INVALID_PRICE_AMOUNT:${plan}`);
   }
-  priceCache.set(plan, price.unit_amount);
-  return price.unit_amount;
+  const next: CachedStripePrice = {
+    unitAmount: price.unit_amount,
+    taxBehavior: price.tax_behavior ?? null,
+  };
+  priceCache.set(plan, next);
+  return next.taxBehavior === "inclusive" ? Math.round(next.unitAmount / (1 + VAT_RATE)) : next.unitAmount;
 }
 
 export async function getPlanPriceCentsMap(plans: Plan[]) {
@@ -51,4 +66,18 @@ export async function getPlanPriceCentsMap(plans: Plan[]) {
     })
   );
   return Object.fromEntries(entries) as Record<Plan, number>;
+}
+
+export function computeDiscountedPlanPriceCents(plan: Plan, basePriceCents: number, discountPercent: number) {
+  const normalizedDiscount = Math.min(Math.max(discountPercent, 0), 100);
+  const factor = 1 - normalizedDiscount / 100;
+
+  // Basic/Premium are displayed as daily rates; mirror that rounding before yearly total.
+  if (DISCOUNT_DAILY_ROUNDED_PLANS.has(plan)) {
+    const baseDailyCents = Math.round(basePriceCents / ANNUAL_BILLING_DAYS);
+    const discountedDailyCents = Math.round(baseDailyCents * factor);
+    return discountedDailyCents * ANNUAL_BILLING_DAYS;
+  }
+
+  return Math.round(basePriceCents * factor);
 }

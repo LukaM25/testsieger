@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { Plan } from "@prisma/client";
-import { LICENSE_PLAN_SET, getPlanPriceCentsMap, normalizeLicensePlan } from "@/lib/licensePricing";
+import {
+  LICENSE_PLAN_SET,
+  computeDiscountedPlanPriceCents,
+  getPlanPriceCentsMap,
+  normalizeLicensePlan,
+} from "@/lib/licensePricing";
 
 export const runtime = "nodejs";
 
@@ -40,8 +45,9 @@ async function loadCartState(userId: string) {
   const priceMap = await getPlanPriceCentsMap(planList as Plan[]);
 
   const items = (cart?.items || []).map((item) => {
-    const basePriceCents = priceMap[item.plan as Plan] ?? 0;
-    const finalPriceCents = Math.round(basePriceCents * (1 - cartDiscountPercent / 100));
+    const plan = item.plan as Plan;
+    const basePriceCents = priceMap[plan] ?? 0;
+    const finalPriceCents = computeDiscountedPlanPriceCents(plan, basePriceCents, cartDiscountPercent);
     const savingsCents = Math.max(basePriceCents - finalPriceCents, 0);
     const paid = isPaidStatus(item.product.paymentStatus);
     const hasPassed = item.product.adminProgress === "PASS";

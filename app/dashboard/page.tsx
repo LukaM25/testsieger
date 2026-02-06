@@ -2,12 +2,33 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import DashboardClient from './DashboardClient';
+import { Plan } from '@prisma/client';
+import { getPlanPriceCentsMap } from '@/lib/licensePricing';
 
 type Props = {
   searchParams?: Promise<{ preview?: string }> | { preview?: string };
 };
 
 export default async function DashboardPage({ searchParams }: Props) {
+  const defaultPlanBasePriceCents = {
+    BASIC: 36135,
+    PREMIUM: 39785,
+    LIFETIME: 146000,
+  } as const;
+  let planBasePriceCents: { BASIC: number; PREMIUM: number; LIFETIME: number } = {
+    ...defaultPlanBasePriceCents,
+  };
+  try {
+    const resolved = await getPlanPriceCentsMap([Plan.BASIC, Plan.PREMIUM, Plan.LIFETIME]);
+    planBasePriceCents = {
+      BASIC: resolved.BASIC ?? defaultPlanBasePriceCents.BASIC,
+      PREMIUM: resolved.PREMIUM ?? defaultPlanBasePriceCents.PREMIUM,
+      LIFETIME: resolved.LIFETIME ?? defaultPlanBasePriceCents.LIFETIME,
+    };
+  } catch {
+    // Fallback keeps dashboard usable if Stripe lookup fails.
+  }
+
   const resolvedSearchParams = await Promise.resolve(searchParams);
   const preview =
     process.env.NODE_ENV !== 'production' && resolvedSearchParams?.preview === '1';
@@ -75,7 +96,7 @@ export default async function DashboardPage({ searchParams }: Props) {
       ],
     };
 
-    return <DashboardClient user={mockUser} />;
+    return <DashboardClient user={mockUser} planBasePriceCents={planBasePriceCents} />;
   }
 
   const session = await getSession();
@@ -147,6 +168,7 @@ export default async function DashboardPage({ searchParams }: Props) {
           product: o.product ? { id: o.product.id, name: o.product.name } : null,
         })),
       }}
+      planBasePriceCents={planBasePriceCents}
     />
   );
 }

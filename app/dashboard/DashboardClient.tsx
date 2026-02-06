@@ -11,6 +11,7 @@ import { useProductStatusPoll } from "@/hooks/useProductStatusPoll";
 
 interface DashboardClientProps {
   user: any;
+  planBasePriceCents?: Partial<Record<"BASIC" | "PREMIUM" | "LIFETIME", number>>;
 }
 
 type LicenseCartItem = {
@@ -33,31 +34,37 @@ type LicenseCartState = {
   totals: { baseCents: number; savingsCents: number; totalCents: number; itemCount: number };
 };
 
+const PLAN_BASE_DEFAULT_CENTS = {
+  BASIC: 36135,
+  PREMIUM: 39785,
+  LIFETIME: 146000,
+} as const;
+
 const PLAN_COMPARISON = [
   {
+    key: "BASIC",
     name: "Basic",
     theme: "sky",
     usage: ["1 Verkaufskanal", "Sprache: Deutsch"],
     contents: ["Siegel", "Zertifikat", "Prüfbericht"],
-    basePriceEur: 0.99,
     billing: "daily",
     footer: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
   },
   {
+    key: "PREMIUM",
     name: "Premium",
     theme: "indigo",
     usage: ["Alle Verkaufskanäle", "Alle Sprachen"],
     contents: ["Siegel", "Zertifikat", "Prüfbericht"],
-    basePriceEur: 1.09,
     billing: "daily",
     footer: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
   },
   {
+    key: "LIFETIME",
     name: "Lifetime",
     theme: "midnight",
     usage: ["Alle Verkaufskanäle", "Alle Sprachen"],
     contents: ["Siegel", "Zertifikat", "Prüfbericht"],
-    basePriceEur: 1460,
     billing: "one-time",
     footer: ["Abrechnung einmalig", "Lizenzverlängerung jährlich."],
   },
@@ -87,14 +94,42 @@ const PLAN_COMPARE_THEMES = {
   },
 } as const;
 
-function PlanComparePopover({ className = "" }: { className?: string }) {
+const ANNUAL_BILLING_DAYS = 365;
+const CARD_DISCOUNT_ROWS = [
+  { label: "1 Prod.", discountPercent: 0, multiplier: 1 },
+  { label: "2 Prod. -20%", discountPercent: 20, multiplier: 2 },
+  { label: "3 Prod. -30%", discountPercent: 30, multiplier: 3 },
+] as const;
+
+const formatPlanPriceFromCents = (cents: number) =>
+  new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(cents / 100);
+
+const computePlanCardPriceCents = (
+  billing: "daily" | "one-time",
+  annualBaseCents: number,
+  discountPercent: number,
+  multiplier: number
+) => {
+  if (billing === "daily") {
+    const baseDailyCents = Math.round(annualBaseCents / ANNUAL_BILLING_DAYS);
+    const discountedDailyCents = Math.round(baseDailyCents * (1 - discountPercent / 100));
+    return { displayCents: discountedDailyCents, suffix: " / Tag" };
+  }
+  const annualDiscountedCents = Math.round(annualBaseCents * multiplier * (1 - discountPercent / 100));
+  return { displayCents: annualDiscountedCents, suffix: "" };
+};
+
+function PlanComparePopover({
+  className = "",
+  plans,
+}: {
+  className?: string;
+  plans: Array<(typeof PLAN_COMPARISON)[number] & { basePriceCents: number }>;
+}) {
   const [hovered, setHovered] = useState(false);
   const [pinned, setPinned] = useState(false);
   const isOpen = hovered || pinned;
   const hoverTimeoutRef = useRef<number | null>(null);
-  const formatEur = (amount: number) =>
-    new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(amount);
-  const roundEur = (n: number) => Math.round(n * 100) / 100;
 
   const clearHoverTimeout = () => {
     if (hoverTimeoutRef.current) {
@@ -191,21 +226,20 @@ function PlanComparePopover({ className = "" }: { className?: string }) {
                   </div>
 
                   <div className="mt-5 grid flex-1 items-stretch gap-6 overflow-y-auto md:grid-cols-3">
-                    {PLAN_COMPARISON.map((plan) => {
+                    {plans.map((plan) => {
                       const theme = PLAN_COMPARE_THEMES[plan.theme];
-                      const priceSuffix = plan.billing === "daily" ? " / Tag" : "";
-                      const priceRows =
-                        plan.billing === "daily"
-                          ? [
-                              { label: "1 Prod.", price: `${formatEur(roundEur(plan.basePriceEur))}${priceSuffix}` },
-                              { label: "2 Prod. -20%", price: `${formatEur(roundEur(plan.basePriceEur * 0.8))}${priceSuffix}` },
-                              { label: "3 Prod. -30%", price: `${formatEur(roundEur(plan.basePriceEur * 0.7))}${priceSuffix}` },
-                            ]
-                          : [
-                              { label: "1 Prod.", price: `${formatEur(roundEur(plan.basePriceEur))}` },
-                              { label: "2 Prod. -20%", price: `${formatEur(roundEur(plan.basePriceEur * 2 * 0.8))}` },
-                              { label: "3 Prod. -30%", price: `${formatEur(roundEur(plan.basePriceEur * 3 * 0.7))}` },
-                            ];
+                      const priceRows = CARD_DISCOUNT_ROWS.map((row) => {
+                        const { displayCents, suffix } = computePlanCardPriceCents(
+                          plan.billing,
+                          plan.basePriceCents,
+                          row.discountPercent,
+                          row.multiplier
+                        );
+                        return {
+                          label: row.label,
+                          price: `${formatPlanPriceFromCents(displayCents)}${suffix}`,
+                        };
+                      });
                       return (
                         <div key={plan.name} className="flex h-full flex-col items-center gap-4">
                           <div className="text-lg font-semibold text-slate-900">{plan.name}</div>
@@ -291,7 +325,7 @@ const parseAddressParts = (raw: string) => {
   return { street, houseNumber, postalCode, city };
 };
 
-export default function DashboardClient({ user }: DashboardClientProps) {
+export default function DashboardClient({ user, planBasePriceCents }: DashboardClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialStatusProducts = useMemo<ProductStatusPayload[]>(
@@ -317,6 +351,22 @@ export default function DashboardClient({ user }: DashboardClientProps) {
   const selectedProduct = useMemo(
     () => products.find((product) => product.id === selectedProductId) || null,
     [products, selectedProductId]
+  );
+  const effectivePlanBaseCents = useMemo(
+    () => ({
+      BASIC: planBasePriceCents?.BASIC ?? PLAN_BASE_DEFAULT_CENTS.BASIC,
+      PREMIUM: planBasePriceCents?.PREMIUM ?? PLAN_BASE_DEFAULT_CENTS.PREMIUM,
+      LIFETIME: planBasePriceCents?.LIFETIME ?? PLAN_BASE_DEFAULT_CENTS.LIFETIME,
+    }),
+    [planBasePriceCents]
+  );
+  const planComparison = useMemo(
+    () =>
+      PLAN_COMPARISON.map((plan) => ({
+        ...plan,
+        basePriceCents: effectivePlanBaseCents[plan.key],
+      })),
+    [effectivePlanBaseCents]
   );
   const baseFeePlanByProductId = useMemo(() => {
     const orders = Array.isArray(user.orders) ? user.orders : [];
@@ -774,11 +824,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
 
   const formatEur = (cents: number) =>
     new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(cents / 100);
-  const formatPlanEur = (amount: number) =>
-    new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(amount);
   const VAT_RATE = 0.19;
-  const formatNetEur = (grossCents: number) =>
-    formatEur(Math.round(grossCents / (1 + VAT_RATE)));
 
   const cartItemsByProductId = useMemo(() => {
     const map = new Map<string, LicenseCartItem>();
@@ -819,8 +865,8 @@ export default function DashboardClient({ user }: DashboardClientProps) {
   const cartHasIneligibleItems = licenseCart.items.some((item) => !item.eligible);
   const cartEligibleCount = licenseCart.items.filter((item) => item.eligible).length;
   const cartIneligibleCount = Math.max(0, licenseCart.items.length - cartEligibleCount);
-  const cartNetTotalCents = Math.round(licenseCart.totals.totalCents / (1 + VAT_RATE));
-  const cartVatCents = Math.max(0, licenseCart.totals.totalCents - cartNetTotalCents);
+  const cartNetTotalCents = licenseCart.totals.totalCents;
+  const cartVatCents = Math.round(cartNetTotalCents * VAT_RATE);
   const cartReasonLabel = (reason?: string) => {
     if (reason === "GRUNDGEBUEHR_OFFEN") return "Grundgebühr offen";
     if (reason === "PRUEFUNG_OFFEN") return "Prüfung noch offen";
@@ -1087,9 +1133,9 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                       )}
                     </div>
                     <div className="text-right text-xs text-slate-600">
-                      <div className="text-sm font-semibold text-slate-900">{formatNetEur(item.finalPriceCents)}</div>
+                      <div className="text-sm font-semibold text-slate-900">{formatEur(item.finalPriceCents)}</div>
                       {item.savingsCents > 0 && (
-                        <div className="text-[11px] text-emerald-700">- {formatNetEur(item.savingsCents)}</div>
+                        <div className="text-[11px] text-emerald-700">- {formatEur(item.savingsCents)}</div>
                       )}
                       <button
                         type="button"
@@ -1171,23 +1217,21 @@ export default function DashboardClient({ user }: DashboardClientProps) {
       </div>
       {planHint && <p className="mt-3 text-sm text-amber-700">{planHint}</p>}
       <div className="mt-6 grid gap-6 md:grid-cols-3">
-        {PLAN_COMPARISON.map((plan) => {
+        {planComparison.map((plan) => {
           const theme = PLAN_COMPARE_THEMES[plan.theme];
-          const planKey = plan.name.toUpperCase();
-          const priceSuffix = plan.billing === "daily" ? " / Tag" : "";
-          const roundEur = (amount: number) => Math.round(amount * 100) / 100;
-          const priceRows =
-            plan.billing === "daily"
-              ? [
-                  { label: "1 Prod.", price: `${formatPlanEur(roundEur(plan.basePriceEur))}${priceSuffix}` },
-                  { label: "2 Prod. -20%", price: `${formatPlanEur(roundEur(plan.basePriceEur * 0.8))}${priceSuffix}` },
-                  { label: "3 Prod. -30%", price: `${formatPlanEur(roundEur(plan.basePriceEur * 0.7))}${priceSuffix}` },
-                ]
-              : [
-                  { label: "1 Prod.", price: `${formatPlanEur(roundEur(plan.basePriceEur))}` },
-                  { label: "2 Prod. -20%", price: `${formatPlanEur(roundEur(plan.basePriceEur * 2 * 0.8))}` },
-                  { label: "3 Prod. -30%", price: `${formatPlanEur(roundEur(plan.basePriceEur * 3 * 0.7))}` },
-                ];
+          const planKey = plan.key;
+          const priceRows = CARD_DISCOUNT_ROWS.map((row) => {
+            const { displayCents, suffix } = computePlanCardPriceCents(
+              plan.billing,
+              plan.basePriceCents,
+              row.discountPercent,
+              row.multiplier
+            );
+            return {
+              label: row.label,
+              price: `${formatPlanPriceFromCents(displayCents)}${suffix}`,
+            };
+          });
           const planMatchesCart = selectedCartPlan === planKey;
           const hasCartItem = Boolean(selectedCartPlan);
           const isActivePlan = selectedProductLicenseActive && selectedProduct?.license?.plan === planKey;
