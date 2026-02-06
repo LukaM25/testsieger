@@ -876,6 +876,12 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     const licenseActive = product.license?.status === "ACTIVE";
     return baseFeePaid && hasPassed && !licenseActive;
   });
+  const hasActiveReviewInProgress = products.some((product) => {
+    if (product.adminProgress === "FAIL") return false;
+    if (product.adminProgress === "COMPLETION") return false;
+    if (product.status === "COMPLETED") return false;
+    return true;
+  });
 
   const certificationsPanel = (
     <section
@@ -1457,20 +1463,31 @@ export default function DashboardClient({ user }: DashboardClientProps) {
             </div>
             <Link
               href="/precheck"
-              className="rounded-full border border-slate-900 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+              className="rounded-full border border-emerald-700 bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
             >
               +hinzufügen
             </Link>
           </div>
         </section>
 
-        <PrecheckStatusCard
-          state={statusState}
-          rightColumn={rightColumnPanel}
-          cartPlanByProductId={cartPlanByProductId}
-        />
-
-        {planSelectionSection}
+        {hasActiveReviewInProgress ? (
+          <>
+            <PrecheckStatusCard
+              state={statusState}
+              rightColumn={rightColumnPanel}
+              cartPlanByProductId={cartPlanByProductId}
+            />
+            {planSelectionSection}
+          </>
+        ) : (
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500">Status</p>
+            <h2 className="mt-1 text-2xl font-semibold text-slate-900">Keine aktuelle Prüfung</h2>
+            <p className="mt-2 text-sm text-slate-500">
+              Aktuell ist keine neue Prüfung in Arbeit. Reichen Sie ein neues Produkt ein, um zu starten.
+            </p>
+          </section>
+        )}
 
         {certificationsPanel}
 
