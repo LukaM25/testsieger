@@ -168,6 +168,7 @@ export async function GET(request: Request) {
 
     const paidLicenseOrderProductIds = new Set<string>();
     const baseFeePlanByProductId = new Map<string, Plan>();
+    const passEmailSentByProductId = new Set<string>();
     if (pageProducts.length > 0) {
       const productIds = pageProducts.map((product) => product.id);
       if (!isViewerOnly) {
@@ -200,6 +201,18 @@ export async function GET(request: Request) {
           baseFeePlanByProductId.set(order.productId, order.plan);
         }
       });
+
+      const passEmailAudits = await prisma.adminAudit.findMany({
+        where: {
+          productId: { in: productIds },
+          action: 'SEND_LICENSE_PLANS_EMAIL',
+        },
+        select: { productId: true },
+        distinct: ['productId'],
+      });
+      passEmailAudits.forEach((audit) => {
+        if (audit.productId) passEmailSentByProductId.add(audit.productId);
+      });
     }
 
     const payload = await Promise.all(
@@ -210,6 +223,7 @@ export async function GET(request: Request) {
           Boolean(product.license?.paidAt) ||
           product.license?.status === 'ACTIVE';
         const baseFeePlan = baseFeePlanByProductId.get(product.id) ?? null;
+        const passEmailSent = passEmailSentByProductId.has(product.id);
         if (isViewerOnly) {
           return {
             id: product.id,
@@ -221,6 +235,7 @@ export async function GET(request: Request) {
             paymentStatus: product.paymentStatus,
             baseFeePlan,
             licensePaid,
+            passEmailSent,
             createdAt: product.createdAt.toISOString(),
             processNumber,
             user: {
@@ -269,6 +284,7 @@ export async function GET(request: Request) {
           paymentStatus: product.paymentStatus,
           baseFeePlan,
           licensePaid,
+          passEmailSent,
           createdAt: product.createdAt.toISOString(),
           processNumber,
           user: {

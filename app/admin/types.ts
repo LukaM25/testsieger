@@ -24,6 +24,7 @@ export type AdminProduct = {
   paymentStatus: string;
   baseFeePlan?: 'PRECHECK_FEE' | 'PRECHECK_PRIORITY' | null;
   licensePaid?: boolean;
+  passEmailSent?: boolean;
   certificate?: {
     id: string;
     pdfUrl?: string | null;

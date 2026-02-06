@@ -403,6 +403,7 @@ function AdminProductRow({
     ratingReady &&
     ['PAID', 'MANUAL'].includes(product.paymentStatus) &&
     (product.adminProgress as any) === 'PASS';
+  const passEmailCompleted = Boolean(product.passEmailSent) || licensePlansEmailSent;
   const canTriggerCompletion =
     permissions.canSendCompletion &&
     (product.adminProgress as any) === 'COMPLETION' &&
@@ -775,8 +776,8 @@ function AdminProductRow({
 		                  }
 		                }}
                 className={`rounded-lg px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition ${
-                  licensePlansEmailSent && !licensePlansEmailLoading
-                    ? 'border border-emerald-600 bg-emerald-600 text-white'
+                  passEmailCompleted && !licensePlansEmailLoading
+                    ? 'border border-slate-900 bg-slate-900 text-white hover:bg-slate-800'
                     : !canSendLicensePlansEmail || licensePlansEmailLoading
                       ? 'border border-slate-200 text-slate-400 cursor-not-allowed'
                       : 'border border-indigo-700 text-indigo-800 hover:bg-indigo-50'
@@ -794,13 +795,13 @@ function AdminProductRow({
 	                }
 	              >
               <CtaLabel
-                showCheck={licensePlansEmailSent && !licensePlansEmailLoading}
+                showCheck={passEmailCompleted && !licensePlansEmailLoading}
                 checkClassName="h-3.5 w-3.5 text-emerald-600"
               >
                 {licensePlansEmailLoading
                   ? '2. Sende…'
-                  : licensePlansEmailSent
-                    ? 'BESTANDEN - MAIL SENT'
+                  : passEmailCompleted
+                    ? '2. BESTANDEN - MAIL SENDEN'
                     : '2. Bestanden - Mail senden'}
               </CtaLabel>
             </button>
