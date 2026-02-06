@@ -101,6 +101,24 @@ const plans: Plan[] = [
   },
 ];
 
+const MADE_IN_OPTIONS = [
+  { de: "Deutschland", en: "Germany" },
+  { de: "Österreich", en: "Austria" },
+  { de: "Schweiz", en: "Switzerland" },
+  { de: "Niederlande", en: "Netherlands" },
+  { de: "Polen", en: "Poland" },
+  { de: "Frankreich", en: "France" },
+  { de: "Italien", en: "Italy" },
+  { de: "Spanien", en: "Spain" },
+  { de: "Vereinigtes Königreich", en: "United Kingdom" },
+  { de: "USA", en: "USA" },
+  { de: "China", en: "China" },
+  { de: "Indien", en: "India" },
+  { de: "Vietnam", en: "Vietnam" },
+  { de: "Türkei", en: "Turkey" },
+  { de: "Sonstiges", en: "Other" },
+] as const;
+
 const planThemes = {
   sky: {
     card: "bg-gradient-to-b from-sky-300 via-sky-200 to-sky-50",
@@ -190,7 +208,9 @@ export default function PrecheckPage() {
     category: "",
     code: "",
     specs: "",
-    size: "",
+    sizeLength: "",
+    sizeWidth: "",
+    sizeHeight: "",
     madeIn: "",
     material: "",
   });
@@ -348,7 +368,9 @@ export default function PrecheckPage() {
       { key: "category", label: tr("Kategorie", "Category"), min: 1 },
       { key: "code", label: tr("Artikelnummer", "Item code"), min: 2 },
       { key: "specs", label: tr("Spezifikationen", "Specs"), min: 5 },
-      { key: "size", label: tr("Größe / Maße", "Size"), min: 2 },
+      { key: "sizeLength", label: tr("Länge", "Length"), min: 1 },
+      { key: "sizeWidth", label: tr("Breite", "Width"), min: 1 },
+      { key: "sizeHeight", label: tr("Höhe", "Height"), min: 1 },
       { key: "madeIn", label: tr("Hergestellt in", "Made in"), min: 2 },
       { key: "material", label: tr("Material", "Material"), min: 2 },
     ] as const;
@@ -367,7 +389,7 @@ export default function PrecheckPage() {
         category: inlineProduct.category.trim(),
         code: inlineProduct.code.trim(),
         specs: inlineProduct.specs.trim(),
-        size: inlineProduct.size.trim(),
+        size: [inlineProduct.sizeLength, inlineProduct.sizeWidth, inlineProduct.sizeHeight].map((value) => value.trim()).join("x"),
         madeIn: inlineProduct.madeIn.trim(),
         material: inlineProduct.material.trim(),
       };
@@ -406,7 +428,9 @@ export default function PrecheckPage() {
         category: "",
         code: "",
         specs: "",
-        size: "",
+        sizeLength: "",
+        sizeWidth: "",
+        sizeHeight: "",
         madeIn: "",
         material: "",
       });
@@ -747,11 +771,6 @@ export default function PrecheckPage() {
                     </>
                   )}
                 </div>
-                {!isUnauthorized && (
-                  <div className="inline-flex items-center gap-3 rounded-full bg-slate-900 text-white px-4 py-2 text-xs font-semibold tracking-[0.18em] w-fit shadow-md">
-                    {tr("Nächster Schritt: Überprüfen Sie Ihren E-Mail-Posteingang", "Next step: Check your email inbox")}
-                  </div>
-                )}
               </div>
 
               <div className="relative shrink-0 w-40 h-40 md:w-56 md:h-56 lg:w-64 lg:h-64 self-center rounded-3xl bg-gradient-to-b from-white to-slate-50 p-3 flex items-center justify-center">
@@ -854,7 +873,7 @@ export default function PrecheckPage() {
               <FadeIn delay={180}>
                 <div className="space-y-3" id="checkout-options" ref={checkoutRef}>
                 <div className="text-2xl font-semibold text-slate-900">
-                  {tr("2. Produkt jetzt an uns senden", "2. Send your product to us now")}
+                  {tr("2. Produkte hinzufügen", "2. Add products")}
                 </div>
 
                 <div className="mt-10 rounded-3xl border border-slate-100 bg-white/90 p-8 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)] md:p-10">
@@ -1154,18 +1173,41 @@ export default function PrecheckPage() {
                                       value={inlineProduct.specs}
                                       onChange={(e) => setInlineProduct((p) => ({ ...p, specs: e.target.value }))}
                                     />
-                                    <input
-                                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
-                                      placeholder={tr("Größe / Maße", "Size")}
-                                      value={inlineProduct.size}
-                                      onChange={(e) => setInlineProduct((p) => ({ ...p, size: e.target.value }))}
-                                    />
-                                    <input
-                                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
-                                      placeholder={tr("Hergestellt in", "Made in")}
-                                      value={inlineProduct.madeIn}
-                                      onChange={(e) => setInlineProduct((p) => ({ ...p, madeIn: e.target.value }))}
-                                    />
+                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-4 md:col-span-2">
+                                      <input
+                                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                                        placeholder={tr("Länge", "Length")}
+                                        value={inlineProduct.sizeLength}
+                                        onChange={(e) => setInlineProduct((p) => ({ ...p, sizeLength: e.target.value }))}
+                                      />
+                                      <input
+                                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                                        placeholder={tr("Breite", "Width")}
+                                        value={inlineProduct.sizeWidth}
+                                        onChange={(e) => setInlineProduct((p) => ({ ...p, sizeWidth: e.target.value }))}
+                                      />
+                                      <input
+                                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                                        placeholder={tr("Höhe", "Height")}
+                                        value={inlineProduct.sizeHeight}
+                                        onChange={(e) => setInlineProduct((p) => ({ ...p, sizeHeight: e.target.value }))}
+                                      />
+                                      <select
+                                        value={inlineProduct.madeIn}
+                                        onChange={(e) => setInlineProduct((p) => ({ ...p, madeIn: e.target.value }))}
+                                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                                      >
+                                        <option value="">{tr("Hergestellt in", "Made in")}</option>
+                                        {MADE_IN_OPTIONS.map((option) => {
+                                          const label = tr(option.de, option.en);
+                                          return (
+                                            <option key={option.de} value={label}>
+                                              {label}
+                                            </option>
+                                          );
+                                        })}
+                                      </select>
+                                    </div>
                                     <input
                                       className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 md:col-span-2"
                                       placeholder={tr("Material", "Material")}

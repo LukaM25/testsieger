@@ -29,7 +29,9 @@ const Schema = z
     category: z.string().trim().min(1, 'Kategorie erforderlich'),
     code: z.string().trim().min(2),
     specs: z.string().trim().min(5),
-    size: z.string().trim().min(2),
+    dimensionLength: z.string().trim().min(1),
+    dimensionWidth: z.string().trim().min(1),
+    dimensionHeight: z.string().trim().min(1),
     madeIn: z.string().trim().min(2),
     material: z.string().trim().min(2),
     privacyAccepted: z.boolean().refine((value) => value === true, {
@@ -42,6 +44,24 @@ const Schema = z
   });
 
 type FormValues = z.infer<typeof Schema>;
+
+const MADE_IN_OPTIONS = [
+  { de: 'Deutschland', en: 'Germany' },
+  { de: 'Österreich', en: 'Austria' },
+  { de: 'Schweiz', en: 'Switzerland' },
+  { de: 'Niederlande', en: 'Netherlands' },
+  { de: 'Polen', en: 'Poland' },
+  { de: 'Frankreich', en: 'France' },
+  { de: 'Italien', en: 'Italy' },
+  { de: 'Spanien', en: 'Spain' },
+  { de: 'Vereinigtes Königreich', en: 'United Kingdom' },
+  { de: 'USA', en: 'USA' },
+  { de: 'China', en: 'China' },
+  { de: 'Indien', en: 'India' },
+  { de: 'Vietnam', en: 'Vietnam' },
+  { de: 'Türkei', en: 'Turkey' },
+  { de: 'Sonstiges', en: 'Other' },
+] as const;
 
 export default function PrecheckForm() {
   const router = useRouter();
@@ -58,8 +78,9 @@ export default function PrecheckForm() {
   });
 
   const onSubmit = async (values: FormValues) => {
-    const { confirmPassword, firstName, lastName, ...rest } = values;
+    const { confirmPassword, firstName, lastName, dimensionLength, dimensionWidth, dimensionHeight, ...rest } = values;
     const name = `${firstName} ${lastName}`.trim();
+    const size = [dimensionLength, dimensionWidth, dimensionHeight].map((value) => value.trim()).join('x');
     const addressParts = [
       `${rest.addressStreet} ${rest.addressNumber}`.trim(),
       rest.addressLine2?.trim(),
@@ -75,6 +96,7 @@ export default function PrecheckForm() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...rest,
+        size,
         name,
         address,
       }),
@@ -284,15 +306,41 @@ export default function PrecheckForm() {
             <Input {...register('code')} placeholder="ABC-123" required />
             <Error msg={errors.code?.message} />
           </div>
-          <div>
+          <div className="md:col-span-2">
             <Label>{tr('Verpackungsgröße / Maße', 'Package size / dimensions')}</Label>
-            <Input {...register('size')} placeholder={tr('z.B. 30×20×10 cm', 'e.g. 30×20×10 cm')} required />
-            <Error msg={errors.size?.message} />
-          </div>
-          <div>
-            <Label>{tr('Wo gefertigt', 'Manufactured in')}</Label>
-            <Input {...register('madeIn')} placeholder={tr('Land', 'Country')} required />
-            <Error msg={errors.madeIn?.message} />
+            <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-4">
+              <div>
+                <Input {...register('dimensionLength')} placeholder={tr('Länge', 'Length')} required />
+                <Error msg={errors.dimensionLength?.message} />
+              </div>
+              <div>
+                <Input {...register('dimensionWidth')} placeholder={tr('Breite', 'Width')} required />
+                <Error msg={errors.dimensionWidth?.message} />
+              </div>
+              <div>
+                <Input {...register('dimensionHeight')} placeholder={tr('Höhe', 'Height')} required />
+                <Error msg={errors.dimensionHeight?.message} />
+              </div>
+              <div>
+                <select
+                  {...register('madeIn')}
+                  defaultValue=""
+                  required
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-800"
+                >
+                  <option value="">{tr('Hergestellt in', 'Made in')}</option>
+                  {MADE_IN_OPTIONS.map((option) => {
+                    const label = locale === 'en' ? option.en : option.de;
+                    return (
+                      <option key={option.de} value={label}>
+                        {label}
+                      </option>
+                    );
+                  })}
+                </select>
+                <Error msg={errors.madeIn?.message} />
+              </div>
+            </div>
           </div>
           <div>
             <Label>{tr('Material (hauptsächlich)', 'Material (primary)')}</Label>
