@@ -1008,6 +1008,12 @@ export default function ProduktTestPage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-6xl px-6 pb-2">
+        <p className="text-center text-2xl font-semibold text-slate-900 md:text-3xl">
+          {tr("Produktsiegel für Amazon Seller, Otto, Kaufland und Ebay", "Product seals for Amazon sellers, Otto, Kaufland and eBay")}
+        </p>
+      </section>
+
       <section className="mx-auto max-w-6xl px-6 py-6">
         <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_20px_50px_-40px_rgba(15,23,42,0.4)]">
           <Image
