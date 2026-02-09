@@ -92,6 +92,7 @@ export async function POST(req: Request) {
     await sendFailureNotification({
       to: product.user.email,
       name: product.user.name,
+      gender: product.user.gender ?? undefined,
       productName: product.name,
       reason: note?.trim() || 'Bitte reichen Sie fehlende Informationen nach, damit wir die Prüfung fortsetzen können.',
     }).catch((err) => {
@@ -121,7 +122,7 @@ export async function POST(req: Request) {
                 name: true,
                 adminProgress: true,
                 processNumber: true,
-                user: { select: { name: true, email: true } },
+                user: { select: { name: true, gender: true, email: true } },
               },
             },
           },
@@ -142,6 +143,7 @@ export async function POST(req: Request) {
           await sendProductReceivedEmail({
             to: product.user.email,
             name: product.user.name,
+            gender: product.user.gender ?? undefined,
             productNames,
             processNumber,
           });
@@ -150,6 +152,7 @@ export async function POST(req: Request) {
         await sendProductReceivedEmail({
           to: product.user.email,
           name: product.user.name,
+          gender: product.user.gender ?? undefined,
           productNames: [product.name],
         });
       }

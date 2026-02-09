@@ -69,7 +69,7 @@ async function handleRequest(req: Request) {
           name: true,
           orders: { select: { paidAt: true, plan: true } },
           license: { select: { paidAt: true, status: true, plan: true } },
-          user: { select: { name: true, email: true } },
+          user: { select: { name: true, gender: true, email: true } },
         },
       },
     },
@@ -114,12 +114,14 @@ async function handleRequest(req: Request) {
         await sendLicensePlanFinalReminderEmail({
           to: cert.product.user.email,
           name: cert.product.user.name ?? '',
+          gender: cert.product.user.gender ?? undefined,
           productName: cert.product.name,
         });
       } else if (shouldSendFirst) {
         await sendLicensePlanReminderEmail({
           to: cert.product.user.email,
           name: cert.product.user.name ?? '',
+          gender: cert.product.user.gender ?? undefined,
           productName: cert.product.name,
         });
       }

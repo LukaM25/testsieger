@@ -59,12 +59,13 @@ export async function POST(req: Request) {
 
     const user = await prisma.user.findUnique({
       where: { id: session.userId },
-      select: { name: true, email: true },
+      select: { name: true, email: true, gender: true },
     });
     if (user?.email && user?.name) {
       sendPrecheckConfirmation({
         to: user.email,
         name: user.name,
+        gender: user.gender ?? undefined,
         productName: product.name,
       }).catch(() => {});
     }

@@ -27,7 +27,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       name: true,
       paymentStatus: true,
       adminProgress: true,
-      user: { select: { email: true, name: true } },
+      user: { select: { email: true, name: true, gender: true } },
       certificate: { select: { id: true, snapshotData: true } },
     },
   });
@@ -60,6 +60,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   await sendCompletionReadyEmail({
     to: product.user.email,
     name: product.user.name,
+    gender: product.user.gender ?? undefined,
     productName: product.name,
     licenseUrl: `${appUrl}/pakete?productId=${encodeURIComponent(product.id)}`,
     ratingPdfBuffer: attachmentBuffer,

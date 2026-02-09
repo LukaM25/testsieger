@@ -17,6 +17,7 @@ export type AdminProduct = {
   createdAt: string;
   user: {
     name: string;
+    gender?: 'MALE' | 'FEMALE' | 'OTHER' | null;
     company?: string | null;
     email: string;
     address?: string | null;

@@ -12,6 +12,7 @@ model User {
   name                String
   email               String               @unique
   passwordHash        String
+  gender              Gender?
   address             String?
   active              Boolean              @default(true)
   deletedAt           DateTime?
@@ -268,6 +269,12 @@ enum AdminRole {
   VIEWER
   EXAMINER
   SUPERADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
 }
 
 enum AssetType {

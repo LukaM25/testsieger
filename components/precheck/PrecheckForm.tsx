@@ -12,6 +12,7 @@ import { Eye, EyeOff } from 'lucide-react';
 
 const Schema = z
   .object({
+    gender: z.enum(['MALE', 'FEMALE', 'OTHER'], { message: 'Anrede erforderlich' }),
     firstName: z.string().trim().min(2),
     lastName: z.string().trim().min(2),
     company: z.string().trim().min(2),
@@ -142,6 +143,22 @@ export default function PrecheckForm() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" autoComplete="on">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div>
+            <Label>{tr('Anrede', 'Salutation')}</Label>
+            <select
+              {...register('gender')}
+              defaultValue=""
+              required
+              autoComplete="honorific-prefix"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-800"
+            >
+              <option value="">{tr('Bitte auswählen', 'Please select')}</option>
+              <option value="MALE">{tr('Herr', 'Mr')}</option>
+              <option value="FEMALE">{tr('Frau', 'Ms')}</option>
+              <option value="OTHER">{tr('Sonstiges', 'Other')}</option>
+            </select>
+            <Error msg={errors.gender?.message} />
+          </div>
           <div>
             <Label>{tr('Vorname', 'First name')}</Label>
             <Input

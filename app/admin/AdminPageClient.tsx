@@ -7,6 +7,7 @@ import AdminHeader from './components/AdminHeader';
 import AdminProductRow from './components/AdminProductRow';
 import SuperadminPanel from './components/SuperadminPanel';
 import { AdminAuthInfo, AdminPermissions, AdminProduct, PaymentStatusOption, StatusOption } from './types';
+import { formatContactName } from '@/lib/name';
 
 type ProductsResponse = {
   products?: AdminProduct[];
@@ -414,9 +415,10 @@ export default function AdminPageClient({ initialAdmin }: AdminPageClientProps) 
                 <span className="text-xs uppercase tracking-[0.3em] text-slate-500">Batch: {totalEntries}</span>
               </div>
               {Object.entries(userGroups).map(([userKey, group]) => {
+                const userDisplayName = formatContactName(group.user.name, group.user.gender, group.user.email);
                 const title = group.user.company
-                  ? `${group.user.company} · ${group.user.name}`
-                  : group.user.name || group.user.email;
+                  ? `${group.user.company} · ${userDisplayName}`
+                  : userDisplayName;
                 return (
                   <div key={userKey} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">

@@ -37,6 +37,7 @@ export default async function DashboardPage({ searchParams }: Props) {
     const mockUser = {
       id: 'preview-user',
       name: 'Max Mustermann',
+      gender: 'MALE' as const,
       email: 'max@example.com',
       address: 'Musterstraße 5, 12345 Berlin',
       products: [
@@ -107,6 +108,7 @@ export default async function DashboardPage({ searchParams }: Props) {
     select: {
       id: true,
       name: true,
+      gender: true,
       email: true,
       address: true,
       products: {
@@ -145,6 +147,7 @@ export default async function DashboardPage({ searchParams }: Props) {
       user={{
         id: user.id,
         name: user.name,
+        gender: user.gender ?? null,
         email: user.email,
         address: user.address ?? null,
         products: (user.products || []).map((p) => ({

@@ -52,6 +52,7 @@ export async function POST(req: Request) {
       await sendPrecheckPaymentSuccess({
         to: product.user.email,
         name: product.user.name,
+        gender: product.user.gender ?? undefined,
         productNames: [product.name],
         processNumber,
         receiptPdf: undefined,

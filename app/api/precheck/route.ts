@@ -8,6 +8,7 @@ import { sendPrecheckConfirmation } from '@/lib/email';
 import { getSession } from '@/lib/auth';
 
 const PrecheckSchema = z.object({
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER']),
   name: z.string().trim().min(2),
   company: z.string().trim().min(2),
   email: z.string().trim().email(),
@@ -53,6 +54,7 @@ export async function POST(req: Request) {
       const passwordHash = await bcrypt.hash(data.password, 12);
       const user = await prisma.user.create({
         data: {
+          gender: data.gender,
           name: data.name,
           email: normalizedEmail,
           passwordHash,
@@ -71,6 +73,7 @@ export async function POST(req: Request) {
       const updated = await prisma.user.update({
         where: { id: existing.id },
         data: {
+          gender: data.gender,
           name: data.name ?? existing.name,
           address: data.address ?? existing.address,
           company: data.company ?? existing.company ?? undefined,
@@ -103,6 +106,7 @@ export async function POST(req: Request) {
     sendPrecheckConfirmation({
       to: normalizedEmail,
       name: data.name,
+      gender: data.gender,
       productName: product.name,
     }).catch(() => { /* avoid blocking */ });
 

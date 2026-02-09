@@ -374,6 +374,7 @@ async function runCompletion(productId: string, message?: string, opts?: { force
 	  await sendCompletionEmail({
 	    to: product.user.email,
 	    name: product.user.name,
+      gender: product.user.gender ?? undefined,
 	    productName: product.name,
 	    verifyUrl,
 	    pdfUrl: pdfSigned,

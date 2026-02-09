@@ -8,6 +8,7 @@ import LogoutButton from "@/components/LogoutButton";
 import { usePrecheckStatusData, type ProductStatusPayload } from "@/hooks/usePrecheckStatusData";
 import { PrecheckStatusCard } from "@/components/PrecheckStatusCard";
 import { useProductStatusPoll } from "@/hooks/useProductStatusPoll";
+import { formatContactName } from "@/lib/name";
 
 interface DashboardClientProps {
   user: any;
@@ -1390,7 +1391,7 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Dashboard</p>
-            <h1 className="text-3xl font-bold text-slate-900">Willkommen, {user.name.split(" ")[0]}</h1>
+            <h1 className="text-3xl font-bold text-slate-900">Willkommen, {formatContactName(user.name, user.gender, "Kunde")}</h1>
             <p className="text-sm text-slate-600">Status im Blick, Zertifikat sicher abrufen.</p>
           </div>
           <div className="relative flex items-center gap-3" ref={accountRef}>

@@ -3,6 +3,7 @@
 import { memo, ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { PAYMENT_STATUS_OPTIONS, STATUS_OPTIONS, STATUS_TONE, statusLabel } from '../constants';
 import { AdminPermissions, AdminProduct, PaymentStatusOption, StatusOption } from '../types';
+import { formatContactName } from '@/lib/name';
 
 type Props = {
   product: AdminProduct;
@@ -1208,7 +1209,7 @@ function AdminProductRow({
               ['Größe / Maße', product.size],
               ['Hergestellt in', product.madeIn],
               ['Material', product.material],
-              ['Kundenname', product.user.name],
+              ['Kundenname', formatContactName(product.user.name, product.user.gender)],
               ['Firma', product.user.company],
               ['E-Mail', product.user.email],
               ['Adresse', product.user.address],

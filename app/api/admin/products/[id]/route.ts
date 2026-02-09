@@ -37,7 +37,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       adminProgress: true,
       paymentStatus: true,
       createdAt: true,
-      user: { select: { name: true, company: true, email: true, address: true } },
+      user: { select: { name: true, gender: true, company: true, email: true, address: true } },
       certificate: isViewerOnly
         ? undefined
         : {
@@ -101,6 +101,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         processNumber: product.processNumber ?? null,
         user: {
           name: product.user.name,
+          gender: product.user.gender,
           company: product.user.company,
           email: product.user.email,
           address: product.user.address,
@@ -148,6 +149,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       processNumber: product.processNumber ?? null,
       user: {
         name: product.user.name,
+        gender: product.user.gender,
         company: product.user.company,
         email: product.user.email,
         address: product.user.address,

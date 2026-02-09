@@ -15,6 +15,7 @@ export async function POST(req: Request) {
     await sendPasswordResetEmail({
       to: normalizedEmail,
       name: result.user.name,
+      gender: result.user.gender ?? undefined,
       resetUrl,
     }).catch(() => {
       /* avoid blocking on email failure */

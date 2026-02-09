@@ -216,6 +216,7 @@ async function handleCheckoutSession(cs: any) {
       await sendPrecheckPaymentSuccess({
         to: recipient.email,
         name: recipient.name,
+        gender: recipient.gender ?? undefined,
         productNames,
         processNumber,
         receiptPdf,

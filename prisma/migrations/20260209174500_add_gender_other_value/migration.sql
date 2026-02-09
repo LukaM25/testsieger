@@ -1,0 +1,7 @@
+DO $$
+BEGIN
+  ALTER TYPE "Gender" ADD VALUE IF NOT EXISTS 'OTHER';
+EXCEPTION
+  WHEN undefined_object THEN
+    CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE', 'OTHER');
+END $$;

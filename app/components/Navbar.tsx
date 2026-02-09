@@ -7,6 +7,7 @@ import Fuse from 'fuse.js';
 import { useRouter, usePathname } from "next/navigation";
 import { Menu, X, Search, User, Eye, EyeOff } from "lucide-react";
 import { useLocale } from "@/components/LocaleProvider";
+import { formatContactName } from "@/lib/name";
 
 type NavItem = {
   labelKey: string;
@@ -49,7 +50,7 @@ const sections: NavSection[] = [
 
 // We'll load a prebuilt search index from /search-index.json for richer keywords
 type SearchEntry = { label: string; href: string; keywords?: string[]; excerpt?: string };
-type ProfileUser = { id: string; name: string; email: string };
+type ProfileUser = { id: string; name: string; email: string; gender?: 'MALE' | 'FEMALE' | 'OTHER' | null };
 
 
 export default function Navbar() {
@@ -157,7 +158,7 @@ export default function Navbar() {
   const profileLabel = profileLoading || adminLoading
     ? t('profile.loading', 'Lade...')
     : profileUser
-      ? profileUser.name
+      ? formatContactName(profileUser.name, profileUser.gender, profileUser.email)
       : adminAuthed
         ? t('profile.admin', 'Admin')
         : t('profile.signin', 'Anmelden');
@@ -614,7 +615,7 @@ export default function Navbar() {
               className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green"
               onClick={() => setProfileOpen((value) => !value)}
               aria-expanded={profileOpen}
-              aria-label={profileUser ? `Profil öffnen (${profileUser.name})` : 'Kundenkonto öffnen'}
+              aria-label={profileUser ? `Profil öffnen (${formatContactName(profileUser.name, profileUser.gender, profileUser.email)})` : 'Kundenkonto öffnen'}
             >
               <User size={20} className="text-slate-700" />
               <span className="whitespace-nowrap text-sm font-semibold">
@@ -626,7 +627,7 @@ export default function Navbar() {
               <div className="absolute right-0 top-full mt-2 w-72 rounded-2xl border border-gray-200 bg-white p-4 shadow-xl z-50">
                 {profileUser ? (
                   <div className="space-y-3">
-                    <p className="text-sm font-semibold text-slate-900">{profileUser.name}</p>
+                    <p className="text-sm font-semibold text-slate-900">{formatContactName(profileUser.name, profileUser.gender, profileUser.email)}</p>
                     <div className="space-y-2">
                       <Link
                         href="/dashboard"
