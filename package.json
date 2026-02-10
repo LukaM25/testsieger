@@ -15,6 +15,8 @@
     "test": "vitest --config vitest.local.config.ts",
     "pretest:storybook": "node scripts/ensure-storybook-builder-vite.cjs",
     "test:storybook": "vitest --config vitest.config.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:fullstack": "RUN_FULLSTACK_E2E=1 playwright test --grep @fullstack",
     "aws:whoami": "node scripts/check-aws-sts.js",
     "seed:admin": "node scripts/seed-admin.cjs"
   },
@@ -53,6 +55,7 @@
     "@21st-extension/toolbar": "^0.5.14",
     "@21st-extension/toolbar-next": "^0.5.14",
     "@chromatic-com/storybook": "^4.1.2",
+    "@playwright/test": "^1.56.1",
     "@storybook/addon-a11y": "^10.0.6",
     "@storybook/addon-docs": "^10.0.6",
     "@storybook/addon-vitest": "^10.0.6",

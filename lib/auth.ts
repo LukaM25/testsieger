@@ -51,11 +51,9 @@ export async function getSession() {
     select: { id: true, email: true, active: true, deletedAt: true },
   });
   if (!user || user.active === false || user.deletedAt) {
-    await clearSession();
     return null;
   }
-  if (user.email !== session.email) {
-    await setSession({ userId: user.id, email: user.email });
-  }
+  // Keep this helper side-effect free so it is safe in Server Components.
+  // Session cookie refresh/rotation is handled by middleware and route handlers.
   return { userId: user.id, email: user.email };
 }

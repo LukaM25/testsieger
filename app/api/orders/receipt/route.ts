@@ -12,6 +12,10 @@ const Schema = z.object({
   orderId: z.string().min(1),
 });
 
+function getFallbackReceiptUrl(orderId: string) {
+  return `/api/orders/receipt/pdf?orderId=${encodeURIComponent(orderId)}`;
+}
+
 function pickReceiptUrl(session: Stripe.Checkout.Session): string | null {
   const invoice = session.invoice as Stripe.Invoice | string | null | undefined;
   if (invoice && typeof invoice !== 'string') {
@@ -39,7 +43,9 @@ export async function POST(req: Request) {
   });
   if (!order) return NextResponse.json({ error: 'ORDER_NOT_FOUND' }, { status: 404 });
   if (!order.paidAt) return NextResponse.json({ error: 'ORDER_NOT_PAID' }, { status: 400 });
-  if (!order.stripeSessionId) return NextResponse.json({ error: 'MISSING_STRIPE_SESSION' }, { status: 400 });
+  if (!order.stripeSessionId) {
+    return NextResponse.json({ ok: true, receiptUrl: getFallbackReceiptUrl(order.id) }, { status: 200 });
+  }
 
   try {
     const checkout = await stripe.checkout.sessions.retrieve(order.stripeSessionId, {
@@ -58,10 +64,12 @@ export async function POST(req: Request) {
         receiptUrl = charge.receipt_url || null;
       }
     }
-    if (!receiptUrl) return NextResponse.json({ error: 'RECEIPT_UNAVAILABLE' }, { status: 404 });
+    if (!receiptUrl) {
+      return NextResponse.json({ ok: true, receiptUrl: getFallbackReceiptUrl(order.id) }, { status: 200 });
+    }
     return NextResponse.json({ ok: true, receiptUrl }, { status: 200 });
   } catch (err) {
     console.error('ORDER_RECEIPT_ERROR', err);
-    return NextResponse.json({ error: 'RECEIPT_LOOKUP_FAILED' }, { status: 500 });
+    return NextResponse.json({ ok: true, receiptUrl: getFallbackReceiptUrl(order.id) }, { status: 200 });
   }
 }

@@ -133,16 +133,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "LICENSE_ACTIVE" }, { status: 409 });
   }
 
-  const cart = await prisma.licenseCart.upsert({
-    where: { userId: session.userId },
-    update: {},
-    create: { userId: session.userId },
+  await prisma.licenseCart.createMany({
+    data: [{ userId: session.userId }],
+    skipDuplicates: true,
   });
 
-  await prisma.licenseCartItem.upsert({
-    where: { cartId_productId: { cartId: cart.id, productId } },
-    update: { plan },
-    create: { cartId: cart.id, productId, plan },
+  const cart = await prisma.licenseCart.findUnique({
+    where: { userId: session.userId },
+    select: { id: true },
+  });
+  if (!cart) {
+    return NextResponse.json({ error: "CART_CREATE_FAILED" }, { status: 500 });
+  }
+
+  await prisma.licenseCartItem.createMany({
+    data: [{ cartId: cart.id, productId, plan }],
+    skipDuplicates: true,
+  });
+
+  await prisma.licenseCartItem.updateMany({
+    where: { cartId: cart.id, productId },
+    data: { plan },
   });
 
   return NextResponse.json({ ok: true });
