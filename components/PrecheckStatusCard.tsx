@@ -172,7 +172,7 @@ export function PrecheckStatusCard({ state, className = "", rightColumn, cartPla
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-500">{tr("Fortschritt", "Progress")}</p>
-          <h2 className="text-2xl font-bold text-slate-900">{tr("Status deiner Prüfung", "Your review status")}</h2>
+          <h2 className="text-2xl font-bold text-slate-900">{tr("Status Ihrer Prüfung", "Your review status")}</h2>
           {productStatus?.name && (
             <p className="text-sm text-slate-600">
               {tr("Produkt", "Product")}: <span className="font-semibold text-slate-900">{productStatus.name}</span>

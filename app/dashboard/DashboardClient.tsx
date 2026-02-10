@@ -2,13 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import LogoutButton from "@/components/LogoutButton";
 import { usePrecheckStatusData, type ProductStatusPayload } from "@/hooks/usePrecheckStatusData";
 import { PrecheckStatusCard } from "@/components/PrecheckStatusCard";
 import { useProductStatusPoll } from "@/hooks/useProductStatusPoll";
-import { formatContactName } from "@/lib/name";
+import { formatLastName } from "@/lib/name";
 
 interface DashboardClientProps {
   user: any;
@@ -33,6 +32,14 @@ type LicenseCartState = {
   cartId: string | null;
   items: LicenseCartItem[];
   totals: { baseCents: number; savingsCents: number; totalCents: number; itemCount: number };
+};
+
+type ActiveLicenseItem = {
+  productId: string;
+  productName: string;
+  plan?: string | null;
+  activeSince?: string | null;
+  sealUrl?: string | null;
 };
 
 const PLAN_BASE_DEFAULT_CENTS = {
@@ -469,6 +476,9 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
   const [cartMessage, setCartMessage] = useState<string | null>(null);
   const [cartBusyId, setCartBusyId] = useState<string | null>(null);
   const [cartCheckoutBusy, setCartCheckoutBusy] = useState(false);
+  const [activeLicenses, setActiveLicenses] = useState<ActiveLicenseItem[]>([]);
+  const [activeLicensesLoading, setActiveLicensesLoading] = useState(false);
+  const [activeLicensesMessage, setActiveLicensesMessage] = useState<string | null>(null);
   const [baseFeeSelections, setBaseFeeSelections] = useState<Record<string, string>>({});
   const [baseFeePaying, setBaseFeePaying] = useState<string | null>(null);
   const [showBilling, setShowBilling] = useState(false);
@@ -554,6 +564,30 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
       return null;
     } finally {
       setCartLoading(false);
+    }
+  };
+
+  const loadActiveLicenses = async () => {
+    setActiveLicensesLoading(true);
+    setActiveLicensesMessage(null);
+    try {
+      const res = await fetch("/api/licenses/active", { cache: "no-store" });
+      if (!res.ok) {
+        setActiveLicenses([]);
+        setActiveLicensesMessage(
+          res.status === 401
+            ? "Bitte einloggen, um aktive Lizenzen zu sehen."
+            : "Aktive Lizenzen konnten nicht geladen werden."
+        );
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      setActiveLicenses(Array.isArray(data?.items) ? data.items : []);
+    } catch {
+      setActiveLicenses([]);
+      setActiveLicensesMessage("Aktive Lizenzen konnten nicht geladen werden.");
+    } finally {
+      setActiveLicensesLoading(false);
     }
   };
 
@@ -790,6 +824,7 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
     setShowLicenseSuccess(true);
     refreshStatus();
     loadLicenseCart();
+    loadActiveLicenses();
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     url.searchParams.delete("licenseCheckout");
@@ -810,6 +845,7 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
 
   useEffect(() => {
     loadLicenseCart();
+    loadActiveLicenses();
   }, []);
 
   const paidOrders = useMemo(() => {
@@ -859,6 +895,16 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
     if (plan === "PREMIUM") return "Premium";
     if (plan === "LIFETIME") return "Lifetime";
     return plan;
+  };
+
+  const planPillTone = (plan?: string | null) => {
+    if (plan === "BASIC")
+      return "bg-gradient-to-r from-emerald-700 via-emerald-800 to-teal-800 text-emerald-50 ring-emerald-500/70 shadow-[0_12px_30px_-14px_rgba(4,120,87,0.95)]";
+    if (plan === "PREMIUM")
+      return "bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 text-amber-50 ring-amber-500/75 shadow-[0_12px_30px_-14px_rgba(180,83,9,0.95)]";
+    if (plan === "LIFETIME")
+      return "bg-gradient-to-r from-indigo-800 via-indigo-900 to-violet-900 text-indigo-50 ring-indigo-500/55 shadow-[0_12px_30px_-14px_rgba(49,46,129,0.98)]";
+    return "bg-slate-100 text-slate-700 ring-slate-200";
   };
 
   const cartHasItems = licenseCart.items.length > 0;
@@ -1362,6 +1408,10 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
     }
   };
 
+  const contactLastName = formatLastName(user.name, "Kunde");
+  const formalTitle = user.gender === "MALE" ? "Herr " : user.gender === "FEMALE" ? "Frau " : "";
+  const greetingName = `${formalTitle}${contactLastName}`.trim();
+
   return (
     <div id="dashboard-top" className="min-h-screen bg-slate-50 px-4 py-8">
       {showLicenseSuccess && typeof document !== "undefined"
@@ -1408,7 +1458,7 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Dashboard</p>
-            <h1 className="text-3xl font-bold text-slate-900">Willkommen, {formatContactName(user.name, user.gender, "Kunde")}</h1>
+            <h1 className="text-3xl font-bold text-slate-900">Willkommen, {greetingName}</h1>
             <p className="text-sm text-slate-600">Status im Blick, Zertifikat sicher abrufen.</p>
           </div>
           <div className="relative flex items-center gap-3" ref={accountRef}>
@@ -1523,12 +1573,13 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
               <h2 className="text-lg font-semibold text-slate-900">Neues Produkt einreichen</h2>
               <p className="text-sm text-slate-500">Weitere Produkte hinzufügen und automatisch Rabatt erhalten.</p>
             </div>
-            <Link
-              href="/precheck"
+            <button
+              type="button"
+              onClick={() => router.push("/precheck")}
               className="rounded-full border border-emerald-700 bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
             >
               +hinzufügen
-            </Link>
+            </button>
           </div>
         </section>
 
@@ -1624,6 +1675,62 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
               </div>
             </div>
           </div>
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Aktive Lizenzen</h2>
+            <p className="text-sm text-slate-500">Ihre aktiven Produkte mit direktem Siegel-Download (PNG).</p>
+          </div>
+          {activeLicensesLoading ? (
+            <p className="mt-4 text-sm text-slate-500">Aktive Lizenzen werden geladen…</p>
+          ) : activeLicenses.length === 0 ? (
+            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <p className="text-sm text-slate-600">Aktuell sind keine aktiven Lizenzen vorhanden.</p>
+              {activeLicensesMessage && <p className="mt-1 text-xs text-amber-700">{activeLicensesMessage}</p>}
+            </div>
+          ) : (
+            <div className="mt-4 grid justify-start gap-4 [grid-template-columns:repeat(auto-fit,minmax(190px,220px))]">
+              {activeLicenses.map((license) => (
+                <article
+                  key={license.productId}
+                  className="min-h-[430px] w-full max-w-[220px] rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                >
+                  <div className="text-sm font-semibold text-slate-900">{license.productName}</div>
+                  <div className="mt-2">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${planPillTone(
+                        license.plan ?? null
+                      )}`}
+                    >
+                      Plan: {planLabel(license.plan ?? null)}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex min-h-64 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <img
+                      src={license.sealUrl || "/siegel19.png"}
+                      alt={`Testsieger Siegel ${license.productName}`}
+                      className="max-h-56 w-auto object-contain"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <a
+                      href={license.sealUrl || "/siegel19.png"}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-full border border-slate-200 px-3 py-1 text-[11px] font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+                    >
+                      Testsieger Siegel (PNG)
+                    </a>
+                    <span className="rounded-full bg-gradient-to-r from-emerald-700 via-emerald-800 to-teal-800 px-3 py-1 text-[11px] font-semibold text-emerald-50 ring-1 ring-emerald-500/70 shadow-[0_12px_30px_-14px_rgba(4,120,87,0.95)]">
+                      Aktiv seit {formatDate(license.activeSince ?? null)}
+                    </span>
+                  </div>
+                </article>
+              ))}
             </div>
           )}
         </section>
