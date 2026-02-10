@@ -866,8 +866,14 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
   const cartHasIneligibleItems = licenseCart.items.some((item) => !item.eligible);
   const cartEligibleCount = licenseCart.items.filter((item) => item.eligible).length;
   const cartIneligibleCount = Math.max(0, licenseCart.items.length - cartEligibleCount);
+  const cartBaseTotalCents = licenseCart.totals.baseCents;
+  const cartSavingsCents = licenseCart.totals.savingsCents;
   const cartNetTotalCents = licenseCart.totals.totalCents;
   const cartVatCents = Math.round(cartNetTotalCents * VAT_RATE);
+  const cartSavingsPercent =
+    cartBaseTotalCents > 0 && cartSavingsCents > 0
+      ? Math.round((cartSavingsCents / cartBaseTotalCents) * 100)
+      : 0;
   const cartReasonLabel = (reason?: string) => {
     if (reason === "GRUNDGEBUEHR_OFFEN") return "Grundgebühr offen";
     if (reason === "PRUEFUNG_OFFEN") return "Prüfung noch offen";
@@ -1098,10 +1104,10 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
   );
 
   const cartPanel = (
-    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_30px_70px_-34px_rgba(15,23,42,0.58)] ring-1 ring-slate-200/80">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <div className="text-sm font-semibold text-slate-900">Warenkorb</div>
+          <div className="text-lg font-semibold text-slate-900">Warenkorb</div>
           <p className="text-xs text-slate-500">Lizenzpläne gesammelt und bereit für den Checkout.</p>
         </div>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200">
@@ -1133,10 +1139,15 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
                         <div className="mt-1 text-[11px] font-semibold text-amber-700">{cartReasonLabel(item.reason)}</div>
                       )}
                     </div>
-                    <div className="text-right text-xs text-slate-600">
-                      <div className="text-sm font-semibold text-slate-900">{formatEur(item.finalPriceCents)}</div>
+                    <div className="text-right text-xs text-slate-600 tabular-nums">
+                      {item.savingsCents > 0 && item.basePriceCents > item.finalPriceCents && (
+                        <div className="text-[11px] text-slate-400 line-through decoration-slate-400/80">
+                          {formatEur(item.basePriceCents)}
+                        </div>
+                      )}
+                      <div className="text-[1.35rem] font-semibold leading-none text-slate-900">{formatEur(item.finalPriceCents)}</div>
                       {item.savingsCents > 0 && (
-                        <div className="text-[11px] text-emerald-700">- {formatEur(item.savingsCents)}</div>
+                        <div className="mt-1 text-[11px] font-semibold text-emerald-700">- {formatEur(item.savingsCents)}</div>
                       )}
                       <button
                         type="button"
@@ -1153,14 +1164,20 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
             })}
           </div>
           <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
-            <div className="flex items-center justify-between text-sm font-semibold text-slate-900">
+            {cartSavingsCents > 0 && (
+              <div className="flex items-center justify-between text-[11px] text-slate-400 tabular-nums">
+                <span>Preis vorher</span>
+                <span className="line-through decoration-slate-400/80">{formatEur(cartBaseTotalCents)}</span>
+              </div>
+            )}
+            <div className="mt-0.5 flex items-end justify-between text-sm font-semibold text-slate-900 tabular-nums">
               <span>Gesamt (Netto)</span>
-              <span>{formatEur(cartNetTotalCents)}</span>
+              <span className="text-[1.35rem] leading-none">{formatEur(cartNetTotalCents)}</span>
             </div>
-            {licenseCart.totals.savingsCents > 0 && (
+            {cartSavingsCents > 0 && (
               <div className="mt-1 flex items-center justify-between text-emerald-700">
-                <span>Ersparnis</span>
-                <span className="font-semibold">- {formatEur(licenseCart.totals.savingsCents)}</span>
+                <span>Ersparnis{cartSavingsPercent > 0 ? ` (${cartSavingsPercent}%)` : ""}</span>
+                <span className="font-semibold">- {formatEur(cartSavingsCents)}</span>
               </div>
             )}
             <div className="mt-1 flex items-center justify-between text-slate-500">
@@ -1184,7 +1201,7 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
                 : "bg-slate-200 text-slate-500 cursor-not-allowed"
             }`}
           >
-            {cartCheckoutBusy ? "Starte Checkout…" : "Lizenzpläne bezahlen"}
+            {cartCheckoutBusy ? "Starte Checkout…" : "Siegel jetzt aktivieren"}
           </button>
           {cartHasIneligibleItems && (
             <p className="text-xs text-amber-600">

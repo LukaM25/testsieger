@@ -36,7 +36,7 @@ export function PrecheckStatusCard({ state, className = "", rightColumn, cartPla
     ? tr("Produkt wird angelegt…", "Creating product…")
     : productStatus
     ? stage.key === "PASS"
-      ? tr("Pass, Glückwunsch!", "Pass, congratulations!")
+      ? tr("Bestanden, Glückwunsch!", "Passed, congratulations!")
       : stage.key === "FAIL"
       ? tr("Fail, bitte E-Mail prüfen", "Fail, please check your email for possible solutions.")
       : stage.key === "COMPLETION"
@@ -50,7 +50,7 @@ export function PrecheckStatusCard({ state, className = "", rightColumn, cartPla
       : tr("Pre-Check", "Pre-check")
     : tr("Produkt auswählen", "Choose a product");
 
-  const passLabel = tr("Bestanden", "Pass");
+  const passLabel = tr("Bestanden", "Passed");
   const passHelper = tr("Prüfung bestanden", "Review passed");
   const completionLabel = tr("Abschluss", "Completion");
   const completionHelper = tr("Alle Dateien sind versendet.", "All files have been sent.");
@@ -91,7 +91,7 @@ export function PrecheckStatusCard({ state, className = "", rightColumn, cartPla
   const labelForStage = (key: string) => {
     switch (key) {
       case "PASS":
-        return tr("Pass", "Pass");
+        return tr("Bestanden", "Passed");
       case "FAIL":
         return tr("Fail", "Fail");
       case "COMPLETION":

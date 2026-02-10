@@ -210,10 +210,7 @@ export async function sendCompletionEmail(opts: {
     qrUrl,
     certificateBuffer,
     reportBuffer,
-    documentId,
-    message,
     sealNumber,
-    invoiceUrl,
     ratingPdfBuffer,
     sealBuffer,
     invoiceBuffer,
@@ -257,30 +254,28 @@ export async function sendCompletionEmail(opts: {
 
   const html = `
     <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
-      <p>${renderStandardGreeting(name, gender)}</p>
-      <p>vielen Dank für die Auswahl und Bezahlung Ihres Lizenzplans. <strong>Ihre Lizenz ist jetzt aktiv.</strong></p>
-      <p>Im Anhang finden Sie alle freigegebenen Materialien zu Ihrem erfolgreich bestandenen Testsieger Check:</p>
+      <p>${renderFormalGreeting(name, gender)}</p>
+      <p>vielen Dank für die Aktivierung Ihres Lizenzplans. Wir freuen uns, Ihnen mitteilen zu können, dass Ihre Lizenz nun vollständig aktiv ist.</p>
+      <p>Herzlichen Glückwunsch zu Ihrem Prüfungsergebnis!</p>
+      <p>Im Anhang finden Sie alle freigegebenen Materialien für Ihren erfolgreich bestandenen Testsieger-Check:</p>
       <ul style="margin:12px 0 16px;padding-left:20px;color:#0f172a;">
-        <li>Offizielles Siegel${sealNumber ? ` (ID: ${escapeHtml(sealNumber)})` : ''}</li>
-        <li>Prüfergebnis (PDF)</li>
-        <li>Prüfbericht</li>
-        <li>Zertifikat</li>
+        <li>Offizielles Siegel (Grafikdateien)${sealNumber ? ` (ID: ${escapeHtml(sealNumber)})` : ''}</li>
+        <li>Prüfergebnis und Prüfbericht (PDF)</li>
+        <li>Ihr Zertifikat</li>
       </ul>
-      <p style="margin:12px 0;">
-        <strong>Verifikation / Zertifikat:</strong><br />
-        <a href="${verifyUrl}" style="color:#1d4ed8;font-weight:600;">${verifyUrl}</a>
+      <p style="margin:12px 0 6px;"><strong>Ihre öffentliche Verifikation:</strong></p>
+      <p style="margin:0 0 12px;">
+        Über folgenden Link können Ihre Kunden die Echtheit Ihres Siegels jederzeit überprüfen:
+        <a href="${verifyUrl}" style="color:#1d4ed8;font-weight:600;">[Link zur Verifikationsseite]</a>
       </p>
-      <p style="margin:12px 0;">
-        <strong>Zertifikat (PDF):</strong> <a href="${pdfUrl}" style="color:#1d4ed8;font-weight:600;">Download</a><br />
-        <strong>QR-Code:</strong> <a href="${qrUrl}" style="color:#1d4ed8;font-weight:600;">Download</a>
-      </p>
-      ${documentId ? `<p style="font-size:13px;color:#475569;">Dokument-ID: <code>${escapeHtml(documentId)}</code></p>` : ''}
-      <p style="margin:12px 0;font-size:13px;color:#475569;">
-        Rechnung: ${invoiceUrl ? `<a href="${invoiceUrl}" style="color:#1d4ed8;font-weight:600;">Abrufen</a>` : 'liegt in Ihrem Kundenkonto bereit.'}
-      </p>
-      ${renderNote(message)}
-      <p>Sie können diese Unterlagen ab sofort im vereinbarten Rahmen nutzen.</p>
-      <p style="margin-top:18px;">Mit besten Grüßen<br/>Deutsches Prüfsiegel Institut (DPI)</p>
+      <p style="margin:12px 0 6px;"><strong>Direkt-Downloads:</strong></p>
+      <ul style="margin:0 0 12px;padding-left:20px;color:#0f172a;">
+        <li><a href="${pdfUrl}" style="color:#1d4ed8;font-weight:600;">[Link]</a> Zertifikat als PDF herunterladen</li>
+        <li><a href="${qrUrl}" style="color:#1d4ed8;font-weight:600;">[Link]</a> QR-Code für Marketingzwecke herunterladen</li>
+      </ul>
+      <p>Ihre Rechnung steht ab sofort in Ihrem Kundenkonto zum Download bereit.</p>
+      <p>Sie können diese Unterlagen ab sofort im vereinbarten Rahmen für Ihr Marketing nutzen.</p>
+      <p style="margin-top:18px;">Mit freundlichen Grüßen<br/>Ihr Team vom Deutschen Prüfsiegel Institut</p>
       ${renderFooter()}
     </div>
   `;
@@ -288,7 +283,7 @@ export async function sendCompletionEmail(opts: {
   await sendEmail({
     from: `Pruefsiegel Zentrum UG – Lizenz <${FROM_EMAIL}>`,
     to,
-    subject: `Lizenz aktiv – ${productName}`,
+    subject: `Ihre Lizenz ist aktiv – Unterlagen zum Testsieger-Check ${productName}`,
     html,
     attachments: attachments.length ? attachments : undefined,
   });
