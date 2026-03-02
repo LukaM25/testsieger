@@ -5,24 +5,27 @@ export default function ImpressumPage() {
     <div className="max-w-4xl mx-auto px-6 pt-20 pb-16 text-gray-700 leading-relaxed">
       <TranslationNotice />
       <h1 className="text-3xl font-semibold text-[#2e4053] mb-4">Impressum</h1>
-      <p>Angaben gemäß § 5 TMG:</p>
+      <p>Angaben gemäß § 5 DDG:</p>
       <p className="mt-2">
-        Prüfsiegel Zentrum UG (haftungsbeschränkt) <br />
-        Musterstraße 12 <br />
-        6020 Innsbruck <br />
-        Österreich
+        DPI - Deutsches Prüfsiegel Institut GmbH <br />
+        Kirchseestraße 2 <br />
+        83666 Waakirchen
       </p>
       <p className="mt-2">
-        Vertreten durch: <br />
-        Etwas Müller
+        Vertreten durch die Geschäftsführer: <br />
+        Ferdinand Johann Lang <br />
+        Sebastian Valentin Lang
       </p>
       <p className="mt-2">
         Kontakt: <br />
-        E-Mail: <a href="mailto:testdomain2501@mail2germany.com" className="text-[#0a74da] hover:underline">testdomain2501@mail2germany.com</a>
+        Telefon: 015679 790129 <br />
+        E-Mail: <a href="mailto:info@dpi-siegel.de" className="text-[#0a74da] hover:underline">info@dpi-siegel.de</a>
       </p>
-      <p className="mt-2">USt-ID: ATU12345678</p>
-      <p className="mt-8 text-sm text-gray-500">
-        Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV: Etwas Müller
+      <p className="mt-2">
+        Registereintrag: <br />
+        Eintragung im Handelsregister. <br />
+        Registergericht: Amtsgericht München <br />
+        Registernummer: HRB 309712
       </p>
     </div>
   );
