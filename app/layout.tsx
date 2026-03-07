@@ -9,7 +9,7 @@ import { cookies } from "next/headers";
 import { normalizeLocale } from "@/lib/i18n";
 
 export const metadata: Metadata = {
-  title: "DPI - Deutsches Prüfsiegel Institut",
+  title: "DPI - Deutsche Prüfsiegel Institut",
   description: "Vertrauen durch Prüfung",
 };
 

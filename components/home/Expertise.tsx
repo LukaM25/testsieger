@@ -10,6 +10,7 @@ export default function Expertise() {
     ? {
       title: 'Our Expertise',
       block1Title: 'Product tests for companies',
+      block1Annotation: 'Amazon, OTTO, Etsy, or other platforms',
       block1Body:
         'We don’t just test – we compare, question, and deliver clear results procurement and product teams can act on. We make transparent what others hide: quality, safety, and everyday usability.',
       more: 'LEARN MORE',
@@ -20,6 +21,7 @@ export default function Expertise() {
     : {
       title: 'Unsere Expertise',
       block1Title: 'Produkt Tests für Unternehmen',
+      block1Annotation: 'Amazon, OTTO, Ebay oder andere Platformen',
       block1Body:
         'Wir prüfen nicht nur – wir vergleichen, hinterfragen und liefern klare Ergebnisse, auf die Einkauf und Produktteams bauen können. Wir machen transparent, was andere verschweigen: Qualität, Sicherheit und Alltagstauglichkeit.',
       more: 'MEHR ERFAHREN',
@@ -41,9 +43,12 @@ export default function Expertise() {
             <span className="text-brand-green text-xs uppercase tracking-widest mb-2 block font-semibold">
               Für Unternehmen
             </span>
-            <h3 className="text-3xl font-bold text-brand-text mb-6">
+            <h3 className="text-3xl font-bold text-brand-text mb-3">
               {copy.block1Title}
             </h3>
+            <p className="text-lg font-semibold leading-tight text-brand-text sm:text-xl mb-5">
+              {copy.block1Annotation}
+            </p>
             <p className="text-gray-600 leading-relaxed font-normal mb-8">
               {copy.block1Body}
             </p>
