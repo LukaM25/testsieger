@@ -100,12 +100,7 @@ export default async function SpielplatzSicherheitPage() {
               >
                 {copy.ctaPrimary}
               </Link>
-              <Link
-                href="/verfahren"
-                className="rounded-full border border-white/60 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/10 hover:-translate-y-0.5"
-              >
-                {copy.ctaSecondary}
-              </Link>
+              
             </div>
           </div>
         </div>
@@ -183,12 +178,7 @@ export default async function SpielplatzSicherheitPage() {
             >
               {copy.ctaBlockPrimary}
             </Link>
-            <Link
-              href="/verfahren"
-              className="rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-800 transition duration-200 hover:bg-gray-50"
-            >
-              {copy.ctaBlockSecondary}
-            </Link>
+           
           </div>
         </div>
       </section>

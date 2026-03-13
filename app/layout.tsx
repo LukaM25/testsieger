@@ -11,6 +11,16 @@ import { normalizeLocale } from "@/lib/i18n";
 export const metadata: Metadata = {
   title: "DPI - Deutsche Prüfsiegel Institut",
   description: "Vertrauen durch Prüfung",
+  icons: {
+    icon: "/icon.png",          // standard browsers & Google
+    shortcut: "/favicon.ico",   // legacy browsers
+    apple: "/icon.png",         // Apple devices
+  },
+  openGraph: {
+    title: "DPI - Deutsche Prüfsiegel Institut",
+    description: "Vertrauen durch Prüfung",
+    images: ["/icon.png"],      // shown when shared on Google/social
+  },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -22,6 +32,21 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         
         <link rel="stylesheet" href="/styles/animations.css" />
+      
+  <link rel="stylesheet" href="/styles/animations.css" />
+  <script
+    type="application/ld+json"
+    dangerouslySetInnerHTML={{
+      __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Deutsches Prüfsiegel Institut",
+        "alternateName": "DPI",
+        "url": "https://dpi-siegel.de/"
+      })
+    }}
+  />
+
       </head>
       <body className="font-sans antialiased bg-brand-surface text-brand-text">
         <LocaleProvider initialLocale={locale}>

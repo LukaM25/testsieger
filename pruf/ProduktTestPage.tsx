@@ -790,7 +790,7 @@ export default function ProduktTestPage() {
           </div>
 
           <div className="text-center text-2xl font-semibold text-slate-900">
-            {tr("Lizenzpläne werden erst nach bestandenen Test fällig.", "License plans are only due after a passed test.")}
+            {tr("Lizenzpläne werden von Ihnen nur für bestandene Produkte aktiviert.", "License plans are only activated for existing products.")}
           </div>
 
           <div className="space-y-6">
@@ -965,8 +965,8 @@ export default function ProduktTestPage() {
             </h3>
             <p className="text-sm text-slate-700">
               {tr(
-                'Dieses Dokument beschreibt das einheitliche und nachvollziehbare Prüfsystem mit den TCPZ-Prüfkriterien der Prüfsiegel Zentrum UG. Grundlage ist ein standardisiertes Bewertungsverfahren, das sicherstellt, dass alle geprüften Produkte nach denselben objektiven Maßstäben bewertet werden. Die Bewertung erfolgt über ein numerisches System von 1 bis 10 Punkten (Halbpunkte möglich), sodass eine präzise und faire Beurteilung möglich ist. Die Bewertung umfasst folgende Hauptkategorien, um ein ganzheitliches und objektives Ergebnis sicherzustellen:',
-                'This document describes the consistent and traceable testing system with the TCPZ criteria of Prüfsiegel Zentrum UG. It is based on a standardized evaluation method to ensure all tested products are rated by the same objective standards. Scoring is on a numeric scale from 1 to 10 (half-points allowed) for precise, fair assessment. The evaluation covers the following main categories to ensure a holistic and objective result:'
+                'Dieses Dokument beschreibt das einheitliche und nachvollziehbare Prüfsystem mit den TC-DPI-Prüfkriterien des Deutschen Prüfsiegel Instituts. Grundlage ist ein standardisiertes Bewertungsverfahren, das sicherstellt, dass alle geprüften Produkte nach denselben objektiven Maßstäben bewertet werden. Die Bewertung erfolgt über ein numerisches System von 1 bis 10 Punkten (Halbpunkte möglich), sodass eine präzise und faire Beurteilung möglich ist. Die Bewertung umfasst folgende Hauptkategorien, um ein ganzheitliches und objektives Ergebnis sicherzustellen:',
+                'This document describes the consistent and traceable testing system with the TC-DPI criteria of Prüfsiegel Zentrum UG. It is based on a standardized evaluation method to ensure all tested products are rated by the same objective standards. Scoring is on a numeric scale from 1 to 10 (half-points allowed) for precise, fair assessment. The evaluation covers the following main categories to ensure a holistic and objective result:'
               )}
             </p>
           </div>

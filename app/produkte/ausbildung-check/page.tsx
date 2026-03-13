@@ -36,12 +36,7 @@ export default function AusbildungCheckPage() {
               Ziel: verlässliche Orientierung für Bewerber und messbare Qualität für Betriebe.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                href="/produkte/produkt-test"
-                className="rounded-lg bg-white/95 px-5 py-3 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-white"
-              >
-                Jetzt kostenloser Pre-Check
-              </Link>
+            
               <Link
                 href="/kontakt"
                 className="rounded-lg border border-white/40 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white hover:bg-white/10"
@@ -226,15 +221,10 @@ export default function AusbildungCheckPage() {
           </div>
 
           <div className="mt-10 flex flex-wrap gap-3">
-            <Link
-              href="/produkte/produkt-test?precheck=open#precheck"
-              className="grid place-items-center rounded-full bg-black px-10 py-4 text-base font-semibold text-white shadow-lg transition duration-200 hover:bg-gray-900 hover:shadow-xl text-center"
-            >
-              Zum Kostenloser Pre-Check
-            </Link>
+           
             <Link
               href="/kontakt"
-              className="rounded-full border border-gray-300 px-6 py-3 text-base font-semibold text-gray-800 shadow-sm transition duration-200 hover:bg-gray-50 hover:shadow-md"
+              className="rounded-full border border-blue-500 px-6 py-3 text-base font-semibold text-blue-600 shadow-sm transition duration-200 hover:bg-blue-50 hover:shadow-md"
             >
               Kontakt aufnehmen
             </Link>
