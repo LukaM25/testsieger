@@ -9,17 +9,24 @@ import { cookies } from "next/headers";
 import { normalizeLocale } from "@/lib/i18n";
 
 export const metadata: Metadata = {
-  title: "DPI - Deutsche Prüfsiegel Institut",
+  title: "DPI - Deutsches Prüfsiegel Institut",
   description: "Vertrauen durch Prüfung",
   icons: {
-    icon: "/icon.png",          // standard browsers & Google
-    shortcut: "/favicon.ico",   // legacy browsers
-    apple: "/icon.png",         // Apple devices
+    icon: "/icon.png",
+    shortcut: "/favicon.ico",
   },
   openGraph: {
-    title: "DPI - Deutsche Prüfsiegel Institut",
+    title: "DPI - Deutsches Prüfsiegel Institut",
     description: "Vertrauen durch Prüfung",
-    images: ["/icon.png"],      // shown when shared on Google/social
+    url: "https://dpi-siegel.de",
+    siteName: "Deutsches Prüfsiegel Institut",
+    images: [
+      {
+        url: "https://dpi-siegel.de/icon.png",
+        width: 512,
+        height: 512,
+      },
+    ],
   },
 };
 
