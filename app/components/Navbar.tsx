@@ -39,7 +39,7 @@ const sections: NavSection[] = [
   {
     labelKey: "nav.company",
     items: [
-      { labelKey: "nav.about", href: "/ueber-uns" },
+      { labelKey: "Über Uns", href: "/ueber-uns" },
       { labelKey: "nav.careers", href: "/karriere" },
       { labelKey: "nav.contact", href: "/kontakt" },
       { labelKey: "nav.portal", href: "/dashboard" },
