@@ -365,12 +365,12 @@ export default function PrecheckForm() {
             <Error msg={errors.material?.message} />
           </div>
           <div className="md:col-span-2">
-            <Label>{tr('Produktspezifikationen', 'Product specifications')}</Label>
+            <Label>{tr('Produktspezifikationen und Produkt Link', 'Product specifications and link to the product')}</Label>
             <textarea
               {...register('specs')}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-800"
               rows={4}
-              placeholder={tr('z.B. wasserdicht, schwer entflammbar, energiesparend …', 'e.g. waterproof, flame retardant, energy saving …')}
+              placeholder={tr('z.B. wasserdicht, schwer entflammbar, energiesparend, mehr hier: link zu Produktseite …', 'e.g. waterproof, flame retardant, energy saving …')}
               required
             />
             <Error msg={errors.specs?.message} />
