@@ -789,6 +789,86 @@ export default function ProduktTestPage() {
             </div>
           </div>
 
+
+            {/* ↓↓↓ NEW SECTION ↓↓↓ */}
+      <section className="mx-auto max-w-6xl px-6 py-16">
+
+        {/* First paragraph — full width */}
+        <h2 className="text-3xl font-bold text-slate-900 lg:text-4xl mb-6">
+          {tr('Warum E-Commerce-Seller auf Testsieger Check setzen', 'Why e-commerce sellers rely on Testsieger Check')}
+        </h2>
+        <p className="text-slate-700 leading-relaxed mb-8">
+          {tr(
+            'Wir wissen, worauf es im modernen Handel ankommt. Das DPI steht für eine neue Generation der Produktprüfung: Wir verbinden tiefgreifendes technisches Verständnis mit kompromissloser Praxisnähe.',
+            'We know what matters in modern commerce. DPI stands for a new generation of product testing: combining deep technical expertise with uncompromising real-world relevance.'
+          )}
+        </p>
+
+        {/* Second paragraph + bullets float left, futur.jpeg floats right */}
+        <div className="grid gap-8 lg:grid-cols-2 lg:items-center mb-14">
+          <div className="space-y-6">
+            <p className="text-slate-700 leading-relaxed">
+              {tr(
+                'Unsere Vision ist es, nicht nur abstrakte Labordaten zu erheben, sondern Produkte exakt so zu testen, wie Ihre Kunden sie nutzen. Das Ergebnis sind ehrliche, greifbare Prüfberichte und ein Siegel, das bei Verbrauchern echtes Vertrauen weckt – und bei Ihnen messbare Umsätze generiert.',
+                'Our vision is to not merely collect abstract lab data, but to test products exactly as your customers use them. The result: honest, tangible test reports and a seal that builds genuine consumer trust — and measurable revenue for you.'
+              )}
+            </p>
+            <ul className="space-y-2 text-slate-800 font-medium">
+              <li className="flex items-center gap-2">
+                <Image src="/checkmark.png" alt="" width={20} height={20} className="h-5 w-5 object-contain" />
+                {tr('Machen Sie Ihr Produkt zum unangefochtenen Bestseller.', 'Make your product the undisputed bestseller.')}
+              </li>
+              <li className="flex items-center gap-2">
+                <Image src="/checkmark.png" alt="" width={20} height={20} className="h-5 w-5 object-contain" />
+                {tr('Verlieren Sie keine wertvollen Kunden mehr an die Konkurrenz.', 'Stop losing valuable customers to competitors.')}
+              </li>
+              <li className="flex items-center gap-2">
+                <Image src="/checkmark.png" alt="" width={20} height={20} className="h-5 w-5 object-contain" />
+                {tr('Zeigen Sie, was in Ihrem Produkt steckt.', 'Show what your product is truly made of.')}
+              </li>
+            </ul>
+          </div>
+
+          {/* futur.jpeg — right, same height as text block */}
+          <div className="overflow-hidden rounded-3xl border border-slate-100 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)]">
+            <img
+              src="/futur.jpeg"
+              alt={tr('Zukunft des E-Commerce', 'Future of e-commerce')}
+              className="w-full h-full object-cover"
+              style={{ maxHeight: '280px' }}
+            />
+          </div>
+        </div>
+
+        {/* Banner — full width */}
+        <div className="rounded-3xl border border-slate-100 bg-slate-50 px-8 py-10 shadow-sm text-center space-y-3">
+          <h3 className="text-2xl font-bold text-slate-900 md:text-3xl">
+            {tr(
+              'Heben Sie Ihr Produkt mit dem DPI-Prüfsiegel aus der Masse ab.',
+              'Stand out from the crowd with the DPI quality seal.'
+            )}
+          </h3>
+          <p className="text-slate-600 leading-relaxed max-w-3xl mx-auto">
+            {tr(
+              'Auf Amazon und im E-Commerce ist der Wettbewerb gnadenlos. Kunden vergleichen Dutzende identisch aussehende Produkte in Sekunden. Wer den Zuschlag bekommt, entscheidet oft nur ein einziger Faktor: Sichtbares Vertrauen.',
+              'On Amazon and in e-commerce, competition is ruthless. Customers compare dozens of identical-looking products in seconds. What makes the difference is often just one factor: visible trust.'
+            )}
+          </p>
+        </div>
+
+        {/* mitsiegel.jpeg — full width below banner */}
+        <div className="mt-10 overflow-hidden rounded-3xl border border-slate-100 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)]">
+          <img
+            src="/mitsiegel.jpeg"
+            alt={tr('Produkt mit Siegel', 'Product with seal')}
+            className="w-full object-cover"
+            style={{ maxHeight: '400px' }}
+          />
+        </div>
+
+      </section>
+      {/* ↑↑↑ END NEW SECTION ↑↑↑ */}
+
           <div className="text-center text-2xl font-semibold text-slate-900">
             {tr("Lizenzpläne werden von Ihnen nur für bestandene Produkte aktiviert.", "License plans are only activated for existing products.")}
           </div>
@@ -878,84 +958,6 @@ export default function ProduktTestPage() {
         </div>
       </section>
 
-            {/* ↓↓↓ NEW SECTION ↓↓↓ */}
-      <section className="mx-auto max-w-6xl px-6 py-16">
-
-        {/* First paragraph — full width */}
-        <h2 className="text-3xl font-bold text-slate-900 lg:text-4xl mb-6">
-          {tr('Warum E-Commerce-Seller auf Testsieger Check setzen', 'Why e-commerce sellers rely on Testsieger Check')}
-        </h2>
-        <p className="text-slate-700 leading-relaxed mb-8">
-          {tr(
-            'Wir wissen, worauf es im modernen Handel ankommt. Das DPI steht für eine neue Generation der Produktprüfung: Wir verbinden tiefgreifendes technisches Verständnis mit kompromissloser Praxisnähe.',
-            'We know what matters in modern commerce. DPI stands for a new generation of product testing: combining deep technical expertise with uncompromising real-world relevance.'
-          )}
-        </p>
-
-        {/* Second paragraph + bullets float left, futur.jpeg floats right */}
-        <div className="grid gap-8 lg:grid-cols-2 lg:items-center mb-14">
-          <div className="space-y-6">
-            <p className="text-slate-700 leading-relaxed">
-              {tr(
-                'Unsere Vision ist es, nicht nur abstrakte Labordaten zu erheben, sondern Produkte exakt so zu testen, wie Ihre Kunden sie nutzen. Das Ergebnis sind ehrliche, greifbare Prüfberichte und ein Siegel, das bei Verbrauchern echtes Vertrauen weckt – und bei Ihnen messbare Umsätze generiert.',
-                'Our vision is to not merely collect abstract lab data, but to test products exactly as your customers use them. The result: honest, tangible test reports and a seal that builds genuine consumer trust — and measurable revenue for you.'
-              )}
-            </p>
-            <ul className="space-y-2 text-slate-800 font-medium">
-              <li className="flex items-center gap-2">
-                <Image src="/checkmark.png" alt="" width={20} height={20} className="h-5 w-5 object-contain" />
-                {tr('Machen Sie Ihr Produkt zum unangefochtenen Bestseller.', 'Make your product the undisputed bestseller.')}
-              </li>
-              <li className="flex items-center gap-2">
-                <Image src="/checkmark.png" alt="" width={20} height={20} className="h-5 w-5 object-contain" />
-                {tr('Verlieren Sie keine wertvollen Kunden mehr an die Konkurrenz.', 'Stop losing valuable customers to competitors.')}
-              </li>
-              <li className="flex items-center gap-2">
-                <Image src="/checkmark.png" alt="" width={20} height={20} className="h-5 w-5 object-contain" />
-                {tr('Zeigen Sie, was in Ihrem Produkt steckt.', 'Show what your product is truly made of.')}
-              </li>
-            </ul>
-          </div>
-
-          {/* futur.jpeg — right, same height as text block */}
-          <div className="overflow-hidden rounded-3xl border border-slate-100 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)]">
-            <img
-              src="/futur.jpeg"
-              alt={tr('Zukunft des E-Commerce', 'Future of e-commerce')}
-              className="w-full h-full object-cover"
-              style={{ maxHeight: '280px' }}
-            />
-          </div>
-        </div>
-
-        {/* Banner — full width */}
-        <div className="rounded-3xl border border-slate-100 bg-slate-50 px-8 py-10 shadow-sm text-center space-y-3">
-          <h3 className="text-2xl font-bold text-slate-900 md:text-3xl">
-            {tr(
-              'Heben Sie Ihr Produkt mit dem DPI-Prüfsiegel aus der Masse ab.',
-              'Stand out from the crowd with the DPI quality seal.'
-            )}
-          </h3>
-          <p className="text-slate-600 leading-relaxed max-w-3xl mx-auto">
-            {tr(
-              'Auf Amazon und im E-Commerce ist der Wettbewerb gnadenlos. Kunden vergleichen Dutzende identisch aussehende Produkte in Sekunden. Wer den Zuschlag bekommt, entscheidet oft nur ein einziger Faktor: Sichtbares Vertrauen.',
-              'On Amazon and in e-commerce, competition is ruthless. Customers compare dozens of identical-looking products in seconds. What makes the difference is often just one factor: visible trust.'
-            )}
-          </p>
-        </div>
-
-        {/* mitsiegel.jpeg — full width below banner */}
-        <div className="mt-10 overflow-hidden rounded-3xl border border-slate-100 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)]">
-          <img
-            src="/mitsiegel.jpeg"
-            alt={tr('Produkt mit Siegel', 'Product with seal')}
-            className="w-full object-cover"
-            style={{ maxHeight: '400px' }}
-          />
-        </div>
-
-      </section>
-      {/* ↑↑↑ END NEW SECTION ↑↑↑ */}
 
 
 

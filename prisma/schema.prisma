@@ -65,6 +65,20 @@ model Order {
   stripeSubId     String?
   createdAt       DateTime  @default(now())
   paidAt          DateTime?
+
+  stripePriceId          String?
+  stripeCurrency         String?
+  stripeUnitAmountCents  Int?
+  stripeSubtotalCents    Int?
+  stripeDiscountCents    Int       @default(0)
+  stripeTotalCents       Int?
+
+  easybillCustomerId     Int?
+  easybillDocumentId     Int?
+  easybillDocumentNumber String?
+  easybillSyncedAt       DateTime?
+  easybillSyncError      String?
+
   product         Product   @relation(fields: [productId], references: [id])
   user            User      @relation(fields: [userId], references: [id])
   license         License?

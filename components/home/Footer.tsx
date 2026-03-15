@@ -115,7 +115,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-16 pt-8 border-t border-white/5 text-xs text-gray-500 text-center uppercase tracking-widest">
-          &copy; {new Date().getFullYear()} TestsiegerCheck. {copy.rights}.
+          &copy; {new Date().getFullYear()} DPI Deutsches Prüfsiegel Institut. {copy.rights}.
         </div>
       </div>
     </footer>
