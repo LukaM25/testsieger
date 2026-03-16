@@ -664,6 +664,20 @@ export default function ProduktTestPage() {
         </div>
       </section>
 
+{/* === HIER EINFÜGEN: grafik.jpeg === */}
+<section className="mx-auto max-w-6xl px-6 pb-8">
+  <div className="overflow-hidden rounded-3xl border border-slate-100 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)]">
+    <img
+      src="/grafik.jpeg"
+      alt={tr('Grafik', 'Graphic')}
+      className="w-full object-cover"
+      style={{ maxHeight: '420px' }}
+    />
+  </div>
+</section>
+{/* === END INSERT === */}
+
+
       <section className="mx-auto max-w-6xl px-6 pt-6 pb-6">
         <div className="text-center">
           <h2 className="text-4xl font-bold">

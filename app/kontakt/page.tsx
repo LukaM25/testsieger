@@ -105,7 +105,7 @@ export default function KontaktPage() {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 shrink-0 text-[#134074]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h2.28a1 1 0 01.95.68l1.06 3.18a1 1 0 01-.23 1.05L7.5 9.4a16.06 16.06 0 006.1 6.1l1.49-1.56a1 1 0 011.05-.23l3.18 1.06a1 1 0 01.68.95V19a2 2 0 01-2 2h-1C9.16 21 3 14.84 3 7V5z" />
               </svg>
-              +49 156 790129
+              +49 156 79790129
             </a>
             <p className="text-sm text-slate-500">
               Erreichbar Mo–Fr, 9–17 Uhr
