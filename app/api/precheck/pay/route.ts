@@ -69,6 +69,7 @@ export async function POST(req: Request) {
   const checkout = await stripe.checkout.sessions.create({
     mode: 'payment',
     customer_email: session.email,
+      allow_promotion_codes: true,
     client_reference_id: `${session.userId}:${primaryProduct.id}:${opt === 'priority' ? 'PRECHECK_PRIORITY' : 'PRECHECK_FEE'}`,
     metadata: {
       productId: primaryProduct.id,

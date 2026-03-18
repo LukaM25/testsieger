@@ -202,6 +202,7 @@ export default function PrecheckPage() {
   const [inlinePrecheckMounted, setInlinePrecheckMounted] = useState(false);
   const [inlineSubmitMessage, setInlineSubmitMessage] = useState<string | null>(null);
   const [inlineSubmitting, setInlineSubmitting] = useState(false);
+  const [agbAccepted, setAgbAccepted] = useState(false);
   const [inlineProduct, setInlineProduct] = useState({
     productName: "",
     brand: "",
@@ -306,6 +307,11 @@ export default function PrecheckPage() {
       return;
     }
     setPayError(null);
+    if (!agbAccepted) {
+  setPayError(tr("Bitte akzeptieren Sie die AGB, um fortzufahren.", "Please accept the Terms and Conditions to proceed."));
+  return;
+}
+
     setPaying(optionId);
     try {
       const res = await fetch("/api/precheck/pay", {
@@ -1251,6 +1257,36 @@ export default function PrecheckPage() {
                   <div className="text-2xl font-semibold text-slate-900">
                     {tr("3. Checkout", "3. Checkout")}
                   </div>
+                  {/* AGB Agreement */}
+<div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 shadow-sm">
+  <input
+    id="agb-accept"
+    type="checkbox"
+    checked={agbAccepted}
+    onChange={(e) => setAgbAccepted(e.target.checked)}
+    className="mt-1 h-4 w-4 rounded border-slate-300 accent-slate-900"
+  />
+  <label htmlFor="agb-accept" className="text-sm text-slate-700 leading-relaxed cursor-pointer">
+    {locale === "de" ? (
+      <>
+        Ich habe die{" "}
+        <a href="/agb.pdf" target="_blank" rel="noopener noreferrer" className="underline font-semibold text-slate-900 hover:text-blue-700">
+          AGB
+        </a>{" "}
+        gelesen und akzeptiere sie. *
+      </>
+    ) : (
+      <>
+        I have read and accept the{" "}
+        <a href="/agb.pdf" target="_blank" rel="noopener noreferrer" className="underline font-semibold text-slate-900 hover:text-blue-700">
+          Terms and Conditions
+        </a>
+        . *
+      </>
+    )}
+  </label>
+</div>
+
                   <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                 {testOptions.map((option, idx) => {
                   const totals = getCheckoutTotals(option.id);
@@ -1280,7 +1316,7 @@ export default function PrecheckPage() {
                       ? { backgroundImage: "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #4ade80 100%)" }
                       : {}),
                   };
-                  const disableCheckout = isUnauthorized || !hasPayableSelection || paying === option.id;
+                  const disableCheckout = isUnauthorized || !hasPayableSelection || paying === option.id || !agbAccepted;
                   const checkoutLabel = isUnauthorized
                     ? tr("Bitte einloggen", "Please sign in")
                     : !selectedIdsForPayment.length
