@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { Plan, LicenseStatus, AdminRole } from '@prisma/client';
 import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
+import { stripe } from '@/lib/stripe';
+
 
 export const runtime = 'nodejs';
 
@@ -81,6 +83,13 @@ export async function POST(req: Request) {
       certificate: true,
     },
   });
+
+    if (status === 'CANCELED') {
+    const subId = product.license?.stripeSubId;
+    if (subId && plan !== 'LIFETIME') {
+      await stripe.subscriptions.cancel(subId);
+    }
+  }
 
   await logAdminAudit({
     adminId: admin.id,
