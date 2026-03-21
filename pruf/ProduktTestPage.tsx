@@ -27,7 +27,7 @@ type Plan = {
 const steps: StepCard[] = [
   { src: "/images/ablauf/1free.PNG", label: { de: "Kostenloser Pre-Check", en: "Free pre-check" } },
   { src: "/images/ablauf/3liefer.PNG", label: { de: "Produkt an uns senden", en: "Send product to us" } },
-  { src: "/images/ablauf/2lizenz.PNG", label: { de: "Lizenzplan auswählen", en: "Choose license plan" } },
+  { src: "/images/ablauf/2lizenz.PNG", label: { de: "Lizenzplan auswÃ¤hlen", en: "Choose license plan" } },
   { src: "/images/ablauf/4testergebnis.PNG", label: { de: "Testergebnis & Siegel erhalten", en: "Receive test result & seal" } },
 ];
 
@@ -43,7 +43,7 @@ const stepSequence = (() => {
 })();
 
 const advantanges = [
-  { src: "/images/iconen/sichtbarkeit.png", label: { de: "Erhöht Sichtbarkeit", en: "Increases visibility" } },
+  { src: "/images/iconen/sichtbarkeit.png", label: { de: "ErhÃ¶ht Sichtbarkeit", en: "Increases visibility" } },
   { src: "/images/iconen/conversion.png", label: { de: "Steigert Conversion Rate", en: "Boosts conversion rate" } },
   { src: "/images/iconen/marketingausgaben.png", label: { de: "Senkt Marketingausgaben", en: "Reduces marketing spend" } },
 ];
@@ -51,7 +51,7 @@ const advantanges = [
 const verfahrenHighlights = [
   { src: "/images/iconen/transparenz.PNG", label: { de: "Transparenz", en: "Transparency" } },
   { src: "/images/iconen/glaub.PNG", label: { de: "Vertrauen", en: "Credibility" } },
-  { src: "/images/iconen/qualitat.PNG", label: { de: "Qualität", en: "Quality" } },
+  { src: "/images/iconen/qualitat.PNG", label: { de: "QualitÃ¤t", en: "Quality" } },
 ];
 
 const STANDARD_NET_EUR = 229;
@@ -65,13 +65,13 @@ const plans: Plan[] = [
       en: ["1 sales channel (Amazon, Otto...)", "Language: German"],
     },
     contents: {
-      de: ["Siegel", "Zertifikat", "Prüfbericht"],
+      de: ["Siegel", "Zertifikat", "PrÃ¼fbericht"],
       en: ["Seal", "Certificate", "Test report"],
     },
     basePriceEur: 0.99,
     billing: "daily",
     footer: {
-      de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+      de: ["Abrechnung 365 Tage / Jahr", "LizenzverlÃ¤ngerung jÃ¤hrlich."],
       en: ["Billing 365 days / year", "License renewal yearly."],
     },
   },
@@ -79,17 +79,17 @@ const plans: Plan[] = [
     name: "Premium",
     theme: "indigo",
     usage: {
-      de: ["ALLE Verkaufskanäle", "ALLE Sprachen"],
+      de: ["ALLE VerkaufskanÃ¤le", "ALLE Sprachen"],
       en: ["ALL sales channels", "ALL languages"],
     },
     contents: {
-      de: ["Siegel", "Zertifikat", "Prüfbericht"],
+      de: ["Siegel", "Zertifikat", "PrÃ¼fbericht"],
       en: ["Seal", "Certificate", "Test report"],
     },
     basePriceEur: 1.09,
     billing: "daily",
     footer: {
-      de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+      de: ["Abrechnung 365 Tage / Jahr", "LizenzverlÃ¤ngerung jÃ¤hrlich."],
       en: ["Billing 365 days / year", "License renewal yearly."],
     },
   },
@@ -97,17 +97,17 @@ const plans: Plan[] = [
     name: "Lifetime",
     theme: "midnight",
     usage: {
-      de: ["ALLE Verkaufskanäle", "ALLE Sprachen"],
+      de: ["ALLE VerkaufskanÃ¤le", "ALLE Sprachen"],
       en: ["ALL sales channels", "ALL languages"],
     },
     contents: {
-      de: ["Siegel", "Zertifikat", "Prüfbericht"],
+      de: ["Siegel", "Zertifikat", "PrÃ¼fbericht"],
       en: ["Seal", "Certificate", "Test report"],
     },
     basePriceEur: 1460,
     billing: "one-time",
     footer: {
-      de: ["Abrechnung einmalig", "Lizenzverlängerung jährlich."],
+      de: ["Abrechnung einmalig", "LizenzverlÃ¤ngerung jÃ¤hrlich."],
       en: ["Billing once", "License renewal yearly."],
     },
   },
@@ -142,61 +142,61 @@ const planThemes = {
 const phasesQa = {
   qa: [
     {
-      question: { de: 'Was genau wird geprüft?', en: 'What exactly is tested?' },
+      question: { de: 'Was genau wird geprÃ¼ft?', en: 'What exactly is tested?' },
       answer: {
-        de: 'Wir prüfen Konsumprodukte anhand klar definierter, transparenter Prüfkriterien nach DPI-Standard.\nJe nach Produktkategorie bewerten wir u. a. Verarbeitung, Funktion, Sicherheit, Praxistauglichkeit und Dokumentation. Die Prüfung erfolgt nachvollziehbar und wird schriftlich dokumentiert.',
+        de: 'Wir prÃ¼fen Konsumprodukte anhand klar definierter, transparenter PrÃ¼fkriterien nach DPI-Standard.\nJe nach Produktkategorie bewerten wir u. a. Verarbeitung, Funktion, Sicherheit, Praxistauglichkeit und Dokumentation. Die PrÃ¼fung erfolgt nachvollziehbar und wird schriftlich dokumentiert.',
         en: 'We test consumer products against clearly defined, transparent criteria (DPI standard).\nDepending on the product category, we assess workmanship, function, safety, real-world usability, and documentation. The process is traceable and documented in writing.',
       }, 
     },
     {
-      question: { de: 'Warum gibt es eine jährliche Lizenz?', en: 'Why is there an annual license?' },
+      question: { de: 'Warum gibt es eine jÃ¤hrliche Lizenz?', en: 'Why is there an annual license?' },
       answer: {
-        de: 'Qualität ist kein einmaliger Zustand. Die Jahreslizenz stellt sicher, dass:\n• das Produkt weiterhin unverändert ist,\n• das Siegel aktuell bleibt,\n• Missbrauch ausgeschlossen wird.\nOhne aktive Lizenz erlischt das Nutzungsrecht am Siegel.',
-        en: 'Quality is not a one-time event. The annual license ensures that:\n• the product remains unchanged,\n• the seal stays current,\n• misuse is prevented.\nWithout an active license, the right to use the seal expires.',
+        de: 'QualitÃ¤t ist kein einmaliger Zustand. Die Jahreslizenz stellt sicher, dass:\nâ€¢ das Produkt weiterhin unverÃ¤ndert ist,\nâ€¢ das Siegel aktuell bleibt,\nâ€¢ Missbrauch ausgeschlossen wird.\nOhne aktive Lizenz erlischt das Nutzungsrecht am Siegel.',
+        en: 'Quality is not a one-time event. The annual license ensures that:\nâ€¢ the product remains unchanged,\nâ€¢ the seal stays current,\nâ€¢ misuse is prevented.\nWithout an active license, the right to use the seal expires.',
       },
     },
     {
-      question: { de: 'Wie lange dauert die Prüfung?', en: 'How long does the test take?' },
+      question: { de: 'Wie lange dauert die PrÃ¼fung?', en: 'How long does the test take?' },
       answer: {
-        de: 'Nach Eingang des Produkts planen wir für den vollständigen Produkttest inklusive Prüfbericht und Zertifikat 14–21 Tage ein.\nMit unserem Prioritäts-Service kann die Bearbeitungszeit auf 7 Tage reduziert werden.',
-        en: 'After the product arrives, we plan 14–21 days for the full product test including report and certificate.\nWith our priority service, turnaround can be reduced to 7 days.',
+        de: 'Nach Eingang des Produkts planen wir fÃ¼r den vollstÃ¤ndigen Produkttest inklusive PrÃ¼fbericht und Zertifikat 14â€“21 Tage ein.\nMit unserem PrioritÃ¤ts-Service kann die Bearbeitungszeit auf 7 Tage reduziert werden.',
+        en: 'After the product arrives, we plan 14â€“21 days for the full product test including report and certificate.\nWith our priority service, turnaround can be reduced to 7 days.',
       },
     },
     {
-      question: { de: 'Was passiert, wenn ich die Lizenz kündige?', en: 'What happens if I cancel the license?' },
+      question: { de: 'Was passiert, wenn ich die Lizenz kÃ¼ndige?', en: 'What happens if I cancel the license?' },
       answer: {
-        de: 'Nach Kündigung und Ende des Gültigkeitszeitraums:\n• erlischt das Nutzungsrecht am Siegel,\n• muss das Siegel aus allen Kanälen entfernt werden,\n• darf nicht weiter mit der Auszeichnung geworben werden.',
-        en: 'After cancellation and the end of the validity period:\n• the right to use the seal expires,\n• the seal must be removed from all channels,\n• advertising with the award is no longer permitted.',
+        de: 'Nach KÃ¼ndigung und Ende des GÃ¼ltigkeitszeitraums:\nâ€¢ erlischt das Nutzungsrecht am Siegel,\nâ€¢ muss das Siegel aus allen KanÃ¤len entfernt werden,\nâ€¢ darf nicht weiter mit der Auszeichnung geworben werden.',
+        en: 'After cancellation and the end of the validity period:\nâ€¢ the right to use the seal expires,\nâ€¢ the seal must be removed from all channels,\nâ€¢ advertising with the award is no longer permitted.',
       },
     },
     {
-      question: { de: 'Was passiert, wenn mein Produkt die Prüfung nicht besteht?', en: 'What if my product does not pass?' },
+      question: { de: 'Was passiert, wenn mein Produkt die PrÃ¼fung nicht besteht?', en: 'What if my product does not pass?' },
       answer: {
-        de: 'Sie erhalten eine klare, sachliche Rückmeldung, welche Punkte nicht erfüllt wurden. Sie können Ihr Produkt anpassen und erneut kostenlos zur Prüfung einreichen.\nEin Siegel wird erst nach bestandener Prüfung vergeben. Die Lizenzgebühren werden erst nach bestandener Prüfung fällig – vorab ist lediglich die Gebühr für den Prüfaufwand zu entrichten.',
+        de: 'Sie erhalten eine klare, sachliche RÃ¼ckmeldung, welche Punkte nicht erfÃ¼llt wurden. Sie kÃ¶nnen Ihr Produkt anpassen und erneut kostenlos zur PrÃ¼fung einreichen.\nEin Siegel wird erst nach bestandener PrÃ¼fung vergeben. Die LizenzgebÃ¼hren werden erst nach bestandener PrÃ¼fung fÃ¤llig â€“ vorab ist lediglich die GebÃ¼hr fÃ¼r den PrÃ¼faufwand zu entrichten.',
         en: 'You receive clear, factual feedback on which criteria were not met. You can improve your product and resubmit it for testing free of charge.\nA seal is awarded only after passing. License fees are due only after a successful test; upfront, only the testing effort fee applies.',
       },
     },
     {
-      question: { de: 'Was erhalte ich nach bestandener Prüfung?', en: 'What do I receive after passing?' },
+      question: { de: 'Was erhalte ich nach bestandener PrÃ¼fung?', en: 'What do I receive after passing?' },
       answer: {
-        de: 'Nach bestandener Prüfung erhalten Sie direkt das Testergebnis und können den passenden Lizenzplan auswählen.\nSie erhalten einen detaillierten Prüfbericht (vollständig für Ihre Unterlagen), zusätzlich wird das Ergebnis unter der zugeordneten Produktkategorie beim Deutschen Prüfsiegel Institut veröffentlicht.\nDarüber hinaus erhalten Sie ein Zertifikat (abrufbar via QR-Code auf dem Siegel) sowie das Siegel als PNG-Datei zur vereinbarten Nutzung auf Verpackung, Website oder Marketingmaterialien.',
-        en: 'After passing, you receive the test result immediately and can choose the appropriate license plan.\nYou get a detailed test report for your records; additionally, the result is published under the assigned product category at the Deutsches Prüfsiegel Institut.\nYou also receive a certificate (accessible via the QR code on the seal) and the seal as a PNG file for the agreed use on packaging, website, or marketing materials.',
+        de: 'Nach bestandener PrÃ¼fung erhalten Sie direkt das Testergebnis und kÃ¶nnen den passenden Lizenzplan auswÃ¤hlen.\nSie erhalten einen detaillierten PrÃ¼fbericht (vollstÃ¤ndig fÃ¼r Ihre Unterlagen), zusÃ¤tzlich wird das Ergebnis unter der zugeordneten Produktkategorie beim Deutschen PrÃ¼fsiegel Institut verÃ¶ffentlicht.\nDarÃ¼ber hinaus erhalten Sie ein Zertifikat (abrufbar via QR-Code auf dem Siegel) sowie das Siegel als PNG-Datei zur vereinbarten Nutzung auf Verpackung, Website oder Marketingmaterialien.',
+        en: 'After passing, you receive the test result immediately and can choose the appropriate license plan.\nYou get a detailed test report for your records; additionally, the result is published under the assigned product category at the Deutsches PrÃ¼fsiegel Institut.\nYou also receive a certificate (accessible via the QR code on the seal) and the seal as a PNG file for the agreed use on packaging, website, or marketing materials.',
       },
     },
     {
-      question: { de: 'Welche Kosten entstehen – und wann?', en: 'What costs arise — and when?' },
+      question: { de: 'Welche Kosten entstehen â€“ und wann?', en: 'What costs arise â€” and when?' },
       answer: {
-        de: 'Nach dem kostenlosen bestandenen Pre-Check kann das Produkt an uns geschickt werden.\nFür den Prüfungsaufwand, das Erstellen der Zertifikate und Berichte wird eine Grundgebühr von 229 € erhoben.\nNach Abschluss der Prüfung und dem vorliegenden Testergebnis kann der Lizenzplan gewählt werden.\nDer Lizenzplan ist individuell auszuwählen und wird für ein komplettes Jahr bezahlt. Ist das Ergebnis nicht zufriedenstellend, muss kein Lizenzplan ausgewählt werden – somit wird auch kein Siegel und Zertifikat ausgestellt.',
-        en: 'After the free pre-check is passed, the product can be sent to us.\nA base fee of €229 is charged for the testing effort and the creation of certificates and reports.\nAfter the test is completed and the result is available, you can choose a license plan.\nThe license plan is selected individually and paid for a full year.\nIf the result is not satisfactory, no license plan is required — therefore no seal or certificate is issued.',
+        de: 'Nach dem kostenlosen bestandenen Pre-Check kann das Produkt an uns geschickt werden.\nFÃ¼r den PrÃ¼fungsaufwand, das Erstellen der Zertifikate und Berichte wird eine GrundgebÃ¼hr von 229 â‚¬ erhoben.\nNach Abschluss der PrÃ¼fung und dem vorliegenden Testergebnis kann der Lizenzplan gewÃ¤hlt werden.\nDer Lizenzplan ist individuell auszuwÃ¤hlen und wird fÃ¼r ein komplettes Jahr bezahlt. Ist das Ergebnis nicht zufriedenstellend, muss kein Lizenzplan ausgewÃ¤hlt werden â€“ somit wird auch kein Siegel und Zertifikat ausgestellt.',
+        en: 'After the free pre-check is passed, the product can be sent to us.\nA base fee of â‚¬229 is charged for the testing effort and the creation of certificates and reports.\nAfter the test is completed and the result is available, you can choose a license plan.\nThe license plan is selected individually and paid for a full year.\nIf the result is not satisfactory, no license plan is required â€” therefore no seal or certificate is issued.',
       },
     },
     {
       question: {
-        de: 'Mehrere Produkte sollen getestet werden, ändert sich der Preis?',
+        de: 'Mehrere Produkte sollen getestet werden, Ã¤ndert sich der Preis?',
         en: 'If multiple products are tested, does the price change?',
       },
       answer: {
-        de: 'Bei einer Anzahl ab 5 Produkten, die getestet werden sollen, können Sie uns direkt anschreiben und wir bereiten Ihnen ein individuelles Angebot.',
+        de: 'Bei einer Anzahl ab 5 Produkten, die getestet werden sollen, kÃ¶nnen Sie uns direkt anschreiben und wir bereiten Ihnen ein individuelles Angebot.',
         en: 'If you want to test 5 or more products, please contact us directly and we will prepare a tailored offer.',
       },
     },
@@ -369,7 +369,7 @@ export default function ProduktTestPage() {
     } catch {
       // ignore and fall back to opening form
     }
-    setCtaNotice(tr('Bitte Konto erstellen und Produkt für den Pre-Check einreichen.', 'Please create an account and submit your product for the pre-check.'));
+    setCtaNotice(tr('Bitte Konto erstellen und Produkt fÃ¼r den Pre-Check einreichen.', 'Please create an account and submit your product for the pre-check.'));
     setShowPrecheck(true);
     // ensure height animation opens
     requestAnimationFrame(() => {
@@ -462,8 +462,8 @@ export default function ProduktTestPage() {
               </h1>
               <p data-animate="hero-text" className="text-sm text-slate-600">
                 {tr(
-                  'Wir begleiten Sie vom Pre-Check bis zum Siegel – transparent, digital und mit einem klaren Bewertungsrahmen.',
-                  'We support you from pre-check to seal – transparent, digital, and with a clear evaluation framework.'
+                  'Wir begleiten Sie vom Pre-Check bis zum Siegel â€“ transparent, digital und mit einem klaren Bewertungsrahmen.',
+                  'We support you from pre-check to seal â€“ transparent, digital, and with a clear evaluation framework.'
                 )}
               </p>
             </div>
@@ -612,7 +612,7 @@ export default function ProduktTestPage() {
       {/* Vorteile / Highlights */}
       <section className="mx-auto max-w-6xl px-6 pt-12 pb-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">{tr('Dein Vorteil', 'Your benefit')}</h2>
+          <h2 className="text-2xl font-semibold">{tr('Ihr Vorteil', 'Your benefit')}</h2>
           <span className="text-xs uppercase tracking-[0.3em] text-slate-500">{tr('klar & strukturiert', 'clear & structured')}</span>
         </div>
         <div className="mt-8 grid gap-8 md:grid-cols-3">
@@ -650,7 +650,7 @@ export default function ProduktTestPage() {
                 </span>
               </h2>
               <p className="text-3xl font-medium text-slate-900 sm:text-[2.35rem]">
-                {tr('Verbrenne nicht unnötig Werbebudget', "Don't burn marketing budget unnecessarily")}
+                {tr('Verbrenne nicht unnÃ¶tig Werbebudget', "Don't burn marketing budget unnecessarily")}
               </p>
             </div>
             <div className="flex h-full items-center justify-center md:justify-end">
@@ -664,8 +664,8 @@ export default function ProduktTestPage() {
         </div>
       </section>
 
-{/* === HIER EINFÜGEN: grafik.jpeg === */}
-<section className="mx-auto max-w-6xl px-6 pb-8">
+{/* === HIER EINFÃœGEN: grafik.jpeg === */}
+<section className="mx-auto max-w-6xl px-6 pb-16">
   <div className="overflow-hidden rounded-3xl border border-slate-100 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)]">
     <img
       src="/grafik.jpeg"
@@ -684,14 +684,14 @@ export default function ProduktTestPage() {
             {tr('Zufriedene Kunden', 'Satisfied customers')}
           </h2>
           <p className="mt-4 text-lg text-slate-600">
-            {tr('Über', 'Over')} <Counter end={1500} /> {tr('Projekte erfolgreich abgeschlossen.', 'projects successfully completed.')}
+            {tr('Ãœber', 'Over')} <Counter end={1500} /> {tr('Projekte erfolgreich abgeschlossen.', 'projects successfully completed.')}
           </p>
         </div>
       </section>
 
       <section className="mx-auto max-w-6xl px-6 pt-6 pb-6">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Exclusivität */}
+          {/* ExclusivitÃ¤t */}
           <div
             className="flex flex-col items-center justify-center rounded-2xl bg-white p-8 text-center text-slate-900"
           >
@@ -699,7 +699,7 @@ export default function ProduktTestPage() {
               <Counter start={0} end={1} duration={1875} />
             </div>
             <div className="mt-2 text-sm font-medium uppercase tracking-wide">
-              {tr('Exclusivität', 'Exclusivity')}
+              {tr('ExclusivitÃ¤t', 'Exclusivity')}
             </div>
           </div>
 
@@ -760,10 +760,10 @@ export default function ProduktTestPage() {
           <div className="rounded-3xl border border-slate-100 bg-white/90 p-8 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)] md:p-10">
             <div className="space-y-3 text-center">
               <h3 className="text-3xl md:text-4xl font-semibold text-slate-900">
-                {tr("Weitere Produkte hinzufügen und sparen.", "Add more products and save.")}
+                {tr("Weitere Produkte hinzufÃ¼gen und sparen.", "Add more products and save.")}
               </h3>
               <p className="text-lg md:text-xl text-slate-600">
-                {tr("Für die Prüfung fällt eine einmalige Testgebühr an.", "A one-time test fee applies for the review.")}
+                {tr("FÃ¼r die PrÃ¼fung fÃ¤llt eine einmalige TestgebÃ¼hr an.", "A one-time test fee applies for the review.")}
               </p>
             </div>
             <div className="mt-8 space-y-5">
@@ -781,7 +781,7 @@ export default function ProduktTestPage() {
                       </>
                     )}
                     <span className="text-base md:text-lg font-semibold">
-                      {tr("Testgebühr", "Test fee")} {formatEur(tier.finalNet)}
+                      {tr("TestgebÃ¼hr", "Test fee")} {formatEur(tier.finalNet)}
                     </span>
                   </div>
                 </div>
@@ -804,16 +804,16 @@ export default function ProduktTestPage() {
           </div>
 
 
-            {/* ↓↓↓ NEW SECTION ↓↓↓ */}
+            {/* â†“â†“â†“ NEW SECTION â†“â†“â†“ */}
       <section className="mx-auto max-w-6xl px-6 py-16">
 
-        {/* First paragraph — full width */}
+        {/* First paragraph â€” full width */}
         <h2 className="text-3xl font-bold text-slate-900 lg:text-4xl mb-6">
           {tr('Warum E-Commerce-Seller auf Testsieger Check setzen', 'Why e-commerce sellers rely on Testsieger Check')}
         </h2>
         <p className="text-slate-700 leading-relaxed mb-8">
           {tr(
-            'Wir wissen, worauf es im modernen Handel ankommt. Das DPI steht für eine neue Generation der Produktprüfung: Wir verbinden tiefgreifendes technisches Verständnis mit kompromissloser Praxisnähe.',
+            'Wir wissen, worauf es im modernen Handel ankommt. Das DPI steht fÃ¼r eine neue Generation der ProduktprÃ¼fung: Wir verbinden tiefgreifendes technisches VerstÃ¤ndnis mit kompromissloser PraxisnÃ¤he.',
             'We know what matters in modern commerce. DPI stands for a new generation of product testing: combining deep technical expertise with uncompromising real-world relevance.'
           )}
         </p>
@@ -823,8 +823,8 @@ export default function ProduktTestPage() {
           <div className="space-y-6">
             <p className="text-slate-700 leading-relaxed">
               {tr(
-                'Unsere Vision ist es, nicht nur abstrakte Labordaten zu erheben, sondern Produkte exakt so zu testen, wie Ihre Kunden sie nutzen. Das Ergebnis sind ehrliche, greifbare Prüfberichte und ein Siegel, das bei Verbrauchern echtes Vertrauen weckt – und bei Ihnen messbare Umsätze generiert.',
-                'Our vision is to not merely collect abstract lab data, but to test products exactly as your customers use them. The result: honest, tangible test reports and a seal that builds genuine consumer trust — and measurable revenue for you.'
+                'Unsere Vision ist es, nicht nur abstrakte Labordaten zu erheben, sondern Produkte exakt so zu testen, wie Ihre Kunden sie nutzen. Das Ergebnis sind ehrliche, greifbare PrÃ¼fberichte und ein Siegel, das bei Verbrauchern echtes Vertrauen weckt â€“ und bei Ihnen messbare UmsÃ¤tze generiert.',
+                'Our vision is to not merely collect abstract lab data, but to test products exactly as your customers use them. The result: honest, tangible test reports and a seal that builds genuine consumer trust â€” and measurable revenue for you.'
               )}
             </p>
             <ul className="space-y-2 text-slate-800 font-medium">
@@ -843,7 +843,7 @@ export default function ProduktTestPage() {
             </ul>
           </div>
 
-          {/* futur.jpeg — right, same height as text block */}
+          {/* futur.jpeg â€” right, same height as text block */}
           <div className="overflow-hidden rounded-3xl border border-slate-100 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)]">
             <img
               src="/futur.jpeg"
@@ -854,11 +854,11 @@ export default function ProduktTestPage() {
           </div>
         </div>
 
-        {/* Banner — full width */}
+        {/* Banner â€” full width */}
         <div className="rounded-3xl border border-slate-100 bg-slate-50 px-8 py-10 shadow-sm text-center space-y-3">
           <h3 className="text-2xl font-bold text-slate-900 md:text-3xl">
             {tr(
-              'Heben Sie Ihr Produkt mit dem DPI-Prüfsiegel aus der Masse ab.',
+              'Heben Sie Ihr Produkt mit dem DPI-PrÃ¼fsiegel aus der Masse ab.',
               'Stand out from the crowd with the DPI quality seal.'
             )}
           </h3>
@@ -870,7 +870,7 @@ export default function ProduktTestPage() {
           </p>
         </div>
 
-        {/* mitsiegel.jpeg — full width below banner */}
+        {/* mitsiegel.jpeg â€” full width below banner */}
         <div className="mt-10 overflow-hidden rounded-3xl border border-slate-100 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)]">
           <img
             src="/mitsiegel.jpeg"
@@ -881,14 +881,14 @@ export default function ProduktTestPage() {
         </div>
 
       </section>
-      {/* ↑↑↑ END NEW SECTION ↑↑↑ */}
+      {/* â†‘â†‘â†‘ END NEW SECTION â†‘â†‘â†‘ */}
 
           <div className="text-center text-2xl font-semibold text-slate-900">
-            {tr("Lizenzpläne werden von Ihnen nur für bestandene Produkte aktiviert.", "License plans are only activated for existing products.")}
+            {tr("LizenzplÃ¤ne werden von Ihnen nur fÃ¼r bestandene Produkte aktiviert.", "License plans are only activated for existing products.")}
           </div>
 
           <div className="space-y-6">
-            <div className="text-2xl font-semibold text-slate-900 text-center">{tr("Lizenzpläne", "License plans")}</div>
+            <div className="text-2xl font-semibold text-slate-900 text-center">{tr("LizenzplÃ¤ne", "License plans")}</div>
             <div className="grid gap-6 md:grid-cols-3">
               {plans.map((plan) => {
                 const theme = planThemes[plan.theme];
@@ -989,7 +989,7 @@ export default function ProduktTestPage() {
               playsInline
               preload="metadata"
             >
-              {tr('Ihr Browser unterstützt das Video-Tag nicht.', 'Your browser does not support the video tag.')}
+              {tr('Ihr Browser unterstÃ¼tzt das Video-Tag nicht.', 'Your browser does not support the video tag.')}
             </video>
           </div>
           <div className="w-full max-w-xl lg:ml-4 flex justify-center lg:justify-start">
@@ -1013,7 +1013,7 @@ export default function ProduktTestPage() {
 
       <section className="mx-auto max-w-6xl px-6 pb-2">
         <p className="text-center text-2xl font-semibold text-slate-900 md:text-3xl">
-          {tr("Produktsiegel für Amazon Seller, Otto, Kaufland und Ebay", "Product seals for Amazon sellers, Otto, Kaufland and eBay")}
+          {tr("Produktsiegel fÃ¼r Amazon Seller, Otto, Kaufland und Ebay", "Product seals for Amazon sellers, Otto, Kaufland and eBay")}
         </p>
       </section>
 
@@ -1029,11 +1029,11 @@ export default function ProduktTestPage() {
         </div>
       </section>
 
-      {/* Prüfverfahren and FAQ */}
+      {/* PrÃ¼fverfahren and FAQ */}
       <section className="mx-auto max-w-6xl px-6 py-16">
         <div className="grid gap-8" id="unser-pruefverfahren" ref={procedureTopRef}>
           <div className="grid gap-6 rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-lg">
-            <h2 className="text-2xl font-semibold">{tr('Unser Prüfverfahren', 'Our testing procedure')}</h2>
+            <h2 className="text-2xl font-semibold">{tr('Unser PrÃ¼fverfahren', 'Our testing procedure')}</h2>
             <div className="grid gap-4 sm:grid-cols-3">
               {verfahrenHighlights.map((item, i) => (
                 <div key={item.label.de} data-animate="card" style={stagger(i)} className="flex flex-col items-center gap-2 rounded-2xl border border-slate-100 p-4 text-center">
@@ -1046,7 +1046,7 @@ export default function ProduktTestPage() {
               href="#pruefverfahren-pdf"
               className="mt-4 inline-flex items-center justify-center rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-lg transition hover:bg-black"
             >
-              {tr('Zum Prüfverfahren', 'View procedure')}
+              {tr('Zum PrÃ¼fverfahren', 'View procedure')}
             </Link>
           </div>
         </div>
@@ -1058,12 +1058,12 @@ export default function ProduktTestPage() {
         >
           <div className="space-y-4">
             <h3 className="text-2xl font-semibold">
-              {tr('VERTRAUEN DURCH PRÜFUNG: Die Testsieger-Check-System Kriterien', 'TRUST THROUGH TESTING: The Testsieger-Check system criteria')}
+              {tr('VERTRAUEN DURCH PRÃœFUNG: Die Testsieger-Check-System Kriterien', 'TRUST THROUGH TESTING: The Testsieger-Check system criteria')}
             </h3>
             <p className="text-sm text-slate-700">
               {tr(
-                'Dieses Dokument beschreibt das einheitliche und nachvollziehbare Prüfsystem mit den TC-DPI-Prüfkriterien des Deutschen Prüfsiegel Instituts. Grundlage ist ein standardisiertes Bewertungsverfahren, das sicherstellt, dass alle geprüften Produkte nach denselben objektiven Maßstäben bewertet werden. Die Bewertung erfolgt über ein numerisches System von 1 bis 10 Punkten (Halbpunkte möglich), sodass eine präzise und faire Beurteilung möglich ist. Die Bewertung umfasst folgende Hauptkategorien, um ein ganzheitliches und objektives Ergebnis sicherzustellen:',
-                'This document describes the consistent and traceable testing system with the TC-DPI criteria of Prüfsiegel Zentrum UG. It is based on a standardized evaluation method to ensure all tested products are rated by the same objective standards. Scoring is on a numeric scale from 1 to 10 (half-points allowed) for precise, fair assessment. The evaluation covers the following main categories to ensure a holistic and objective result:'
+                'Dieses Dokument beschreibt das einheitliche und nachvollziehbare PrÃ¼fsystem mit den TC-DPI-PrÃ¼fkriterien des Deutschen PrÃ¼fsiegel Instituts. Grundlage ist ein standardisiertes Bewertungsverfahren, das sicherstellt, dass alle geprÃ¼ften Produkte nach denselben objektiven MaÃŸstÃ¤ben bewertet werden. Die Bewertung erfolgt Ã¼ber ein numerisches System von 1 bis 10 Punkten (Halbpunkte mÃ¶glich), sodass eine prÃ¤zise und faire Beurteilung mÃ¶glich ist. Die Bewertung umfasst folgende Hauptkategorien, um ein ganzheitliches und objektives Ergebnis sicherzustellen:',
+                'This document describes the consistent and traceable testing system with the TC-DPI criteria of PrÃ¼fsiegel Zentrum UG. It is based on a standardized evaluation method to ensure all tested products are rated by the same objective standards. Scoring is on a numeric scale from 1 to 10 (half-points allowed) for precise, fair assessment. The evaluation covers the following main categories to ensure a holistic and objective result:'
               )}
             </p>
           </div>
@@ -1075,7 +1075,7 @@ export default function ProduktTestPage() {
               </span>
               <p className="text-sm text-slate-700">
                 {tr(
-                  'Wir bewerten die Verpackung auf Schutzfunktion, Materialwahl, Stabilität und Produktsicherheit bei Transport und Lagerung. Zusätzlich prüfen wir Kennzeichnungen und Nachhaltigkeit.',
+                  'Wir bewerten die Verpackung auf Schutzfunktion, Materialwahl, StabilitÃ¤t und Produktsicherheit bei Transport und Lagerung. ZusÃ¤tzlich prÃ¼fen wir Kennzeichnungen und Nachhaltigkeit.',
                   'We assess packaging for protection, material choice, stability, and product safety during transport and storage. We also review labeling and sustainability.'
                 )}
               </p>
@@ -1086,29 +1086,29 @@ export default function ProduktTestPage() {
               </span>
               <p className="text-sm text-slate-700">
                 {tr(
-                  'Bewertung der Materialqualität, Präzision der Verarbeitung, Stabilität sowie des gesamten optischen Eindrucks und Erscheinungsbilds des Produkts.',
+                  'Bewertung der MaterialqualitÃ¤t, PrÃ¤zision der Verarbeitung, StabilitÃ¤t sowie des gesamten optischen Eindrucks und Erscheinungsbilds des Produkts.',
                   'Assessing material quality, precision of workmanship, stability, and the overall visual impression of the product.'
                 )}
               </p>
             </blockquote>
             <blockquote className="flex h-full flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-slate-900 shadow-sm">
               <span className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-600">
-                {tr('Kriterium C: Praxistest – Hält der Hersteller seine Werbeversprechen?', 'Criterion C: Practical test – does the manufacturer deliver on promises?')}
+                {tr('Kriterium C: Praxistest â€“ HÃ¤lt der Hersteller seine Werbeversprechen?', 'Criterion C: Practical test â€“ does the manufacturer deliver on promises?')}
               </span>
               <p className="text-sm text-slate-700">
                 {tr(
-                  'Im praktischen Einsatz überprüfen wir, ob die beworbenen Features, Leistungsversprechen und Produktvorteile tatsächlich eingehalten werden.',
+                  'Im praktischen Einsatz Ã¼berprÃ¼fen wir, ob die beworbenen Features, Leistungsversprechen und Produktvorteile tatsÃ¤chlich eingehalten werden.',
                   'In practical use we verify whether the advertised features, performance promises, and product benefits are truly met.'
                 )}
               </p>
             </blockquote>
             <blockquote className="flex h-full flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-slate-900 shadow-sm">
               <span className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-600">
-                {tr('Kriterium D: Preis-/Leistungsverhältnis und Verbraucherbewertungen', 'Criterion D: Price-performance and consumer reviews')}
+                {tr('Kriterium D: Preis-/LeistungsverhÃ¤ltnis und Verbraucherbewertungen', 'Criterion D: Price-performance and consumer reviews')}
               </span>
               <p className="text-sm text-slate-700">
                 {tr(
-                  'Das Verhältnis von Preis zu tatsächlicher Leistung wird analysiert und um reale Nutzermeinungen ergänzt. Dadurch entsteht ein ausgewogenes Gesamtbild aus objektiven Tests und Praxiserfahrungen.',
+                  'Das VerhÃ¤ltnis von Preis zu tatsÃ¤chlicher Leistung wird analysiert und um reale Nutzermeinungen ergÃ¤nzt. Dadurch entsteht ein ausgewogenes Gesamtbild aus objektiven Tests und Praxiserfahrungen.',
                   'We analyze the price-to-performance ratio and complement it with real user opinions. This creates a balanced overall picture from objective tests and practical experiences.'
                 )}
               </p>
@@ -1117,7 +1117,7 @@ export default function ProduktTestPage() {
 
           <p className="text-sm font-semibold text-slate-800">
             {tr(
-              'Alle Kriterien werden mit 1 bis 10 Punkten bewertet. Der Durchschnitt dieser Kriterien ergibt die Gesamtnote und dient als Grundlage für die Auszeichnung im Testsieger-Check.',
+              'Alle Kriterien werden mit 1 bis 10 Punkten bewertet. Der Durchschnitt dieser Kriterien ergibt die Gesamtnote und dient als Grundlage fÃ¼r die Auszeichnung im Testsieger-Check.',
               'All criteria are scored from 1 to 10. The average of these criteria forms the overall grade and is the basis for the Testsieger-Check award.'
             )}
           </p>
@@ -1146,7 +1146,7 @@ export default function ProduktTestPage() {
         </div>
 
         <div className="mt-12 bg-white pt-8">
-          <h3 className="text-2xl font-semibold">{tr('Häufige Fragen', 'Frequently asked questions')}</h3>
+          <h3 className="text-2xl font-semibold">{tr('HÃ¤ufige Fragen', 'Frequently asked questions')}</h3>
           <div className="mt-6 space-y-6">
             {phasesQa.qa.map((item, i) => (
               <details

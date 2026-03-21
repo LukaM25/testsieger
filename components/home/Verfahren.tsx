@@ -32,6 +32,7 @@ export default function Verfahren() {
         'Spielplätze prüfen wir nach DIN EN 1176/1177 mit dokumentierten Befunden und klaren Maßnahmen, damit Betreiber Sicherheit und Rechtssicherheit erhöhen.',
       more: 'MEHR ERFAHREN',
     };
+
   return (
     <section data-animate="section" className="border-t border-gray-200 py-20 sm:py-24" style={{ backgroundColor: '#f3f4f6' }}>
       <div className="mx-auto max-w-6xl px-6">

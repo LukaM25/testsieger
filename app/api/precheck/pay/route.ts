@@ -78,8 +78,9 @@ export async function POST(req: Request) {
       plan: opt === 'priority' ? 'PRECHECK_PRIORITY' : 'PRECHECK_FEE',
     },
     line_items: lineItems,
-    success_url: `${baseUrl}/precheck?productId=${primaryProduct.id}&product=${encodeURIComponent(primaryProduct.name)}&checkout=success`,
-    cancel_url: `${baseUrl}/precheck?productId=${primaryProduct.id}&product=${encodeURIComponent(primaryProduct.name)}&checkout=cancel`,
+  success_url: `${baseUrl}/dashboard?baseFeeCheckout=success`,
+cancel_url: `${baseUrl}/dashboard?baseFeeCheckout=cancel`,
+
   });
 
   const orderPlan = opt === 'priority' ? Plan.PRECHECK_PRIORITY : Plan.PRECHECK_FEE;

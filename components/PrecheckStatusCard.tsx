@@ -11,6 +11,8 @@ type Props = {
   className?: string;
   rightColumn?: ReactNode;
   cartPlanByProductId?: Record<string, string>;
+  baseFeeCartIds?: Set<string>;
+  onToggleBaseFee?: (productId: string) => void;
 };
 
 const deriveStage = (product: ProductStatusPayload | null) => {
@@ -24,7 +26,14 @@ const deriveStage = (product: ProductStatusPayload | null) => {
   return { key: "PRECHECK", percent: 0 } as const;
 };
 
-export function PrecheckStatusCard({ state, className = "", rightColumn, cartPlanByProductId }: Props) {
+export function PrecheckStatusCard({
+  state,
+  className = "",
+  rightColumn,
+  cartPlanByProductId,
+  baseFeeCartIds,
+  onToggleBaseFee,
+}: Props) {
   const { locale } = useLocale();
   const tr = (de: string, en: string) => (locale === "en" ? en : de);
   const { products, selectedProductId, setSelectedProductId, productStatus, productsLoading, statusLoading, statusError } = state;
@@ -90,43 +99,27 @@ export function PrecheckStatusCard({ state, className = "", rightColumn, cartPla
 
   const labelForStage = (key: string) => {
     switch (key) {
-      case "PASS":
-        return tr("Bestanden", "Passed");
-      case "FAIL":
-        return tr("Fail", "Fail");
-      case "COMPLETION":
-        return tr("Abschluss", "Completion");
-      case "ANALYSIS":
-        return tr("Analyse", "Analysis");
-      case "RECEIVED":
-        return tr("Eingang", "Received");
-      case "WAITING_SHIPPING":
-        return tr("Versand", "Shipping");
-      case "PRECHECK":
-        return tr("Neu", "New");
-      default:
-        return key;
+      case "PASS": return tr("Bestanden", "Passed");
+      case "FAIL": return tr("Fail", "Fail");
+      case "COMPLETION": return tr("Abschluss", "Completion");
+      case "ANALYSIS": return tr("Analyse", "Analysis");
+      case "RECEIVED": return tr("Eingang", "Received");
+      case "WAITING_SHIPPING": return tr("Versand", "Shipping");
+      case "PRECHECK": return tr("Neu", "New");
+      default: return key;
     }
   };
 
   const toneForStage = (key: string) => {
     switch (key) {
-      case "PASS":
-        return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-      case "FAIL":
-        return "bg-rose-50 text-rose-700 ring-rose-200";
-      case "COMPLETION":
-        return "bg-indigo-50 text-indigo-700 ring-indigo-200";
-      case "ANALYSIS":
-        return "bg-blue-50 text-blue-700 ring-blue-200";
-      case "RECEIVED":
-        return "bg-sky-50 text-sky-700 ring-sky-200";
-      case "WAITING_SHIPPING":
-        return "bg-amber-50 text-amber-700 ring-amber-200";
-      case "PRECHECK":
-        return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-      default:
-        return "bg-slate-100 text-slate-600 ring-slate-200";
+      case "PASS": return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+      case "FAIL": return "bg-rose-50 text-rose-700 ring-rose-200";
+      case "COMPLETION": return "bg-indigo-50 text-indigo-700 ring-indigo-200";
+      case "ANALYSIS": return "bg-blue-50 text-blue-700 ring-blue-200";
+      case "RECEIVED": return "bg-sky-50 text-sky-700 ring-sky-200";
+      case "WAITING_SHIPPING": return "bg-amber-50 text-amber-700 ring-amber-200";
+      case "PRECHECK": return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+      default: return "bg-slate-100 text-slate-600 ring-slate-200";
     }
   };
 
@@ -167,6 +160,9 @@ export function PrecheckStatusCard({ state, className = "", rightColumn, cartPla
       ? tr("1 Produkt neu", "1 new product")
       : tr(`${newProductCount} Produkte neu`, `${newProductCount} new products`);
 
+  // Hide the legacy pay button when the rightColumn is handling payment
+  const showLegacyPayButton = !rightColumn;
+
   return (
     <div className={`rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.35)] ${className}`}>
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -196,120 +192,162 @@ export function PrecheckStatusCard({ state, className = "", rightColumn, cartPla
             <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-400">
               {tr("1. Produktauswahl", "1. Product selection")}
             </div>
-          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 shadow-inner">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-slate-900">{tr("Produkt auswählen", "Choose a product")}</span>
-              {newProductCount > 0 ? (
-                <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
-                  {newProductLabel}
-                </span>
-              ) : (
-                <span className="text-xs text-slate-500">{products.length || 0} {tr("Produkte", "products")}</span>
-              )}
-            </div>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {productsLoading
-                ? Array.from({ length: 4 }).map((_, idx) => (
-                    <div
-                      key={idx}
-                      className="h-[68px] w-full animate-pulse rounded-xl border border-slate-200 bg-white px-3 py-2"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="h-3 w-24 rounded bg-slate-200" />
-                        <div className="h-3 w-12 rounded bg-slate-200" />
-                      </div>
-                      <div className="mt-2 h-3 w-32 rounded bg-slate-200" />
-                    </div>
-                  ))
-                : products.map((p) => {
-                    const checked = selectedProductId === p.id;
-                    const stageKey = deriveStage(p).key;
-                    const stageTone = toneForStage(stageKey);
-                    const stageLabel = labelForStage(stageKey);
-                    const cartPlan = cartPlans[p.id];
-                    const activePlan = p.license?.status === "ACTIVE" ? p.license?.plan : null;
-                    const plan = planLabel(activePlan || cartPlan);
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => setSelectedProductId(checked ? "" : p.id)}
-                        className={`flex w-full flex-col items-start rounded-xl border px-3 py-2 text-left transition ${
-                          checked ? "border-blue-500 bg-white shadow-sm" : "border-slate-200 bg-white hover:border-slate-300"
-                        }`}
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 shadow-inner">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-slate-900">{tr("Produkt auswählen", "Choose a product")}</span>
+                {newProductCount > 0 ? (
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                    {newProductLabel}
+                  </span>
+                ) : (
+                  <span className="text-xs text-slate-500">{products.length || 0} {tr("Produkte", "products")}</span>
+                )}
+              </div>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {productsLoading
+                  ? Array.from({ length: 4 }).map((_, idx) => (
+                      <div
+                        key={idx}
+                        className="h-[68px] w-full animate-pulse rounded-xl border border-slate-200 bg-white px-3 py-2"
                       >
-                        <div className="flex w-full items-center justify-between">
-                          <span className="text-sm font-semibold text-slate-900">{p.name}</span>
-                          <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ring-1 ${stageTone}`}>
-                            {stageLabel}
-                          </span>
+                        <div className="flex items-center justify-between">
+                          <div className="h-3 w-24 rounded bg-slate-200" />
+                          <div className="h-3 w-12 rounded bg-slate-200" />
                         </div>
-                        <div className="mt-1 flex w-full items-center justify-between gap-2 text-xs text-slate-500">
-                          <span>{p.brand || "—"}</span>
-                          {plan && (
-                            <span
-                              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ring-1 ${
-                                activePlan
-                                  ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-                                  : "text-slate-900 ring-amber-200/90 shadow-[0_10px_30px_-18px_rgba(245,158,11,0.65)]"
-                              }`}
-                              style={activePlan ? undefined : cartPillStyle}
-                            >
-                              {activePlan ? (
-                                `${tr("Lizenz", "License")} ${plan}`
-                              ) : (
-                                <>
-                                  {cartIcon}
-                                  <span className="sr-only">{tr("Warenkorb", "Cart")}</span>
-                                  <span>{plan}</span>
-                                </>
-                              )}
+                        <div className="mt-2 h-3 w-32 rounded bg-slate-200" />
+                      </div>
+                    ))
+                  : products.map((p) => {
+                      const checked = selectedProductId === p.id;
+                      const stageKey = deriveStage(p).key;
+                      const stageTone = toneForStage(stageKey);
+                      const stageLabelText = labelForStage(stageKey);
+                      const cartPlan = cartPlans[p.id];
+                      const activePlan = p.license?.status === "ACTIVE" ? p.license?.plan : null;
+                      const plan = planLabel(activePlan || cartPlan);
+                      const isPaid = ["PAID", "MANUAL"].includes(p.paymentStatus);
+                      const inBaseFeeCart = baseFeeCartIds?.has(p.id) ?? false;
+
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedProductId(checked ? "" : p.id);
+                            // If unpaid and we have a toggle handler, also toggle into Grundgebühr cart
+                            if (!isPaid && onToggleBaseFee) {
+                              onToggleBaseFee(p.id);
+                            }
+                          }}
+                          className={`flex w-full flex-col items-start rounded-xl border px-3 py-2 text-left transition ${
+                            checked
+                              ? isPaid
+                                ? "border-blue-500 bg-white shadow-sm"
+                                : "border-amber-400 bg-amber-50 shadow-sm"
+                              : inBaseFeeCart
+                              ? "border-amber-300 bg-amber-50/60 hover:border-amber-400"
+                              : "border-slate-200 bg-white hover:border-slate-300"
+                          }`}
+                        >
+                          <div className="flex w-full items-center justify-between">
+                            <span className="text-sm font-semibold text-slate-900">{p.name}</span>
+                            <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ring-1 ${stageTone}`}>
+                              {stageLabelText}
                             </span>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
-              {!productsLoading && products.length === 0 && (
-                <p className="text-sm text-slate-600">
-                  {tr("Bitte melden oder Pre-Check starten, um Produkte zu sehen.", "Sign in or submit a pre-check to see your products.")}
-                </p>
-              )}
+                          </div>
+                          <div className="mt-1 flex w-full items-center justify-between gap-2 text-xs text-slate-500">
+                            <span>{p.brand || "—"}</span>
+                            {plan && (
+                              <span
+                                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ring-1 ${
+                                  activePlan
+                                    ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                                    : "text-slate-900 ring-amber-200/90 shadow-[0_10px_30px_-18px_rgba(245,158,11,0.65)]"
+                                }`}
+                                style={activePlan ? undefined : cartPillStyle}
+                              >
+                                {activePlan ? (
+                                  `${tr("Lizenz", "License")} ${plan}`
+                                ) : (
+                                  <>
+                                    {cartIcon}
+                                    <span className="sr-only">{tr("Warenkorb", "Cart")}</span>
+                                    <span>{plan}</span>
+                                  </>
+                                )}
+                              </span>
+                            )}
+                            {!isPaid && onToggleBaseFee && (
+                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${
+                                inBaseFeeCart
+                                  ? "bg-amber-100 text-amber-800 ring-amber-300"
+                                  : "bg-amber-50 text-amber-600 ring-amber-200"
+                              }`}>
+                                {inBaseFeeCart ? "✓ Gebühr" : "Gebühr offen"}
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                {!productsLoading && products.length === 0 && (
+                  <p className="text-sm text-slate-600">
+                    {tr("Bitte melden oder Pre-Check starten, um Produkte zu sehen.", "Sign in or submit a pre-check to see your products.")}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-            <div className="text-sm font-semibold text-slate-900">{tr("Aktionen", "Actions")}</div>
-            {!productStatus && (
-              <p className="mt-2 text-sm text-slate-600">
-                {tr("Wähle ein Produkt, um zu bezahlen oder das Zertifikat zu sehen.", "Select a product to pay or view the certificate.")}
-              </p>
-            )}
-            {productStatus && isOptimistic ? (
-              <p className="mt-2 text-sm text-slate-600">
-                {tr("Bitte kurz warten, das Produkt wird gespeichert.", "Please wait a moment while we save your product.")}
-              </p>
-            ) : productStatus ? (
-              <div className="mt-3 space-y-2">
-                <ProductPayButton
-                  productId={productStatus.id}
-                  status={productStatus.status}
-                  paymentStatus={productStatus.paymentStatus}
-                  forceEnabled
-                />
-                <CertificateAction
-                  productId={productStatus.id}
-                  initialCertificate={productStatus.certificate}
-                  status={productStatus.status}
-                  paymentStatus={productStatus.paymentStatus}
-                  statusLabel={statusBadgeLabel}
-                  showStatusLabel={showStatusBadge}
-                  tr={tr}
-                />
-              </div>
-            ) : null}
-          </div>
+          {/* Only show Aktionen if NOT delegating to rightColumn for payment */}
+          {showLegacyPayButton && (
+            <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="text-sm font-semibold text-slate-900">{tr("Aktionen", "Actions")}</div>
+              {!productStatus && (
+                <p className="mt-2 text-sm text-slate-600">
+                  {tr("Wähle ein Produkt, um zu bezahlen oder das Zertifikat zu sehen.", "Select a product to pay or view the certificate.")}
+                </p>
+              )}
+              {productStatus && isOptimistic ? (
+                <p className="mt-2 text-sm text-slate-600">
+                  {tr("Bitte kurz warten, das Produkt wird gespeichert.", "Please wait a moment while we save your product.")}
+                </p>
+              ) : productStatus ? (
+                <div className="mt-3 space-y-2">
+                  <ProductPayButton
+                    productId={productStatus.id}
+                    status={productStatus.status}
+                    paymentStatus={productStatus.paymentStatus}
+                    forceEnabled
+                  />
+                  <CertificateAction
+                    productId={productStatus.id}
+                    initialCertificate={productStatus.certificate}
+                    status={productStatus.status}
+                    paymentStatus={productStatus.paymentStatus}
+                    statusLabel={statusBadgeLabel}
+                    showStatusLabel={showStatusBadge}
+                    tr={tr}
+                  />
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {/* Show CertificateAction even when rightColumn handles payment */}
+          {!showLegacyPayButton && productStatus && !isOptimistic && (
+            <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <CertificateAction
+                productId={productStatus.id}
+                initialCertificate={productStatus.certificate}
+                status={productStatus.status}
+                paymentStatus={productStatus.paymentStatus}
+                statusLabel={statusBadgeLabel}
+                showStatusLabel={showStatusBadge}
+                tr={tr}
+              />
+            </div>
+          )}
         </div>
 
         {rightColumn ? <div>{rightColumn}</div> : null}

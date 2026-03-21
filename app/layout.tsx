@@ -10,6 +10,7 @@ import { normalizeLocale } from "@/lib/i18n";
 
 export const metadata: Metadata = {
   title: "DPI - Deutsches Prüfsiegel Institut",
+  applicationName: "DPI - Deutsches Prüfsiegel Institut",
   description: "Vertrauen durch Prüfung",
   icons: {
     icon: "/icon.png",

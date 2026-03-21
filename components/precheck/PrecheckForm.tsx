@@ -327,15 +327,15 @@ export default function PrecheckForm() {
             <Label>{tr('Verpackungsgröße / Maße', 'Package size / dimensions')}</Label>
             <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-4">
               <div>
-                <Input {...register('dimensionLength')} placeholder={tr('Länge', 'Length')} required />
+                <Input {...register('dimensionLength')} placeholder={tr('Länge (cm)', 'Length')} required />
                 <Error msg={errors.dimensionLength?.message} />
               </div>
               <div>
-                <Input {...register('dimensionWidth')} placeholder={tr('Breite', 'Width')} required />
+                <Input {...register('dimensionWidth')} placeholder={tr('Breite (cm)', 'Width')} required />
                 <Error msg={errors.dimensionWidth?.message} />
               </div>
               <div>
-                <Input {...register('dimensionHeight')} placeholder={tr('Höhe', 'Height')} required />
+                <Input {...register('dimensionHeight')} placeholder={tr('Höhe (cm)', 'Height')} required />
                 <Error msg={errors.dimensionHeight?.message} />
               </div>
               <div>

@@ -24,8 +24,21 @@ body {
 
   button:focus-visible {
     @apply outline-none ring-2 ring-brand-green ring-offset-2;
+
+    h1 {
+    @apply text-3xl font-bold text-brand-dark;
   }
-}
+  h2 {
+    @apply text-2xl font-semibold text-brand-dark;
+  }
+  h3 {
+    @apply text-xl font-semibold text-brand-dark;
+  }
+  h4 {
+    @apply text-lg font-medium text-brand-dark;
+  }
+}}
+
 
 html,
 body {

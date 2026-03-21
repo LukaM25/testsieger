@@ -17,6 +17,7 @@ export default function Footer() {
       contact: 'Contact',
       imprint: 'Imprint',
       rights: 'All rights reserved',
+      agb: 'Terms and Conditions',
     }
     : {
       title: 'DPI Deutsches Prüfsiegel Institut',
@@ -30,6 +31,7 @@ export default function Footer() {
       contact: 'Kontakt',
       imprint: 'Impressum',
       rights: 'Alle Rechte vorbehalten',
+      agb: 'AGB',
     };
 
   return (
@@ -74,22 +76,28 @@ export default function Footer() {
               {copy.company}
             </h4>
             <ul className="space-y-3 font-light text-sm text-gray-400">
-              <li>
-                <Link href="/ueber-uns" className="hover:text-white transition-colors">
-                  {copy.about}
-                </Link>
-              </li>
-              <li>
-                <Link href="/kontakt" className="hover:text-white transition-colors">
-                  {copy.contact}
-                </Link>
-              </li>
-              <li>
-                <Link href="/impressum" className="hover:text-white transition-colors">
-                  {copy.imprint}
-                </Link>
-              </li>
-            </ul>
+  <li>
+    <Link href="/ueber-uns" className="hover:text-white transition-colors">
+      {copy.about}
+    </Link>
+  </li>
+  <li>
+    <Link href="/kontakt" className="hover:text-white transition-colors">
+      {copy.contact}
+    </Link>
+  </li>
+  <li>
+    <Link href="/impressum" className="hover:text-white transition-colors">
+      {copy.imprint}
+    </Link>
+  </li>
+  <li>
+    <Link href="/agb" className="hover:text-white transition-colors">
+      {copy.agb}
+    </Link>
+  </li>
+</ul>
+
           </div>
         </div>
         <div className="mt-10 border-t border-white/5 pt-6">

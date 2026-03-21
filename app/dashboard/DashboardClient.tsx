@@ -109,6 +109,9 @@ const CARD_DISCOUNT_ROWS = [
   { label: "3 Prod. -30%", discountPercent: 30, multiplier: 3 },
 ] as const;
 
+const GRUNDGEBUEHR_BASE_CENTS = 22_900;
+const PRIORITY_ADDON_CENTS = 6_000;
+
 const formatPlanPriceFromCents = (cents: number) =>
   new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(cents / 100);
 
@@ -232,7 +235,6 @@ function PlanComparePopover({
                       Schließen
                     </button>
                   </div>
-
                   <div className="mt-5 grid flex-1 items-stretch gap-6 overflow-y-auto md:grid-cols-3">
                     {plans.map((plan) => {
                       const theme = PLAN_COMPARE_THEMES[plan.theme];
@@ -391,7 +393,9 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
   }, [user.orders]);
 
   const [showLicenseSuccess, setShowLicenseSuccess] = useState(false);
+  const [showBaseFeeSuccess, setShowBaseFeeSuccess] = useState(false);
   const [isTabVisible, setIsTabVisible] = useState(true);
+
   useEffect(() => {
     const handleVisibility = () => {
       setIsTabVisible(document.visibilityState === "visible");
@@ -479,8 +483,89 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
   const [activeLicenses, setActiveLicenses] = useState<ActiveLicenseItem[]>([]);
   const [activeLicensesLoading, setActiveLicensesLoading] = useState(false);
   const [activeLicensesMessage, setActiveLicensesMessage] = useState<string | null>(null);
-  const [baseFeeSelections, setBaseFeeSelections] = useState<Record<string, string>>({});
-  const [baseFeePaying, setBaseFeePaying] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
+const handleCancelLicense = async (productId: string) => {
+  if (!confirm("Lizenz wirklich kündigen? Diese Aktion kann nicht rückgängig gemacht werden.")) return;
+  setCancellingId(productId);
+  try {
+    const res = await fetch("/api/licenses/cancel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productId }),
+    });
+    if (res.ok) {
+      await refreshStatus();
+      await loadActiveLicenses();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || "Kündigung fehlgeschlagen.");
+    }
+  } catch {
+    alert("Kündigung fehlgeschlagen.");
+  } finally {
+    setCancellingId(null);
+  }
+};
+
+
+  // ── Grundgebühr cart (multi-select) ──────────────────────────────────
+  const [baseFeeCart, setBaseFeeCart] = useState<Set<string>>(new Set());
+  const [baseFeeOption, setBaseFeeOption] = useState<"standard" | "priority">("standard");
+  const [baseFeePaying, setBaseFeePaying] = useState(false);
+
+  const toggleBaseFeeCart = (productId: string) => {
+    setBaseFeeCart((prev) => {
+      const next = new Set(prev);
+      if (next.has(productId)) {
+        next.delete(productId);
+      } else {
+        next.add(productId);
+      }
+      return next;
+    });
+  };
+
+  const baseFeeCartCount = baseFeeCart.size;
+  const baseFeeDiscountPercent =
+    baseFeeCartCount <= 1 ? 0 : baseFeeCartCount === 2 ? 20 : 30;
+  const baseFeePerItemCents = Math.round(
+    GRUNDGEBUEHR_BASE_CENTS * (1 - baseFeeDiscountPercent / 100)
+  );
+  const baseFeeSubtotalCents = baseFeePerItemCents * baseFeeCartCount;
+  const baseFeePriorityAddonCents = baseFeeOption === "priority" ? PRIORITY_ADDON_CENTS : 0;
+  const baseFeeTotalCents = baseFeeSubtotalCents + baseFeePriorityAddonCents;
+  const baseFeeOriginalTotalCents = GRUNDGEBUEHR_BASE_CENTS * baseFeeCartCount;
+  const baseFeeSavingsCents = baseFeeOriginalTotalCents - baseFeeSubtotalCents;
+
+  const handleBaseFeePay = async () => {
+    const ids = [...baseFeeCart];
+    if (ids.length === 0) return;
+    setBaseFeePaying(true);
+    try {
+      const res = await fetch("/api/precheck/pay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productIds: ids, option: baseFeeOption }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.url) {
+        alert(data.error || "Grundgebühr konnte nicht gestartet werden.");
+        return;
+      }
+      if (data?.alreadyPaid) {
+        alert("Grundgebühr für eines der Produkte bereits bezahlt.");
+        return;
+      }
+      window.location.href = data.url as string;
+    } catch {
+      alert("Grundgebühr konnte nicht gestartet werden.");
+    } finally {
+      setBaseFeePaying(false);
+    }
+  };
+  // ─────────────────────────────────────────────────────────────────────
+
   const [showBilling, setShowBilling] = useState(false);
   const [showProducts, setShowProducts] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
@@ -499,6 +584,7 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
   const [accountSaving, setAccountSaving] = useState(false);
   const [accountDeleting, setAccountDeleting] = useState(false);
   const [accountMessage, setAccountMessage] = useState<string | null>(null);
+
   const handleReceipt = async (orderId: string) => {
     try {
       const res = await fetch("/api/orders/receipt", {
@@ -514,31 +600,6 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
       window.open(data.receiptUrl as string, "_blank", "noopener,noreferrer");
     } catch {
       alert("Beleg konnte nicht geladen werden.");
-    }
-  };
-
-  const handleBaseFeePay = async (productId: string, option: string) => {
-    setBaseFeePaying(productId);
-    try {
-      const res = await fetch("/api/precheck/pay", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, option }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data?.url) {
-        alert(data.error || "Grundgebühr konnte nicht gestartet werden.");
-        return;
-      }
-      if (data?.alreadyPaid) {
-        alert("Grundgebühr bereits bezahlt.");
-        return;
-      }
-      window.location.href = data.url as string;
-    } catch {
-      alert("Grundgebühr konnte nicht gestartet werden.");
-    } finally {
-      setBaseFeePaying(null);
     }
   };
 
@@ -695,32 +756,20 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
   const getProgressLabel = (adminProgress?: string, status?: string, hasCertificate?: boolean) => {
     if (hasCertificate) return "Bestanden";
     switch (adminProgress) {
-      case "PRECHECK":
-        return "Pre-Check eingereicht";
-      case "RECEIVED":
-        return "Eingegangen";
-      case "ANALYSIS":
-        return "Analyse";
-      case "PASS":
-        return "Bestanden";
-      case "COMPLETION":
-        return "Abschluss";
-      case "FAIL":
-        return "Nicht bestanden";
-      default:
-        break;
+      case "PRECHECK": return "Pre-Check eingereicht";
+      case "RECEIVED": return "Eingegangen";
+      case "ANALYSIS": return "Analyse";
+      case "PASS": return "Bestanden";
+      case "COMPLETION": return "Abschluss";
+      case "FAIL": return "Nicht bestanden";
+      default: break;
     }
     switch (status) {
-      case "PRECHECK":
-        return "Pre-Check eingereicht";
-      case "PAID":
-        return "Gebühr bezahlt";
-      case "IN_REVIEW":
-        return "In Prüfung";
-      case "COMPLETED":
-        return "Abgeschlossen";
-      default:
-        return "Status folgt";
+      case "PRECHECK": return "Pre-Check eingereicht";
+      case "PAID": return "Gebühr bezahlt";
+      case "IN_REVIEW": return "In Prüfung";
+      case "COMPLETED": return "Abgeschlossen";
+      default: return "Status folgt";
     }
   };
 
@@ -833,15 +882,28 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
   }, [searchParams, router, refreshStatus]);
 
   useEffect(() => {
-    if (!showLicenseSuccess) return;
+    const status = searchParams.get("baseFeeCheckout");
+    if (status !== "success") return;
+    setShowBaseFeeSuccess(true);
+    refreshStatus();
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("baseFeeCheckout");
+    const nextSearch = url.searchParams.toString();
+    router.replace(nextSearch ? `${url.pathname}?${nextSearch}` : url.pathname, { scroll: false });
+  }, [searchParams, router, refreshStatus]);
+
+  useEffect(() => {
+    if (!showLicenseSuccess && !showBaseFeeSuccess) return;
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setShowLicenseSuccess(false);
+        setShowBaseFeeSuccess(false);
       }
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
-  }, [showLicenseSuccess]);
+  }, [showLicenseSuccess, showBaseFeeSuccess]);
 
   useEffect(() => {
     loadLicenseCart();
@@ -982,6 +1044,113 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
     return true;
   });
 
+  // Products with unpaid Grundgebühr
+  const unpaidBaseFeeProducts = products.filter(
+    (p) => !["PAID", "MANUAL"].includes(p.paymentStatus)
+  );
+
+  const baseFeeCartPanel =
+    unpaidBaseFeeProducts.length > 0 ? (
+      <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-700">
+              Grundgebühr
+            </p>
+            <h2 className="text-lg font-semibold text-slate-900">Grundgebühr bezahlen</h2>
+            <p className="text-sm text-slate-500">
+              Produkte auswählen und gemeinsam mit Rabatt bezahlen.
+            </p>
+          </div>
+          {baseFeeCartCount > 0 && (
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-[11px] font-semibold text-amber-800 ring-1 ring-amber-200">
+              {baseFeeCartCount} ausgewählt
+            </span>
+          )}
+        </div>
+
+        <div className="mt-4 grid gap-2">
+          {unpaidBaseFeeProducts.map((p) => {
+            const inCart = baseFeeCart.has(p.id);
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => toggleBaseFeeCart(p.id)}
+                className={`flex w-full items-center justify-between rounded-xl border px-4 py-2.5 text-left text-sm font-semibold transition ${
+                  inCart
+                    ? "border-amber-400 bg-amber-100 text-amber-900"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
+                }`}
+              >
+                <span>{p.name}</span>
+                <span
+                  className={`ml-3 h-4 w-4 rounded-full border-2 transition ${
+                    inCart ? "border-amber-500 bg-amber-500" : "border-slate-300 bg-white"
+                  }`}
+                />
+              </button>
+            );
+          })}
+        </div>
+
+        {baseFeeCartCount > 0 && (
+          <div className="mt-4 space-y-3">
+            <div className="flex flex-wrap gap-2">
+              {(["standard", "priority"] as const).map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => setBaseFeeOption(opt)}
+                  className={`rounded-full px-3 py-1 text-[11px] font-semibold transition ${
+                    baseFeeOption === opt
+                      ? "bg-amber-600 text-white"
+                      : "border border-amber-200 bg-white text-amber-700 hover:border-amber-300"
+                  }`}
+                >
+                  {opt === "standard" ? "Standard" : "Priority (+60 €)"}
+                </button>
+              ))}
+            </div>
+
+            <div className="rounded-lg bg-white px-4 py-3 text-xs text-slate-600 shadow-sm">
+              {baseFeeDiscountPercent > 0 && (
+                <div className="flex justify-between text-slate-400 tabular-nums">
+                  <span>Preis vorher</span>
+                  <span className="line-through">{formatEur(baseFeeOriginalTotalCents)}</span>
+                </div>
+              )}
+              <div className="mt-0.5 flex justify-between font-semibold text-slate-900 tabular-nums">
+                <span>Gesamt (Netto)</span>
+                <span className="text-base">{formatEur(baseFeeTotalCents)}</span>
+              </div>
+              {baseFeeDiscountPercent > 0 && (
+                <div className="mt-1 flex justify-between text-emerald-700">
+                  <span>Ersparnis ({baseFeeDiscountPercent}%)</span>
+                  <span className="font-semibold">- {formatEur(baseFeeSavingsCents)}</span>
+                </div>
+              )}
+              {baseFeeOption === "priority" && (
+                <div className="mt-1 flex justify-between text-amber-700">
+                  <span>Priority-Aufschlag</span>
+                  <span className="font-semibold">+ {formatEur(baseFeePriorityAddonCents)}</span>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleBaseFeePay}
+              disabled={baseFeePaying}
+              className="w-full rounded-full bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700 disabled:opacity-60"
+            >
+              {baseFeePaying ? "Zahlung wird gestartet…" : "Jetzt zur Kasse"}
+            </button>
+          </div>
+        )}
+      </section>
+    ) : null;
+
   const certificationsPanel = (
     <section
       id="certifications-section"
@@ -1105,29 +1274,17 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
                         </span>
                       )}
                       {!baseFeePaid && (
-                        <div className="flex flex-wrap items-center gap-2">
-                          <select
-                            className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold text-amber-800"
-                            value={baseFeeSelections[p.id] || "standard"}
-                            onChange={(e) => setBaseFeeSelections((prev) => ({ ...prev, [p.id]: e.target.value }))}
-                            disabled={baseFeePaying === p.id}
-                          >
-                            <option value="standard">Grundgebühr (Standard)</option>
-                            <option value="priority">Priority</option>
-                          </select>
-                          <button
-                            type="button"
-                            onClick={() => handleBaseFeePay(p.id, baseFeeSelections[p.id] || "standard")}
-                            disabled={baseFeePaying === p.id}
-                            className={`rounded-full px-3 py-1 text-[11px] font-semibold transition ${
-                              baseFeePaying === p.id
-                                ? "bg-amber-100 text-amber-700"
-                                : "bg-amber-600 text-white hover:bg-amber-700"
-                            }`}
-                          >
-                            {baseFeePaying === p.id ? "Zahlung läuft…" : "Grundgebühr zahlen"}
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => toggleBaseFeeCart(p.id)}
+                          className={`rounded-full px-3 py-1 text-[11px] font-semibold transition ${
+                            baseFeeCart.has(p.id)
+                              ? "bg-amber-100 text-amber-800 ring-1 ring-amber-300"
+                              : "border border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300"
+                          }`}
+                        >
+                          {baseFeeCart.has(p.id) ? "✓ Im Warenkorb" : "Grundgebühr auswählen"}
+                        </button>
                       )}
                       {baseFeePaid && !hasPassed && (
                         <button
@@ -1259,7 +1416,8 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
       )}
     </section>
   );
-  const rightColumnPanel = hasOpenLicensePayments ? cartPanel : null;
+
+  const rightColumnPanel = hasOpenLicensePayments ? cartPanel : baseFeeCartPanel;
 
   const planSelectionSection = (
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -1414,6 +1572,7 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
 
   return (
     <div id="dashboard-top" className="min-h-screen bg-slate-50 px-4 py-8">
+      {/* License success modal */}
       {showLicenseSuccess && typeof document !== "undefined"
         ? createPortal(
             <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true">
@@ -1454,6 +1613,49 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
             document.body
           )
         : null}
+
+      {/* Grundgebühr success modal */}
+      {showBaseFeeSuccess && typeof document !== "undefined"
+        ? createPortal(
+            <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true">
+              <div
+                className="absolute inset-0 bg-slate-950/30 backdrop-blur-sm"
+                onClick={() => setShowBaseFeeSuccess(false)}
+              />
+              <div className="relative z-10 w-full max-w-md rounded-3xl border border-slate-100 bg-white p-6 shadow-2xl">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-500">Grundgebühr</p>
+                    <h2 className="text-xl font-semibold text-slate-900">Zahlung bestätigt</h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowBaseFeeSuccess(false)}
+                    className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:border-slate-300"
+                  >
+                    Schließen
+                  </button>
+                </div>
+                <p className="mt-4 text-sm text-slate-600 leading-relaxed">
+                  Vielen Dank, Ihre Grundgebühr ist bestätigt ✅
+                  <br />
+                  Ihr Produkt wird nun zur Prüfung weitergeleitet.
+                </p>
+                <div className="mt-6 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowBaseFeeSuccess(false)}
+                    className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-black"
+                  >
+                    Weiter
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
+
       <div className="mx-auto max-w-6xl space-y-8">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -1589,6 +1791,8 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
               state={statusState}
               rightColumn={rightColumnPanel}
               cartPlanByProductId={cartPlanByProductId}
+              baseFeeCartIds={baseFeeCart}
+              onToggleBaseFee={toggleBaseFeeCart}
             />
             {planSelectionSection}
           </>
@@ -1624,57 +1828,60 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
               }`}
             >
               <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-              <div className="text-sm font-semibold text-slate-800">Rechnungen</div>
-              <div className="mt-3 space-y-2">
-                {paidOrders.length === 0 && <p className="text-sm text-slate-500">Noch keine Rechnungen.</p>}
-                {paidOrders.map((order: any) => (
-                  <div key={order.id} className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 shadow-sm">
-                    <div className="text-xs text-slate-600">
-                      <div className="font-semibold text-slate-800">{orderLabel(order)}</div>
-                      <div>{order.product?.name || "Produkt"} · {formatDate(order.paidAt)}</div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleReceipt(order.id)}
-                      className="rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-black"
-                    >
-                      Rechnung PDF
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-              <div className="text-sm font-semibold text-slate-800">Lizenzen</div>
-              <div className="mt-3 space-y-2">
-                {products.filter((p: any) => p.license?.status).length === 0 && (
-                  <p className="text-sm text-slate-500">Noch keine Lizenzen aktiv.</p>
-                )}
-                {products.map((p: any) => {
-                  const status = p.license?.status;
-                  if (!status) return null;
-                  return (
-                    <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 text-xs font-semibold shadow-sm">
-                      <span className="text-slate-700">{p.name}</span>
-                      {status === "ACTIVE" ? (
-                        <a
-                          href={`/kontakt?topic=lizenz-kuendigen&productId=${encodeURIComponent(p.id)}`}
-                          className="rounded-full border border-slate-200 px-3 py-1 text-[11px] font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-800"
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <div className="text-sm font-semibold text-slate-800">Rechnungen</div>
+                  <div className="mt-3 space-y-2">
+                    {paidOrders.length === 0 && <p className="text-sm text-slate-500">Noch keine Rechnungen.</p>}
+                    {paidOrders.map((order: any) => (
+                      <div key={order.id} className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 shadow-sm">
+                        <div className="text-xs text-slate-600">
+                          <div className="font-semibold text-slate-800">{orderLabel(order)}</div>
+                          <div>{order.product?.name || "Produkt"} · {formatDate(order.paidAt)}</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleReceipt(order.id)}
+                          className="rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-black"
                         >
-                          Lizenz kündigen
-                        </a>
-                      ) : status === "EXPIRED" ? (
-                        <span className="text-amber-600">Lizenz abgelaufen</span>
-                      ) : (
-                        <span className="text-slate-500">Status: {status}</span>
-                      )}
-                    </div>
-                  );
-                })}
+                          Rechnung PDF
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <div className="text-sm font-semibold text-slate-800">Lizenzen</div>
+                  <div className="mt-3 space-y-2">
+                    {products.filter((p: any) => p.license?.status).length === 0 && (
+                      <p className="text-sm text-slate-500">Noch keine Lizenzen aktiv.</p>
+                    )}
+                    {products.map((p: any) => {
+                      const status = p.license?.status;
+                      if (!status) return null;
+                      return (
+                        <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 text-xs font-semibold shadow-sm">
+                          <span className="text-slate-700">{p.name}</span>
+                          {status === "ACTIVE" ? (
+  <button
+    type="button"
+    onClick={() => handleCancelLicense(p.id)}
+    disabled={cancellingId === p.id}
+    className="rounded-full border border-red-200 px-3 py-1 text-[11px] font-semibold text-red-600 hover:border-red-300 hover:text-red-800 disabled:opacity-50"
+  >
+    {cancellingId === p.id ? "Kündigt…" : "Lizenz kündigen"}
+  </button>
+
+                          ) : status === "EXPIRED" ? (
+                            <span className="text-amber-600">Lizenz abgelaufen</span>
+                          ) : (
+                            <span className="text-slate-500">Status: {status}</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
             </div>
           )}
         </section>
@@ -1734,9 +1941,7 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
             </div>
           )}
         </section>
-
-
-              </div>
+      </div>
     </div>
   );
 }

@@ -74,7 +74,6 @@ const faq = [
   },
 ];
 
-// Force dynamic so new certificates appear instantly
 export const dynamic = 'force-dynamic';
 
 const results = [
@@ -113,18 +112,24 @@ const results = [
 const badges = [
   {
     title: { de: 'Siegel "Gold"', en: 'Seal "Gold"' },
-    description:
-      { de: 'Gesamtwert ≥ 90 Punkte, keinerlei kritische Abweichungen. Nutzungsdauer 24 Monate, jährliches Monitoring obligatorisch.', en: 'Total score ≥ 90 points, no critical deviations. Usage 24 months, annual monitoring required.' },
+    description: {
+      de: 'Gesamtwert ≥ 90 Punkte, keinerlei kritische Abweichungen. Nutzungsdauer 24 Monate, jährliches Monitoring obligatorisch.',
+      en: 'Total score ≥ 90 points, no critical deviations. Usage 24 months, annual monitoring required.',
+    },
   },
   {
     title: { de: 'Siegel "Silber"', en: 'Seal "Silver"' },
-    description:
-      { de: 'Gesamtwert ≥ 80 Punkte, ggf. Nebenauflagen. Nutzungsdauer 12 Monate, optionale Re-Audits bei Produktupdates.', en: 'Total score ≥ 80 points, possible minor conditions. Usage 12 months, optional re-audits on product updates.' },
+    description: {
+      de: 'Gesamtwert ≥ 80 Punkte, ggf. Nebenauflagen. Nutzungsdauer 12 Monate, optionale Re-Audits bei Produktupdates.',
+      en: 'Total score ≥ 80 points, possible minor conditions. Usage 12 months, optional re-audits on product updates.',
+    },
   },
   {
     title: { de: 'In Bewertung', en: 'Under evaluation' },
-    description:
-      { de: 'Der Prüfprozess ist aktiv. Zwischenberichte stehen im Kundenportal zur Verfügung, das Siegel ist noch nicht freigegeben.', en: 'The evaluation is in progress. Interim reports are available in the customer portal; the seal is not yet released.' },
+    description: {
+      de: 'Der Prüfprozess ist aktiv. Zwischenberichte stehen im Kundenportal zur Verfügung, das Siegel ist noch nicht freigegeben.',
+      en: 'The evaluation is in progress. Interim reports are available in the customer portal; the seal is not yet released.',
+    },
   },
 ];
 
@@ -162,17 +167,16 @@ export default async function LizenzenPage({ searchParams }: Props) {
   const rawParams = await searchParams;
   const productId = Array.isArray(rawParams.productId) ? rawParams.productId[0] : rawParams.productId;
 
-  // 1. Fetch Valid Data from DB
   const productsRaw = await prisma.product.findMany({
     where: {
-      status: { in: ['COMPLETED', 'IN_REVIEW', 'PAID'] }, 
-      certificate: { isNot: null }
+      status: { in: ['COMPLETED', 'IN_REVIEW', 'PAID'] },
+      certificate: { isNot: null },
     },
     include: {
       certificate: true,
-      user: { select: { company: true } }
+      user: { select: { company: true } },
     },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
   });
 
   const products = await Promise.all(
@@ -208,6 +212,8 @@ export default async function LizenzenPage({ searchParams }: Props) {
 
   return (
     <div className="bg-white text-brand-text">
+
+      {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-br from-[#F0F6FA] via-white to-white border-b border-gray-100">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute -left-20 top-12 h-56 w-56 rounded-full bg-brand-primary/10 blur-3xl" />
@@ -292,6 +298,7 @@ export default async function LizenzenPage({ searchParams }: Props) {
         </div>
       </section>
 
+      {/* License search */}
       <section className="-mt-10 pb-16 lg:pb-20">
         <div className="mx-auto max-w-6xl px-6">
           <div className="rounded-3xl border border-gray-100 bg-white p-7 shadow-xl shadow-brand-dark/5 animate-fade-in-up" data-animate="section">
@@ -300,14 +307,15 @@ export default async function LizenzenPage({ searchParams }: Props) {
                 <h2 className="text-xl font-semibold text-brand-dark">{tr('Lizenzcode prüfen & verwalten', 'Check & manage licenses')}</h2>
                 <p className="text-sm text-gray-600">
                   {tr('Suche per Lizenzcode, Produktname oder ID. Relevante Details erscheinen sofort.', 'Search via license code, product name, or ID. Relevant details appear instantly.')}
-                  </p>
-                </div>
+                </p>
               </div>
+            </div>
             <LizenzenClient products={products} />
           </div>
         </div>
       </section>
 
+      {/* Workflow + Assets */}
       <section className="pb-16 lg:pb-20">
         <div className="mx-auto max-w-6xl px-6">
           <div className="grid gap-8 lg:grid-cols-[1.05fr,0.95fr]">
@@ -323,10 +331,7 @@ export default async function LizenzenPage({ searchParams }: Props) {
               </div>
               <div className="mt-6 space-y-4">
                 {licenseSteps.map((step, index) => (
-                  <div
-                    key={step.title}
-                    className="flex gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
-                  >
+                  <div key={step.title} className="flex gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-primary/10 text-sm font-bold text-brand-primary">
                       {index + 1}
                     </div>
@@ -359,6 +364,7 @@ export default async function LizenzenPage({ searchParams }: Props) {
         </div>
       </section>
 
+      {/* Product verification */}
       {productId ? (
         <section className="mx-auto max-w-6xl px-6 pb-10 pt-4">
           {certificate ? (
@@ -407,15 +413,10 @@ export default async function LizenzenPage({ searchParams }: Props) {
                         </svg>
                       </Link>
                     ) : (
-                      <button
-                        type="button"
-                        disabled
-                        className="inline-flex items-center gap-2 rounded-lg bg-gray-200 px-4 py-2 text-xs font-semibold text-gray-500 shadow-sm cursor-not-allowed"
-                      >
+                      <button type="button" disabled className="inline-flex items-center gap-2 rounded-lg bg-gray-200 px-4 py-2 text-xs font-semibold text-gray-500 shadow-sm cursor-not-allowed">
                         {tr('Prüfbericht noch nicht verfügbar', 'Report not available yet')}
                       </button>
                     )}
-
                     {hasUploadedReport ? (
                       <Link
                         href={certificate.reportUrl || '#'}
@@ -426,15 +427,10 @@ export default async function LizenzenPage({ searchParams }: Props) {
                         {tr('Zusätzlicher Prüfbericht (Upload)', 'Additional report (upload)')}
                       </Link>
                     ) : (
-                      <button
-                        type="button"
-                        disabled
-                        className="inline-flex items-center gap-2 rounded-lg bg-gray-200 px-4 py-2 text-xs font-semibold text-gray-500 shadow-sm cursor-not-allowed"
-                      >
+                      <button type="button" disabled className="inline-flex items-center gap-2 rounded-lg bg-gray-200 px-4 py-2 text-xs font-semibold text-gray-500 shadow-sm cursor-not-allowed">
                         {tr('Zusätzlicher Prüfbericht fehlt', 'Additional report not available')}
                       </button>
                     )}
-
                     <Link
                       href={`/verify/${certificate.seal_number}`}
                       className="inline-flex items-center gap-2 rounded-lg border border-brand-primary/30 px-4 py-2 text-xs font-semibold text-brand-dark transition hover:-translate-y-0.5 hover:border-brand-primary hover:text-brand-primary"
@@ -456,11 +452,14 @@ export default async function LizenzenPage({ searchParams }: Props) {
         </section>
       ) : null}
 
+      {/* Test results */}
       <section className="border-t border-b border-gray-100 bg-white">
         <div className="mx-auto max-w-6xl px-6 pb-16 pt-16 lg:pt-20">
           <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
             <div className="max-w-3xl space-y-2">
-              <h2 className="text-3xl font-bold text-brand-dark md:text-4xl">{tr('Aktuelle Testergebnisse', 'Current test results')}</h2>
+              <h2 className="text-3xl font-bold text-brand-dark sm:text-4xl">
+                {tr('Aktuelle Testergebnisse', 'Current test results')}
+              </h2>
               <p className="text-lg text-gray-600">
                 {tr(
                   'Diese Übersicht dient als Placeholder für echte Prüfberichte. Struktur, Bewertungsskala und Call-to-Actions sind bereits so angelegt, dass finale Inhalte ohne Designänderungen übernommen werden können.',
@@ -508,6 +507,7 @@ export default async function LizenzenPage({ searchParams }: Props) {
         </div>
       </section>
 
+      {/* Seal levels */}
       <section className="bg-[#F0F6FA]">
         <div className="mx-auto max-w-6xl px-6 py-16 lg:py-20">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
@@ -522,21 +522,19 @@ export default async function LizenzenPage({ searchParams }: Props) {
             </div>
           </div>
           <div className="mt-8 grid gap-6 md:grid-cols-3">
-              {badges.map((badge) => (
-                <div
-                  key={badge.title.de}
-                  className="relative overflow-hidden rounded-3xl border border-gray-100 bg-white p-6 shadow-md"
-                >
+            {badges.map((badge) => (
+              <div key={badge.title.de} className="relative overflow-hidden rounded-3xl border border-gray-100 bg-white p-6 shadow-md">
                 <div className="absolute right-4 top-4 h-10 w-10 rounded-full bg-brand-primary/10" />
-                  <div className="text-sm font-semibold uppercase tracking-[0.3em] text-brand-primary">{tr('Stufe', 'Level')}</div>
-                  <h4 className="mt-2 text-xl font-semibold text-brand-dark">{tr(badge.title.de, badge.title.en)}</h4>
-                  <p className="mt-3 text-sm leading-relaxed text-gray-600">{tr(badge.description.de, badge.description.en)}</p>
-                </div>
-              ))}
+                <div className="text-sm font-semibold uppercase tracking-[0.3em] text-brand-primary">{tr('Stufe', 'Level')}</div>
+                <h4 className="mt-2 text-xl font-semibold text-brand-dark">{tr(badge.title.de, badge.title.en)}</h4>
+                <p className="mt-3 text-sm leading-relaxed text-gray-600">{tr(badge.description.de, badge.description.en)}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
+      {/* FAQ */}
       <section className="bg-white">
         <div className="mx-auto max-w-6xl px-6 pb-16 pt-12 lg:pt-14">
           <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-lg">
@@ -548,10 +546,7 @@ export default async function LizenzenPage({ searchParams }: Props) {
             </div>
             <div className="mt-8 grid gap-7 md:grid-cols-2">
               {faq.map((item) => (
-                <details
-                  key={item.question.de}
-                  className="group rounded-2xl border border-gray-100 bg-[#F0F6FA]"
-                >
+                <details key={item.question.de} className="group rounded-2xl border border-gray-100 bg-[#F0F6FA]">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-6 [&::-webkit-details-marker]:hidden">
                     <h3 className="text-lg font-semibold text-brand-dark">
                       {tr(item.question.de, item.question.en)}
@@ -573,6 +568,7 @@ export default async function LizenzenPage({ searchParams }: Props) {
           </div>
         </div>
       </section>
+
     </div>
   );
 }

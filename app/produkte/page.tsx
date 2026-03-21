@@ -81,7 +81,7 @@ export default function ProductsOverviewPage() {
               </div>
               <header>
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Platzhalter</p>
-                <h3 className="mt-1 text-2xl font-semibold text-slate-900">{product.name}</h3>
+                <h3 className="mt-1 text-lg font-semibold text-slate-900">{product.name}</h3>
                 <p className="mt-2 text-sm text-slate-600">{product.tagline}</p>
               </header>
               <p className="text-sm leading-relaxed text-slate-600">{product.summary}</p>
