@@ -282,8 +282,14 @@ async function syncEasybillForSession(params: {
     },
   });
 
-  let customerId = existingInvoice?.easybillCustomerId ?? null;
-  let documentId = existingInvoice?.easybillDocumentId ?? null;
+  let customerId: bigint | null =
+    existingInvoice?.easybillCustomerId == null
+      ? null
+      : BigInt(existingInvoice.easybillCustomerId);
+  let documentId: bigint | null =
+    existingInvoice?.easybillDocumentId == null
+      ? null
+      : BigInt(existingInvoice.easybillDocumentId);
   let documentNumber = existingInvoice?.easybillDocumentNumber ?? null;
 
   if (!documentId) {
@@ -297,8 +303,8 @@ async function syncEasybillForSession(params: {
       lines,
     });
 
-    customerId = result.customerId;
-    documentId = result.documentId;
+    customerId = BigInt(result.customerId);
+    documentId = BigInt(result.documentId);
     documentNumber = result.documentNumber ?? null;
 
     await prisma.order.updateMany({
@@ -314,16 +320,16 @@ async function syncEasybillForSession(params: {
 
     console.info("EASYBILL_INVOICE_CREATED", {
       sessionId,
-      documentId,
+      documentId: String(documentId),
       documentNumber,
-      customerId,
+      customerId: String(customerId),
     });
   } else {
     console.info("EASYBILL_INVOICE_REUSED", {
       sessionId,
-      documentId,
+      documentId: String(documentId),
       documentNumber,
-      customerId,
+      customerId: String(customerId),
     });
   }
 
@@ -349,7 +355,7 @@ async function syncEasybillForSession(params: {
 
   console.info("EASYBILL_INVOICE_EMAIL_SENT", {
     sessionId,
-    documentId,
+    documentId: String(documentId),
     to: recipient.email,
   });
 }

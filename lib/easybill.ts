@@ -267,7 +267,7 @@ export async function createEasybillInvoiceForPaidCheckout(
 }
 
 export async function sendEasybillDocumentEmail(input: {
-  documentId: number;
+  documentId: number | bigint;
   to: string;
   cc?: string;
   from?: string;
@@ -285,14 +285,14 @@ export async function sendEasybillDocumentEmail(input: {
   if (input.subject) payload.subject = input.subject;
   if (input.message) payload.message = input.message;
 
-  await easybillRequest(`/documents/${input.documentId}/send/email`, {
+  await easybillRequest(`/documents/${String(input.documentId)}/send/email`, {
     method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
-export async function fetchEasybillDocumentPdf(documentId: number) {
-  return easybillRequestBinary(`/documents/${documentId}/pdf`, {
+export async function fetchEasybillDocumentPdf(documentId: number | bigint) {
+  return easybillRequestBinary(`/documents/${String(documentId)}/pdf`, {
     method: "GET",
     headers: {
       Accept: "application/pdf",

@@ -73,8 +73,8 @@ model Order {
   stripeDiscountCents    Int       @default(0)
   stripeTotalCents       Int?
 
-  easybillCustomerId     Int?
-  easybillDocumentId     Int?
+  easybillCustomerId     BigInt?
+  easybillDocumentId     BigInt?
   easybillDocumentNumber String?
   easybillSyncedAt       DateTime?
   easybillSyncError      String?
