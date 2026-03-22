@@ -6,6 +6,7 @@ import { ensureProcessNumber } from "@/lib/processNumber";
 import { Plan } from "@prisma/client";
 import {
   createEasybillInvoiceForPaidCheckout,
+  sendEasybillDocumentEmail,
   type EasybillLine,
 } from "@/lib/easybill";
 
@@ -268,32 +269,88 @@ async function syncEasybillForSession(params: {
     return;
   }
 
-  const result = await createEasybillInvoiceForPaidCheckout({
-    externalId: sessionId,
-    customer: {
-      name: recipient.name,
-      email: recipient.email,
-      address: null,
+  const existingInvoice = await prisma.order.findFirst({
+    where: {
+      stripeSessionId: sessionId,
+      easybillDocumentId: { not: null },
     },
-    lines,
+    select: {
+      easybillCustomerId: true,
+      easybillDocumentId: true,
+      easybillDocumentNumber: true,
+      easybillSyncError: true,
+    },
+  });
+
+  let customerId = existingInvoice?.easybillCustomerId ?? null;
+  let documentId = existingInvoice?.easybillDocumentId ?? null;
+  let documentNumber = existingInvoice?.easybillDocumentNumber ?? null;
+
+  if (!documentId) {
+    const result = await createEasybillInvoiceForPaidCheckout({
+      externalId: sessionId,
+      customer: {
+        name: recipient.name,
+        email: recipient.email,
+        address: recipient.address ?? null,
+      },
+      lines,
+    });
+
+    customerId = result.customerId;
+    documentId = result.documentId;
+    documentNumber = result.documentNumber ?? null;
+
+    await prisma.order.updateMany({
+      where: { stripeSessionId: sessionId },
+      data: {
+        easybillCustomerId: customerId,
+        easybillDocumentId: documentId,
+        easybillDocumentNumber: documentNumber,
+        easybillSyncedAt: new Date(),
+        easybillSyncError: null,
+      },
+    });
+
+    console.info("EASYBILL_INVOICE_CREATED", {
+      sessionId,
+      documentId,
+      documentNumber,
+      customerId,
+    });
+  } else {
+    console.info("EASYBILL_INVOICE_REUSED", {
+      sessionId,
+      documentId,
+      documentNumber,
+      customerId,
+    });
+  }
+
+  if (!documentId) {
+    throw new Error("EASYBILL_DOCUMENT_ID_MISSING");
+  }
+
+  if (existingInvoice?.easybillDocumentId && !existingInvoice.easybillSyncError) {
+    return;
+  }
+
+  await sendEasybillDocumentEmail({
+    documentId,
+    to: recipient.email,
   });
 
   await prisma.order.updateMany({
     where: { stripeSessionId: sessionId },
     data: {
-      easybillCustomerId: result.customerId,
-      easybillDocumentId: result.documentId,
-      easybillDocumentNumber: result.documentNumber ?? null,
-      easybillSyncedAt: new Date(),
       easybillSyncError: null,
     },
   });
 
-  console.info("EASYBILL_INVOICE_CREATED", {
+  console.info("EASYBILL_INVOICE_EMAIL_SENT", {
     sessionId,
-    documentId: result.documentId,
-    documentNumber: result.documentNumber,
-    customerId: result.customerId,
+    documentId,
+    to: recipient.email,
   });
 }
 
@@ -495,30 +552,6 @@ async function handleCheckoutSession(cs: any) {
       include: { user: true },
     });
 
-    let receiptPdf: Buffer | undefined;
-
-    if (typeof (cs as any).invoice === "string") {
-      try {
-        const invoice = await stripe.invoices.retrieve(
-          (cs as any).invoice as string
-        );
-        const pdfUrl = (invoice as any).invoice_pdf as
-          | string
-          | null
-          | undefined;
-
-        if (pdfUrl) {
-          const res = await fetch(pdfUrl);
-          if (res.ok) {
-            const arr = await res.arrayBuffer();
-            receiptPdf = Buffer.from(arr);
-          }
-        }
-      } catch (err) {
-        console.warn("INVOICE_PDF_FETCH_FAIL", err);
-      }
-    }
-
     const recipient = products.find((product) => product.user)?.user;
     const productNames = products.map((product) => product.name);
 
@@ -536,7 +569,6 @@ async function handleCheckoutSession(cs: any) {
         gender: recipient.gender ?? undefined,
         productNames,
         processNumber,
-        receiptPdf,
       });
     } catch (err) {
       console.error("PRECHECK_PAYMENT_EMAIL_ERROR", err);

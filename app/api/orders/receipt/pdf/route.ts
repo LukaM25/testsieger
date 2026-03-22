@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { fetchEasybillDocumentPdf } from '@/lib/easybill';
 import { generateInvoicePdf } from '@/lib/invoiceBuilder';
 
 export const runtime = 'nodejs';
@@ -30,6 +31,7 @@ export async function GET(req: Request) {
       plan: true,
       priceCents: true,
       paidAt: true,
+      easybillDocumentId: true,
       user: { select: { name: true, email: true, address: true } },
       product: { select: { name: true } },
     },
@@ -37,6 +39,22 @@ export async function GET(req: Request) {
 
   if (!order) return NextResponse.json({ error: 'ORDER_NOT_FOUND' }, { status: 404 });
   if (!order.paidAt) return NextResponse.json({ error: 'ORDER_NOT_PAID' }, { status: 400 });
+
+  if (order.easybillDocumentId) {
+    try {
+      const pdfBuffer = await fetchEasybillDocumentPdf(order.easybillDocumentId);
+      return new NextResponse(new Uint8Array(pdfBuffer), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `inline; filename="receipt-${order.id.slice(0, 8)}.pdf"`,
+          'Cache-Control': 'private, no-store',
+        },
+      });
+    } catch (err) {
+      console.error('ORDER_RECEIPT_EASYBILL_FETCH_ERROR', err);
+    }
+  }
 
   const invoiceBuffer = await generateInvoicePdf({
     invoiceNumber: `REC-${order.id.slice(0, 8).toUpperCase()}`,

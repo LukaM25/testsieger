@@ -376,7 +376,7 @@ export async function sendPrecheckPaymentSuccess(opts: {
   processNumber: string;
   receiptPdf?: Buffer | null;
 }) {
-  const { to, name, gender, productNames, processNumber, receiptPdf } = opts;
+  const { to, name, gender, productNames, processNumber } = opts;
   const safeProductNames = productNames.map((value) => escapeHtml(value));
   const productList = safeProductNames.join(', ');
   const isPlural = productNames.length !== 1;
@@ -387,7 +387,7 @@ export async function sendPrecheckPaymentSuccess(opts: {
       <p>${renderFormalGreeting(name, gender)}</p>
       <p>vielen Dank für den Zahlungseingang der Prüfgebühr. Ihr Auftrag für den „Testsieger Check“ des Deutschen Prüfsiegel Instituts (DPI) ist damit offiziell aktiviert.</p>
       <p>${productLabel}:<br/><strong>${productList}</strong></p>
-      <p>Die Rechnung zu Ihrer Zahlung finden Sie im Anhang dieser E-Mail.</p>
+      <p>Ihre Rechnung wird Ihnen separat über Easybill per E-Mail zugestellt.</p>
       <p>Damit wir Ihre ${isPlural ? 'Produkte' : 'Produkt'} unmittelbar in den Prüfprozess übernehmen können, senden Sie ${productObjectPronoun} bitte an folgende Versandadresse:</p>
       <p style="margin:12px 0;line-height:1.5;font-size:15.4px;font-weight:700;">
         Deutsches Prüfsiegel Institut (DPI)<br/>
@@ -409,15 +409,6 @@ export async function sendPrecheckPaymentSuccess(opts: {
     to,
     subject: `Prüfgebühr bestätigt – Vorgangsnummer ${processNumber}`,
     html,
-    attachments: receiptPdf
-      ? [
-          {
-            filename: `Rechnung-${productNames.length === 1 ? productNames[0] : processNumber}.pdf`,
-            content: receiptPdf,
-            contentType: 'application/pdf',
-          },
-        ]
-      : undefined,
   });
 }
 

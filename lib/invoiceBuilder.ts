@@ -48,9 +48,9 @@ export async function generateInvoicePdf(opts: InvoiceOptions): Promise<Buffer> 
   y -= 28;
 
   // Seller
-  drawText('Prüfsiegel Zentrum UG (haftungsbeschränkt)', { size: 11, font: fontBold });
+  drawText('DPI - Deutsches Prüfsiegel Institut GmbH', { size: 11, font: fontBold });
   y -= 14;
-  ['Musterstraße 12', '6020 Innsbruck', 'Österreich'].forEach((line) => {
+  ['Kirchseestraße 2', '83666 Waakirchen', 'Deutschland', 'info@dpi-siegel.de', '+49 15679 790129'].forEach((line) => {
     drawText(line, { size: 11 });
     y -= 14;
   });

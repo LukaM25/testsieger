@@ -2,8 +2,6 @@ import QRCode from 'qrcode';
 import { prisma } from '@/lib/prisma';
 import { sendCompletionEmail } from '@/lib/email';
 import { generateCertificatePdf } from '@/pdfGenerator';
-import { generateInvoicePdf } from '@/lib/invoiceBuilder';
-import { InvoiceLine } from '@/lib/invoiceBuilder';
 import { generateSealForS3 } from '@/lib/seal';
 import { storeCertificateAssets } from '@/lib/certificateAssets';
 import { CompletionJob, CompletionJobStatus, AssetType } from '@prisma/client';
@@ -335,42 +333,6 @@ async function runCompletion(productId: string, message?: string, opts?: { force
     data: { status: 'COMPLETED', adminProgress: 'COMPLETION' },
   });
 
-  // Build invoice lines (best-effort)
-  const invoiceLines: InvoiceLine[] = [];
-  if (product.paymentStatus === 'PAID' || product.paymentStatus === 'MANUAL') {
-    invoiceLines.push({
-      label: 'Grundgebühr',
-      amountCents: 25400,
-    });
-  }
-  product.orders
-    .filter((o) => o.paidAt && o.plan)
-    .forEach((o) => {
-      if (typeof o.priceCents === 'number' && o.priceCents > 0) {
-        invoiceLines.push({
-          label: `Lizenz ${o.plan}`,
-          amountCents: o.priceCents,
-        });
-      }
-    });
-
-  let invoiceBuffer: Buffer | undefined;
-  if (invoiceLines.length) {
-    try {
-      invoiceBuffer = await generateInvoicePdf({
-        invoiceNumber: `INV-${product.id.slice(0, 8)}`,
-        customerName: product.user.name,
-        customerEmail: product.user.email,
-        customerAddress: product.user.address ?? null,
-        productName: product.name,
-        lines: invoiceLines,
-        currency: 'EUR',
-      });
-    } catch (err) {
-      console.error('INVOICE_GENERATION_ERROR', err);
-    }
-  }
-
 	  await sendCompletionEmail({
 	    to: product.user.email,
 	    name: product.user.name,
@@ -386,7 +348,6 @@ async function runCompletion(productId: string, message?: string, opts?: { force
 	    sealNumber: seal,
 	    ratingPdfBuffer: rating.buffer,
 	    sealBuffer,
-	    invoiceBuffer,
 	  });
 
   return {

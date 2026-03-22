@@ -70,6 +70,28 @@ async function easybillRequest<T>(
   return (await response.json()) as T;
 }
 
+async function easybillRequestBinary(
+  path: string,
+  init: RequestInit = {}
+): Promise<Buffer> {
+  const response = await fetch(`${EASYBILL_BASE_URL}${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${getEasybillApiKey()}`,
+      ...(init.headers || {}),
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Easybill request failed (${response.status}) ${path}: ${text}`);
+  }
+
+  const data = await response.arrayBuffer();
+  return Buffer.from(data);
+}
+
 function splitName(fullName: string) {
   const trimmed = (fullName || "").trim();
   if (!trimmed) return { first_name: "Kunde", last_name: "Unbekannt" };
@@ -239,4 +261,38 @@ export async function createEasybillInvoiceForPaidCheckout(
     documentId: finalized.id,
     documentNumber: finalized.document_number ?? null,
   };
+}
+
+export async function sendEasybillDocumentEmail(input: {
+  documentId: number;
+  to: string;
+  cc?: string;
+  from?: string;
+  subject?: string;
+  message?: string;
+}) {
+  const payload: Record<string, string | boolean> = {
+    to: input.to,
+    send_by_self: false,
+    send_with_attachment: true,
+  };
+
+  if (input.cc) payload.cc = input.cc;
+  if (input.from) payload.from = input.from;
+  if (input.subject) payload.subject = input.subject;
+  if (input.message) payload.message = input.message;
+
+  await easybillRequest(`/documents/${input.documentId}/send/email`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function fetchEasybillDocumentPdf(documentId: number) {
+  return easybillRequestBinary(`/documents/${documentId}/pdf`, {
+    method: "GET",
+    headers: {
+      Accept: "application/pdf",
+    },
+  });
 }

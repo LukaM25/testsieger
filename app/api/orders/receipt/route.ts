@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import Stripe from 'stripe';
-import { stripe } from '@/lib/stripe';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -14,15 +12,6 @@ const Schema = z.object({
 
 function getFallbackReceiptUrl(orderId: string) {
   return `/api/orders/receipt/pdf?orderId=${encodeURIComponent(orderId)}`;
-}
-
-function pickReceiptUrl(session: Stripe.Checkout.Session): string | null {
-  const invoice = session.invoice as Stripe.Invoice | string | null | undefined;
-  if (invoice && typeof invoice !== 'string') {
-    return invoice.invoice_pdf || invoice.hosted_invoice_url || null;
-  }
-
-  return null;
 }
 
 export async function POST(req: Request) {
@@ -39,37 +28,13 @@ export async function POST(req: Request) {
 
   const order = await prisma.order.findFirst({
     where: { id: input.orderId, userId: session.userId },
-    select: { id: true, paidAt: true, stripeSessionId: true },
+    select: { id: true, paidAt: true },
   });
   if (!order) return NextResponse.json({ error: 'ORDER_NOT_FOUND' }, { status: 404 });
   if (!order.paidAt) return NextResponse.json({ error: 'ORDER_NOT_PAID' }, { status: 400 });
-  if (!order.stripeSessionId) {
-    return NextResponse.json({ ok: true, receiptUrl: getFallbackReceiptUrl(order.id) }, { status: 200 });
-  }
 
-  try {
-    const checkout = await stripe.checkout.sessions.retrieve(order.stripeSessionId, {
-      expand: ['invoice', 'payment_intent', 'payment_intent.latest_charge'],
-    });
-    let receiptUrl = pickReceiptUrl(checkout);
-    if (!receiptUrl && checkout.payment_intent) {
-      const paymentIntent =
-        typeof checkout.payment_intent === 'string'
-          ? await stripe.paymentIntents.retrieve(checkout.payment_intent, { expand: ['latest_charge'] })
-          : checkout.payment_intent;
-      const latestCharge = paymentIntent.latest_charge;
-      if (latestCharge) {
-        const charge =
-          typeof latestCharge === 'string' ? await stripe.charges.retrieve(latestCharge) : latestCharge;
-        receiptUrl = charge.receipt_url || null;
-      }
-    }
-    if (!receiptUrl) {
-      return NextResponse.json({ ok: true, receiptUrl: getFallbackReceiptUrl(order.id) }, { status: 200 });
-    }
-    return NextResponse.json({ ok: true, receiptUrl }, { status: 200 });
-  } catch (err) {
-    console.error('ORDER_RECEIPT_ERROR', err);
-    return NextResponse.json({ ok: true, receiptUrl: getFallbackReceiptUrl(order.id) }, { status: 200 });
-  }
+  return NextResponse.json(
+    { ok: true, receiptUrl: getFallbackReceiptUrl(order.id) },
+    { status: 200 }
+  );
 }
