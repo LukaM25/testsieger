@@ -4,8 +4,8 @@ import { render, screen } from '@testing-library/react';
 import KontaktPage from '../app/kontakt/page';
 
 describe('Kontakt page form', () => {
-  test('renders contact form with expected submit target', () => {
-    render(<KontaktPage />);
+  test('renders contact form with expected submit target', async () => {
+    render(await KontaktPage({}));
 
     const submitButton = screen.getByRole('button', { name: 'Nachricht senden' });
     const form = submitButton.closest('form');

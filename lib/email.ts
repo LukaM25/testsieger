@@ -11,9 +11,8 @@ const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const BREVO_API_URL = process.env.BREVO_API_URL ?? 'https://api.brevo.com/v3/smtp/email';
-const FROM_EMAIL = process.env.MAIL_FROM ?? 'info@dpi-siegel.de';
 const APP_BASE_URL = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'https://dpi-siegel.de';
-const SENDER_NAME = 'DPI - Deutsches Pruefsiegel Institut';
+const SENDER_NAME = 'DPI - Deutsches Prüfsiegel Institut';
 
 const transporter = SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS
   ? nodemailer.createTransport({
@@ -27,8 +26,15 @@ const transporter = SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS
 type Attachment = { filename: string; content: Buffer | Uint8Array; contentType?: string };
 type RecipientGender = 'MALE' | 'FEMALE' | 'OTHER';
 
-async function sendEmail(opts: { to: string; subject: string; html: string; attachments?: Attachment[]; from?: string }) {
-  const { to, subject, html, attachments, from } = opts;
+async function sendEmail(opts: {
+  to: string;
+  subject: string;
+  html: string;
+  attachments?: Attachment[];
+  from?: string;
+  replyTo?: string;
+}) {
+  const { to, subject, html, attachments, from, replyTo } = opts;
   const normalizedAttachments = attachments?.map((attachment) => ({
     ...attachment,
     content: normalizeAttachmentContent(attachment.content),
@@ -42,6 +48,9 @@ async function sendEmail(opts: { to: string; subject: string; html: string; atta
       subject,
       htmlContent: html,
     };
+    if (replyTo) {
+      payload.replyTo = { email: replyTo };
+    }
     if (normalizedAttachments?.length) {
       payload.attachment = normalizedAttachments.map((attachment) => ({
         name: attachment.filename,
@@ -71,6 +80,7 @@ async function sendEmail(opts: { to: string; subject: string; html: string; atta
       to,
       subject,
       html,
+      replyTo,
       attachments: normalizedAttachments,
     });
     return;
@@ -82,6 +92,24 @@ async function sendEmail(opts: { to: string; subject: string; html: string; atta
 function normalizeAttachmentContent(content: Buffer | Uint8Array) {
   return Buffer.isBuffer(content) ? content : Buffer.from(content);
 }
+
+function isValidEmail(value: string | undefined | null): value is string {
+  if (!value) return false;
+  const trimmed = value.trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+}
+
+const FROM_EMAIL = isValidEmail(process.env.MAIL_FROM)
+  ? process.env.MAIL_FROM.trim()
+  : 'info@dpi-siegel.de';
+
+const CONTACT_RECIPIENT =
+  [
+    process.env.CONTACT_EMAIL,
+    process.env.SUPPORT_EMAIL,
+    process.env.MAIL_FROM,
+    'info@dpi-siegel.de',
+  ].find((value) => isValidEmail(value)) ?? 'info@dpi-siegel.de';
 
 function safeLastName(name: string) {
   const lastName = extractLastName(name);
@@ -101,19 +129,6 @@ function safeDisplayName(name: string, gender?: RecipientGender) {
 function renderStandardGreeting(name: string, gender?: RecipientGender) {
   const safeName = safeDisplayName(name, gender);
   return safeName ? `Guten Tag ${safeName},` : 'Guten Tag,';
-}
-
-function renderHelloGreeting(name: string, gender?: RecipientGender) {
-  const safeName = safeDisplayName(name, gender);
-  return safeName ? `Hallo ${safeName},` : 'Hallo,';
-}
-
-function renderGreeting(name: string, gender?: RecipientGender) {
-  const safeName = safeDisplayName(name, gender);
-  if (!safeName) return 'Guten Tag,';
-  if (gender === 'MALE') return `Guten Tag Herr ${safeName},`;
-  if (gender === 'FEMALE') return `Guten Tag Frau ${safeName},`;
-  return renderStandardGreeting(name, gender);
 }
 
 function renderFormalGreeting(name: string, gender?: RecipientGender) {
@@ -162,7 +177,7 @@ export async function sendPrecheckConfirmation(opts: {
 
   const html = `
     <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.65;color:#0f172a">
-      <p>${renderGreeting(name, gender)}</p>
+      <p>${renderFormalGreeting(name, gender)}</p>
       <p>Ihr Produkt <strong>${escapeHtml(productName)}</strong> hat den Pre-Check erfolgreich bestanden. Alle relevanten Daten wurden in Echtzeit abgefragt und valide bestätigt. Damit erfüllt Ihr Produkt die Kriterien, um offiziell in den Testsieger Check des Deutschen Prüfsiegel Instituts (DPI) überführt zu werden.</p>
       <p>Falls die Prüfgebühr für den Testsieger Check noch nicht beglichen wurde, können Sie diese hier direkt auslösen:</p>
       <p style="margin:16px 0 8px;">
@@ -319,7 +334,7 @@ export async function sendCertificateAndSealEmail(opts: {
 
   const html = `
     <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
-      <p>${renderHelloGreeting(name, gender)}</p>
+      <p>${renderFormalGreeting(name, gender)}</p>
       <p>Prüfbericht und Siegel für <strong>${escapeHtml(productName)}</strong> stehen bereit.</p>
       <p>Verifikation: <a href="${verifyUrl}" style="color:#1d4ed8;font-weight:600;">${verifyUrl}</a></p>
       <p style="margin:12px 0;">Im Anhang finden Sie den Prüfbericht (PDF) und das Siegel (PNG). Bitte nutzen Sie den QR-Code und die Siegelgrafik gemäß Ihren vereinbarten Einsatzorten.</p>
@@ -352,7 +367,7 @@ export async function sendFailureNotification(opts: {
   const { to, name, gender, productName, reason } = opts;
   const html = `
     <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
-      <p>${renderHelloGreeting(name, gender)}</p>
+      <p>${renderFormalGreeting(name, gender)}</p>
       <p>für Ihr Produkt <strong>${escapeHtml(productName)}</strong> benötigen wir weitere Informationen, bevor wir die Prüfung abschließen können.</p>
       <p><strong>Grund:</strong> ${escapeHtml(reason)}</p>
       <p>Bitte senden Sie uns die fehlenden Angaben oder Dokumente, damit wir fortfahren können. Bei Rückfragen helfen wir gern.</p>
@@ -433,7 +448,7 @@ export async function sendCompletionReadyEmail(opts: {
 
 		  const html = `
 		    <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
-		      <p>${renderStandardGreeting(name, gender)}</p>
+		      <p>${renderFormalGreeting(name, gender)}</p>
 		      <p>gute Nachrichten: Ihr Produkt hat den Testsieger Check erfolgreich bestanden!</p>
 		      <p>Das vollständige Prüfergebnis finden Sie im Anhang dieser E-Mail (PDF).</p>
 		      <p style="margin:14px 0;">Um das Siegel, den Prüfbericht und das Zertifikat offiziell zu aktivieren und nutzen zu dürfen, wählen Sie jetzt Ihren passenden Lizenzplan aus:</p>
@@ -466,7 +481,7 @@ export async function sendLicensePlanReminderEmail(opts: {
   const { to, name, gender, productName } = opts;
   const html = `
     <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
-      <p>${renderStandardGreeting(name, gender)}</p>
+      <p>${renderFormalGreeting(name, gender)}</p>
       <p>Ihr Produkt <strong>${escapeHtml(productName)}</strong> hat den Test erfolgreich bestanden und erfüllt alle Anforderungen für unser Qualitätssiegel. Dies ist eine kurze Erinnerung:</p>
       <p>Um das Siegel offiziell zu aktivieren und den Service zu starten, wählen Sie bitte jetzt Ihren Lizenzplan aus.</p>
       <p>Sobald der Plan aktiviert ist, erhalten Sie die Nutzungsfreigabe für das Siegel sowie alle zugehörigen Leistungen.</p>
@@ -493,7 +508,7 @@ export async function sendLicensePlanFinalReminderEmail(opts: {
   const { to, name, gender, productName } = opts;
   const html = `
     <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
-      <p>${renderStandardGreeting(name, gender)}</p>
+      <p>${renderFormalGreeting(name, gender)}</p>
       <p>dies ist unsere letzte Erinnerung:</p>
       <p>Ihr Produkt <strong>${escapeHtml(productName)}</strong> hat den Test erfolgreich bestanden – allerdings ist das Qualitätssiegel noch nicht aktiviert. Bitte wählen Sie jetzt Ihren Lizenzplan, damit die Nutzung des Siegels sowie unser Service offiziell starten können.</p>
       <p>Ohne Auswahl des Lizenzplans können wir die Freigabe leider nicht erteilen.</p>
@@ -557,7 +572,7 @@ export async function sendLicenseActivatedEmail(opts: {
 
   const html = `
     <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
-      <p>${renderStandardGreeting(name, gender)}</p>
+      <p>${renderFormalGreeting(name, gender)}</p>
       <p>vielen Dank für die Auswahl und Bezahlung Ihres Lizenzplans. Ihre Lizenz ist jetzt aktiv.</p>
       <p>Im Anhang finden Sie alle freigegebenen Materialien zu Ihrem erfolgreich bestandenen Testsieger Check:</p>
       <ul style="margin:12px 0 16px;padding-left:20px;color:#0f172a;">
@@ -592,7 +607,7 @@ export async function sendPassAndLicenseRequest(opts: {
   const plansLink = (licenseUrl || `${appUrl.replace(/\/$/, '')}/produkte`).replace(/\/$/, '');
   const html = `
     <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
-      <p>${renderHelloGreeting(name, gender)}</p>
+      <p>${renderFormalGreeting(name, gender)}</p>
       <p>Ihr Produkt <strong>${escapeHtml(productName)}</strong> hat den Test bestanden. Vielen Dank für Ihr Vertrauen!</p>
       <p style="margin:12px 0;">Bitte wählen Sie jetzt Ihren Lizenzplan, damit wir Ihr Siegel final aktivieren können.</p>
       <p>
@@ -632,7 +647,7 @@ export async function sendProductReceivedEmail(opts: {
     : '';
   const html = `
     <div style="font-family:system-ui,Arial;line-height:1.6;color:#111">
-      <p>${renderStandardGreeting(name, gender)}</p>
+      <p>${renderFormalGreeting(name, gender)}</p>
       <p>Ihr ${productNoun} <strong>${productList}</strong> ${isPlural ? 'sind' : 'ist'} bei uns eingetroffen und für den Testsieger Check des DPI registriert. Die Prüfung läuft im vereinbarten Zeitfenster an.</p>
       ${processLine}
       <p>Sie erhalten automatisch ein Update, sobald die Analyse abgeschlossen ist.</p>
@@ -651,7 +666,7 @@ export async function sendProductReceivedEmail(opts: {
 
 export async function sendPasswordResetEmail(opts: { to: string; name?: string | null; gender?: RecipientGender | null; resetUrl: string }) {
   const { to, name, gender, resetUrl } = opts;
-  const greeting = renderHelloGreeting(name || '', gender ?? undefined);
+  const greeting = renderFormalGreeting(name || '', gender ?? undefined);
   const html = `
     <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
       <p>${greeting}</p>
@@ -669,6 +684,71 @@ export async function sendPasswordResetEmail(opts: { to: string; name?: string |
     from: `${SENDER_NAME} – Konto <${FROM_EMAIL}>`,
     to,
     subject: 'Passwort zurücksetzen',
+    html,
+  });
+}
+
+export async function sendContactInquiryEmail(opts: {
+  inquiryNumber: string;
+  name: string;
+  email: string;
+  category: string;
+  message: string;
+}) {
+  const { inquiryNumber, name, email, category, message } = opts;
+  const html = `
+    <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
+      <p>Neue Anfrage über das Kontaktformular.</p>
+      <div style="margin:16px 0;padding:16px;border:1px solid #e2e8f0;border-radius:16px;background:#f8fafc;">
+        <p style="margin:0 0 8px;"><strong>Anfrage-Nr.:</strong> ${escapeHtml(inquiryNumber)}</p>
+        <p style="margin:0 0 8px;"><strong>Name:</strong> ${escapeHtml(name)}</p>
+        <p style="margin:0 0 8px;"><strong>E-Mail:</strong> ${escapeHtml(email)}</p>
+        <p style="margin:0 0 8px;"><strong>Kategorie:</strong> ${escapeHtml(category)}</p>
+        <p style="margin:0;"><strong>Nachricht:</strong><br/>${escapeHtml(message).replace(/\n/g, '<br/>')}</p>
+      </div>
+      <p>Antworten Sie direkt auf diese E-Mail, um den Absender zu erreichen.</p>
+      ${renderFooter()}
+    </div>
+  `;
+
+  await sendEmail({
+    from: `${SENDER_NAME} – Kontakt <${FROM_EMAIL}>`,
+    to: CONTACT_RECIPIENT,
+    replyTo: email,
+    subject: `Kontaktseite - Anfrage nr. ${inquiryNumber}`,
+    html,
+  });
+}
+
+export async function sendContactAutoReplyEmail(opts: {
+  inquiryNumber: string;
+  to: string;
+  name: string;
+  category: string;
+  message: string;
+}) {
+  const { inquiryNumber, to, name, category, message } = opts;
+  const html = `
+    <div style="font-family:system-ui,Arial;line-height:1.7;color:#0f172a">
+      <p>${renderFormalGreeting(name)}</p>
+      <p>vielen Dank für Ihre Nachricht an das Deutsche Prüfsiegel Institut (DPI).</p>
+      <p>Wir haben Ihre Anfrage erhalten und melden uns in der Regel innerhalb von <strong>24 Stunden</strong> persönlich bei Ihnen zurück.</p>
+      <div style="margin:18px 0;padding:18px;border:1px solid #dbeafe;border-radius:18px;background:linear-gradient(135deg,#eff6ff 0%,#f8fafc 100%);">
+        <p style="margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#1d4ed8;">Ihre Anfrage</p>
+        <p style="margin:0 0 8px;"><strong>Anfrage-Nr.:</strong> ${escapeHtml(inquiryNumber)}</p>
+        <p style="margin:0 0 8px;"><strong>Kategorie:</strong> ${escapeHtml(category)}</p>
+        <p style="margin:0;color:#334155;">${escapeHtml(message).replace(/\n/g, '<br/>')}</p>
+      </div>
+      <p>Falls Ihr Anliegen besonders dringend ist, erreichen Sie uns zusätzlich telefonisch unter <strong>015679 790129</strong>.</p>
+      <p style="margin-top:18px;">Mit freundlichen Grüßen<br/>Ihr Team vom Deutschen Prüfsiegel Institut</p>
+      ${renderFooter()}
+    </div>
+  `;
+
+  await sendEmail({
+    from: `${SENDER_NAME} – Kontakt <${FROM_EMAIL}>`,
+    to,
+    subject: 'Ihre Anfrage bei DPI ist eingegangen',
     html,
   });
 }

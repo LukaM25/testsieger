@@ -147,7 +147,7 @@ const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/lizenzen?q=${record
       to: userEmail,
       subject: `Your Product Certificate: ${record.name}`,
       html: `
-        <p>Dear ${record.user_name},</p>
+        <p>Sehr geehrte Damen und Herren,</p>
         <p>Your product <strong>${record.name}</strong> has been successfully verified.</p>
         <p>Please find your official certificate and supporting files attached.</p>
         ${note}

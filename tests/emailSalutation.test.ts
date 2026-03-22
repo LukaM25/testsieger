@@ -56,8 +56,8 @@ describe('pre-check email salutations', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const payload = JSON.parse((fetchMock.mock.calls[0] as any)[1].body);
-    expect(payload.htmlContent).toContain('Guten Tag Frau Meyer,');
-    expect(payload.htmlContent).not.toContain('Guten Tag Frau Anna Meyer,');
+    expect(payload.htmlContent).toContain('Sehr geehrte Frau Meyer,');
+    expect(payload.htmlContent).not.toContain('Sehr geehrte Frau Anna Meyer,');
     expect(payload.subject).toContain('Pre-Check bestanden');
   });
 

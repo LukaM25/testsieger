@@ -1,6 +1,14 @@
 import Image from 'next/image';
 
-export default function KontaktPage() {
+type Props = {
+  searchParams?: Promise<{ sent?: string; error?: string }> | { sent?: string; error?: string };
+};
+
+export default async function KontaktPage({ searchParams }: Props = {}) {
+  const resolvedSearchParams = await Promise.resolve(searchParams);
+  const sent = resolvedSearchParams?.sent === '1';
+  const error = resolvedSearchParams?.error === '1';
+
   return (
     <main className="bg-white text-slate-900">
       <section data-animate="section" className="relative isolate mx-auto max-w-5xl px-6 pt-20 pb-20">
@@ -17,9 +25,27 @@ export default function KontaktPage() {
           <h1 className="text-4xl font-semibold text-brand-text">Kontakt</h1>
           <p className="text-slate-700 leading-relaxed max-w-3xl">
             Haben Sie Fragen zu unseren Prüfsiegeln oder möchten Sie Ihr Produkt für eine Prüfung anmelden?
-            Wir antworten in der Regel innerhalb eines Werktags.
+            Wir antworten in der Regel innerhalb von 48 Stunden.
           </p>
         </div>
+
+        {sent && (
+          <div className="relative mt-8 rounded-3xl border border-emerald-200 bg-emerald-50/90 px-6 py-5 text-emerald-900 shadow-[0_20px_50px_-35px_rgba(5,150,105,0.45)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">Nachricht gesendet</p>
+            <p className="mt-2 text-sm leading-relaxed">
+              Vielen Dank. Ihre Nachricht ist bei uns eingegangen. Sie erhalten außerdem eine automatische Eingangsbestätigung per E-Mail, und wir melden uns in der Regel innerhalb von 48 Stunden persönlich zurück.
+            </p>
+          </div>
+        )}
+
+        {error && (
+          <div className="relative mt-8 rounded-3xl border border-rose-200 bg-rose-50/90 px-6 py-5 text-rose-900 shadow-[0_20px_50px_-35px_rgba(225,29,72,0.35)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-rose-700">Versand fehlgeschlagen</p>
+            <p className="mt-2 text-sm leading-relaxed">
+              Ihre Nachricht konnte gerade nicht versendet werden. Bitte versuchen Sie es erneut oder schreiben Sie direkt an info@dpi-siegel.de.
+            </p>
+          </div>
+        )}
 
         {/* Form — unchanged */}
         <form
