@@ -640,8 +640,8 @@ export default function ProduktTestPage() {
       </section>
 
       <section className="bg-white">
-        <div className="mx-auto max-w-6xl px-6 py-14">
-          <div className="grid items-center gap-10 md:grid-cols-2">
+        <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
+          <div className="grid items-center gap-12 md:grid-cols-2">
             <div className="space-y-6 text-left">
               <h2 className={sectionTitleClass}>
                 <span>{tr('Spare mehrere Hundert Euro Werbebudget ein.', 'Save hundreds of euros in marketing budget.')}</span>
@@ -670,21 +670,21 @@ export default function ProduktTestPage() {
         </div>
       </section>
 
-{/* === HIER EINFUEGEN: grafik.jpeg === */}
-<section className="mx-auto max-w-6xl px-6 pb-16">
-  <div className="overflow-hidden rounded-3xl border border-slate-100 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)]">
-    <img
-      src="/grafik.jpeg"
-      alt={tr('Grafik', 'Graphic')}
-      className="w-full object-cover"
-      style={{ maxHeight: '420px' }}
-    />
-  </div>
-</section>
-{/* === END INSERT === */}
+      {/* === HIER EINFUEGEN: grafik.jpeg === */}
+      <section className="mx-auto max-w-5xl px-6 py-16 sm:py-24">
+        <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-50 p-4 shadow-[0_30px_70px_-42px_rgba(15,23,42,0.28)] sm:p-6">
+          <img
+            src="/grafik.jpeg"
+            alt={tr('Grafik', 'Graphic')}
+            className="w-full rounded-[1.4rem] object-cover"
+            style={{ maxHeight: '460px' }}
+          />
+        </div>
+      </section>
+      {/* === END INSERT === */}
 
 
-      <section className="mx-auto max-w-6xl px-6 pt-6 pb-6">
+      <section className="mx-auto max-w-6xl px-6 pt-6 pb-12 sm:pt-8 sm:pb-14">
         <div className="text-center">
           <h2 className={sectionTitleClass}>
             {tr('Zufriedene Kunden', 'Satisfied customers')}
@@ -695,7 +695,7 @@ export default function ProduktTestPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 pt-6 pb-6">
+      <section className="mx-auto max-w-6xl px-6 py-10 sm:py-12">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Exklusivitaet */}
           <div
@@ -747,7 +747,7 @@ export default function ProduktTestPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 pb-8">
+      <section className="mx-auto max-w-6xl px-6 pb-14 sm:pb-18">
         <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)]">
           <div className="relative aspect-[16/9] w-full">
             <Image
