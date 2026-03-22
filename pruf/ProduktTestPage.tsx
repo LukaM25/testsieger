@@ -142,6 +142,7 @@ const sectionTitleClass = "text-3xl font-semibold leading-tight tracking-tight t
 const subsectionTitleClass = "text-2xl font-semibold leading-tight tracking-tight text-slate-900 sm:text-3xl";
 const cardTitleClass = "text-lg font-semibold leading-snug text-slate-900 sm:text-xl";
 const pageSubtitleClass = "text-base leading-relaxed text-slate-600 sm:text-lg";
+const carouselImages = ["/carosel/wertung1.jpeg", "/carosel/wertung2.jpeg"];
 
 // Reuse the full precheck page component here to keep validation and behavior consistent
 
@@ -251,6 +252,7 @@ export default function ProduktTestPage() {
       precheckSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
+  const [carouselIndex, setCarouselIndex] = useState(0);
   const [contentMaxHeight, setContentMaxHeight] = useState<string>('0px');
   const [heroAnim, setHeroAnim] = useState(false);
   const formatEur = (amountEur: number) =>
@@ -362,6 +364,12 @@ export default function ProduktTestPage() {
   const scrollToProcedure = () => {
     procedureTopRef.current?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
   };
+  const goPrevSlide = () => {
+    setCarouselIndex((prev) => (prev - 1 + carouselImages.length) % carouselImages.length);
+  };
+  const goNextSlide = () => {
+    setCarouselIndex((prev) => (prev + 1) % carouselImages.length);
+  };
 
   const handlePrecheckCta = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -400,6 +408,14 @@ export default function ProduktTestPage() {
       });
     }
   }, [searchParams, prefersReducedMotion]);
+
+  useEffect(() => {
+    if (isCoarsePointer || prefersReducedMotion || showPrecheck) return;
+    const id = setInterval(() => {
+      setCarouselIndex((prev) => (prev + 1) % carouselImages.length);
+    }, 3200);
+    return () => clearInterval(id);
+  }, [isCoarsePointer, prefersReducedMotion, showPrecheck]);
 
   useEffect(() => {
     const videoEl = videoRef.current;
@@ -1005,6 +1021,73 @@ export default function ProduktTestPage() {
             >
               {tr('Machen Sie ihr Produkt sichtbar', 'Make your product visible')}
             </h2>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-6 py-12">
+        <div className="rounded-3xl border border-slate-200 bg-slate-50/80 p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.45)]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
+                {tr('Produkt Vorschau', 'Product preview')}
+              </p>
+              <h2 className="text-2xl font-semibold text-slate-900">
+                {tr('So sehen geprüfte Produkte aus', 'A look at tested products')}
+              </h2>
+              <p className="text-sm text-slate-600">
+                {tr(
+                  'Beispiele aus aktuellen Bewertungen. Blättern oder warten, um weitere zu sehen.',
+                  'Examples from recent reviews. Browse or wait to see more.'
+                )}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {carouselImages.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setCarouselIndex(i)}
+                  className={`h-2.5 w-2.5 rounded-full transition ${carouselIndex === i ? 'bg-slate-900' : 'bg-slate-300'}`}
+                  aria-label={`${tr('Slide', 'Slide')} ${i + 1}`}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="relative mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <button
+              type="button"
+              onClick={goPrevSlide}
+              aria-label={tr('Vorheriges Bild', 'Previous image')}
+              className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow-sm ring-1 ring-slate-200 transition hover:bg-white hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
+            >
+              <span className="block h-4 w-4 rotate-180 border-b-2 border-r-2 border-slate-800" />
+            </button>
+            <button
+              type="button"
+              onClick={goNextSlide}
+              aria-label={tr('Nächstes Bild', 'Next image')}
+              className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow-sm ring-1 ring-slate-200 transition hover:bg-white hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
+            >
+              <span className="block h-4 w-4 border-b-2 border-r-2 border-slate-800" />
+            </button>
+            <div
+              className="flex transition-transform duration-700 ease-in-out"
+              style={{ transform: `translateX(-${carouselIndex * 100}%)` }}
+            >
+              {carouselImages.map((src, idx) => (
+                <div key={src} className="flex min-w-full items-center justify-center bg-slate-50">
+                  <Image
+                    src={src}
+                    alt={tr('Produkt Vorschaubild', 'Product preview image')}
+                    width={1400}
+                    height={900}
+                    className="h-[280px] w-full object-contain sm:h-[340px] md:h-[420px] lg:h-[500px]"
+                    priority={idx === 0}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
