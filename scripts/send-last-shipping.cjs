@@ -94,7 +94,7 @@ function renderFooter(baseUrl) {
 async function sendEmail({ to, name, productName, processNumber }) {
   const transporter = createTransporter();
   const from = process.env.MAIL_FROM || process.env.SMTP_USER || 'pruefsiegel@lucidstar.de';
-  const appBase = process.env.APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://pruefsiegelzentrum.vercel.app';
+  const appBase = process.env.APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://dpi-siegel.de';
 
   const html = `
     <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
@@ -117,7 +117,7 @@ async function sendEmail({ to, name, productName, processNumber }) {
   `;
 
   await transporter.sendMail({
-    from: `Pruefsiegel Zentrum UG – Zahlung <${from}>`,
+    from: `DPI - Deutsches Pruefsiegel Institut – Zahlung <${from}>`,
     to,
     subject: `Prüfgebühr bestätigt – Vorgangsnummer ${processNumber}`,
     html,

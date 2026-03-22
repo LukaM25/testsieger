@@ -6,7 +6,8 @@ import path from 'path';
 import { generateCertificatePdf } from './pdfGenerator'; 
 
 const SHEET_LINK = process.env.RATING_SHEET_LINK || "https://docs.google.com/spreadsheets/d/1uwauj30aZ4KpwSHBL3Yi6yB85H_OQypI5ogKuR82KFk/edit?usp=sharing";
-const APP_BASE_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://pruefsiegelzentrum.vercel.app";
+const APP_BASE_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://dpi-siegel.de";
+const SENDER_NAME = 'DPI - Deutsches Pruefsiegel Institut';
 
 function toCsvLink(link) {
   if (link.includes("/export?format=csv")) return link;
@@ -142,7 +143,7 @@ const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/lizenzen?q=${record
     const note = formatNote(message);
 
     await sendEmail({
-      from: `Pruefsiegel Zentrum UG – Certificate <${MAIL_FROM}>`,
+      from: `${SENDER_NAME} – Certificate <${MAIL_FROM}>`,
       to: userEmail,
       subject: `Your Product Certificate: ${record.name}`,
       html: `
@@ -208,7 +209,7 @@ function formatNote(message) {
 }
 
 function renderFooter() {
-  const base = (APP_BASE_URL || '').replace(/\/$/, '') || 'http://pruefsiegelzentrum.vercel.app';
+  const base = (APP_BASE_URL || '').replace(/\/$/, '') || 'https://dpi-siegel.de';
   const logo = `${base}/dpilogo-v3.png`;
   const seal = `${base}/siegel19.png`;
   return `

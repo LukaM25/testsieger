@@ -12,7 +12,8 @@ const SMTP_PASS = process.env.SMTP_PASS;
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const BREVO_API_URL = process.env.BREVO_API_URL ?? 'https://api.brevo.com/v3/smtp/email';
 const FROM_EMAIL = process.env.MAIL_FROM ?? 'pruefsiegel@lucidstar.de';
-const APP_BASE_URL = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://pruefsiegelzentrum.vercel.app';
+const APP_BASE_URL = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'https://dpi-siegel.de';
+const SENDER_NAME = 'DPI - Deutsches Pruefsiegel Institut';
 
 const transporter = SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS
   ? nodemailer.createTransport({
@@ -175,7 +176,7 @@ export async function sendPrecheckConfirmation(opts: {
   `;
 
   await sendEmail({
-    from: `Pruefsiegel Zentrum UG – Pre-Check <${FROM_EMAIL}>`,
+    from: `${SENDER_NAME} – Pre-Check <${FROM_EMAIL}>`,
     to,
     subject: 'Pre-Check bestanden – Prüfgebühr jetzt buchen',
     html,
@@ -281,7 +282,7 @@ export async function sendCompletionEmail(opts: {
   `;
 
   await sendEmail({
-    from: `Pruefsiegel Zentrum UG – Lizenz <${FROM_EMAIL}>`,
+    from: `${SENDER_NAME} – Lizenz <${FROM_EMAIL}>`,
     to,
     subject: `Ihre Lizenz ist aktiv – Unterlagen zum Testsieger-Check ${productName}`,
     html,
@@ -327,13 +328,13 @@ export async function sendCertificateAndSealEmail(opts: {
         <li>Bei Fragen zur Platzierung oder Farben melden Sie sich jederzeit.</li>
         <li>Änderungen an Siegel- oder Einsatzdaten erfolgen über das Kundenportal.</li>
       </ul>
-      <p style="margin-top:18px;">Danke für Ihr Vertrauen.<br/>Prüfsiegel Zentrum UG</p>
+      <p style="margin-top:18px;">Danke für Ihr Vertrauen.<br/>DPI - Deutsches Pruefsiegel Institut</p>
       ${renderFooter()}
     </div>
   `;
 
   await sendEmail({
-    from: `Pruefsiegel Zentrum UG – Zertifikat <${FROM_EMAIL}>`,
+    from: `${SENDER_NAME} – Zertifikat <${FROM_EMAIL}>`,
     to,
     subject: `Prüfbericht & Siegel – ${productName}`,
     html,
@@ -355,12 +356,12 @@ export async function sendFailureNotification(opts: {
       <p>für Ihr Produkt <strong>${escapeHtml(productName)}</strong> benötigen wir weitere Informationen, bevor wir die Prüfung abschließen können.</p>
       <p><strong>Grund:</strong> ${escapeHtml(reason)}</p>
       <p>Bitte senden Sie uns die fehlenden Angaben oder Dokumente, damit wir fortfahren können. Bei Rückfragen helfen wir gern.</p>
-      <p style="margin-top:18px;">Prüfsiegel Zentrum UG</p>
+      <p style="margin-top:18px;">DPI - Deutsches Pruefsiegel Institut</p>
       ${renderFooter()}
     </div>
   `;
   await sendEmail({
-    from: `Pruefsiegel Zentrum UG – Status <${FROM_EMAIL}>`,
+    from: `${SENDER_NAME} – Status <${FROM_EMAIL}>`,
     to,
     subject: `Statusmeldung zu ${productName}`,
     html,
@@ -404,7 +405,7 @@ export async function sendPrecheckPaymentSuccess(opts: {
   `;
 
   await sendEmail({
-    from: `Pruefsiegel Zentrum UG – Zahlung <${FROM_EMAIL}>`,
+    from: `${SENDER_NAME} – Zahlung <${FROM_EMAIL}>`,
     to,
     subject: `Prüfgebühr bestätigt – Vorgangsnummer ${processNumber}`,
     html,
@@ -457,7 +458,7 @@ export async function sendCompletionReadyEmail(opts: {
 	  `;
 
   await sendEmail({
-    from: `Pruefsiegel Zentrum UG – Abschluss <${FROM_EMAIL}>`,
+    from: `${SENDER_NAME} – Abschluss <${FROM_EMAIL}>`,
     to,
     subject: `Testsieger Check bestanden – ${productName}`,
     html,
@@ -485,7 +486,7 @@ export async function sendLicensePlanReminderEmail(opts: {
   `;
 
   await sendEmail({
-    from: `Pruefsiegel Zentrum UG – Erinnerung <${FROM_EMAIL}>`,
+    from: `${SENDER_NAME} – Erinnerung <${FROM_EMAIL}>`,
     to,
     subject: `Erinnerung: Lizenzplan auswählen – ${productName}`,
     html,
@@ -512,7 +513,7 @@ export async function sendLicensePlanFinalReminderEmail(opts: {
   `;
 
   await sendEmail({
-    from: `Pruefsiegel Zentrum UG – Erinnerung <${FROM_EMAIL}>`,
+    from: `${SENDER_NAME} – Erinnerung <${FROM_EMAIL}>`,
     to,
     subject: `Letzte Erinnerung: Lizenzplan auswählen – ${productName}`,
     html,
@@ -580,7 +581,7 @@ export async function sendLicenseActivatedEmail(opts: {
   `;
 
   await sendEmail({
-    from: `Pruefsiegel Zentrum UG – Lizenz <${FROM_EMAIL}>`,
+    from: `${SENDER_NAME} – Lizenz <${FROM_EMAIL}>`,
     to,
     subject: `Lizenz aktiv – ${productName}`,
     html,
@@ -596,7 +597,7 @@ export async function sendPassAndLicenseRequest(opts: {
   licenseUrl?: string;
 }) {
   const { to, name, gender, productName, licenseUrl } = opts;
-  const appUrl = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://pruefsiegelzentrum.vercel.app';
+  const appUrl = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'https://dpi-siegel.de';
   const plansLink = (licenseUrl || `${appUrl.replace(/\/$/, '')}/produkte`).replace(/\/$/, '');
   const html = `
     <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
@@ -610,13 +611,13 @@ export async function sendPassAndLicenseRequest(opts: {
         <li>Nach Planwahl erhalten Sie automatisch das finale Paket per E-Mail.</li>
         <li>Siegel bleibt bis dahin vorgemerkt, aber noch nicht endgültig freigeschaltet.</li>
       </ul>
-      <p style="margin-top:18px;">Danke für Ihr Vertrauen.<br/>Prüfsiegel Zentrum UG</p>
+      <p style="margin-top:18px;">Danke für Ihr Vertrauen.<br/>DPI - Deutsches Pruefsiegel Institut</p>
       ${renderFooter()}
     </div>
   `;
 
   await sendEmail({
-    from: `Pruefsiegel Zentrum UG – Test bestanden <${FROM_EMAIL}>`,
+    from: `${SENDER_NAME} – Test bestanden <${FROM_EMAIL}>`,
     to,
     subject: `Test bestanden – Lizenzplan für ${productName} wählen`,
     html,
@@ -650,7 +651,7 @@ export async function sendProductReceivedEmail(opts: {
   `;
 
   await sendEmail({
-    from: `Pruefsiegel Zentrum UG – Wareneingang <${FROM_EMAIL}>`,
+    from: `${SENDER_NAME} – Wareneingang <${FROM_EMAIL}>`,
     to,
     subject: 'Produkt eingetroffen – Prüfung eingeplant',
     html,
@@ -668,13 +669,13 @@ export async function sendPasswordResetEmail(opts: { to: string; name?: string |
         <a href="${resetUrl}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">Passwort jetzt zurücksetzen</a>
       </p>
       <p style="font-size:13px;color:#475569;">Der Link ist 60 Minuten gültig.</p>
-      <p style="margin-top:18px;">Prüfsiegel Zentrum UG</p>
+      <p style="margin-top:18px;">DPI - Deutsches Pruefsiegel Institut</p>
       ${renderFooter()}
     </div>
   `;
 
   await sendEmail({
-    from: `Pruefsiegel Zentrum UG – Konto <${FROM_EMAIL}>`,
+    from: `${SENDER_NAME} – Konto <${FROM_EMAIL}>`,
     to,
     subject: 'Passwort zurücksetzen',
     html,

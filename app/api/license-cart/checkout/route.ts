@@ -79,6 +79,7 @@ export async function POST() {
   const checkout = await stripe.checkout.sessions.create({
     mode: "payment",
     customer_email: session.email,
+    allow_promotion_codes: true,
     client_reference_id: `${session.userId}:license-cart:${cart.id}`,
     metadata: {
       userId: session.userId,
