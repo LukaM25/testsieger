@@ -14,7 +14,11 @@ export const runtime = "nodejs";
 function parseCheckoutSession(cs: any) {
   const reference =
     typeof cs.client_reference_id === "string" ? cs.client_reference_id : "";
-  const [, productIdFromRef, planFromRef] = reference.split(":");
+  const [, refSecond = "", refThird = ""] = reference.split(":");
+  const isLicenseCartReference = refSecond === "license-cart";
+  const productIdFromRef = isLicenseCartReference ? "" : refSecond;
+  const planFromRef = isLicenseCartReference ? "" : refThird;
+  const cartIdFromRef = isLicenseCartReference ? refThird : "";
   const planFromMetadata =
     cs.metadata && typeof cs.metadata.plan === "string"
       ? cs.metadata.plan
@@ -27,7 +31,7 @@ function parseCheckoutSession(cs: any) {
   const cartId =
     cs.metadata && typeof cs.metadata.cartId === "string"
       ? cs.metadata.cartId
-      : "";
+      : cartIdFromRef;
   const productIdsRaw =
     cs.metadata && typeof cs.metadata.productIds === "string"
       ? cs.metadata.productIds
