@@ -64,6 +64,23 @@ export default async function KontaktPage({ searchParams }: Props = {}) {
               />
             </label>
             <label className="space-y-2 text-sm font-semibold text-slate-800">
+              <span className="uppercase tracking-[0.18em] text-xs text-slate-500">Anrede</span>
+              <select
+                name="gender"
+                required
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 shadow-sm focus:border-[#134074] focus:outline-none focus:ring-2 focus:ring-[#134074]/15 text-base"
+                defaultValue=""
+              >
+                <option value="" disabled>Bitte auswählen</option>
+                <option value="MALE">Herr</option>
+                <option value="FEMALE">Frau</option>
+                <option value="OTHER">Divers</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <label className="space-y-2 text-sm font-semibold text-slate-800">
               <span className="uppercase tracking-[0.18em] text-xs text-slate-500">Ihre E-Mail-Adresse</span>
               <input
                 type="email"

@@ -691,17 +691,19 @@ export async function sendPasswordResetEmail(opts: { to: string; name?: string |
 export async function sendContactInquiryEmail(opts: {
   inquiryNumber: string;
   name: string;
+  gender: RecipientGender;
   email: string;
   category: string;
   message: string;
 }) {
-  const { inquiryNumber, name, email, category, message } = opts;
+  const { inquiryNumber, name, gender, email, category, message } = opts;
   const html = `
     <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a">
       <p>Neue Anfrage über das Kontaktformular.</p>
       <div style="margin:16px 0;padding:16px;border:1px solid #e2e8f0;border-radius:16px;background:#f8fafc;">
         <p style="margin:0 0 8px;"><strong>Anfrage-Nr.:</strong> ${escapeHtml(inquiryNumber)}</p>
         <p style="margin:0 0 8px;"><strong>Name:</strong> ${escapeHtml(name)}</p>
+        <p style="margin:0 0 8px;"><strong>Anrede:</strong> ${escapeHtml(gender)}</p>
         <p style="margin:0 0 8px;"><strong>E-Mail:</strong> ${escapeHtml(email)}</p>
         <p style="margin:0 0 8px;"><strong>Kategorie:</strong> ${escapeHtml(category)}</p>
         <p style="margin:0;"><strong>Nachricht:</strong><br/>${escapeHtml(message).replace(/\n/g, '<br/>')}</p>
@@ -724,15 +726,16 @@ export async function sendContactAutoReplyEmail(opts: {
   inquiryNumber: string;
   to: string;
   name: string;
+  gender: RecipientGender;
   category: string;
   message: string;
 }) {
-  const { inquiryNumber, to, name, category, message } = opts;
+  const { inquiryNumber, to, name, gender, category, message } = opts;
   const html = `
     <div style="font-family:system-ui,Arial;line-height:1.7;color:#0f172a">
-      <p>${renderFormalGreeting(name)}</p>
+      <p>${renderFormalGreeting(name, gender)}</p>
       <p>vielen Dank für Ihre Nachricht an das Deutsche Prüfsiegel Institut (DPI).</p>
-      <p>Wir haben Ihre Anfrage erhalten und melden uns in der Regel innerhalb von <strong>24 Stunden</strong> persönlich bei Ihnen zurück.</p>
+      <p>Wir haben Ihre Anfrage erhalten und melden uns in der Regel innerhalb von <strong>48 Stunden</strong> persönlich bei Ihnen zurück.</p>
       <div style="margin:18px 0;padding:18px;border:1px solid #dbeafe;border-radius:18px;background:linear-gradient(135deg,#eff6ff 0%,#f8fafc 100%);">
         <p style="margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#1d4ed8;">Ihre Anfrage</p>
         <p style="margin:0 0 8px;"><strong>Anfrage-Nr.:</strong> ${escapeHtml(inquiryNumber)}</p>

@@ -24,18 +24,24 @@ function normalizeField(value: FormDataEntryValue | null) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizeGender(value: string) {
+  if (value === "MALE" || value === "FEMALE" || value === "OTHER") return value;
+  return "";
+}
+
 export async function POST(req: Request) {
   const formData = await req.formData().catch(() => null);
   if (!formData) return redirectWithState(req, "error");
 
   const name = normalizeField(formData.get("name"));
+  const gender = normalizeGender(normalizeField(formData.get("gender")));
   const email = normalizeField(formData.get("email")).toLowerCase();
   const categoryKey = normalizeField(formData.get("category"));
   const message = normalizeField(formData.get("message"));
   const category = CATEGORY_LABELS[categoryKey] ?? categoryKey;
 
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  if (!name || !validEmail || !category || !message) {
+  if (!name || !gender || !validEmail || !category || !message) {
     return redirectWithState(req, "error");
   }
 
@@ -45,6 +51,7 @@ export async function POST(req: Request) {
     await sendContactInquiryEmail({
       inquiryNumber,
       name,
+      gender,
       email,
       category,
       message,
@@ -54,6 +61,7 @@ export async function POST(req: Request) {
       inquiryNumber,
       to: email,
       name,
+      gender,
       category,
       message,
     });
