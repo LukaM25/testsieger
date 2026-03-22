@@ -672,11 +672,11 @@ export default function ProduktTestPage() {
 
       {/* === HIER EINFUEGEN: grafik.jpeg === */}
       <section className="mx-auto max-w-5xl px-6 py-16 sm:py-24">
-        <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-50 p-4 shadow-[0_30px_70px_-42px_rgba(15,23,42,0.28)] sm:p-6">
+        <div className="overflow-hidden rounded-[2rem]">
           <img
             src="/grafik.jpeg"
             alt={tr('Grafik', 'Graphic')}
-            className="w-full rounded-[1.4rem] object-cover"
+            className="w-full object-cover"
             style={{ maxHeight: '460px' }}
           />
         </div>
