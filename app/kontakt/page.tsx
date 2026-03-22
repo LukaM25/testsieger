@@ -25,7 +25,7 @@ export default async function KontaktPage({ searchParams }: Props = {}) {
           <h1 className="text-4xl font-semibold text-brand-text">Kontakt</h1>
           <p className="text-slate-700 leading-relaxed max-w-3xl">
             Haben Sie Fragen zu unseren Prüfsiegeln oder möchten Sie Ihr Produkt für eine Prüfung anmelden?
-            Wir antworten in der Regel innerhalb von 48 Stunden.
+            Wir antworten in der Regel innerhalb von 24 Stunden.
           </p>
         </div>
 
@@ -33,7 +33,7 @@ export default async function KontaktPage({ searchParams }: Props = {}) {
           <div className="relative mt-8 rounded-3xl border border-emerald-200 bg-emerald-50/90 px-6 py-5 text-emerald-900 shadow-[0_20px_50px_-35px_rgba(5,150,105,0.45)]">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">Nachricht gesendet</p>
             <p className="mt-2 text-sm leading-relaxed">
-              Vielen Dank. Ihre Nachricht ist bei uns eingegangen. Sie erhalten außerdem eine automatische Eingangsbestätigung per E-Mail, und wir melden uns in der Regel innerhalb von 48 Stunden persönlich zurück.
+              Vielen Dank. Ihre Nachricht ist bei uns eingegangen. Sie erhalten außerdem eine automatische Eingangsbestätigung per E-Mail, und wir melden uns in der Regel innerhalb von 24 Stunden persönlich zurück.
             </p>
           </div>
         )}
