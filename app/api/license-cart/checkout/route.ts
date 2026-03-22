@@ -27,6 +27,7 @@ export async function POST() {
               createdAt: true,
               paymentStatus: true,
               adminProgress: true,
+              certificate: { select: { id: true } },
               license: { select: { status: true } },
             },
           },
@@ -44,7 +45,8 @@ export async function POST() {
 
   const invalid = cart.items.find((item) => {
     const paid = isPaidStatus(item.product.paymentStatus);
-    const hasPassed = item.product.adminProgress === "PASS";
+    const hasPassed =
+      item.product.adminProgress === "PASS" || Boolean(item.product.certificate?.id);
     const licenseActive = item.product.license?.status === "ACTIVE";
     return !paid || !hasPassed || licenseActive;
   });

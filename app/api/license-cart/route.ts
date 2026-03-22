@@ -29,6 +29,7 @@ async function loadCartState(userId: string) {
               createdAt: true,
               paymentStatus: true,
               adminProgress: true,
+              certificate: { select: { id: true } },
               license: { select: { status: true, plan: true } },
             },
           },
@@ -50,7 +51,8 @@ async function loadCartState(userId: string) {
     const finalPriceCents = computeDiscountedPlanPriceCents(plan, basePriceCents, cartDiscountPercent);
     const savingsCents = Math.max(basePriceCents - finalPriceCents, 0);
     const paid = isPaidStatus(item.product.paymentStatus);
-    const hasPassed = item.product.adminProgress === "PASS";
+    const hasPassed =
+      item.product.adminProgress === "PASS" || Boolean(item.product.certificate?.id);
     const licenseActive = item.product.license?.status === "ACTIVE";
     const eligible = paid && hasPassed && !licenseActive;
     let reason = "";
@@ -117,6 +119,7 @@ export async function POST(req: Request) {
       userId: true,
       paymentStatus: true,
       adminProgress: true,
+      certificate: { select: { id: true } },
       license: { select: { status: true } },
     },
   });
@@ -126,7 +129,9 @@ export async function POST(req: Request) {
   if (!isPaidStatus(product.paymentStatus)) {
     return NextResponse.json({ error: "BASE_FEE_REQUIRED" }, { status: 409 });
   }
-  if (product.adminProgress !== "PASS") {
+  const hasPassed =
+    product.adminProgress === "PASS" || Boolean(product.certificate?.id);
+  if (!hasPassed) {
     return NextResponse.json({ error: "NOT_PASSED" }, { status: 409 });
   }
   if (product.license?.status === "ACTIVE") {
