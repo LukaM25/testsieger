@@ -241,7 +241,10 @@ export async function createEasybillInvoiceForPaidCheckout(
   }
 
   const invalid = input.lines.some(
-    (line) => !line.stripePriceId || !Number.isFinite(line.totalCents) || line.totalCents <= 0
+    (line) =>
+      !line.description?.trim() ||
+      !Number.isFinite(line.totalCents) ||
+      line.totalCents < 0
   );
 
   if (invalid) {
