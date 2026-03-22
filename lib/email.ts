@@ -11,7 +11,7 @@ const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const BREVO_API_URL = process.env.BREVO_API_URL ?? 'https://api.brevo.com/v3/smtp/email';
-const FROM_EMAIL = process.env.MAIL_FROM ?? 'pruefsiegel@lucidstar.de';
+const FROM_EMAIL = process.env.MAIL_FROM ?? 'info@dpi-siegel.de';
 const APP_BASE_URL = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'https://dpi-siegel.de';
 const SENDER_NAME = 'DPI - Deutsches Pruefsiegel Institut';
 
