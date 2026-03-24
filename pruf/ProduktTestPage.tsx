@@ -700,6 +700,9 @@ export default function ProduktTestPage() {
                 src="/cashdrop.jpeg"
                 alt={tr('Cash drop', 'Cash drop')}
                 className="h-full w-full max-w-[421px] object-contain sm:max-w-[518px]"
+                loading="lazy"
+                decoding="async"
+                fetchPriority="low"
               />
             </div>
           </div>
@@ -714,6 +717,9 @@ export default function ProduktTestPage() {
             alt={tr('Grafik', 'Graphic')}
             className="w-full object-cover"
             style={{ maxHeight: '460px' }}
+            loading="lazy"
+            decoding="async"
+            fetchPriority="low"
           />
         </div>
       </section>
@@ -892,6 +898,9 @@ export default function ProduktTestPage() {
               alt={tr('Zukunft des E-Commerce', 'Future of e-commerce')}
               className="w-full h-full object-cover"
               style={{ maxHeight: '280px' }}
+              loading="lazy"
+              decoding="async"
+              fetchPriority="low"
             />
           </div>
         </div>
@@ -919,6 +928,9 @@ export default function ProduktTestPage() {
             alt={tr('Produkt mit Siegel', 'Product with seal')}
             className="w-full object-cover"
             style={{ maxHeight: '400px' }}
+            loading="lazy"
+            decoding="async"
+            fetchPriority="low"
           />
         </div>
 
@@ -1029,7 +1041,7 @@ export default function ProduktTestPage() {
               height={440}
               muted
               playsInline
-              preload="metadata"
+              preload="none"
             >
               {tr('Ihr Browser unterstützt das Video-Tag nicht.', 'Your browser does not support the video tag.')}
             </video>
