@@ -105,7 +105,8 @@
       },
       {
         root: null,
-        threshold: 0.2,
+        // Tall mobile sections may never reach 20% visibility, leaving them hidden forever.
+        threshold: 0.05,
         rootMargin: "0px 0px -10% 0px",
       }
     );
