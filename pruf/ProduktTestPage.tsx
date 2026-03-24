@@ -342,10 +342,7 @@ export default function ProduktTestPage() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (isCoarsePointer) {
-      setPrecheckSticky(false);
-      return;
-    }
+    
 
     const node = precheckCtaRef.current;
     if (!node) return;
@@ -459,7 +456,7 @@ export default function ProduktTestPage() {
   }, []);
 
   return (
-    <main className="overflow-x-hidden bg-white text-slate-900">
+<main className="bg-white text-slate-900">
       {precheckSticky && (
         <div className="fixed top-16 left-0 right-0 z-40 flex justify-center px-4">
           <button
