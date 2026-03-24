@@ -489,7 +489,7 @@ export default function Navbar() {
     });
 
   return (
-    <header className="relative z-50 w-full overflow-x-hidden bg-white/90 backdrop-blur-md border-b border-gray-200">
+    <header className="relative z-50 w-full overflow-x-hidden border-b border-gray-200 bg-white/90 backdrop-blur-none sm:backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-3 sm:gap-3 sm:px-6">
         {/* Logo */}
         <a href="/" className="flex h-full min-w-0 items-center shrink py-2">

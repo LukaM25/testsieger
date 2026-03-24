@@ -18,6 +18,22 @@ export default function Counter({
   const [count, setCount] = useState(start);
   const ref = useRef<HTMLSpanElement | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [shouldAnimate, setShouldAnimate] = useState(true);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const query = window.matchMedia("(prefers-reduced-motion: reduce), (pointer: coarse)");
+    const update = (event?: MediaQueryListEvent) => setShouldAnimate(event ? !event.matches : !query.matches);
+    update();
+
+    if (query.addEventListener) {
+      query.addEventListener("change", update);
+      return () => query.removeEventListener("change", update);
+    }
+
+    query.addListener(update);
+    return () => query.removeListener(update);
+  }, []);
 
   useEffect(() => {
     const currentRef = ref.current;
@@ -45,6 +61,10 @@ export default function Counter({
 
   useEffect(() => {
     if (!isVisible) return;
+    if (!shouldAnimate) {
+      setCount(end);
+      return;
+    }
 
     const startTime = Date.now();
 
@@ -67,7 +87,7 @@ export default function Counter({
     };
 
     requestAnimationFrame(animate);
-  }, [isVisible, start, end, duration]);
+  }, [isVisible, shouldAnimate, start, end, duration]);
 
   return (
     <span ref={ref} className={className}>

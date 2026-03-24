@@ -8,6 +8,17 @@
   }
 }
 
+@media (pointer: coarse) {
+  .js-animate [data-animate],
+  .js-animate [data-animate].is-visible {
+    transition-duration: 0ms !important;
+    transition-delay: 0ms !important;
+    transform: none !important;
+    opacity: 1 !important;
+    will-change: auto !important;
+  }
+}
+
 @keyframes floatY {
   0% { transform: translateY(0px); }
   50% { transform: translateY(-6px); }
