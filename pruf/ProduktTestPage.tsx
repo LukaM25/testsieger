@@ -224,24 +224,6 @@ export default function ProduktTestPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const hasPlayedVideoRef = useRef(false);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const updateSticky = () => {
-      const node = precheckCtaRef.current;
-      if (!node) return;
-      const rect = node.getBoundingClientRect();
-      const threshold = rect.top + window.scrollY + rect.height;
-      setPrecheckSticky(window.scrollY > threshold);
-    };
-    updateSticky();
-    window.addEventListener('scroll', updateSticky, { passive: true });
-    window.addEventListener('resize', updateSticky);
-    return () => {
-      window.removeEventListener('scroll', updateSticky);
-      window.removeEventListener('resize', updateSticky);
-    };
-  }, [showPrecheck]);
-
   const handlePrecheckToggle = () => {
     setShowPrecheck((s) => !s);
   };
@@ -357,6 +339,44 @@ export default function ProduktTestPage() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (isCoarsePointer) {
+      setPrecheckSticky(false);
+      return;
+    }
+
+    const node = precheckCtaRef.current;
+    if (!node) return;
+
+    if (typeof IntersectionObserver === 'undefined') {
+      const updateSticky = () => {
+        const rect = node.getBoundingClientRect();
+        setPrecheckSticky(rect.bottom < 72);
+      };
+      updateSticky();
+      window.addEventListener('scroll', updateSticky, { passive: true });
+      window.addEventListener('resize', updateSticky);
+      return () => {
+        window.removeEventListener('scroll', updateSticky);
+        window.removeEventListener('resize', updateSticky);
+      };
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setPrecheckSticky(entry.isIntersecting ? false : entry.boundingClientRect.bottom < 72);
+      },
+      {
+        threshold: 0,
+        rootMargin: '-72px 0px 0px 0px',
+      }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [isCoarsePointer, showPrecheck]);
 
   const scrollToPrecheck = () => {
     precheckSectionRef.current?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });

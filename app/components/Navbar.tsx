@@ -489,21 +489,21 @@ export default function Navbar() {
     });
 
   return (
-    <header className="relative w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 overflow-visible">
-      <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-3 sm:px-6 gap-3">
+    <header className="relative z-50 w-full overflow-x-hidden bg-white/90 backdrop-blur-md border-b border-gray-200">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-3 sm:gap-3 sm:px-6">
         {/* Logo */}
-        <a href="/" className="flex h-full items-center shrink-0 py-2">
+        <a href="/" className="flex h-full min-w-0 items-center shrink py-2">
           <Image
             src="/dpilogo-v3.png"
             alt="Deutsches Prüfsiegel Institut"
             width={360}
             height={96}
             priority
-            className="block h-full w-auto object-contain"
+            className="block h-full w-auto max-w-[148px] object-contain sm:max-w-none"
           />
         </a>
 
-        <div className="flex items-center gap-3 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           {/* Always-open search bubble */}
           <div className="relative" ref={inputRef as any}>
             <div className="flex items-center sm:hidden">
@@ -612,13 +612,13 @@ export default function Navbar() {
           <div className="relative" ref={profileRef}>
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green"
+              className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green sm:px-4"
               onClick={() => setProfileOpen((value) => !value)}
               aria-expanded={profileOpen}
               aria-label={profileUser ? `Profil öffnen (${formatContactName(profileUser.name, profileUser.gender, profileUser.email)})` : 'Kundenkonto öffnen'}
             >
               <User size={20} className="text-slate-700" />
-              <span className="whitespace-nowrap text-sm font-semibold">
+              <span className="hidden whitespace-nowrap text-sm font-semibold sm:inline">
                 {profileLabel}
               </span>
             </button>
@@ -815,12 +815,12 @@ export default function Navbar() {
 
           <div className="relative">
             <button
-              className="p-2 rounded-lg border"
+              className="rounded-lg border p-2"
               onClick={() => setOpen((o) => !o)}
               aria-label={open ? t('nav.menu.close') : t('nav.menu.open')}
             >
               <span className="inline-flex items-center">
-                <span className="mr-1">{t('nav.menu')}</span>
+                <span className="mr-1 hidden sm:inline">{t('nav.menu')}</span>
                 {open ? <X size={22} /> : <Menu size={22} />}
               </span>
             </button>
