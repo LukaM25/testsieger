@@ -439,7 +439,7 @@ export default function ProduktTestPage() {
   }, []);
 
   return (
-    <main className="bg-white text-slate-900">
+    <main className="overflow-x-hidden bg-white text-slate-900">
       {precheckSticky && (
         <div className="fixed top-16 left-0 right-0 z-40 flex justify-center px-4">
           <button
@@ -534,7 +534,7 @@ export default function ProduktTestPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-12">
+      <section className="mx-auto max-w-6xl overflow-x-hidden px-6 py-12">
         <h2 className={subsectionTitleClass}>{tr('Ablauf', 'Process')}</h2>
         <div className="mt-8 flex flex-col items-center justify-center gap-6 md:flex-row md:flex-nowrap">
           {stepSequence.map((entry, idx) =>
@@ -1054,7 +1054,7 @@ export default function ProduktTestPage() {
               ))}
             </div>
           </div>
-          <div className="relative mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <div className="relative mt-6 max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-white">
             <button
               type="button"
               onClick={goPrevSlide}
@@ -1071,18 +1071,21 @@ export default function ProduktTestPage() {
             >
               <span className="block h-4 w-4 border-b-2 border-r-2 border-slate-800" />
             </button>
-            <div
-              className="flex transition-transform duration-700 ease-in-out"
-              style={{ transform: `translateX(-${carouselIndex * 100}%)` }}
-            >
+            <div className="relative h-[280px] w-full sm:h-[340px] md:h-[420px] lg:h-[500px]">
               {carouselImages.map((src, idx) => (
-                <div key={src} className="flex min-w-full items-center justify-center bg-slate-50">
+                <div
+                  key={src}
+                  className={`absolute inset-0 flex items-center justify-center bg-slate-50 transition-opacity duration-500 ${
+                    carouselIndex === idx ? 'opacity-100' : 'pointer-events-none opacity-0'
+                  }`}
+                  aria-hidden={carouselIndex !== idx}
+                >
                   <Image
                     src={src}
                     alt={tr('Produkt Vorschaubild', 'Product preview image')}
-                    width={1400}
-                    height={900}
-                    className="h-[280px] w-full object-contain sm:h-[340px] md:h-[420px] lg:h-[500px]"
+                    fill
+                    sizes="(min-width: 1024px) 960px, (min-width: 768px) 90vw, 100vw"
+                    className="object-contain"
                     priority={idx === 0}
                   />
                 </div>
