@@ -12,7 +12,7 @@ export default function HomePage() {
     <main className="bg-white text-gray-900">
       <Hero />
       <Intro />
-      <Logos />
+{/* <Logos /> */}
       <Expertise />
       <Sicherheit />
       <Verfahren />

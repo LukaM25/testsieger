@@ -137,7 +137,7 @@ const planThemes = {
   },
 } as const;
 
-const pageTitleClass = "text-4xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl lg:text-6xl";
+const pageTitleClass = "text-4xl leading-tight tracking-tight text-slate-900 sm:text-5xl lg:text-6xl";
 const sectionTitleClass = "text-3xl font-semibold leading-tight tracking-tight text-slate-900 sm:text-4xl";
 const subsectionTitleClass = "text-2xl font-semibold leading-tight tracking-tight text-slate-900 sm:text-3xl";
 const cardTitleClass = "text-lg font-semibold leading-snug text-slate-900 sm:text-xl";
@@ -497,8 +497,10 @@ export default function ProduktTestPage() {
             />
             <div className="space-y-3">
               <h1 data-animate="hero-title" className={pageTitleClass}>
-                {tr('Ihr Produkt verdient Vertrauen', 'Your product deserves trust')}
-              </h1>
+  <span className="font-light">{tr('Ihr Produkt', 'Your product')}</span>{' '}
+  <span className="font-bold">{tr('verdient Vertrauen', 'deserves trust')}</span>
+</h1>
+
               <p data-animate="hero-text" className={pageSubtitleClass}>
                 {tr(
                   'Wir begleiten Sie vom Pre-Check bis zum Siegel - transparent, digital und mit einem klaren Bewertungsrahmen.',
