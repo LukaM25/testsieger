@@ -22,7 +22,7 @@ export default function Counter({
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
-    const query = window.matchMedia("(prefers-reduced-motion: reduce), (pointer: coarse)");
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
     const update = (event?: MediaQueryListEvent) => setShouldAnimate(event ? !event.matches : !query.matches);
     update();
 
