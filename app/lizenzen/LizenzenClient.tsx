@@ -11,10 +11,16 @@ interface Product {
   madeIn: string | null;
   processNumber?: string | null;
   certificate: {
+    id: string;
     seal_number: string | null;
     pdfUrl: string | null;
     reportUrl: string | null;
     createdAt: Date;
+  } | null;
+  license: {
+    id: string;
+    licenseCode: string;
+    status: string;
   } | null;
   user: {
     company: string | null;
@@ -31,8 +37,13 @@ export default function LizenzenClient({ products }: { products: any[] }) {
     const searchParam = searchParams.get('q');
     if (searchParam) {
       setQuery(searchParam);
-      // If ID matches exactly, open the dropdown immediately
-      const exactMatch = products.find(p => p.id === searchParam);
+      const normalized = searchParam.toLowerCase();
+      const exactMatch = products.find((p) =>
+        p.id.toLowerCase() === normalized ||
+        p.certificate?.id?.toLowerCase() === normalized ||
+        p.certificate?.seal_number?.toLowerCase() === normalized ||
+        p.license?.licenseCode?.toLowerCase() === normalized
+      );
       if (exactMatch) {
         setOpenId(exactMatch.id);
       }
@@ -48,7 +59,9 @@ export default function LizenzenClient({ products }: { products: any[] }) {
       p.brand.toLowerCase().includes(lowerQ) ||
       (p.category ?? '').toLowerCase().includes(lowerQ) ||
       p.id.toLowerCase().includes(lowerQ) ||
+      (p.certificate?.id ?? '').toLowerCase().includes(lowerQ) ||
       p.certificate?.seal_number?.toLowerCase().includes(lowerQ) ||
+      (p.license?.licenseCode ?? '').toLowerCase().includes(lowerQ) ||
       (p.processNumber ?? '').toLowerCase().includes(lowerQ)
     );
   }, [query, products]);
@@ -92,7 +105,9 @@ export default function LizenzenClient({ products }: { products: any[] }) {
               >
                 <div>
                   <div className="font-bold text-slate-900">{product.name}</div>
-                  <div className="text-xs text-slate-500">{product.brand} • {product.certificate?.seal_number || 'Kein Siegel'}</div>
+                  <div className="text-xs text-slate-500">
+                    {product.brand} • {product.license?.licenseCode || product.certificate?.seal_number || 'Kein Siegel'}
+                  </div>
                 </div>
                 <div className={`transform transition-transform text-slate-400 ${isOpen ? 'rotate-180' : ''}`}>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -115,6 +130,8 @@ export default function LizenzenClient({ products }: { products: any[] }) {
                       <h4 className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Zertifikat</h4>
                       <div className="text-slate-700 space-y-1">
                         <p>Status: <span className="text-brand-primary font-bold">Gültig & Geprüft</span></p>
+                        <p>Lizenzcode: <span className="font-mono text-xs text-slate-500">{product.license?.licenseCode || '—'}</span></p>
+                        <p>Siegelnummer: <span className="font-mono text-xs text-slate-500">{product.certificate?.seal_number || '—'}</span></p>
                         <p>Ausgestellt: {new Date(product.certificate?.createdAt).toLocaleDateString('de-DE')}</p>
                       </div>
                     </div>

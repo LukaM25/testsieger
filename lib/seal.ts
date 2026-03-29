@@ -6,6 +6,7 @@ import sharp from "sharp";
 type SealInput = {
   product: { id: string; name: string; brand: string | null; createdAt: Date };
   certificateId: string;
+  verificationCode?: string | null;
   tcCode?: string | null;
   ratingScore: string;
   ratingLabel: string;
@@ -169,6 +170,7 @@ function makeSvgText({
 export async function generateSealForS3({
   product,
   certificateId,
+  verificationCode = null,
   tcCode,
   ratingScore,
   ratingLabel,
@@ -226,7 +228,8 @@ export async function generateSealForS3({
     },
   };
 
-  const reportUrl = `${appUrl.replace(/\/$/, "")}/lizenzen?q=${certificateId}`;
+  const reportLookupCode = verificationCode?.trim() || certificateId;
+  const reportUrl = `${appUrl.replace(/\/$/, "")}/lizenzen?q=${encodeURIComponent(reportLookupCode)}`;
   const tcCodeValue = tcCode ?? certificateId;
   const infoFontSizes = {
     body: Math.round(INFO_FONT_SIZES.body * scaleY),
@@ -393,6 +396,7 @@ export async function generateSealForS3({
 export async function generateSeal({
   product,
   certificateId,
+  verificationCode = null,
   tcCode,
   ratingScore,
   ratingLabel,
@@ -405,6 +409,7 @@ export async function generateSeal({
   const { buffer, key } = await generateSealForS3({
     product,
     certificateId,
+    verificationCode,
     tcCode,
     ratingScore,
     ratingLabel,

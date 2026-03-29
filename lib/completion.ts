@@ -4,6 +4,7 @@ import { sendCompletionEmail } from '@/lib/email';
 import { generateCertificatePdf } from '@/pdfGenerator';
 import { generateSealForS3 } from '@/lib/seal';
 import { storeCertificateAssets } from '@/lib/certificateAssets';
+import { buildLicenseVerificationUrl } from '@/lib/licenseVerification';
 import { CompletionJob, CompletionJobStatus, AssetType } from '@prisma/client';
 import { saveBufferToS3, signedUrlForKey } from '@/lib/storage';
 import { ensureSignedS3Url } from '@/lib/s3';
@@ -166,7 +167,13 @@ async function runCompletion(productId: string, message?: string, opts?: { force
       data: { productId: product.id, pdfUrl: '', qrUrl: '', seal_number: seal },
     }));
   const certificateId = certificateRecord.id;
-  const verifyUrl = `${APP_URL.replace(/\/$/, '')}/lizenzen?q=${encodeURIComponent(certificateId)}`;
+  const verificationCode = product.license?.licenseCode ?? null;
+  const verifyUrl = buildLicenseVerificationUrl(APP_URL, {
+    licenseCode: verificationCode,
+    sealNumber: seal,
+    certificateId,
+    productId: product.id,
+  });
   const qrBuffer = await QRCode.toBuffer(verifyUrl, {
     margin: 1,
     width: 512,
@@ -204,6 +211,8 @@ async function runCompletion(productId: string, message?: string, opts?: { force
     },
     certificateId,
     domain: APP_URL,
+    licenseCode: verificationCode ?? undefined,
+    verify_url: verifyUrl,
     qrUrl: qrDataUrl,
   });
 
@@ -241,6 +250,7 @@ async function runCompletion(productId: string, message?: string, opts?: { force
       const seal = await generateSealForS3({
         product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
         certificateId: cert.id,
+        verificationCode,
         tcCode: product.processNumber ?? undefined,
         ratingScore: cert.ratingScore ?? 'PASS',
         ratingLabel: cert.ratingLabel ?? 'PASS',
@@ -286,6 +296,7 @@ async function runCompletion(productId: string, message?: string, opts?: { force
         const seal = await generateSealForS3({
           product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
           certificateId: cert.id,
+          verificationCode,
           tcCode: product.processNumber ?? undefined,
           ratingScore: cert.ratingScore ?? 'PASS',
           ratingLabel: cert.ratingLabel ?? 'PASS',
@@ -418,7 +429,7 @@ async function syncLicenseAfterCompletion(productId: string, result: CompletionR
     where: { productId },
     data: {
       status: 'ACTIVE',
-      licenseCode: result.seal,
+      licenseCode: existingLicense.licenseCode || result.seal,
       certificateId: result.certId,
       startsAt: existingLicense.startsAt ?? now,
       paidAt: existingLicense.paidAt ?? now,

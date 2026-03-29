@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/admin";
 import { generateCertificatePdf } from "@/pdfGenerator";
 import { generateSeal as generateSealImage } from "@/lib/seal";
 import { storeCertificateAssets } from "@/lib/certificateAssets";
+import { buildLicenseVerificationUrl } from "@/lib/licenseVerification";
 
 export const runtime = "nodejs";
 
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
 
     const product = await prisma.product.findUnique({
       where: { id: productId },
-      include: { user: true, certificate: true },
+      include: { user: true, certificate: true, license: true },
     });
 
     if (!product) return NextResponse.json({ error: "Produkt nicht gefunden" }, { status: 404 });
@@ -46,7 +47,13 @@ export async function POST(req: Request) {
         },
       }));
 
-    const verifyUrl = `${baseDomain.replace(/\/$/, "")}/lizenzen?q=${encodeURIComponent(cert.id)}`;
+    const verificationCode = product.license?.licenseCode ?? null;
+    const verifyUrl = buildLicenseVerificationUrl(baseDomain, {
+      licenseCode: verificationCode,
+      sealNumber: seal_number,
+      certificateId: cert.id,
+      productId: product.id,
+    });
     const qrBuffer = await QRCode.toBuffer(verifyUrl, { margin: 1, width: 512 });
     const qrDataUrl = `data:image/png;base64,${qrBuffer.toString("base64")}`;
 
@@ -81,6 +88,8 @@ export async function POST(req: Request) {
       },
       certificateId: cert.id,
       domain: baseDomain,
+      licenseCode: verificationCode ?? undefined,
+      verify_url: verifyUrl,
       qrUrl: qrDataUrl,
     });
 
@@ -99,6 +108,7 @@ export async function POST(req: Request) {
         sealUrl = await generateSealImage({
           product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
           certificateId: cert.id,
+          verificationCode,
           tcCode: product.processNumber ?? undefined,
           ratingScore: cert.ratingScore ?? 'PASS',
           ratingLabel: cert.ratingLabel ?? 'PASS',

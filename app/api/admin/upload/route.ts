@@ -6,6 +6,7 @@ import { AdminRole, AssetType } from '@prisma/client';
 import { logAdminAudit, requireAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 import { generateSealForS3 } from '@/lib/seal';
+import { buildLicenseVerificationUrl } from '@/lib/licenseVerification';
 import { saveBufferToS3, signedUrlForKey, MAX_UPLOAD_BYTES } from '@/lib/storage';
 import { uploadedPdfKey, qrKey } from '@/lib/assetKeys';
 
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
     // fetch product + user
     const product = await prisma.product.findUnique({
       where: { id: productId },
-      include: { user: true, certificate: true },
+      include: { user: true, certificate: true, license: true },
     });
     if (!product) return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     if (product.certificate) return NextResponse.json({ error: 'Certificate already exists' }, { status: 400 });
@@ -68,7 +69,13 @@ export async function POST(req: Request) {
 
     const baseDomain =
       process.env.NEXT_PUBLIC_BASE_URL || process.env.APP_URL || 'http://localhost:3000';
-    const verifyUrl = `${baseDomain.replace(/\/$/, '')}/lizenzen?q=${encodeURIComponent(cert.id)}`;
+    const verificationCode = product.license?.licenseCode ?? null;
+    const verifyUrl = buildLicenseVerificationUrl(baseDomain, {
+      licenseCode: verificationCode,
+      sealNumber: seal,
+      certificateId: cert.id,
+      productId: product.id,
+    });
 
     // Generate QR png -> save
     const qrPng = await QRCode.toBuffer(verifyUrl, { margin: 1, width: 512 });
@@ -135,6 +142,7 @@ export async function POST(req: Request) {
     const generatedSeal = await generateSealForS3({
       product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
       certificateId: cert.id,
+      verificationCode,
       tcCode: product.processNumber ?? undefined,
       ratingScore: cert.ratingScore ?? 'PASS',
       ratingLabel: cert.ratingLabel ?? 'PASS',

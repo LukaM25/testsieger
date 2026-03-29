@@ -41,6 +41,15 @@ function normalizeCertificateData(data = {}) {
   const product = data.product || {};
   const certificate = data.certificate || {};
   const user = data.user || product.user || {};
+  const verificationCode =
+    data.licenseCode ||
+    data.license?.licenseCode ||
+    certificate.licenseCode ||
+    data.seal_number ||
+    certificate.seal_number ||
+    data.certificateId ||
+    data.id ||
+    product.id;
 
   const createdAtRaw = data.createdAt ?? product.createdAt ?? certificate.createdAt;
   const createdAt =
@@ -49,8 +58,8 @@ function normalizeCertificateData(data = {}) {
       : createdAtRaw?.toISOString?.() || undefined;
 
   let verifyUrl = data.verify_url || data.verifyUrl;
-  if (!verifyUrl && data.domain && data.certificateId) {
-    verifyUrl = `${data.domain.replace(/\/$/, '')}/lizenzen?q=${encodeURIComponent(data.certificateId)}`;
+  if (!verifyUrl && data.domain && verificationCode) {
+    verifyUrl = `${data.domain.replace(/\/$/, '')}/lizenzen?q=${encodeURIComponent(verificationCode)}`;
   }
 
   const qrUrl = data.qrUrl || data.qrDataUrl || certificate.qrDataUrl || certificate.qrUrl;
@@ -81,6 +90,7 @@ function normalizeCertificateData(data = {}) {
     size: data.size || product.size,
     madeIn: data.madeIn || product.madeIn,
     material: data.material || product.material,
+    licenseCode: verificationCode,
     createdAt,
     status: data.status || product.status || certificate.status,
     seal_number: data.seal_number || certificate.seal_number,

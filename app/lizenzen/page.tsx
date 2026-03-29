@@ -174,6 +174,13 @@ export default async function LizenzenPage({ searchParams }: Props) {
     },
     include: {
       certificate: true,
+      license: {
+        select: {
+          id: true,
+          licenseCode: true,
+          status: true,
+        },
+      },
       user: { select: { company: true } },
     },
     orderBy: { createdAt: 'desc' },
