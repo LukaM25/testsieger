@@ -20,7 +20,7 @@ export default function Expertise() {
     }
     : {
       title: 'Unsere Expertise',
-      block1Title: 'Produkt Tests für Unternehmen',
+      block1Title: 'Einzelprodukttest für Unternehmen',
       block1Annotation: 'Amazon, OTTO, Ebay oder andere Platformen',
       block1Body:
         'Wir prüfen nicht nur – wir vergleichen, hinterfragen und liefern klare Ergebnisse, auf die Einkauf und Produktteams bauen können. Wir machen transparent, was andere verschweigen: Qualität, Sicherheit und Alltagstauglichkeit.',

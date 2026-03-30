@@ -142,7 +142,10 @@ const sectionTitleClass = "text-3xl font-semibold leading-tight tracking-tight t
 const subsectionTitleClass = "text-2xl font-semibold leading-tight tracking-tight text-slate-900 sm:text-3xl";
 const cardTitleClass = "text-lg font-semibold leading-snug text-slate-900 sm:text-xl";
 const pageSubtitleClass = "text-base leading-relaxed text-slate-600 sm:text-lg";
-const carouselImages = ["/carosel/wertung1.jpeg", "/carosel/wertung2.jpeg"];
+const carouselImages = [
+  "/carosel/mole-repeller-solar.jpeg",
+  "/carosel/mole-repeller-akku.jpeg",
+];
 
 // Reuse the full precheck page component here to keep validation and behavior consistent
 
@@ -1064,7 +1067,7 @@ export default function ProduktTestPage() {
                 {tr('Produkt Vorschau', 'Product preview')}
               </p>
               <h2 className="text-2xl font-semibold text-slate-900">
-                {tr('So sehen geprüfte Produkte aus', 'A look at tested products')}
+                {tr('So sehen geprüfte Produkte einer unserer Vertrauenspartner aus - EdenGardens', 'A look at tested products from our trusted partner, EdenGardens.')}
               </h2>
               <p className="text-sm text-slate-600">
                 {tr(

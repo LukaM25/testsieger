@@ -182,7 +182,7 @@ export function buildRatingPdfHtmlV1(opts: {
 
         <div class="footer">
           <div>Dieses Dokument wurde automatisch aus dem Kundenportal generiert.</div>
-          <div>Prüfsiegel Zentrum UG</div>
+          <div>DPI - Deutsches Prüfsiegel Institut</div>
         </div>
       </div>
     </body>
