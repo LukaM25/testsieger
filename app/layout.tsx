@@ -11,7 +11,7 @@ import { normalizeLocale } from "@/lib/i18n";
 export const metadata: Metadata = {
   title: "DPI - Deutsches Prüfsiegel Institut",
   applicationName: "DPI - Deutsches Prüfsiegel Institut",
-  description: "Vertrauen durch Prüfung",
+  description: "Wir stehen für Praxisnahe, transparente Prüfungen im Bereich Produkttest Siegelvergabe und andere Dienstleistungen die exakt das widerspiegeln, was für den Endkunden zählt: Funktion Sicherheit und Qualität im realen Einsatz.",
   icons: {
     icon: "/icon.png",
     shortcut: "/favicon.ico",
