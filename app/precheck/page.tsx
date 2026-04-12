@@ -6,6 +6,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useLocale } from "@/components/LocaleProvider";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePrecheckStatusData, type ProductStatusPayload } from "@/hooks/usePrecheckStatusData";
+import {
+  QUICK_CREATE_CATEGORY_OPTIONS,
+  QUICK_CREATE_MADE_IN_OPTIONS,
+  createEmptyQuickCreateProductForm,
+  findInvalidQuickCreateField,
+  toQuickCreateProductPayload,
+} from "@/lib/quickCreateProductForm";
 
 // --- Types ---
 type TestOption = {
@@ -101,24 +108,6 @@ const plans: Plan[] = [
   },
 ];
 
-const MADE_IN_OPTIONS = [
-  { de: "Deutschland", en: "Germany" },
-  { de: "Österreich", en: "Austria" },
-  { de: "Schweiz", en: "Switzerland" },
-  { de: "Niederlande", en: "Netherlands" },
-  { de: "Polen", en: "Poland" },
-  { de: "Frankreich", en: "France" },
-  { de: "Italien", en: "Italy" },
-  { de: "Spanien", en: "Spain" },
-  { de: "Vereinigtes Königreich", en: "United Kingdom" },
-  { de: "USA", en: "USA" },
-  { de: "China", en: "China" },
-  { de: "Indien", en: "India" },
-  { de: "Vietnam", en: "Vietnam" },
-  { de: "Türkei", en: "Turkey" },
-  { de: "Sonstiges", en: "Other" },
-] as const;
-
 const planThemes = {
   sky: {
     card: "bg-gradient-to-b from-sky-300 via-sky-200 to-sky-50",
@@ -203,18 +192,7 @@ export default function PrecheckPage() {
   const [inlineSubmitMessage, setInlineSubmitMessage] = useState<string | null>(null);
   const [inlineSubmitting, setInlineSubmitting] = useState(false);
   const [agbAccepted, setAgbAccepted] = useState(false);
-  const [inlineProduct, setInlineProduct] = useState({
-    productName: "",
-    brand: "",
-    category: "",
-    code: "",
-    specs: "",
-    sizeLength: "",
-    sizeWidth: "",
-    sizeHeight: "",
-    madeIn: "",
-    material: "",
-  });
+  const [inlineProduct, setInlineProduct] = useState(createEmptyQuickCreateProductForm);
   const heroTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dotsTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const inlinePrecheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -344,6 +322,8 @@ export default function PrecheckPage() {
   };
 
   const openInlinePrecheck = () => {
+    setInlineProduct(createEmptyQuickCreateProductForm());
+    setInlineSubmitMessage(null);
     if (!inlinePrecheckMounted) {
       setInlinePrecheckMounted(true);
       requestAnimationFrame(() => {
@@ -368,37 +348,15 @@ export default function PrecheckPage() {
 
   const handleInlinePrecheckSubmit = async () => {
     setInlineSubmitMessage(null);
-    const requiredFields = [
-      { key: "productName", label: tr("Produktname", "Product name"), min: 2 },
-      { key: "brand", label: tr("Marke", "Brand"), min: 1 },
-      { key: "category", label: tr("Kategorie", "Category"), min: 1 },
-      { key: "code", label: tr("Artikelnummer", "Item code"), min: 2 },
-      { key: "specs", label: tr("Spezifikationen", "Specs"), min: 5 },
-      { key: "sizeLength", label: tr("Länge", "Length"), min: 1 },
-      { key: "sizeWidth", label: tr("Breite", "Width"), min: 1 },
-      { key: "sizeHeight", label: tr("Höhe", "Height"), min: 1 },
-      { key: "madeIn", label: tr("Hergestellt in", "Made in"), min: 2 },
-      { key: "material", label: tr("Material", "Material"), min: 2 },
-    ] as const;
-    for (const field of requiredFields) {
-      const value = (inlineProduct as Record<string, string>)[field.key] || "";
-      if (value.trim().length < field.min) {
-        setInlineSubmitMessage(tr(`Bitte ${field.label} ausfüllen.`, `Please enter ${field.label}.`));
-        return;
-      }
+    const invalidField = findInvalidQuickCreateField(inlineProduct);
+    if (invalidField) {
+      const label = tr(invalidField.label.de, invalidField.label.en);
+      setInlineSubmitMessage(tr(`Bitte ${label} ausfüllen.`, `Please enter ${label}.`));
+      return;
     }
     setInlineSubmitting(true);
     try {
-      const payload = {
-        productName: inlineProduct.productName.trim(),
-        brand: inlineProduct.brand.trim(),
-        category: inlineProduct.category.trim(),
-        code: inlineProduct.code.trim(),
-        specs: inlineProduct.specs.trim(),
-        size: [inlineProduct.sizeLength, inlineProduct.sizeWidth, inlineProduct.sizeHeight].map((value) => value.trim()).join("x"),
-        madeIn: inlineProduct.madeIn.trim(),
-        material: inlineProduct.material.trim(),
-      };
+      const payload = toQuickCreateProductPayload(inlineProduct);
       const res = await fetch("/api/products/quick-create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -428,18 +386,7 @@ export default function PrecheckPage() {
       setSelectedProductId(nextProduct.id);
       setSelectedProductIds((prev) => Array.from(new Set([nextProduct.id, ...prev])));
       setInlineSubmitMessage(tr("Produkt angelegt.", "Product created."));
-      setInlineProduct({
-        productName: "",
-        brand: "",
-        category: "",
-        code: "",
-        specs: "",
-        sizeLength: "",
-        sizeWidth: "",
-        sizeHeight: "",
-        madeIn: "",
-        material: "",
-      });
+      setInlineProduct(createEmptyQuickCreateProductForm());
     } catch {
       setInlineSubmitMessage(tr("Produkt konnte nicht angelegt werden.", "Product could not be created."));
     } finally {
@@ -1139,33 +1086,11 @@ export default function PrecheckPage() {
                                       className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
                                     >
                                       <option value="">{tr("Nichts ausgewählt", "Nothing selected")}</option>
-                                      <option value="Ausbildung">Ausbildung</option>
-                                      <option value="Auto & Motorrad">Auto &amp; Motorrad</option>
-                                      <option value="Baby">Baby</option>
-                                      <option value="Baumarkt">Baumarkt</option>
-                                      <option value="Beleuchtung">Beleuchtung</option>
-                                      <option value="Bücher">Bücher</option>
-                                      <option value="Bürobedarf & Schreibwaren">Bürobedarf &amp; Schreibwaren</option>
-                                      <option value="Computer & Zubehör">Computer &amp; Zubehör</option>
-                                      <option value="DVD & Blu-ray">DVD &amp; Blu-ray</option>
-                                      <option value="Elektro-Großgeräte">Elektro-Großgeräte</option>
-                                      <option value="Elektronik & Foto">Elektronik &amp; Foto</option>
-                                      <option value="Garten">Garten</option>
-                                      <option value="Gewerbe, Industrie & Wissenschaft">Gewerbe, Industrie &amp; Wissenschaft</option>
-                                      <option value="Handgefertigte Produkte">Handgefertigte Produkte</option>
-                                      <option value="Haustierbedarf">Haustierbedarf</option>
-                                      <option value="Kamera & Foto">Kamera &amp; Foto</option>
-                                      <option value="Kosmetik & Pflege">Kosmetik &amp; Pflege</option>
-                                      <option value="Küche, Haushalt & Wohnen">Küche, Haushalt &amp; Wohnen</option>
-                                      <option value="Lebensmittel & Getränke">Lebensmittel &amp; Getränke</option>
-                                      <option value="Mode">Mode</option>
-                                      <option value="Musikinstrumente & DJ-Equipment">Musikinstrumente &amp; DJ-Equipment</option>
-                                      <option value="Software">Software</option>
-                                      <option value="Spiele & Gaming">Spiele &amp; Gaming</option>
-                                      <option value="Spielzeug">Spielzeug</option>
-                                      <option value="Sport & Freizeit">Sport &amp; Freizeit</option>
-                                      <option value="Uhren & Schmuck">Uhren &amp; Schmuck</option>
-                                      <option value="Wohnen">Wohnen</option>
+                                      {QUICK_CREATE_CATEGORY_OPTIONS.map((option) => (
+                                        <option key={option} value={option}>
+                                          {option}
+                                        </option>
+                                      ))}
                                     </select>
                                     <input
                                       className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
@@ -1204,7 +1129,7 @@ export default function PrecheckPage() {
                                         className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
                                       >
                                         <option value="">{tr("Hergestellt in", "Made in")}</option>
-                                        {MADE_IN_OPTIONS.map((option) => {
+                                        {QUICK_CREATE_MADE_IN_OPTIONS.map((option) => {
                                           const label = tr(option.de, option.en);
                                           return (
                                             <option key={option.de} value={label}>

@@ -25,7 +25,8 @@ export default function ImpressumPage() {
         Registereintrag: <br />
         Eintragung im Handelsregister. <br />
         Registergericht: Amtsgericht München <br />
-        Registernummer: HRB 309712
+        Registernummer: HRB 309712 <br />
+        USt-IdNr : DE461330921
       </p>
     </div>
   );

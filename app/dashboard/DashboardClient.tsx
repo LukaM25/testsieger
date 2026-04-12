@@ -8,6 +8,13 @@ import { usePrecheckStatusData, type ProductStatusPayload } from "@/hooks/usePre
 import { PrecheckStatusCard } from "@/components/PrecheckStatusCard";
 import { useProductStatusPoll } from "@/hooks/useProductStatusPoll";
 import { formatLastName } from "@/lib/name";
+import {
+  QUICK_CREATE_CATEGORY_OPTIONS,
+  QUICK_CREATE_MADE_IN_OPTIONS,
+  createEmptyQuickCreateProductForm,
+  findInvalidQuickCreateField,
+  toQuickCreateProductPayload,
+} from "@/lib/quickCreateProductForm";
 
 interface DashboardClientProps {
   user: any;
@@ -338,6 +345,8 @@ const parseAddressParts = (raw: string) => {
 export default function DashboardClient({ user, planBasePriceCents }: DashboardClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const dashboardSearch = searchParams.toString();
+  const nextAfterLogin = encodeURIComponent(`/dashboard${dashboardSearch ? `?${dashboardSearch}` : ""}`);
   const initialStatusProducts = useMemo<ProductStatusPayload[]>(
     () =>
       (user.products || []).map(
@@ -395,6 +404,10 @@ export default function DashboardClient({ user, planBasePriceCents }: DashboardC
   const [showLicenseSuccess, setShowLicenseSuccess] = useState(false);
   const [showBaseFeeSuccess, setShowBaseFeeSuccess] = useState(false);
   const [isTabVisible, setIsTabVisible] = useState(true);
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [newProduct, setNewProduct] = useState(createEmptyQuickCreateProductForm);
+  const [addProductSubmitting, setAddProductSubmitting] = useState(false);
+  const [addProductMessage, setAddProductMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const handleVisibility = () => {
@@ -584,6 +597,38 @@ const handleCancelLicense = async (productId: string) => {
   const [accountSaving, setAccountSaving] = useState(false);
   const [accountDeleting, setAccountDeleting] = useState(false);
   const [accountMessage, setAccountMessage] = useState<string | null>(null);
+
+  const handleAddProductSubmit = async () => {
+    setAddProductMessage(null);
+    const invalidField = findInvalidQuickCreateField(newProduct);
+    if (invalidField) {
+      setAddProductMessage(`Bitte ${invalidField.label.de} ausfüllen.`);
+      return;
+    }
+    setAddProductSubmitting(true);
+    try {
+      const res = await fetch("/api/products/quick-create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(toQuickCreateProductPayload(newProduct)),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        setAddProductMessage("Bitte einloggen, um fortzufahren.");
+        router.push(`/login?next=${nextAfterLogin}`);
+        return;
+      }
+      if (!res.ok || !data?.product) {
+        setAddProductMessage(data?.error || "Produkt konnte nicht angelegt werden.");
+        return;
+      }
+      router.push(`/precheck?productId=${data.product.id}`);
+    } catch {
+      setAddProductMessage("Produkt konnte nicht angelegt werden.");
+    } finally {
+      setAddProductSubmitting(false);
+    }
+  };
 
   const handleReceipt = async (orderId: string) => {
     try {
@@ -1777,12 +1822,122 @@ const handleCancelLicense = async (productId: string) => {
             </div>
             <button
               type="button"
-              onClick={() => router.push("/precheck")}
+              onClick={() => {
+                setNewProduct(createEmptyQuickCreateProductForm());
+                setAddProductMessage(null);
+                setShowAddProduct(true);
+              }}
+              aria-expanded={showAddProduct}
+              aria-controls="dashboard-inline-add-product"
               className="rounded-full border border-emerald-700 bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
             >
               +hinzufügen
             </button>
           </div>
+          {showAddProduct && (
+            <div id="dashboard-inline-add-product" className="mt-4">
+              <fieldset
+                disabled={addProductSubmitting}
+                className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 text-slate-900 shadow-sm"
+              >
+                <div className="grid gap-3 md:grid-cols-2">
+                  <input
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                    placeholder="Produktname"
+                    value={newProduct.productName}
+                    onChange={(e) => setNewProduct((p) => ({ ...p, productName: e.target.value }))}
+                  />
+                  <input
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                    placeholder="Marke"
+                    value={newProduct.brand}
+                    onChange={(e) => setNewProduct((p) => ({ ...p, brand: e.target.value }))}
+                  />
+                  <select
+                    value={newProduct.category}
+                    onChange={(e) => setNewProduct((p) => ({ ...p, category: e.target.value }))}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                  >
+                    <option value="">Nichts ausgewählt</option>
+                    {QUICK_CREATE_CATEGORY_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                    placeholder="Artikelnummer"
+                    value={newProduct.code}
+                    onChange={(e) => setNewProduct((p) => ({ ...p, code: e.target.value }))}
+                  />
+                  <input
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 md:col-span-2"
+                    placeholder="Spezifikationen"
+                    value={newProduct.specs}
+                    onChange={(e) => setNewProduct((p) => ({ ...p, specs: e.target.value }))}
+                  />
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-4 md:col-span-2">
+                    <input
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                      placeholder="Länge"
+                      value={newProduct.sizeLength}
+                      onChange={(e) => setNewProduct((p) => ({ ...p, sizeLength: e.target.value }))}
+                    />
+                    <input
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                      placeholder="Breite"
+                      value={newProduct.sizeWidth}
+                      onChange={(e) => setNewProduct((p) => ({ ...p, sizeWidth: e.target.value }))}
+                    />
+                    <input
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                      placeholder="Höhe"
+                      value={newProduct.sizeHeight}
+                      onChange={(e) => setNewProduct((p) => ({ ...p, sizeHeight: e.target.value }))}
+                    />
+                    <select
+                      value={newProduct.madeIn}
+                      onChange={(e) => setNewProduct((p) => ({ ...p, madeIn: e.target.value }))}
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                    >
+                      <option value="">Hergestellt in</option>
+                      {QUICK_CREATE_MADE_IN_OPTIONS.map((option) => (
+                        <option key={option.de} value={option.de}>
+                          {option.de}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <input
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 md:col-span-2"
+                    placeholder="Material"
+                    value={newProduct.material}
+                    onChange={(e) => setNewProduct((p) => ({ ...p, material: e.target.value }))}
+                  />
+                  <div className="flex flex-wrap items-center gap-3 md:col-span-2">
+                    <button
+                      type="button"
+                      onClick={handleAddProductSubmit}
+                      disabled={addProductSubmitting}
+                      className="rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-black disabled:opacity-60"
+                    >
+                      {addProductSubmitting ? "Wird gesendet…" : "Produkt einreichen"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddProduct(false)}
+                      disabled={addProductSubmitting}
+                      className="rounded-full border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-60"
+                    >
+                      Schließen
+                    </button>
+                    {addProductMessage && <span className="text-sm text-slate-600">{addProductMessage}</span>}
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+          )}
         </section>
 
         {hasActiveReviewInProgress ? (

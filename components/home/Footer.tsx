@@ -117,7 +117,7 @@ export default function Footer() {
                   Telefon <a href="tel:+4915679790129" className="text-gray-300 transition-colors hover:text-white">015679 790129</a>, E-Mail <a href="mailto:info@dpi-siegel.de" className="text-gray-300 transition-colors hover:text-white">info@dpi-siegel.de</a>
                 </p>
                 <p className="mt-2 text-[10px] uppercase tracking-[0.2em] text-gray-500">Registereintrag</p>
-                <p className="mt-1 text-gray-300">Eintragung im Handelsregister, Registergericht Amtsgericht München, Registernummer HRB 309712</p>
+                <p className="mt-1 text-gray-300">Eintragung im Handelsregister, Registergericht Amtsgericht München, Registernummer HRB 309712, USt-IdNr : DE461330921</p>
               </div>
             </div>
           </div>
