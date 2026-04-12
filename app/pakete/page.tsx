@@ -148,7 +148,7 @@ export default function Packages() {
             <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 ring-1 ring-slate-200/70">
               Lizenzpläne Produktsiegel
             </div>
-            <h1 className="text-4xl md:text-5xl font-semibold leading-tight text-slate-900">Zahle erst, wenn dein Produkt bestanden hat.</h1>
+            <h1 className="text-4xl md:text-5xl font-semibold leading-tight text-slate-900">Wäglen Sie erst Ihren Plan, wenn das Produkt bestanden hat.</h1>
             <p className="text-lg text-slate-700 max-w-3xl">
               Wir prüfen dein Produkt im Testsieger Check. Erst nach bestandenem Ergebnis wählst du den passenden Lizenzplan für das Siegel.
             </p>

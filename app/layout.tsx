@@ -38,7 +38,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={locale} className="no-js">
       <head>
-        
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=AW-18054519223"
+          strategy="afterInteractive"
+        />
+        <Script id="google-ads-gtag" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'AW-18054519223');
+          `}
+        </Script>
         <link rel="stylesheet" href="/styles/animations.css" />
       
   <link rel="stylesheet" href="/styles/animations.css" />

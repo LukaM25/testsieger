@@ -682,7 +682,7 @@ export default function ProduktTestPage() {
           <div className="grid items-center gap-12 md:grid-cols-2">
             <div className="space-y-6 text-left">
               <h2 className={sectionTitleClass}>
-                <span>{tr('Spare mehrere Hundert Euro Werbebudget ein.', 'Save hundreds of euros in marketing budget.')}</span>
+                <span>{tr('Sparen Sie mehrere Hundert Euro Werbebudget ein.', 'Save hundreds of euros in marketing budget.')}</span>
                 <span className="ml-3 inline-flex align-middle sm:ml-4">
                   <Image
                     src="/checkmark.png"
@@ -711,21 +711,7 @@ export default function ProduktTestPage() {
         </div>
       </section>
 
-      {/* === HIER EINFUEGEN: grafik.jpeg === */}
-      <section className="mx-auto max-w-5xl px-6 py-16 sm:py-24">
-        <div className="overflow-hidden rounded-[2rem]">
-          <img
-            src="/grafik.jpeg"
-            alt={tr('Grafik', 'Graphic')}
-            className="w-full object-cover"
-            style={{ maxHeight: '460px' }}
-            loading="lazy"
-            decoding="async"
-            fetchPriority="low"
-          />
-        </div>
-      </section>
-      {/* === END INSERT === */}
+      
 
 
       <section className="mx-auto max-w-6xl px-6 pt-6 pb-12 sm:pt-8 sm:pb-14">
