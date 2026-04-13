@@ -6,6 +6,7 @@ import { Plan } from "@prisma/client";
 import { getPublicBaseUrl } from "@/lib/baseUrl";
 
 export const runtime = "nodejs";
+const FIXED_TAX_RATE_ID = process.env.STRIPE_TAX_RATE_19?.trim() || "";
 
 const PLAN_PRICE: Record<string, string> = {
   BASIC: process.env.STRIPE_PRICE_BASIC!,
@@ -91,12 +92,18 @@ export async function POST(req: Request) {
     stripeSession = await stripe.checkout.sessions.create(
       {
         mode: checkoutMode,
-        line_items: [{ price: priceId, quantity: 1 }],
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+            tax_rates: FIXED_TAX_RATE_ID ? [FIXED_TAX_RATE_ID] : undefined,
+          },
+        ],
         customer_email: session.email,
         allow_promotion_codes: true,
-        automatic_tax: { enabled: true },
+        automatic_tax: { enabled: !FIXED_TAX_RATE_ID },
         billing_address_collection: "required",
-        tax_id_collection: { enabled: true },
+        tax_id_collection: { enabled: !FIXED_TAX_RATE_ID },
         client_reference_id: `${session.userId}:${product.id}:${selectedPlan}`,
         metadata: {
           productId: product.id,

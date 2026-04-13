@@ -9,6 +9,7 @@ export const runtime = 'nodejs';
 
 const PRECHECK_BASE_FEE_CENTS = 22_900;
 const PRECHECK_PRIORITY_ADDON_CENTS = 6_000;
+const FIXED_TAX_RATE_ID = process.env.STRIPE_TAX_RATE_19?.trim() || "";
 
 export async function POST(req: Request) {
   const session = await getSession();
@@ -50,6 +51,7 @@ export async function POST(req: Request) {
         tax_behavior: 'exclusive' as const,
         product_data: { name },
       },
+      tax_rates: FIXED_TAX_RATE_ID ? [FIXED_TAX_RATE_ID] : undefined,
       quantity: 1,
     };
   });
@@ -61,6 +63,7 @@ export async function POST(req: Request) {
         tax_behavior: 'exclusive' as const,
         product_data: { name: 'Priority Add-on' },
       },
+      tax_rates: FIXED_TAX_RATE_ID ? [FIXED_TAX_RATE_ID] : undefined,
       quantity: 1,
     });
   }
@@ -72,9 +75,9 @@ export async function POST(req: Request) {
     mode: 'payment',
     customer_email: session.email,
     allow_promotion_codes: true,
-    automatic_tax: { enabled: true },
+    automatic_tax: { enabled: !FIXED_TAX_RATE_ID },
     billing_address_collection: 'required',
-    tax_id_collection: { enabled: true },
+    tax_id_collection: { enabled: !FIXED_TAX_RATE_ID },
     client_reference_id: `${session.userId}:${primaryProduct.id}:${opt === 'priority' ? 'PRECHECK_PRIORITY' : 'PRECHECK_FEE'}`,
     metadata: {
       productId: primaryProduct.id,

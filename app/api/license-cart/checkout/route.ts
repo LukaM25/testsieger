@@ -10,6 +10,7 @@ export const runtime = "nodejs";
 
 const isPaidStatus = (status: string | null | undefined) => status === "PAID" || status === "MANUAL";
 const discountPercentForCount = (count: number) => (count <= 1 ? 0 : count === 2 ? 20 : 30);
+const FIXED_TAX_RATE_ID = process.env.STRIPE_TAX_RATE_19?.trim() || "";
 
 export async function POST() {
   const session = await getSession();
@@ -74,6 +75,7 @@ export async function POST() {
           name: `${planLabel} – ${item.product.name}`,
         },
       },
+      tax_rates: FIXED_TAX_RATE_ID ? [FIXED_TAX_RATE_ID] : undefined,
       quantity: 1,
     };
   });
@@ -83,9 +85,9 @@ export async function POST() {
     mode: "payment",
     customer_email: session.email,
     allow_promotion_codes: true,
-    automatic_tax: { enabled: true },
+    automatic_tax: { enabled: !FIXED_TAX_RATE_ID },
     billing_address_collection: "required",
-    tax_id_collection: { enabled: true },
+    tax_id_collection: { enabled: !FIXED_TAX_RATE_ID },
     client_reference_id: `${session.userId}:license-cart:${cart.id}`,
     metadata: {
       userId: session.userId,
