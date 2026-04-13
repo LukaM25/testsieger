@@ -2,7 +2,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Prüfverfahren – Prüfsiegel Zentrum UG',
   description:
     'Überblick über den standardisierten Prüfprozess vom Erstgespräch über Laboranalysen bis zur Lizenzierung des Prüfsiegels.',
 };

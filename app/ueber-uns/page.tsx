@@ -1,7 +1,6 @@
 import Image from "next/image";
 
 export const metadata = {
-  title: "Über uns – Prüfsiegel Zentrum UG",
   description: "Über das Deutsche Prüfsiegel Institut (DPI) und den Testsieger Check.",
 };
 

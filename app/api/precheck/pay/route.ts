@@ -47,6 +47,7 @@ export async function POST(req: Request) {
       price_data: {
         currency: 'eur',
         unit_amount: unitAmount,
+        tax_behavior: 'exclusive' as const,
         product_data: { name },
       },
       quantity: 1,
@@ -57,6 +58,7 @@ export async function POST(req: Request) {
       price_data: {
         currency: 'eur',
         unit_amount: PRECHECK_PRIORITY_ADDON_CENTS,
+        tax_behavior: 'exclusive' as const,
         product_data: { name: 'Priority Add-on' },
       },
       quantity: 1,
@@ -69,7 +71,10 @@ export async function POST(req: Request) {
   const checkout = await stripe.checkout.sessions.create({
     mode: 'payment',
     customer_email: session.email,
-      allow_promotion_codes: true,
+    allow_promotion_codes: true,
+    automatic_tax: { enabled: true },
+    billing_address_collection: 'required',
+    tax_id_collection: { enabled: true },
     client_reference_id: `${session.userId}:${primaryProduct.id}:${opt === 'priority' ? 'PRECHECK_PRIORITY' : 'PRECHECK_FEE'}`,
     metadata: {
       productId: primaryProduct.id,
@@ -78,9 +83,8 @@ export async function POST(req: Request) {
       plan: opt === 'priority' ? 'PRECHECK_PRIORITY' : 'PRECHECK_FEE',
     },
     line_items: lineItems,
-  success_url: `${baseUrl}/dashboard?baseFeeCheckout=success`,
-cancel_url: `${baseUrl}/dashboard?baseFeeCheckout=cancel`,
-
+    success_url: `${baseUrl}/dashboard?baseFeeCheckout=success`,
+    cancel_url: `${baseUrl}/dashboard?baseFeeCheckout=cancel`,
   });
 
   const orderPlan = opt === 'priority' ? Plan.PRECHECK_PRIORITY : Plan.PRECHECK_FEE;

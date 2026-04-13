@@ -5,7 +5,6 @@ import { stagger } from '@/lib/animation';
 import { normalizeLocale } from '@/lib/i18n';
 
 export const metadata = {
-  title: 'Spielplatz Sicherheit – Prüfsiegel Zentrum UG',
   description:
     'DIN EN 1176/1177 konforme Spielplatzprüfungen – zuverlässig, dokumentiert und auditready.',
 };

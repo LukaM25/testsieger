@@ -4,7 +4,6 @@ import { placeholderProducts } from '@/lib/placeholderContent';
 import { stagger } from '@/lib/animation';
 
 export const metadata = {
-  title: 'Unsere Produkte – Prüfsiegel Zentrum UG',
   description:
     'Überblick über anstehende Prüfsiegel-Produkte mit thematisch passenden Platzhaltern für Inhalte und Assets.',
 };

@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { stagger } from '@/lib/animation';
 
 export const metadata = {
-  title: 'Ausbildung Check – Prüfsiegel Zentrum UG',
   description:
     'Transparente Bewertung von Ausbildungsplätzen: Praxisnähe, Betreuung, Erfolgsquote – objektiv geprüft.',
 };

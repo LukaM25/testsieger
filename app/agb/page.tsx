@@ -1,7 +1,6 @@
 import TranslationNotice from "@/components/TranslationNotice";
 
 export const metadata = {
-  title: "Allgemeine Geschäftsbedingungen – DPI - Deutsches Prüfsiegel Institut GmbH",
   description: "Allgemeine Geschäftsbedingungen der DPI - Deutsches Prüfsiegel Institut GmbH.",
 };
 

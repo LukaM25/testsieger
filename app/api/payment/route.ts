@@ -94,6 +94,9 @@ export async function POST(req: Request) {
         line_items: [{ price: priceId, quantity: 1 }],
         customer_email: session.email,
         allow_promotion_codes: true,
+        automatic_tax: { enabled: true },
+        billing_address_collection: "required",
+        tax_id_collection: { enabled: true },
         client_reference_id: `${session.userId}:${product.id}:${selectedPlan}`,
         metadata: {
           productId: product.id,

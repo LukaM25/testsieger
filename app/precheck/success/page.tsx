@@ -4,7 +4,6 @@ import { getSession } from '@/lib/auth';
 import { LOCALE_COOKIE, normalizeLocale } from '@/lib/i18n';
 
 export const metadata = {
-  title: 'Pre-Check bestanden – Prüfsiegel Zentrum UG',
   description: 'Nächste Schritte nach bestandenem Pre-Check inklusive Testgebühr, Versand und Lizenzplänen.',
 };
 

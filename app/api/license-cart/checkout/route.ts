@@ -69,6 +69,7 @@ export async function POST() {
       price_data: {
         currency: "eur",
         unit_amount: unitAmount,
+        tax_behavior: "exclusive" as const,
         product_data: {
           name: `${planLabel} – ${item.product.name}`,
         },
@@ -82,6 +83,9 @@ export async function POST() {
     mode: "payment",
     customer_email: session.email,
     allow_promotion_codes: true,
+    automatic_tax: { enabled: true },
+    billing_address_collection: "required",
+    tax_id_collection: { enabled: true },
     client_reference_id: `${session.userId}:license-cart:${cart.id}`,
     metadata: {
       userId: session.userId,

@@ -6,7 +6,6 @@ import LizenzenClient from './LizenzenClient';
 import { ensureSignedS3Url } from '@/lib/s3';
 
 export const metadata = {
-  title: 'Lizenzverwaltung & Testergebnisse – Prüfsiegel Zentrum UG',
   description:
     'Lizenzsuche, Lizenzverwaltung und aktuelle Testergebnisse in einem zentralen Bereich.',
 };
