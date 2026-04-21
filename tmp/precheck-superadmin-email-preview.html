@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pre-Check Superadmin Email Preview</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 32px 20px;
+        background:
+          radial-gradient(circle at top left, rgba(148, 163, 184, 0.14), transparent 34%),
+          linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+        color: #0f172a;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .frame {
+        max-width: 920px;
+        margin: 0 auto;
+      }
+
+      .label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 14px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: #dbeafe;
+        color: #1d4ed8;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .subject {
+        margin: 0 0 18px;
+        font-size: 28px;
+        line-height: 1.15;
+      }
+
+      .mail-shell {
+        padding: 18px;
+        border: 1px solid #cbd5e1;
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.65);
+        box-shadow: 0 30px 80px rgba(15, 23, 42, 0.12);
+        backdrop-filter: blur(10px);
+      }
+
+      .mail-card {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 36px 40px;
+        border-radius: 24px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+      }
+
+      .intro {
+        margin: 0 0 20px;
+        font-size: 17px;
+        line-height: 1.7;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 18px 0 24px;
+        font-size: 15px;
+      }
+
+      td {
+        padding: 10px 14px;
+        border: 1px solid #e2e8f0;
+        vertical-align: top;
+      }
+
+      td:first-child {
+        width: 34%;
+        font-weight: 700;
+        background: #f8fafc;
+      }
+
+      .button-row {
+        margin: 18px 0 8px;
+      }
+
+      .button {
+        display: inline-block;
+        padding: 13px 20px;
+        border-radius: 12px;
+        background: #0f172a;
+        color: #ffffff;
+        text-decoration: none;
+        font-weight: 700;
+      }
+
+      .footer {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-top: 28px;
+        padding-top: 18px;
+        border-top: 1px solid #e2e8f0;
+        color: #475569;
+        font-size: 12px;
+      }
+
+      .footer img.logo {
+        width: 140px;
+        height: 40px;
+        object-fit: contain;
+      }
+
+      .footer img.seal {
+        width: 70px;
+        height: 70px;
+        object-fit: contain;
+      }
+
+      .footer a {
+        color: #1d4ed8;
+        text-decoration: none;
+      }
+
+      .meta {
+        margin-top: 18px;
+        color: #64748b;
+        font-size: 12px;
+      }
+
+      @media (max-width: 720px) {
+        body {
+          padding: 20px 12px;
+        }
+
+        .mail-card {
+          padding: 24px 18px;
+        }
+
+        .subject {
+          font-size: 23px;
+        }
+
+        td,
+        td:first-child {
+          display: block;
+          width: 100%;
+        }
+
+        td:first-child {
+          border-bottom: 0;
+        }
+
+        .footer {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="frame">
+      <div class="label">Internal Email Preview</div>
+      <h1 class="subject">Subject: Neuer Pre-Check: Solarleuchte Pro</h1>
+
+      <div class="mail-shell">
+        <div class="mail-card">
+          <p class="intro">Ein neues Produkt wurde für den Pre-Check registriert.</p>
+
+          <table aria-label="Pre-Check Registrierung">
+            <tbody>
+              <tr>
+                <td>Produkt</td>
+                <td>Solarleuchte Pro</td>
+              </tr>
+              <tr>
+                <td>Marke</td>
+                <td>LumenWorks</td>
+              </tr>
+              <tr>
+                <td>Kategorie</td>
+                <td>Garten</td>
+              </tr>
+              <tr>
+                <td>Artikelnummer</td>
+                <td>SKU-42</td>
+              </tr>
+              <tr>
+                <td>Produkt-ID</td>
+                <td>prod_123</td>
+              </tr>
+              <tr>
+                <td>Kunde</td>
+                <td>Anna Meyer</td>
+              </tr>
+              <tr>
+                <td>E-Mail</td>
+                <td>anna@example.com</td>
+              </tr>
+              <tr>
+                <td>Firma</td>
+                <td>Lumen GmbH</td>
+              </tr>
+              <tr>
+                <td>Quelle</td>
+                <td>Precheck-Formular</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="button-row">
+            <a class="button" href="https://dpi-siegel.de/admin">Zum Admin-Dashboard</a>
+          </p>
+
+          <div class="footer">
+            <img class="logo" src="../public/dpilogo-v3.png" alt="DPI Logo" />
+            <img class="seal" src="../public/siegel19.png" alt="Prüfsiegel" />
+            <div>
+              Deutsches Prüfsiegel Institut (DPI)<br />
+              Prüfzentrum – Kundenservice<br />
+              <a href="https://dpi-siegel.de">https://dpi-siegel.de</a>
+            </div>
+          </div>
+
+          <div class="meta">Preview source: `tmp/precheck-superadmin-email-preview.html`</div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

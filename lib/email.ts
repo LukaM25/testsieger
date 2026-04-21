@@ -198,6 +198,91 @@ export async function sendPrecheckConfirmation(opts: {
   });
 }
 
+export async function sendPrecheckRegistrationAlert(opts: {
+  to: string;
+  productId: string;
+  productName: string;
+  brand: string;
+  category?: string | null;
+  code?: string | null;
+  customerName: string;
+  customerEmail: string;
+  customerCompany?: string | null;
+  sourceLabel: string;
+}) {
+  const {
+    to,
+    productId,
+    productName,
+    brand,
+    category,
+    code,
+    customerName,
+    customerEmail,
+    customerCompany,
+    sourceLabel,
+  } = opts;
+  const adminUrl = `${APP_BASE_URL.replace(/\/$/, '')}/admin`;
+  const safeCompany = customerCompany?.trim() ? escapeHtml(customerCompany) : 'Nicht angegeben';
+
+  const html = `
+    <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.65;color:#0f172a">
+      <p>Ein neues Produkt wurde für den Pre-Check registriert.</p>
+      <table style="border-collapse:collapse;margin:16px 0 20px;width:100%;max-width:680px;">
+        <tbody>
+          <tr>
+            <td style="padding:8px 12px;border:1px solid #e2e8f0;font-weight:700;background:#f8fafc;">Produkt</td>
+            <td style="padding:8px 12px;border:1px solid #e2e8f0;">${escapeHtml(productName)}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px;border:1px solid #e2e8f0;font-weight:700;background:#f8fafc;">Marke</td>
+            <td style="padding:8px 12px;border:1px solid #e2e8f0;">${escapeHtml(brand)}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px;border:1px solid #e2e8f0;font-weight:700;background:#f8fafc;">Kategorie</td>
+            <td style="padding:8px 12px;border:1px solid #e2e8f0;">${category?.trim() ? escapeHtml(category) : 'Nicht angegeben'}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px;border:1px solid #e2e8f0;font-weight:700;background:#f8fafc;">Artikelnummer</td>
+            <td style="padding:8px 12px;border:1px solid #e2e8f0;">${code?.trim() ? escapeHtml(code) : 'Nicht angegeben'}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px;border:1px solid #e2e8f0;font-weight:700;background:#f8fafc;">Produkt-ID</td>
+            <td style="padding:8px 12px;border:1px solid #e2e8f0;">${escapeHtml(productId)}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px;border:1px solid #e2e8f0;font-weight:700;background:#f8fafc;">Kunde</td>
+            <td style="padding:8px 12px;border:1px solid #e2e8f0;">${escapeHtml(customerName)}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px;border:1px solid #e2e8f0;font-weight:700;background:#f8fafc;">E-Mail</td>
+            <td style="padding:8px 12px;border:1px solid #e2e8f0;">${escapeHtml(customerEmail)}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px;border:1px solid #e2e8f0;font-weight:700;background:#f8fafc;">Firma</td>
+            <td style="padding:8px 12px;border:1px solid #e2e8f0;">${safeCompany}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px;border:1px solid #e2e8f0;font-weight:700;background:#f8fafc;">Quelle</td>
+            <td style="padding:8px 12px;border:1px solid #e2e8f0;">${escapeHtml(sourceLabel)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="margin:16px 0 8px;">
+        <a href="${adminUrl}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">Zum Admin-Dashboard</a>
+      </p>
+      ${renderFooter()}
+    </div>
+  `;
+
+  await sendEmail({
+    from: `${SENDER_NAME} – Admin <${FROM_EMAIL}>`,
+    to,
+    subject: `Neuer Pre-Check: ${productName}`,
+    html,
+  });
+}
+
 export async function sendCompletionEmail(opts: {
   to: string;
   name: string;

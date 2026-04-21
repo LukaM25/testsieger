@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { sendPrecheckConfirmation } from '@/lib/email';
+import { notifySuperadminsOfPrecheckRegistration } from '@/lib/precheckNotifications';
 
 export const runtime = 'nodejs';
 
@@ -59,15 +60,31 @@ export async function POST(req: Request) {
 
     const user = await prisma.user.findUnique({
       where: { id: session.userId },
-      select: { name: true, email: true, gender: true },
+      select: { name: true, email: true, gender: true, company: true },
     });
     if (user?.email && user?.name) {
-      sendPrecheckConfirmation({
+      void sendPrecheckConfirmation({
         to: user.email,
         name: user.name,
         gender: user.gender ?? undefined,
         productName: product.name,
-      }).catch(() => {});
+      }).catch((error) => {
+        console.error('PRECHECK_CONFIRMATION_EMAIL_FAILED', { productId: product.id, error });
+      });
+
+      void notifySuperadminsOfPrecheckRegistration({
+        productId: product.id,
+        productName: product.name,
+        brand: product.brand,
+        category: product.category,
+        code: product.code,
+        customerName: user.name,
+        customerEmail: user.email,
+        customerCompany: user.company ?? null,
+        sourceLabel: 'Dashboard-Produktanlage',
+      }).catch((error) => {
+        console.error('PRECHECK_SUPERADMIN_NOTIFICATION_ERROR', { productId: product.id, error });
+      });
     }
 
     return NextResponse.json({

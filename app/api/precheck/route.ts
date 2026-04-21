@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import { setSession } from '@/lib/cookies';
 import { sendPrecheckConfirmation } from '@/lib/email';
 import { getSession } from '@/lib/auth';
+import { notifySuperadminsOfPrecheckRegistration } from '@/lib/precheckNotifications';
 
 const PrecheckSchema = z.object({
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']),
@@ -103,12 +104,28 @@ export async function POST(req: Request) {
 
     // 3) Prepare invoice PDF
     // 4) Send confirmation email (fire and forget)
-    sendPrecheckConfirmation({
+    void sendPrecheckConfirmation({
       to: normalizedEmail,
       name: data.name,
       gender: data.gender,
       productName: product.name,
-    }).catch(() => { /* avoid blocking */ });
+    }).catch((error) => {
+      console.error('PRECHECK_CONFIRMATION_EMAIL_FAILED', { productId: product.id, error });
+    });
+
+    void notifySuperadminsOfPrecheckRegistration({
+      productId: product.id,
+      productName: product.name,
+      brand: product.brand,
+      category,
+      code: data.code ?? null,
+      customerName: data.name,
+      customerEmail: normalizedEmail,
+      customerCompany: data.company ?? null,
+      sourceLabel: 'Precheck-Formular',
+    }).catch((error) => {
+      console.error('PRECHECK_SUPERADMIN_NOTIFICATION_ERROR', { productId: product.id, error });
+    });
 
     // 5) Set session & respond with redirect to precheck overview
     await setSession({ userId, email: normalizedEmail });
