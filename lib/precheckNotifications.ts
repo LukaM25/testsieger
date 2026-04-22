@@ -1,6 +1,4 @@
-import { AdminRole } from '@prisma/client';
 import { sendPrecheckRegistrationAlert } from '@/lib/email';
-import { prisma } from '@/lib/prisma';
 
 type NotifySuperadminsOfPrecheckRegistrationInput = {
   productId: string;
@@ -14,38 +12,8 @@ type NotifySuperadminsOfPrecheckRegistrationInput = {
   sourceLabel: string;
 };
 
-function isValidEmail(value: string | undefined | null): value is string {
-  if (!value) return false;
-  const trimmed = value.trim();
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
-}
-
-export function parseSuperadminNotificationEmails(rawValue = '') {
-  return rawValue
-    .split(',')
-    .map((value) => value.trim().toLowerCase())
-    .filter(isValidEmail);
-}
-
 async function getSuperadminNotificationRecipients() {
-  const admins = await prisma.admin.findMany({
-    where: {
-      role: AdminRole.SUPERADMIN,
-      active: true,
-      revokedAt: null,
-    },
-    select: { email: true },
-  });
-
-  const envRecipients = parseSuperadminNotificationEmails(
-    process.env.SUPERADMIN_NOTIFICATION_EMAILS ?? process.env.SUPERADMIN_NOTIFICATION_EMAIL ?? '',
-  );
-
-  return Array.from(
-    new Set(
-      [...admins.map((admin) => admin.email.trim().toLowerCase()), ...envRecipients].filter(isValidEmail),
-    ),
-  );
+  return ['info@dpi-siegel.de'];
 }
 
 export async function notifySuperadminsOfPrecheckRegistration(
