@@ -126,6 +126,7 @@ export async function GET(request: Request) {
                   externalReferenceId: true,
                   ratingScore: true,
                   ratingLabel: true,
+                  snapshotData: true,
                   sealUrl: true,
                 },
               },
@@ -224,6 +225,13 @@ export async function GET(request: Request) {
           product.license?.status === 'ACTIVE';
         const baseFeePlan = baseFeePlanByProductId.get(product.id) ?? null;
         const passEmailSent = passEmailSentByProductId.has(product.id);
+        const ratingV1 = ((product.certificate?.snapshotData as any)?.ratingV1 || {}) as any;
+        const ratingStatus =
+          ratingV1.status === 'FINAL' ? 'FINAL' : ratingV1.status === 'DRAFT' ? 'DRAFT' : null;
+        const ratingDraftUpdatedAt =
+          typeof ratingV1.draftUpdatedAt === 'string' ? ratingV1.draftUpdatedAt : null;
+        const ratingFinalizedAt =
+          typeof ratingV1.finalizedAt === 'string' ? ratingV1.finalizedAt : null;
         if (isViewerOnly) {
           return {
             id: product.id,
@@ -305,6 +313,9 @@ export async function GET(request: Request) {
                 externalReferenceId: product.certificate.externalReferenceId,
                 ratingScore: product.certificate.ratingScore,
                 ratingLabel: product.certificate.ratingLabel,
+                ratingStatus,
+                ratingDraftUpdatedAt,
+                ratingFinalizedAt,
                 sealUrl,
               }
             : null,

@@ -91,6 +91,7 @@ export default function AdminProductRatingPage() {
   const isFinal = data?.status === "FINAL";
 
   const errorMessage = (error?: string) => {
+    if (error === "UNAUTHORIZED") return "Admin-Session abgelaufen. Bitte im Admin-Dashboard erneut einloggen.";
     if (error === "INCOMPLETE_RATING") return "Finalize nicht möglich: Bitte zuerst alle benötigten Abschnitte bewerten.";
     if (error === "LOCKED") return "Prüfergebnis ist gesperrt.";
     return null;

@@ -34,6 +34,9 @@ export type AdminProduct = {
     externalReferenceId?: string | null;
     ratingScore?: string | null;
     ratingLabel?: string | null;
+    ratingStatus?: 'DRAFT' | 'FINAL' | null;
+    ratingDraftUpdatedAt?: string | null;
+    ratingFinalizedAt?: string | null;
     sealUrl?: string | null;
     reportUrl?: string | null;
   } | null;

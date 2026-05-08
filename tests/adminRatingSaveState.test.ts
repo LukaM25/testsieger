@@ -13,6 +13,7 @@ const renderHtmlToPdfBufferMock = vi.fn(async () => Buffer.from('rating-pdf'));
 const saveBufferToS3Mock = vi.fn(async () => undefined);
 
 const prismaMock = {
+  $connect: vi.fn(async () => undefined),
   product: {
     findUnique: vi.fn(async ({ where }: any) => {
       if (where.id !== productId) return null;
@@ -29,6 +30,46 @@ const prismaMock = {
           : null,
       };
     }),
+    findMany: vi.fn(async () => [
+      {
+        id: productRecord.id,
+        name: productRecord.name,
+        brand: 'Example Brand',
+        category: 'Example Category',
+        code: null,
+        specs: null,
+        size: null,
+        madeIn: null,
+        material: null,
+        status: 'PRECHECK',
+        processNumber: productRecord.processNumber,
+        adminProgress: 'PRECHECK',
+        paymentStatus: 'UNPAID',
+        createdAt: new Date('2026-05-08T08:00:00.000Z'),
+        user: { name: 'Example User', gender: null, company: null, email: 'user@example.test', address: null },
+        certificate: {
+          id: certificateRecord.id,
+          pdfUrl: '',
+          reportUrl: null,
+          qrUrl: '',
+          seal_number: 'seal-example',
+          externalReferenceId: null,
+          ratingScore: certificateRecord.ratingScore,
+          ratingLabel: certificateRecord.ratingLabel,
+          snapshotData: certificateRecord.snapshotData,
+          sealUrl: null,
+        },
+        license: null,
+      },
+    ]),
+    count: vi.fn(async () => 1),
+    groupBy: vi.fn(async () => [{ status: 'PRECHECK', _count: { _all: 1 } }]),
+  },
+  order: {
+    findMany: vi.fn(async () => []),
+  },
+  adminAudit: {
+    findMany: vi.fn(async () => []),
   },
   certificate: {
     findUnique: vi.fn(async ({ where }: any) => {
@@ -134,6 +175,15 @@ describe('admin product rating save state', () => {
     expect(reloadJson.status).toBe('DRAFT');
     expect(reloadJson.values.B2).toEqual(draftValues.B2);
     expect(reloadJson.values.B29).toEqual(draftValues.B29);
+
+    const productsModule = await import('../app/api/admin/products/route');
+    const productsResponse = await productsModule.GET(new Request('http://test.local/api/admin/products?signed=0'));
+    const productsJson = await productsResponse.json();
+
+    expect(productsResponse.status).toBe(200);
+    expect(productsJson.products[0].certificate.ratingStatus).toBe('DRAFT');
+    expect(productsJson.products[0].certificate.ratingDraftUpdatedAt).toEqual(expect.any(String));
+    expect(productsJson.products[0].certificate.ratingScore).toBeNull();
 
     const finalValues = Object.fromEntries(
       RATING_CRITERIA_V1.map((criterion) => [criterion.id, { score: 9, note: `Checked ${criterion.id}` }]),

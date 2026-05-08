@@ -604,6 +604,18 @@ function AdminProductRow({
                   {product.certificate.ratingScore} · {product.certificate.ratingLabel}
                 </span>
               )}
+              {product.certificate?.ratingStatus === 'DRAFT' && !product.certificate.ratingScore && (
+                <span
+                  className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-700 ring-1 ring-amber-100"
+                  title={
+                    product.certificate.ratingDraftUpdatedAt
+                      ? `Entwurf gespeichert: ${new Date(product.certificate.ratingDraftUpdatedAt).toLocaleString('de-DE')}`
+                      : undefined
+                  }
+                >
+                  Prüfergebnis: Entwurf
+                </span>
+              )}
               {product.certificate?.seal_number && (
                 <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-700 ring-slate-200">
                   Siegel: {product.certificate.seal_number}

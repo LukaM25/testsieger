@@ -20,7 +20,7 @@ type ProductsResponse = {
 
 type ProductPatch = { id: string } & Partial<Omit<AdminProduct, 'id'>>;
 
-const IDLE_TIMEOUT_MS = 10 * 60 * 1000;
+const IDLE_TIMEOUT_MS = 12 * 60 * 60 * 1000;
 const IDLE_WARN_MS = 60 * 1000;
 
 function mergeProduct(prev: AdminProduct, patch: ProductPatch): AdminProduct {
@@ -81,6 +81,8 @@ export default function AdminPageClient({ initialAdmin }: AdminPageClientProps) 
   const [showSuperControls, setShowSuperControls] = useState(false);
   const [activePreviewId, setActivePreviewId] = useState<string | null>(null);
   const productsAbortRef = useRef<AbortController | null>(null);
+  const didInitialProductsFetchRef = useRef(false);
+  const lastFetchedProductsKeyRef = useRef<string | null>(null);
   const warnTimerRef = useRef<number | null>(null);
   const idleWarningRef = useRef(false);
   const role = adminInfo?.role || 'VIEWER';
@@ -258,13 +260,23 @@ export default function AdminPageClient({ initialAdmin }: AdminPageClientProps) 
   }, [resetIdleTimers]);
 
   useEffect(() => {
-    if (!authed) return;
+    if (!authed) {
+      didInitialProductsFetchRef.current = false;
+      lastFetchedProductsKeyRef.current = null;
+      return;
+    }
+    if (didInitialProductsFetchRef.current) return;
+    didInitialProductsFetchRef.current = true;
+    lastFetchedProductsKeyRef.current = JSON.stringify({ search, statusFilter, paymentFilter });
     fetchProducts({ cursor: null, append: false });
-  }, [authed, fetchProducts]);
+  }, [authed, fetchProducts, paymentFilter, search, statusFilter]);
 
   useEffect(() => {
-    if (!authed) return;
+    if (!authed || !didInitialProductsFetchRef.current) return;
+    const productsKey = JSON.stringify({ search, statusFilter, paymentFilter });
+    if (lastFetchedProductsKeyRef.current === productsKey) return;
     const timer = window.setTimeout(() => {
+      lastFetchedProductsKeyRef.current = productsKey;
       fetchProducts({ cursor: null, append: false });
     }, 250);
     return () => window.clearTimeout(timer);
