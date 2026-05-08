@@ -23,7 +23,10 @@ function getRatingSnapshot(snapshotData: unknown) {
   const rating = (snap.ratingV1 || {}) as any;
   return {
     raw: rating,
+    status: rating.status === 'FINAL' ? 'FINAL' : rating.status === 'DRAFT' ? 'DRAFT' : null,
     lockedAt: typeof rating.lockedAt === 'string' ? (rating.lockedAt as string) : null,
+    draftUpdatedAt: typeof rating.draftUpdatedAt === 'string' ? (rating.draftUpdatedAt as string) : null,
+    finalizedAt: typeof rating.finalizedAt === 'string' ? (rating.finalizedAt as string) : null,
     values: (rating.values || {}) as Record<string, { score?: any; note?: any }>,
     csv: rating.csv as any,
     pdf: rating.pdf as any,
@@ -86,7 +89,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   return NextResponse.json({
     ok: true,
     product: { id: product.id, name: product.name },
+    status: rating.status,
     lockedAt: rating.lockedAt,
+    draftUpdatedAt: rating.draftUpdatedAt,
+    finalizedAt: rating.finalizedAt,
     values: persistedValues,
     computed,
     csv: rating.csv ?? null,
@@ -117,12 +123,71 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (current.lockedAt) return NextResponse.json({ error: 'LOCKED' }, { status: 409 });
 
   const body = await req.json().catch(() => ({}));
+  const mode = body?.mode === 'final' ? 'final' : 'draft';
   const values = toPersistableValues(body?.values);
   const computed = computeRating(values);
 
-  const certificate = product.certificate?.id
-    ? await prisma.certificate.findUnique({ where: { id: product.certificate.id } })
-    : await ensureCertificate(product.id, product.userId);
+  const certificate = await ensureCertificate(product.id, product.userId);
+
+  const nowIso = new Date().toISOString();
+  const prevSnapshot = ((product.certificate?.snapshotData as any) || {}) as any;
+
+  if (mode === 'draft') {
+    const nextSnapshot = {
+      ...prevSnapshot,
+      ratingV1: {
+        ...current.raw,
+        version: 'v1',
+        status: 'DRAFT',
+        values,
+        computed,
+        updatedAt: nowIso,
+        draftUpdatedAt: nowIso,
+        finalizedAt: null,
+        csv: null,
+        pdf: null,
+        lockedAt: null,
+        lockedByAdminId: null,
+        passEmailSentAt: null,
+        licenseReminderSentAt: null,
+        licenseFinalReminderSentAt: null,
+      },
+    };
+
+    await prisma.certificate.update({
+      where: { id: certificate!.id },
+      data: {
+        snapshotData: nextSnapshot as any,
+        ratingScore: null,
+        ratingLabel: null,
+      },
+    });
+
+    await logAdminAudit({
+      adminId: admin.id,
+      action: 'RATING_SHEET_DRAFT_SAVE',
+      entityType: 'Product',
+      entityId: product.id,
+      productId: product.id,
+      payload: { overallScore: computed.overallGrade != null ? computed.overallGrade.toFixed(1) : null, draftUpdatedAt: nowIso },
+    });
+
+    return NextResponse.json({
+      ok: true,
+      status: 'DRAFT',
+      lockedAt: null,
+      draftUpdatedAt: nowIso,
+      finalizedAt: null,
+      values,
+      computed,
+      csv: null,
+      pdf: null,
+    });
+  }
+
+  if (computed.overallGrade == null || !computed.overallCategory) {
+    return NextResponse.json({ error: 'INCOMPLETE_RATING' }, { status: 400 });
+  }
 
   const csvBuffer = buildRatingCsvV1({
     productId: product.id,
@@ -207,15 +272,17 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     },
   });
 
-  const nowIso = new Date().toISOString();
-  const prevSnapshot = ((product.certificate?.snapshotData as any) || {}) as any;
   const nextSnapshot = {
     ...prevSnapshot,
     ratingV1: {
+      ...current.raw,
       version: 'v1',
+      status: 'FINAL',
       values,
       computed,
       updatedAt: nowIso,
+      draftUpdatedAt: current.draftUpdatedAt,
+      finalizedAt: nowIso,
       csv: { key: csvKey, sha256: csvHash, updatedAt: nowIso },
       pdf: { key: pdfKey, sha256: pdfHash, updatedAt: nowIso },
       lockedAt: null,
@@ -250,7 +317,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   return NextResponse.json({
     ok: true,
+    status: 'FINAL',
     lockedAt: null,
+    draftUpdatedAt: current.draftUpdatedAt,
+    finalizedAt: nowIso,
     values,
     computed,
     csv: { key: csvKey, sha256: csvHash, updatedAt: nowIso },

@@ -9,7 +9,10 @@ type ApiResponse = {
   ok?: boolean;
   error?: string;
   product?: { id: string; name: string };
+  status?: "DRAFT" | "FINAL" | null;
   lockedAt?: string | null;
+  draftUpdatedAt?: string | null;
+  finalizedAt?: string | null;
   values?: RatingValues;
   computed?: RatingComputed;
   csv?: { key?: string; sha256?: string; updatedAt?: string } | null;
@@ -37,6 +40,7 @@ export default function AdminProductRatingPage() {
   const [adminAuthed, setAdminAuthed] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [data, setData] = useState<ApiResponse | null>(null);
   const [values, setValues] = useState<RatingValues>({});
@@ -84,6 +88,13 @@ export default function AdminProductRatingPage() {
 
   const lockedAt = data?.lockedAt ?? null;
   const isLocked = Boolean(lockedAt);
+  const isFinal = data?.status === "FINAL";
+
+  const errorMessage = (error?: string) => {
+    if (error === "INCOMPLETE_RATING") return "Finalize nicht möglich: Bitte zuerst alle benötigten Abschnitte bewerten.";
+    if (error === "LOCKED") return "Prüfergebnis ist gesperrt.";
+    return null;
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -92,19 +103,42 @@ export default function AdminProductRatingPage() {
       const res = await fetch(`/api/admin/products/${productId}/rating`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ values }),
+        body: JSON.stringify({ mode: "draft", values }),
       });
       const json = (await res.json().catch(() => ({}))) as ApiResponse;
       if (!res.ok) {
-        setMessage(json.error || "Speichern fehlgeschlagen.");
+        setMessage(errorMessage(json.error) || json.error || "Speichern fehlgeschlagen.");
         return;
       }
       setData((prev) => ({ ...(prev || {}), ...json }));
-      setMessage("Gespeichert. CSV wurde aktualisiert.");
+      setMessage("Gespeichert. Sie können später fortsetzen.");
     } catch {
       setMessage("Speichern fehlgeschlagen.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleFinalize = async () => {
+    setFinalizing(true);
+    setMessage(null);
+    try {
+      const res = await fetch(`/api/admin/products/${productId}/rating`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "final", values }),
+      });
+      const json = (await res.json().catch(() => ({}))) as ApiResponse;
+      if (!res.ok) {
+        setMessage(errorMessage(json.error) || json.error || "Finalize fehlgeschlagen.");
+        return;
+      }
+      setData((prev) => ({ ...(prev || {}), ...json }));
+      setMessage("Finalisiert. CSV und PDF wurden aktualisiert.");
+    } catch {
+      setMessage("Finalize fehlgeschlagen.");
+    } finally {
+      setFinalizing(false);
     }
   };
 
@@ -138,13 +172,24 @@ export default function AdminProductRatingPage() {
             <button
               type="button"
               onClick={handleSave}
-              disabled={loading || saving || isLocked}
+              disabled={loading || saving || finalizing || isLocked}
               className={`rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition ${
-                loading || saving || isLocked ? "bg-slate-200 text-slate-500 cursor-not-allowed" : "bg-slate-900 text-white hover:bg-black"
+                loading || saving || finalizing || isLocked ? "bg-slate-200 text-slate-500 cursor-not-allowed" : "bg-slate-900 text-white hover:bg-black"
               }`}
-              title={isLocked ? `Gesperrt seit ${fmtDate(lockedAt)} (E-Mail #4 gesendet).` : undefined}
+              title={isLocked ? `Gesperrt seit ${fmtDate(lockedAt)} (E-Mail #4 gesendet).` : "Speichert einen Entwurf ohne finale Bewertung."}
             >
               {saving ? "Speichere…" : isLocked ? "Gesperrt" : "Speichern"}
+            </button>
+            <button
+              type="button"
+              onClick={handleFinalize}
+              disabled={loading || saving || finalizing || isLocked}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition ${
+                loading || saving || finalizing || isLocked ? "bg-slate-200 text-slate-500 cursor-not-allowed" : "bg-emerald-700 text-white hover:bg-emerald-800"
+              }`}
+              title={isLocked ? `Gesperrt seit ${fmtDate(lockedAt)} (E-Mail #4 gesendet).` : "Setzt die finale Bewertung und erzeugt CSV/PDF."}
+            >
+              {finalizing ? "Finalisiere…" : isLocked ? "Gesperrt" : "Finalize"}
             </button>
           </div>
         </header>
@@ -155,7 +200,9 @@ export default function AdminProductRatingPage() {
           <div className="grid gap-3 sm:grid-cols-4">
             <div>
               <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Status</div>
-              <div className="mt-1 text-sm font-semibold text-slate-900">{isLocked ? "Gesperrt" : "Bearbeitbar"}</div>
+              <div className="mt-1 text-sm font-semibold text-slate-900">{isLocked ? "Gesperrt" : isFinal ? "Final" : "Entwurf"}</div>
+              <div className="mt-1 text-xs text-slate-600">Entwurf: {fmtDate(data?.draftUpdatedAt || null)}</div>
+              <div className="mt-1 text-xs text-slate-600">Finalisiert: {fmtDate(data?.finalizedAt || null)}</div>
               <div className="mt-1 text-xs text-slate-600">Gesperrt seit: {fmtDate(lockedAt)}</div>
             </div>
             <div>
