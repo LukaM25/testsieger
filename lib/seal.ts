@@ -41,6 +41,10 @@ const INFO_FONT_SIZES = {
 };
 const INFO_TEXT_SCALE_X = 0.81;
 const INFO_VALUE_GAP = 20;
+const INFO_LONG_TEXT_THRESHOLD = 18;
+const INFO_TEXT_QR_GAP = 36;
+const INFO_WRAPPED_BODY_SCALE = 0.54;
+const INFO_WRAPPED_LINE_HEIGHT = 50;
 
 const DEFAULT_TEMPLATE = path.join(process.cwd(), "siegeltemplate.png");
 const DEFAULT_OUTPUT_DIR = path.join(
@@ -85,6 +89,116 @@ function formatTestDate(date: Date) {
 function shorten(input: string | null | undefined, max = 28) {
   if (!input) return "";
   return input.length > max ? `${input.slice(0, max)}...` : input;
+}
+
+function escapeXml(value: string) {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function estimateCondensedTextWidth(text: string, fontSize: number, scaleX: number) {
+  const units = Array.from(text).reduce((total, char) => {
+    if (char === " ") return total + 0.25;
+    if (/[,.;:|/\\-]/.test(char)) return total + 0.2;
+    if (/[ilI1!]/.test(char)) return total + 0.22;
+    if (/[mwMW]/.test(char)) return total + 0.62;
+    if (/[A-ZÄÖÜ]/.test(char)) return total + 0.48;
+    if (/[0-9]/.test(char)) return total + 0.42;
+    return total + 0.4;
+  }, 0);
+
+  return units * fontSize * scaleX;
+}
+
+function truncateTextToWidth(text: string, maxWidth: number, fontSize: number, scaleX: number) {
+  const suffix = "...";
+  if (estimateCondensedTextWidth(text, fontSize, scaleX) <= maxWidth) return text;
+
+  let candidate = text.trim();
+  while (candidate.length > 0) {
+    const next = `${candidate.replace(/\s+$/g, "")}${suffix}`;
+    if (estimateCondensedTextWidth(next, fontSize, scaleX) <= maxWidth) return next;
+    candidate = candidate.slice(0, -1);
+  }
+
+  return suffix;
+}
+
+function splitIntoBalancedTwoLines(
+  text: string,
+  maxWidth: number,
+  fontSize: number,
+  scaleX: number,
+) {
+  const words = text.split(" ");
+  if (words.length < 2) return null;
+
+  let best: { lines: [string, string]; score: number } | null = null;
+
+  for (let index = 1; index < words.length; index += 1) {
+    const first = words.slice(0, index).join(" ");
+    const second = words.slice(index).join(" ");
+    const firstWidth = estimateCondensedTextWidth(first, fontSize, scaleX);
+    const secondWidth = estimateCondensedTextWidth(second, fontSize, scaleX);
+
+    if (firstWidth > maxWidth || secondWidth > maxWidth) continue;
+
+    const score = Math.abs(firstWidth - secondWidth);
+    if (!best || score < best.score) {
+      best = { lines: [first, second], score };
+    }
+  }
+
+  return best?.lines ?? null;
+}
+
+function wrapInfoText(
+  text: string,
+  maxWidth: number,
+  fontSize: number,
+  scaleX: number,
+  forceTwoLines = false,
+) {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (!normalized) return [];
+
+  const fitsSingleLine =
+    normalized.length <= INFO_LONG_TEXT_THRESHOLD &&
+    estimateCondensedTextWidth(normalized, fontSize, scaleX) <= maxWidth;
+
+  if (fitsSingleLine) return [normalized];
+
+  if (forceTwoLines) {
+    const balanced = splitIntoBalancedTwoLines(normalized, maxWidth, fontSize, scaleX);
+    if (balanced) return balanced;
+  }
+
+  const words = normalized.split(" ");
+  const lines: string[] = [];
+  let current = "";
+
+  for (let index = 0; index < words.length; index += 1) {
+    const word = words[index];
+    const candidate = current ? `${current} ${word}` : word;
+    if (estimateCondensedTextWidth(candidate, fontSize, scaleX) <= maxWidth) {
+      current = candidate;
+      continue;
+    }
+
+    if (current) lines.push(current);
+    current = word;
+
+    if (lines.length === 1) {
+      const remaining = [current, ...words.slice(index + 1)].join(" ");
+      lines.push(truncateTextToWidth(remaining, maxWidth, fontSize, scaleX));
+      return lines;
+    }
+  }
+
+  if (current) lines.push(current);
+
+  return lines.slice(0, 2).map((line) =>
+    truncateTextToWidth(line, maxWidth, fontSize, scaleX),
+  );
 }
 
 function makeSvgText({
@@ -134,8 +248,6 @@ function makeSvgText({
     ? `@font-face { font-family: 'DIN Condensed'; src: url('${fontDataUrl}') format('opentype'); }`
     : "";
 
-  const escapeXml = (value: string) =>
-    value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   let textContent = escapeXml(text);
   if (tightenCommaBy > 0 && text.includes(",")) {
     const commaIndex = text.indexOf(",");
@@ -165,6 +277,66 @@ function makeSvgText({
       </text>
     </svg>`
   );
+}
+
+function makeInfoValueTextOverlays({
+  text,
+  x,
+  y,
+  maxWidth,
+  fontSize,
+  fontWeight,
+  color,
+  fontDataUrl,
+  scaleX,
+  width,
+  height,
+}: {
+  text: string;
+  x: number;
+  y: number;
+  maxWidth: number;
+  fontSize: number;
+  fontWeight: number;
+  color: string;
+  fontDataUrl?: string | null;
+  scaleX: number;
+  width: number;
+  height: number;
+}): sharp.OverlayOptions[] {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (!normalized) return [];
+
+  const shouldWrap =
+    normalized.length > INFO_LONG_TEXT_THRESHOLD ||
+    estimateCondensedTextWidth(normalized, fontSize, scaleX) > maxWidth;
+  const forceTwoLines = normalized.length > INFO_LONG_TEXT_THRESHOLD;
+  const effectiveFontSize = shouldWrap
+    ? Math.round(fontSize * INFO_WRAPPED_BODY_SCALE)
+    : fontSize;
+  const lines = shouldWrap
+    ? wrapInfoText(normalized, maxWidth, effectiveFontSize, scaleX, forceTwoLines)
+    : [normalized];
+  const lineHeight = Math.round(
+    effectiveFontSize *
+      (INFO_WRAPPED_LINE_HEIGHT / (INFO_FONT_SIZES.body * INFO_WRAPPED_BODY_SCALE)),
+  );
+  const firstLineY = lines.length === 1 ? y : y - Math.round(lineHeight / 2);
+
+  return lines.map((line, index) => ({
+    input: makeSvgText({
+      text: line,
+      x,
+      y: firstLineY + index * lineHeight,
+      fontSize: effectiveFontSize,
+      fontWeight,
+      color,
+      fontDataUrl,
+      scaleX,
+      width,
+      height,
+    }),
+  }));
 }
 
 export async function generateSealForS3({
@@ -236,6 +408,8 @@ export async function generateSealForS3({
     metaData: Math.round(INFO_FONT_SIZES.metaData * scaleY),
     smallMuted: Math.round(INFO_FONT_SIZES.smallMuted * scaleY),
   };
+  const infoTextMaxWidth = (x: number) =>
+    Math.max(80, COORDS.qr.x - x - Math.round(INFO_TEXT_QR_GAP * scaleX));
 
   const templateBuffer = await sharp(templatePath).ensureAlpha().toBuffer();
   const composites: sharp.OverlayOptions[] = [];
@@ -280,11 +454,12 @@ export async function generateSealForS3({
   });
 
   // --- 2. PRODUCT DETAILS ---
-  composites.push({
-    input: makeSvgText({
-      text: shorten(product.name, 28),
+  composites.push(
+    ...makeInfoValueTextOverlays({
+      text: product.name,
       x: COORDS.productValue.x,
       y: COORDS.productValue.y,
+      maxWidth: infoTextMaxWidth(COORDS.productValue.x),
       fontSize: infoFontSizes.body,
       fontWeight: FONTS.body.weight,
       color: FONTS.body.color,
@@ -293,13 +468,14 @@ export async function generateSealForS3({
       width: canvasWidth,
       height: canvasHeight,
     }),
-  });
+  );
 
-  composites.push({
-    input: makeSvgText({
-      text: product.brand ? shorten(product.brand, 28) : "",
+  composites.push(
+    ...makeInfoValueTextOverlays({
+      text: product.brand || "",
       x: COORDS.brandValue.x,
       y: COORDS.brandValue.y,
+      maxWidth: infoTextMaxWidth(COORDS.brandValue.x),
       fontSize: infoFontSizes.body,
       fontWeight: FONTS.body.weight,
       color: FONTS.body.color,
@@ -308,7 +484,7 @@ export async function generateSealForS3({
       width: canvasWidth,
       height: canvasHeight,
     }),
-  });
+  );
 
   // --- 3. META DATA ---
   const testDate = formatTestDate(licenseDate ?? product.createdAt);
