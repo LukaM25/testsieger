@@ -45,109 +45,7 @@ const licenseSteps = [
   },
 ];
 
-const faq = [
-  {
-    question: { de: 'Was genau wird geprüft?', en: 'What exactly is tested?' },
-    answer: {
-      de: 'Wir prüfen Konsumprodukte anhand klar definierter, transparenter Prüfkriterien nach DPI-Standard.\nJe nach Produktkategorie bewerten wir u. a. Verarbeitung, Funktion, Sicherheit, Praxistauglichkeit und Dokumentation. Die Prüfung erfolgt nachvollziehbar und wird schriftlich dokumentiert.',
-      en: 'We test consumer products against clearly defined, transparent criteria (DPI standard).\nDepending on the product category, we assess workmanship, function, safety, real-world usability, and documentation. The process is traceable and documented in writing.',
-    },
-  },
-  {
-    question: { de: 'Warum gibt es eine jährliche Lizenz?', en: 'Why is there an annual license?' },
-    answer: {
-      de: 'Qualität ist kein einmaliger Zustand. Die Jahreslizenz stellt sicher, dass:\n• das Produkt weiterhin unverändert ist,\n• das Siegel aktuell bleibt,\n• Missbrauch ausgeschlossen wird.\nOhne aktive Lizenz erlischt das Nutzungsrecht am Siegel.',
-      en: 'Quality is not a one-time event. The annual license ensures that:\n• the product remains unchanged,\n• the seal stays current,\n• misuse is prevented.\nWithout an active license, the right to use the seal expires.',
-    },
-  },
-  {
-    question: { de: 'Wie lange dauert die Prüfung?', en: 'How long does the test take?' },
-    answer: {
-      de: 'Nach Eingang des Produkts planen wir für den vollständigen Produkttest inklusive Prüfbericht und Zertifikat 14–21 Tage ein.\nMit unserem Prioritäts-Service kann die Bearbeitungszeit auf 7 Tage reduziert werden.',
-      en: 'After the product arrives, we plan 14–21 days for the full product test including report and certificate.\nWith our priority service, turnaround can be reduced to 7 days.',
-    },
-  },
-  {
-    question: { de: 'Was passiert, wenn ich die Lizenz kündige?', en: 'What happens if I cancel the license?' },
-    answer: {
-      de: 'Nach Kündigung und Ende des Gültigkeitszeitraums:\n• erlischt das Nutzungsrecht am Siegel,\n• muss das Siegel aus allen Kanälen entfernt werden,\n• darf nicht weiter mit der Auszeichnung geworben werden.',
-      en: 'After cancellation and the end of the validity period:\n• the right to use the seal expires,\n• the seal must be removed from all channels,\n• advertising with the award is no longer permitted.',
-    },
-  },
-  {
-    question: { de: 'Was passiert, wenn mein Produkt die Prüfung nicht besteht?', en: 'What if my product does not pass?' },
-    answer: {
-      de: 'Sie erhalten eine klare, sachliche Rückmeldung, welche Punkte nicht erfüllt wurden. Sie können Ihr Produkt anpassen und erneut kostenlos zur Prüfung einreichen.\nEin Siegel wird erst nach bestandener Prüfung vergeben. Die Lizenzgebühren werden erst nach bestandener Prüfung fällig – vorab ist lediglich die Gebühr für den Prüfaufwand zu entrichten.',
-      en: 'You receive clear, factual feedback on which criteria were not met. You can improve your product and resubmit it for testing free of charge.\nA seal is awarded only after passing. License fees are due only after a successful test; upfront, only the testing effort fee applies.',
-    },
-  },
-  {
-    question: { de: 'Was erhalte ich nach bestandener Prüfung?', en: 'What do I receive after passing?' },
-    answer: {
-      de: 'Nach bestandener Prüfung erhalten Sie direkt das Testergebnis und können den passenden Lizenzplan auswählen.\nSie erhalten einen detaillierten Prüfbericht (vollständig für Ihre Unterlagen), zusätzlich wird das Ergebnis unter der zugeordneten Produktkategorie beim Deutschen Prüfsiegel Institut veröffentlicht.\nDarüber hinaus erhalten Sie ein Zertifikat (abrufbar via QR-Code auf dem Siegel) sowie das Siegel als PNG-Datei zur vereinbarten Nutzung auf Verpackung, Website oder Marketingmaterialien.',
-      en: 'After passing, you receive the test result immediately and can choose the appropriate license plan.\nYou get a detailed test report for your records; additionally, the result is published under the assigned product category at the Deutsches Prüfsiegel Institut.\nYou also receive a certificate (accessible via the QR code on the seal) and the seal as a PNG file for the agreed use on packaging, website, or marketing materials.',
-    },
-  },
-];
-
 export const dynamic = 'force-dynamic';
-
-const results = [
-  {
-    product: { de: 'Ausbildung-Check', en: 'Training Check' },
-    category: { de: 'Digitales Lernangebot', en: 'Digital learning offer' },
-    score: '92 / 100',
-    status: { de: 'Zugelassen', en: 'Approved' },
-    summary: {
-      de: 'Hohe Zufriedenheit der Testpersonen, revisionssichere Lernstandsdokumentation sowie DSGVO-konforme Plattform.',
-      en: 'High tester satisfaction, audit-proof learning records, and GDPR-compliant platform.',
-    },
-  },
-  {
-    product: { de: 'SmartHome Komfortpaket', en: 'SmartHome Comfort Package' },
-    category: { de: 'Haustechnik', en: 'Home technology' },
-    score: '85 / 100',
-    status: { de: 'Mit Auflagen', en: 'With conditions' },
-    summary: {
-      de: 'Sehr gute Energieeffizienz. Empfehlung: Nachbesserung der Dokumentation für Firmware-Updates.',
-      en: 'Very good energy efficiency. Recommendation: improve documentation for firmware updates.',
-    },
-  },
-  {
-    product: { de: 'Organic Care Set', en: 'Organic Care Set' },
-    category: { de: 'Körperpflege', en: 'Personal care' },
-    score: '78 / 100',
-    status: { de: 'In Prüfung', en: 'Under review' },
-    summary: {
-      de: 'Sensorische Tests abgeschlossen, Laboranalysen zu Haltbarkeit laufen. Finales Ergebnis ab Q3 erwartet.',
-      en: 'Sensory tests completed, shelf-life lab analyses in progress. Final result expected from Q3.',
-    },
-  },
-];
-
-const badges = [
-  {
-    title: { de: 'Siegel "Gold"', en: 'Seal "Gold"' },
-    description: {
-      de: 'Gesamtwert ≥ 90 Punkte, keinerlei kritische Abweichungen. Nutzungsdauer 24 Monate, jährliches Monitoring obligatorisch.',
-      en: 'Total score ≥ 90 points, no critical deviations. Usage 24 months, annual monitoring required.',
-    },
-  },
-  {
-    title: { de: 'Siegel "Silber"', en: 'Seal "Silver"' },
-    description: {
-      de: 'Gesamtwert ≥ 80 Punkte, ggf. Nebenauflagen. Nutzungsdauer 12 Monate, optionale Re-Audits bei Produktupdates.',
-      en: 'Total score ≥ 80 points, possible minor conditions. Usage 12 months, optional re-audits on product updates.',
-    },
-  },
-  {
-    title: { de: 'In Bewertung', en: 'Under evaluation' },
-    description: {
-      de: 'Der Prüfprozess ist aktiv. Zwischenberichte stehen im Kundenportal zur Verfügung, das Siegel ist noch nicht freigegeben.',
-      en: 'The evaluation is in progress. Interim reports are available in the customer portal; the seal is not yet released.',
-    },
-  },
-];
 
 const managementHighlights = [
   {
@@ -173,15 +71,9 @@ const managementHighlights = [
   },
 ];
 
-type Props = {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-};
-
-export default async function LizenzenPage({ searchParams }: Props) {
+export default async function LizenzenPage() {
   const locale = normalizeLocale((await cookies()).get('lang')?.value || 'de');
   const tr = (de: string, en: string) => (locale === 'en' ? en : de);
-  const rawParams = await searchParams;
-  const productId = Array.isArray(rawParams.productId) ? rawParams.productId[0] : rawParams.productId;
 
   const productsRaw = await prisma.product.findMany({
     where: {
@@ -218,22 +110,6 @@ export default async function LizenzenPage({ searchParams }: Props) {
     )
   );
 
-  const certificateRaw = productId
-    ? await prisma.certificate.findFirst({
-        where: { productId },
-        include: { product: { include: { user: true } } },
-      })
-    : null;
-  const certificate = certificateRaw
-    ? {
-        ...certificateRaw,
-        pdfUrl: await signCertificateAssetUrl(certificateRaw.pdfUrl),
-        reportUrl: await signCertificateAssetUrl(certificateRaw.reportUrl),
-        sealUrl: await signCertificateAssetUrl(certificateRaw.sealUrl),
-      }
-    : null;
-  const hasPdf = Boolean(certificate?.pdfUrl);
-  const hasUploadedReport = Boolean(certificate?.reportUrl);
   const dateFormatter = new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'de-DE', {
     day: '2-digit',
     month: '2-digit',
@@ -430,10 +306,10 @@ export default async function LizenzenPage({ searchParams }: Props) {
                   </article>
                 );
               })}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
       {/* License search */}
       <section className="pb-16 lg:pb-20">
@@ -448,260 +324,6 @@ export default async function LizenzenPage({ searchParams }: Props) {
               </div>
             </div>
             <LizenzenClient products={products} />
-          </div>
-        </div>
-      </section>
-
-      {/* Workflow + Assets */}
-      <section className="pb-16 lg:pb-20">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="grid gap-8 lg:grid-cols-[1.05fr,0.95fr]">
-            <div className="rounded-3xl border border-gray-100 bg-[#F0F6FA] p-7 shadow-lg animate-fade-in-up" data-animate="section">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-brand-primary">{tr('Workflow', 'Workflow')}</p>
-                  <h2 className="text-xl font-semibold text-brand-dark">{tr('So steuern Sie Lizenzen', 'How you manage licenses')}</h2>
-                  <p className="mt-2 text-sm text-gray-600">
-                    {tr('Von der Ausgabe bis zur Archivierung: klar strukturierte Schritte mit Monitoring.', 'From issuance to archiving: clear steps with monitoring.')}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-6 space-y-4">
-                {licenseSteps.map((step, index) => (
-                  <div key={step.title} className="flex gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-primary/10 text-sm font-bold text-brand-primary">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-semibold text-brand-dark">{step.title}</h3>
-                      <p className="mt-1 text-sm text-gray-600 leading-relaxed">{step.detail}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="rounded-3xl border border-gray-100 bg-white p-7 shadow-lg animate-fade-in-up" data-animate="section">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-brand-primary">{tr('Assets & Berichte', 'Assets & reports')}</p>
-              <h3 className="mt-2 text-xl font-semibold text-brand-dark">{tr('Siegel, PDFs und Audit-Trail', 'Seals, PDFs, and audit trail')}</h3>
-              <p className="mt-2 text-sm text-gray-600">
-                {tr('Alle Zertifikate, Siegelgrafiken und Ansprechpartner liegen gebündelt – inkl. Historie und Einsatzorten.', 'All certificates, seal artwork, and contacts in one place – including history and usage locations.')}
-              </p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-gray-100 bg-[#F0F6FA] p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-primary">{tr('Siegel-Assets', 'Seal assets')}</p>
-                  <p className="mt-2 text-sm text-gray-700">{tr('PNG, SVG und PDF-Reports direkt aus dem Portal herunterladen.', 'Download PNG, SVG, and PDF reports directly from the portal.')}</p>
-                </div>
-                <div className="rounded-2xl border border-gray-100 bg-[#F0F6FA] p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-primary">{tr('Audit-Trail', 'Audit trail')}</p>
-                  <p className="mt-2 text-sm text-gray-700">{tr('Änderungen an Status, Laufzeiten und Einsatzorten werden protokolliert.', 'Changes to status, runtimes, and usage locations are logged.')}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Product verification */}
-      {productId ? (
-        <section className="mx-auto max-w-6xl px-6 pb-10 pt-4">
-          {certificate ? (
-            <div className="rounded-3xl border border-gray-100 bg-white p-9 shadow-lg">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-brand-primary">
-                    {tr('Verifikation für Produkt-ID', 'Verification for product ID')} {productId}
-                  </p>
-                  <h3 className="mt-2 text-xl font-semibold text-brand-dark">
-                    {tr('Siegelnummer', 'Seal number')}: <span className="font-mono text-base text-gray-600">{certificate.seal_number}</span>
-                  </h3>
-                </div>
-                <span className="inline-flex items-center gap-2 rounded-full bg-brand-primary/10 px-4 py-2 text-xs font-semibold text-brand-primary">
-                  <span className="h-2 w-2 rounded-full bg-brand-primary" />
-                  {tr('Gültig & geprüft', 'Valid & verified')}
-                </span>
-              </div>
-              <div className="mt-6 grid gap-6 md:grid-cols-3">
-                <div className="space-y-2 rounded-2xl border border-gray-100 bg-[#F0F6FA] p-5">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-brand-primary">{tr('Produkt', 'Product')}</p>
-                  <p className="text-lg font-semibold text-brand-dark">{certificate.product.name}</p>
-                  <p className="text-sm text-gray-600">{certificate.product.brand}</p>
-                </div>
-                <div className="space-y-2 rounded-2xl border border-gray-100 bg-[#F0F6FA] p-5">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-brand-primary">{tr('Kunde', 'Customer')}</p>
-                  <p className="text-sm text-gray-700">{certificate.product.user?.name}</p>
-                  {certificate.product.user?.company && (
-                    <p className="text-sm text-gray-700">{certificate.product.user.company}</p>
-                  )}
-                  <p className="text-xs text-gray-500">{certificate.product.user?.email}</p>
-                </div>
-                <div className="space-y-2 rounded-2xl border border-gray-100 bg-[#F0F6FA] p-5">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-brand-primary">{tr('Aktionen', 'Actions')}</p>
-                  <div className="flex flex-col gap-2">
-                    {hasPdf ? (
-                      <Link
-                        href={`/api/certificates/${certificate.productId}/download`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-dark"
-                      >
-                        {tr('Prüfbericht herunterladen', 'Download report')}
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                      </Link>
-                    ) : (
-                      <button type="button" disabled className="inline-flex items-center gap-2 rounded-lg bg-gray-200 px-4 py-2 text-xs font-semibold text-gray-500 shadow-sm cursor-not-allowed">
-                        {tr('Prüfbericht noch nicht verfügbar', 'Report not available yet')}
-                      </button>
-                    )}
-                    {hasUploadedReport ? (
-                      <Link
-                        href={certificate.reportUrl || '#'}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-700"
-                      >
-                        {tr('Zusätzlicher Prüfbericht (Upload)', 'Additional report (upload)')}
-                      </Link>
-                    ) : (
-                      <button type="button" disabled className="inline-flex items-center gap-2 rounded-lg bg-gray-200 px-4 py-2 text-xs font-semibold text-gray-500 shadow-sm cursor-not-allowed">
-                        {tr('Zusätzlicher Prüfbericht fehlt', 'Additional report not available')}
-                      </button>
-                    )}
-                    <Link
-                      href={`/verify/${certificate.seal_number}`}
-                      className="inline-flex items-center gap-2 rounded-lg border border-brand-primary/30 px-4 py-2 text-xs font-semibold text-brand-dark transition hover:-translate-y-0.5 hover:border-brand-primary hover:text-brand-primary"
-                    >
-                      {tr('Detail-Verifikation', 'Detailed verification')}
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-3xl border border-orange-200 bg-orange-50 p-6 text-sm text-orange-900 shadow-sm">
-              <p>
-                {tr('Keine gültige Prüfung für Produkt-ID', 'No valid test for product ID')} {productId}{' '}
-                {tr('gefunden. Bitte überprüfen Sie die Siegelnummer oder wenden Sie sich an unseren Support.', 'found. Please check the seal number or contact our support.')}
-              </p>
-            </div>
-          )}
-        </section>
-      ) : null}
-
-      {/* Test results */}
-      <section className="border-t border-b border-gray-100 bg-white">
-        <div className="mx-auto max-w-6xl px-6 pb-16 pt-16 lg:pt-20">
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
-            <div className="max-w-3xl space-y-2">
-              <h2 className="text-3xl font-bold text-brand-dark sm:text-4xl">
-                {tr('Aktuelle Testergebnisse', 'Current test results')}
-              </h2>
-              <p className="text-lg text-gray-600">
-                {tr(
-                  'Diese Übersicht dient als Placeholder für echte Prüfberichte. Struktur, Bewertungsskala und Call-to-Actions sind bereits so angelegt, dass finale Inhalte ohne Designänderungen übernommen werden können.',
-                  'This overview serves as a placeholder for real test reports. Structure, scoring, and CTAs are set so final content can be inserted without design changes.'
-                )}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                href="/kontakt"
-                className="inline-flex items-center gap-2 rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-white shadow-md shadow-brand-primary/15 transition hover:-translate-y-0.5 hover:bg-brand-dark"
-              >
-                {tr('Prüfbericht anfordern', 'Request test report')}
-              </Link>
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-brand-dark shadow-sm transition hover:-translate-y-0.5 hover:border-brand-primary hover:text-brand-primary"
-              >
-                {tr('Kundenportal öffnen', 'Open customer portal')}
-              </Link>
-            </div>
-          </div>
-
-          <div className="mt-10 overflow-hidden rounded-3xl border border-gray-100 bg-[#F0F6FA] shadow-inner">
-            <div className="grid grid-cols-1 divide-y divide-gray-100 md:divide-y-0 md:divide-x md:grid-cols-3">
-              {results.map((entry) => (
-                <div key={entry.product.de} className="p-7">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.28em] text-brand-primary">{tr(entry.category.de, entry.category.en)}</p>
-                      <h3 className="mt-2 text-lg font-semibold text-brand-dark">{tr(entry.product.de, entry.product.en)}</h3>
-                    </div>
-                    <span className="inline-flex items-center rounded-full bg-brand-primary/10 px-3 py-1 text-[11px] font-semibold text-brand-primary">
-                      {tr(entry.status.de, entry.status.en)}
-                    </span>
-                  </div>
-                  <p className="mt-3 text-sm text-gray-600">{tr(entry.summary.de, entry.summary.en)}</p>
-                  <div className="mt-4 text-sm font-semibold text-brand-dark">
-                    {tr('Bewertung', 'Score')}: <span className="text-lg">{entry.score}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Seal levels */}
-      <section className="bg-[#F0F6FA]">
-        <div className="mx-auto max-w-6xl px-6 py-16 lg:py-20">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-2xl space-y-3">
-              <h3 className="text-2xl font-semibold text-brand-dark">{tr('Siegelstufen', 'Seal levels')}</h3>
-              <p className="max-w-3xl text-sm text-gray-600">
-                {tr(
-                  'Die finale Ausprägung des Prüfsiegels orientiert sich an der erreichten Punktzahl. Diese Platzhalterbeschreibungen lassen sich durch echte Vergabekriterien ersetzen.',
-                  'The final seal tier depends on the achieved score. These placeholder descriptions can be replaced with the real award criteria.'
-                )}
-              </p>
-            </div>
-          </div>
-          <div className="mt-8 grid gap-6 md:grid-cols-3">
-            {badges.map((badge) => (
-              <div key={badge.title.de} className="relative overflow-hidden rounded-3xl border border-gray-100 bg-white p-6 shadow-md">
-                <div className="absolute right-4 top-4 h-10 w-10 rounded-full bg-brand-primary/10" />
-                <div className="text-sm font-semibold uppercase tracking-[0.3em] text-brand-primary">{tr('Stufe', 'Level')}</div>
-                <h4 className="mt-2 text-xl font-semibold text-brand-dark">{tr(badge.title.de, badge.title.en)}</h4>
-                <p className="mt-3 text-sm leading-relaxed text-gray-600">{tr(badge.description.de, badge.description.en)}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="bg-white">
-        <div className="mx-auto max-w-6xl px-6 pb-16 pt-12 lg:pt-14">
-          <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-lg">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h2 className="text-2xl font-semibold text-brand-dark">{tr('Fragen & Antworten', 'Questions & answers')}</h2>
-                <p className="text-sm text-gray-600">{tr('Kurz erklärt, wie der Lizenzcheck funktioniert.', 'Short answers on how license checks work.')}</p>
-              </div>
-            </div>
-            <div className="mt-8 grid gap-7 md:grid-cols-2">
-              {faq.map((item) => (
-                <details key={item.question.de} className="group rounded-2xl border border-gray-100 bg-[#F0F6FA]">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-6 [&::-webkit-details-marker]:hidden">
-                    <h3 className="text-lg font-semibold text-brand-dark">
-                      {tr(item.question.de, item.question.en)}
-                    </h3>
-                    <span className="text-slate-400 transition group-open:rotate-180">
-                      <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M5 8l5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </span>
-                  </summary>
-                  <div className="px-6 pb-6">
-                    <p className="whitespace-pre-line text-sm text-gray-600">
-                      {tr(item.answer.de, item.answer.en)}
-                    </p>
-                  </div>
-                </details>
-              ))}
-            </div>
           </div>
         </div>
       </section>
