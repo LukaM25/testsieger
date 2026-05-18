@@ -3,7 +3,24 @@ import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { normalizeLocale } from '@/lib/i18n';
 import LizenzenClient from './LizenzenClient';
-import { ensureSignedS3Url } from '@/lib/s3';
+import { ensureSignedS3Url, signedS3Url } from '@/lib/s3';
+
+async function signCertificateAssetUrl(url?: string | null) {
+  if (!url) return null;
+  if (url.startsWith('/')) return url;
+  if (/^https?:\/\//i.test(url)) return ensureSignedS3Url(url);
+
+  try {
+    if (url.startsWith('s3://')) {
+      const parsed = new URL(url);
+      return signedS3Url(parsed.pathname.replace(/^\//, ''));
+    }
+
+    return signedS3Url(url);
+  } catch {
+    return url;
+  }
+}
 
 export const metadata = {
   description:
@@ -192,8 +209,9 @@ export default async function LizenzenPage({ searchParams }: Props) {
             ...product,
             certificate: {
               ...product.certificate,
-              pdfUrl: await ensureSignedS3Url(product.certificate.pdfUrl),
-              reportUrl: await ensureSignedS3Url(product.certificate.reportUrl),
+              pdfUrl: await signCertificateAssetUrl(product.certificate.pdfUrl),
+              reportUrl: await signCertificateAssetUrl(product.certificate.reportUrl),
+              sealUrl: await signCertificateAssetUrl(product.certificate.sealUrl),
             },
           }
         : product
@@ -209,12 +227,26 @@ export default async function LizenzenPage({ searchParams }: Props) {
   const certificate = certificateRaw
     ? {
         ...certificateRaw,
-        pdfUrl: await ensureSignedS3Url(certificateRaw.pdfUrl),
-        reportUrl: await ensureSignedS3Url(certificateRaw.reportUrl),
+        pdfUrl: await signCertificateAssetUrl(certificateRaw.pdfUrl),
+        reportUrl: await signCertificateAssetUrl(certificateRaw.reportUrl),
+        sealUrl: await signCertificateAssetUrl(certificateRaw.sealUrl),
       }
     : null;
   const hasPdf = Boolean(certificate?.pdfUrl);
   const hasUploadedReport = Boolean(certificate?.reportUrl);
+  const dateFormatter = new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+  const recentTestedProducts = products
+    .filter((product) => product.certificate)
+    .sort(
+      (a, b) =>
+        new Date(b.certificate?.createdAt ?? b.createdAt).getTime() -
+        new Date(a.certificate?.createdAt ?? a.createdAt).getTime()
+    )
+    .slice(0, 3);
 
   return (
     <div className="bg-white text-brand-text">
@@ -304,8 +336,107 @@ export default async function LizenzenPage({ searchParams }: Props) {
         </div>
       </section>
 
+      {/* Latest tested products */}
+      <section className="-mt-10 pb-10 lg:pb-12">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="rounded-3xl border border-gray-100 bg-white p-7 shadow-xl shadow-brand-dark/5 animate-fade-in-up" data-animate="section">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-brand-primary">{tr('Live-Übersicht', 'Live overview')}</p>
+                <h2 className="mt-2 text-2xl font-semibold text-brand-dark">{tr('Zuletzt geprüfte Produkte', 'Recently tested products')}</h2>
+                <p className="mt-2 text-sm text-gray-600">
+                  {tr(
+                    'Neue Prüfungen mit freigegebenem Prüfbericht und nutzbarem Siegel auf einen Blick.',
+                    'New tests with released reports and usable seals at a glance.'
+                  )}
+                </p>
+              </div>
+              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                {tr('Live aktualisiert', 'Updated live')}
+              </span>
+            </div>
+
+            <div className="mt-6 grid gap-4 lg:grid-cols-3">
+              {recentTestedProducts.map((product) => {
+                const certificateCreatedAt = product.certificate?.createdAt ?? product.createdAt;
+                const reportHref = product.certificate?.pdfUrl ? `/api/certificates/${product.id}/download` : null;
+                const sealHref = product.certificate?.sealUrl || null;
+
+                return (
+                  <article key={product.id} className="flex min-h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-[#F0F6FA] shadow-sm">
+                    <div className="flex items-start gap-4 p-4">
+                      <div className="flex h-24 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white bg-white">
+                        {sealHref ? (
+                          <img src={sealHref} alt="" className="h-full w-full object-contain p-2" />
+                        ) : (
+                          <span className="px-2 text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-400">
+                            {tr('Siegel folgt', 'Seal pending')}
+                          </span>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-brand-primary">
+                            {product.license?.status === 'ACTIVE' ? tr('Aktive Lizenz', 'Active license') : tr('Geprüft', 'Tested')}
+                          </span>
+                          <span className="text-xs text-gray-500">{dateFormatter.format(new Date(certificateCreatedAt))}</span>
+                        </div>
+                        <h3 className="mt-3 text-base font-semibold leading-snug text-brand-dark">{product.name}</h3>
+                        <p className="mt-1 text-sm text-gray-600">{product.brand}</p>
+                        {product.category && <p className="mt-2 text-xs font-medium text-gray-500">{product.category}</p>}
+                      </div>
+                    </div>
+                    <div className="mt-auto border-t border-white/80 bg-white/80 p-4">
+                      <div className="flex flex-wrap gap-2">
+                        {reportHref ? (
+                          <Link
+                            href={reportHref}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center justify-center rounded-lg bg-brand-primary px-3 py-2 text-xs font-semibold text-white transition hover:-translate-y-0.5 hover:bg-brand-dark"
+                          >
+                            {tr('Prüfbericht', 'Report')}
+                          </Link>
+                        ) : (
+                          <button type="button" disabled className="inline-flex cursor-not-allowed items-center justify-center rounded-lg bg-gray-200 px-3 py-2 text-xs font-semibold text-gray-500">
+                            {tr('Prüfbericht folgt', 'Report pending')}
+                          </button>
+                        )}
+                        {sealHref ? (
+                          <Link
+                            href={sealHref}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center justify-center rounded-lg border border-brand-primary/30 bg-white px-3 py-2 text-xs font-semibold text-brand-dark transition hover:-translate-y-0.5 hover:border-brand-primary hover:text-brand-primary"
+                          >
+                            {tr('Siegel öffnen', 'Open seal')}
+                          </Link>
+                        ) : (
+                          <button type="button" disabled className="inline-flex cursor-not-allowed items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-400">
+                            {tr('Siegel folgt', 'Seal pending')}
+                          </button>
+                        )}
+                        {product.certificate?.seal_number && (
+                          <Link
+                            href={`/verify/${product.certificate.seal_number}`}
+                            className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 transition hover:-translate-y-0.5 hover:border-brand-primary hover:text-brand-primary"
+                          >
+                            {tr('Verifizieren', 'Verify')}
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* License search */}
-      <section className="-mt-10 pb-16 lg:pb-20">
+      <section className="pb-16 lg:pb-20">
         <div className="mx-auto max-w-6xl px-6">
           <div className="rounded-3xl border border-gray-100 bg-white p-7 shadow-xl shadow-brand-dark/5 animate-fade-in-up" data-animate="section">
             <div className="flex items-center justify-between pb-4">
