@@ -7,23 +7,19 @@ type Logo = { src: string; alt: string; size?: 'large' | 'larger' };
 const logos: Logo[] = [
   { src: '/images/logos/Edengardenslogo.png', alt: 'Eden Gardens logo', size: 'large' },
   { src: '/images/logos/mypawslogo.png', alt: 'My Paws logo', size: 'larger' },
-  { src: '/images/logos/row-1-column-1.png', alt: 'Partner logo 1' },
-  { src: '/images/logos/row-1-column-2.png', alt: 'Partner logo 2' },
-  { src: '/images/logos/row-1-column-3.png', alt: 'Partner logo 3' },
-  { src: '/images/logos/row-2-column-1.png', alt: 'Partner logo 4' },
-  { src: '/images/logos/row-2-column-2.png', alt: 'Partner logo 5' },
-  { src: '/images/logos/row-3-column-3.png', alt: 'Partner logo 6' },
+  { src: '/images/logos/KEFIRKO LOGO GREEN TRANSPARENT.PNG', alt: 'Kefirko logo', size: 'large' },
+  { src: '/images/logos/Bild von 31.05.26, 17.42.png', alt: 'Partner logo', size: 'large' },
 ];
 
 export default function Logos() {
-  const loopedLogos = [...logos, ...logos];
+  const loopedLogos = Array.from({ length: 6 }, () => logos).flat();
 
   return (
     <section data-animate="section" className="bg-white">
       <div className="flex justify-center">
         <div className="inline-flex flex-col items-center px-4 py-6 gap-6 w-full overflow-hidden">
           <div className="text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-text">
+            <p className="text-[0.9375rem] font-semibold uppercase tracking-[0.2em] text-brand-text">
               Vertrauenspartner
             </p>
           </div>
@@ -55,7 +51,7 @@ export default function Logos() {
           100% { transform: translateX(-50%); }
         }
         .animate-logo-marquee {
-          width: 200%;
+          width: max-content;
           animation: logo-marquee 30s linear infinite;
         }
         @media (prefers-reduced-motion: reduce) {
