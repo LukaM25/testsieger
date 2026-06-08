@@ -9,18 +9,20 @@ import { cookies } from "next/headers";
 import { normalizeLocale } from "@/lib/i18n";
 
 const GOOGLE_TAG_MANAGER_ID = "GTM-5Z5ZT5B6";
+const SITE_DESCRIPTION =
+  "Deutsches Prüfsiegel Institut (DPI): Testsieger-Check – mit unserem Qualitätssiegel wird Qualität sichtbar. Praxisnahe Produkttests & Ausbildungs-Check";
 
 export const metadata: Metadata = {
   title: "DPI - Deutsches Prüfsiegel Institut",
   applicationName: "DPI - Deutsches Prüfsiegel Institut",
-  description: "Wir stehen für Praxisnahe, transparente Prüfungen im Bereich Produkttest Siegelvergabe und andere Dienstleistungen die exakt das widerspiegeln, was für den Endkunden zählt: Funktion Sicherheit und Qualität im realen Einsatz.",
+  description: SITE_DESCRIPTION,
   icons: {
     icon: "/icon.png",
     shortcut: "/favicon.ico",
   },
   openGraph: {
     title: "DPI - Deutsches Prüfsiegel Institut",
-    description: "Vertrauen durch Prüfung",
+    description: SITE_DESCRIPTION,
     url: "https://dpi-siegel.de",
     siteName: "Deutsches Prüfsiegel Institut",
     images: [
