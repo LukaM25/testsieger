@@ -31,7 +31,7 @@ export default function Logos() {
                   src={l.src}
                   alt={l.alt}
                   width={220}
-                  height={80}
+                  height={60}
                   className={`h-16 w-auto flex-shrink-0 ${
                     l.size === 'larger'
                       ? 'scale-[1.265]'
