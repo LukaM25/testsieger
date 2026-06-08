@@ -17,13 +17,13 @@ export default function Logos() {
   return (
     <section data-animate="section" className="bg-white">
       <div className="flex justify-center">
-        <div className="inline-flex flex-col items-center px-4 py-6 gap-6 w-full overflow-hidden">
+        <div className="inline-flex flex-col items-center px-4 py-6 gap-10 w-full overflow-hidden">
           <div className="text-center">
             <p className="text-[0.9375rem] font-semibold uppercase tracking-[0.2em] text-brand-text">
               Vertrauenspartner
             </p>
           </div>
-          <div className="relative w-full overflow-hidden">
+          <div className="relative w-full overflow-hidden py-5">
             <div className="flex items-center gap-12 opacity-80 animate-logo-marquee">
               {loopedLogos.map((l, idx) => (
                 <Image
