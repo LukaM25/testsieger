@@ -24,6 +24,19 @@ type Plan = {
   footer: { de: string[]; en: string[] };
 };
 
+export type LiveTestedProduct = {
+  id: string;
+  name: string;
+  brand: string;
+  category: string | null;
+  certificateCreatedAt: string;
+  licenseStatus: string | null;
+  reportUrl: string | null;
+  certificateUrl: string | null;
+  sealUrl: string | null;
+  sealNumber: string | null;
+};
+
 const steps: StepCard[] = [
   { src: "/images/ablauf/1free.PNG", label: { de: "Kostenloser Pre-Check", en: "Free pre-check" } },
   { src: "/images/ablauf/3liefer.PNG", label: { de: "Produkt an uns senden", en: "Send product to us" } },
@@ -213,7 +226,163 @@ const phasesQa = {
   ],
 };
 
-export default function ProduktTestPage() {
+function LiveTestedProductsOverview({
+  products,
+  tr,
+  locale,
+}: {
+  products: LiveTestedProduct[];
+  tr: (de: string, en: string) => string;
+  locale: string;
+}) {
+  const dateFormatter = new Intl.DateTimeFormat(locale === "en" ? "en-US" : "de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
+  return (
+    <section className="-mt-2 pb-10 lg:pb-12">
+      <div className="mx-auto max-w-6xl px-6">
+        <div
+          className="rounded-3xl border border-gray-100 bg-white p-7 shadow-xl shadow-brand-dark/5 animate-fade-in-up"
+          data-animate="section"
+        >
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-brand-primary">
+                {tr("Live-Übersicht", "Live overview")}
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold text-brand-dark">
+                {tr("Zuletzt geprüfte Produkte", "Recently tested products")}
+              </h2>
+              <p className="mt-2 text-sm text-gray-600">
+                {tr(
+                  "Neue Prüfungen mit freigegebenem Prüfbericht und nutzbarem Siegel auf einen Blick.",
+                  "New tests with released reports and usable seals at a glance."
+                )}
+              </p>
+            </div>
+            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              {tr("Live aktualisiert", "Updated live")}
+            </span>
+          </div>
+
+          <div className="mt-6 grid gap-4 lg:grid-cols-3">
+            {products.map((product) => (
+              <article
+                key={product.id}
+                className="flex min-h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-[#F0F6FA] shadow-sm"
+              >
+                <div className="flex items-start gap-4 p-4">
+                  <div className="flex h-24 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white bg-white">
+                    {product.sealUrl ? (
+                      <img
+                        src={product.sealUrl}
+                        alt=""
+                        className="h-full w-full object-contain p-2"
+                      />
+                    ) : (
+                      <span className="px-2 text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-400">
+                        {tr("Siegel folgt", "Seal pending")}
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-brand-primary">
+                        {product.licenseStatus === "ACTIVE"
+                          ? tr("Aktive Lizenz", "Active license")
+                          : tr("Geprüft", "Tested")}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {dateFormatter.format(new Date(product.certificateCreatedAt))}
+                      </span>
+                    </div>
+                    <h3 className="mt-3 text-base font-semibold leading-snug text-brand-dark">
+                      {product.name}
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-600">{product.brand}</p>
+                    {product.category && (
+                      <p className="mt-2 text-xs font-medium text-gray-500">
+                        {product.category}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-auto border-t border-white/80 bg-white/80 p-4">
+                  <div className="flex flex-wrap gap-2">
+                    {product.reportUrl ? (
+                      <Link
+                        href={product.reportUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center justify-center rounded-lg bg-brand-primary px-3 py-2 text-xs font-semibold text-white transition hover:-translate-y-0.5 hover:bg-brand-dark"
+                      >
+                        {tr("Prüfbericht", "Report")}
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        className="inline-flex cursor-not-allowed items-center justify-center rounded-lg bg-gray-200 px-3 py-2 text-xs font-semibold text-gray-500"
+                      >
+                        {tr("Prüfbericht folgt", "Report pending")}
+                      </button>
+                    )}
+                    {product.certificateUrl ? (
+                      <Link
+                        href={product.certificateUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center justify-center rounded-lg border border-brand-primary/30 bg-white px-3 py-2 text-xs font-semibold text-brand-dark transition hover:-translate-y-0.5 hover:border-brand-primary hover:text-brand-primary"
+                      >
+                        {tr("Zertifikat", "Certificate")}
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        className="inline-flex cursor-not-allowed items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-400"
+                      >
+                        {tr("Zertifikat folgt", "Certificate pending")}
+                      </button>
+                    )}
+                    {product.sealUrl ? (
+                      <Link
+                        href={product.sealUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center justify-center rounded-lg border border-brand-primary/30 bg-white px-3 py-2 text-xs font-semibold text-brand-dark transition hover:-translate-y-0.5 hover:border-brand-primary hover:text-brand-primary"
+                      >
+                        {tr("Siegel öffnen", "Open seal")}
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        className="inline-flex cursor-not-allowed items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-400"
+                      >
+                        {tr("Siegel folgt", "Seal pending")}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export default function ProduktTestPage({
+  recentTestedProducts = [],
+}: {
+  recentTestedProducts?: LiveTestedProduct[];
+}) {
   const searchParams = useSearchParams();
   const { locale } = useLocale();
   const tr = (de: string, en: string) => (locale === 'en' ? en : de);
@@ -594,6 +763,7 @@ export default function ProduktTestPage() {
           )}
         </div>
       </section>
+      <LiveTestedProductsOverview products={recentTestedProducts} tr={tr} locale={locale} />
       {/* Inserted Pre-Check form inline so the Produkt Test page is self-contained */}
       <section id="precheck" ref={precheckSectionRef} className="mx-auto max-w-3xl px-4 py-10">
         <div className="flex flex-col items-center gap-4 text-slate-900">

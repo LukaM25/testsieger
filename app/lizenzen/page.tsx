@@ -424,14 +424,6 @@ export default async function LizenzenPage() {
                             {tr("Siegel folgt", "Seal pending")}
                           </button>
                         )}
-                        {product.certificate?.seal_number && (
-                          <Link
-                            href={`/verify/${product.certificate.seal_number}`}
-                            className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 transition hover:-translate-y-0.5 hover:border-brand-primary hover:text-brand-primary"
-                          >
-                            {tr("Verifizieren", "Verify")}
-                          </Link>
-                        )}
                       </div>
                     </div>
                   </article>
