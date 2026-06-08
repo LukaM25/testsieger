@@ -8,6 +8,8 @@ import { LocaleProvider } from "@/components/LocaleProvider";
 import { cookies } from "next/headers";
 import { normalizeLocale } from "@/lib/i18n";
 
+const GOOGLE_TAG_MANAGER_ID = "GTM-5Z5ZT5B6";
+
 export const metadata: Metadata = {
   title: "DPI - Deutsches Prüfsiegel Institut",
   applicationName: "DPI - Deutsches Prüfsiegel Institut",
@@ -38,6 +40,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={locale} className="no-js">
       <head>
+        <Script id="google-tag-manager" strategy="afterInteractive">
+          {`
+            (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+            })(window,document,'script','dataLayer','${GOOGLE_TAG_MANAGER_ID}');
+          `}
+        </Script>
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=AW-18054519223"
           strategy="afterInteractive"
@@ -68,6 +79,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
       </head>
       <body className="font-sans antialiased bg-brand-surface text-brand-text">
+        <noscript>
+          <iframe
+            src={`https://www.googletagmanager.com/ns.html?id=${GOOGLE_TAG_MANAGER_ID}`}
+            height="0"
+            width="0"
+            style={{ display: "none", visibility: "hidden" }}
+          />
+        </noscript>
         <LocaleProvider initialLocale={locale}>
           <Navbar />
           <main className="min-h-[80vh]">{children}</main>
