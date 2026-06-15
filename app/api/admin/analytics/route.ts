@@ -55,6 +55,50 @@ function isoDay(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
+function labelForPath(path: string | null) {
+  const rawPath = path || "/";
+  const pathname = rawPath.split("?")[0] || "/";
+
+  const exactLabels: Record<string, string> = {
+    "/": "Startseite",
+    "/admin": "Admin",
+    "/agb": "AGB",
+    "/dashboard": "Dashboard",
+    "/datenschutz": "Datenschutz",
+    "/impressum": "Impressum",
+    "/karriere": "Karriere",
+    "/kontakt": "Kontakt",
+    "/lizenzen": "Lizenzen",
+    "/login": "Login",
+    "/pakete": "Checkout",
+    "/precheck": "Precheck",
+    "/precheck/success": "Precheck Erfolg",
+    "/produkte": "Produkte",
+    "/produkte/ausbildung-check": "Ausbildung-Check",
+    "/produkte/produkt-test": "Produkt-Test",
+    "/produkte/spielplatz-sicherheit": "Spielplatz-Sicherheit",
+    "/produkte/spielplatz_sicherheit": "Spielplatz-Sicherheit",
+    "/pruefverfahren": "Prüfverfahren",
+    "/reset-password": "Passwort zurücksetzen",
+    "/ueber-uns": "Über uns",
+    "/verfahren": "Verfahren",
+  };
+
+  if (exactLabels[pathname]) return exactLabels[pathname];
+  if (pathname.startsWith("/verify/")) return "Zertifikat-Verifizierung";
+  if (pathname.startsWith("/produkte/")) return "Produktseite";
+
+  return pathname
+    .split("/")
+    .filter(Boolean)
+    .map((segment) =>
+      decodeURIComponent(segment)
+        .replace(/[-_]+/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase()),
+    )
+    .join(" / ") || "Startseite";
+}
+
 function fillDailyRows(days: number, since: Date, rows: DailyRow[]) {
   const byDay = new Map(
     rows.map((row) => [
@@ -191,6 +235,7 @@ export async function GET(request: Request) {
         count: toNumber(row.count),
       })),
       topPages: topPages.map((row) => ({
+        label: labelForPath(row.path),
         path: row.path ?? "/",
         count: toNumber(row.count),
       })),

@@ -16,7 +16,7 @@ type AnalyticsSummary = {
     conversions: number | null;
   };
   eventCounts: Array<{ name: string; label: string; count: number }>;
-  topPages: Array<{ path: string; count: number }>;
+  topPages: Array<{ label: string; path: string; count: number }>;
   sources: Array<{ source: string; count: number }>;
   daily: Array<{ day: string; pageViews: number; visitors: number; conversions: number }>;
   generatedAt: string;
@@ -218,7 +218,7 @@ export default function AnalyticsPanel() {
                 {summary.topPages.length ? (
                   summary.topPages.map((page) => (
                     <div key={page.path} className="flex items-center justify-between gap-3 text-sm">
-                      <span className="truncate text-slate-600">{page.path}</span>
+                      <span className="truncate text-slate-600" title={page.path}>{page.label}</span>
                       <span className="font-semibold text-slate-900">{formatNumber(page.count)}</span>
                     </div>
                   ))
