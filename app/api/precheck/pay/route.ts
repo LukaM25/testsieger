@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { Plan } from '@prisma/client';
 import { getSession } from '@/lib/auth';
 import { getPublicBaseUrl } from '@/lib/baseUrl';
+import { hasAnalyticsConsent, recordAnalyticsEvent } from '@/lib/analytics';
 
 export const runtime = 'nodejs';
 
@@ -100,6 +101,21 @@ export async function POST(req: Request) {
       stripeSessionId: checkout.id,
     },
   });
+
+  if (hasAnalyticsConsent(req)) {
+    void recordAnalyticsEvent({
+      name: 'checkout_start',
+      path: '/dashboard',
+      userId: session.userId,
+      productId: primaryProduct.id,
+      metadata: {
+        plan: orderPlan,
+        checkoutType: 'precheck',
+        option: opt,
+        productCount: selectedProducts.length,
+      },
+    });
+  }
 
   return NextResponse.json({ ok: true, url: checkout.url });
 }

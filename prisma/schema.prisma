@@ -226,6 +226,29 @@ model AdminAudit {
   @@index([createdAt])
 }
 
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  name      String
+  path      String?
+  referrer  String?
+  source    String?
+  medium    String?
+  campaign  String?
+  sessionId String?
+  userId    String?
+  productId String?
+  metadata  Json?
+  userAgent String?
+  ipHash    String?
+  createdAt DateTime @default(now())
+
+  @@index([name, createdAt])
+  @@index([createdAt])
+  @@index([sessionId])
+  @@index([userId])
+  @@index([productId])
+}
+
 model CompletionJob {
   id            String              @id @default(cuid())
   productId     String

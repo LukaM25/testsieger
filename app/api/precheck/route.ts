@@ -7,6 +7,7 @@ import { setSession } from '@/lib/cookies';
 import { sendPrecheckConfirmation } from '@/lib/email';
 import { getSession } from '@/lib/auth';
 import { notifySuperadminsOfPrecheckRegistration } from '@/lib/precheckNotifications';
+import { hasAnalyticsConsent, recordAnalyticsEvent } from '@/lib/analytics';
 
 const PrecheckSchema = z.object({
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']),
@@ -126,6 +127,19 @@ export async function POST(req: Request) {
     }).catch((error) => {
       console.error('PRECHECK_SUPERADMIN_NOTIFICATION_ERROR', { productId: product.id, error });
     });
+
+    if (hasAnalyticsConsent(req)) {
+      void recordAnalyticsEvent({
+        name: 'precheck_submit',
+        path: '/precheck',
+        userId,
+        productId: product.id,
+        metadata: {
+          category,
+          hasExistingAccount: Boolean(existing),
+        },
+      });
+    }
 
     // 5) Set session & respond with redirect to precheck overview
     await setSession({ userId, email: normalizedEmail });

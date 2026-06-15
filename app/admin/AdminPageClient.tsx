@@ -5,6 +5,7 @@ import { CertificatePreviewModal } from '@/components/CertificatePreviewModal';
 import { useCertificateActions } from '@/hooks/useCertificateActions';
 import AdminHeader from './components/AdminHeader';
 import AdminProductRow from './components/AdminProductRow';
+import AnalyticsPanel from './components/AnalyticsPanel';
 import SuperadminPanel from './components/SuperadminPanel';
 import { AdminAuthInfo, AdminPermissions, AdminProduct, PaymentStatusOption, StatusOption } from './types';
 import { formatContactName } from '@/lib/name';
@@ -408,6 +409,8 @@ export default function AdminPageClient({ initialAdmin }: AdminPageClientProps) 
         />
 
         <SuperadminPanel isOpen={isSuperAdmin && showSuperControls} />
+
+        <AnalyticsPanel />
 
         {loadingProducts ? (
           <div className="rounded-3xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500 shadow-sm">

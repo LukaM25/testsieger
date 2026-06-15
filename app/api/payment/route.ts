@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Plan } from "@prisma/client";
 import { getPublicBaseUrl } from "@/lib/baseUrl";
+import { hasAnalyticsConsent, recordAnalyticsEvent } from "@/lib/analytics";
 
 export const runtime = "nodejs";
 const FIXED_TAX_RATE_ID = process.env.STRIPE_TAX_RATE_19?.trim() || "";
@@ -144,6 +145,20 @@ export async function POST(req: Request) {
       stripeTotalCents: priceAmountCents ?? 0,
     },
   });
+
+  if (hasAnalyticsConsent(req)) {
+    void recordAnalyticsEvent({
+      name: "checkout_start",
+      path: "/pakete",
+      userId: session.userId,
+      productId: product.id,
+      metadata: {
+        plan: selectedPlan,
+        checkoutType: "license",
+        mode: checkoutMode,
+      },
+    });
+  }
 
   return NextResponse.json({ url: stripeSession.url });
 }

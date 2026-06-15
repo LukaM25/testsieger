@@ -9,6 +9,7 @@ import {
   sendEasybillDocumentEmail,
   type EasybillLine,
 } from "@/lib/easybill";
+import { recordAnalyticsEvent } from "@/lib/analytics";
 
 export const runtime = "nodejs";
 
@@ -551,6 +552,26 @@ async function handleCheckoutSession(cs: any) {
       }
     }
   }
+
+  let analyticsUserId: string | null = orders[0]?.userId ?? null;
+  if (!analyticsUserId) {
+    const product = await prisma.product.findUnique({
+      where: { id: primaryProductId },
+      select: { userId: true },
+    });
+    analyticsUserId = product?.userId ?? null;
+  }
+
+  await recordAnalyticsEvent({
+    name: "payment_success",
+    userId: analyticsUserId,
+    productId: primaryProductId,
+    metadata: {
+      plan,
+      productCount: productIds.length,
+      stripeSessionId: cs.id,
+    },
+  });
 
   if (plan === "PRECHECK_FEE" || plan === "PRECHECK_PRIORITY") {
     const products = await prisma.product.findMany({

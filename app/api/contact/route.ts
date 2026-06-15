@@ -5,6 +5,7 @@ import {
   sendContactAutoReplyEmail,
   sendContactInquiryEmail,
 } from "@/lib/email";
+import { hasAnalyticsConsent, recordAnalyticsEvent } from "@/lib/analytics";
 
 export const runtime = "nodejs";
 
@@ -65,6 +66,17 @@ export async function POST(req: Request) {
       category,
       message,
     });
+
+    if (hasAnalyticsConsent(req)) {
+      void recordAnalyticsEvent({
+        name: "contact_submit",
+        path: "/kontakt",
+        metadata: {
+          categoryKey,
+          category,
+        },
+      });
+    }
 
     return redirectWithState(req, "sent");
   } catch (err) {
