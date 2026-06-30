@@ -553,6 +553,13 @@ export default function ProduktTestPage({
   const scrollToProcedure = () => {
     procedureTopRef.current?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
   };
+  const scrollToProcedureDetails = () => {
+    procedureDetailRef.current?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
+    procedureDetailRef.current?.classList.add('ring-2', 'ring-[#134074]', 'shadow-2xl', 'transition', 'duration-500');
+    setTimeout(() => {
+      procedureDetailRef.current?.classList.remove('ring-2', 'ring-[#134074]', 'shadow-2xl', 'transition', 'duration-500');
+    }, 1800);
+  };
   const goPrevSlide = () => {
     setCarouselIndex((prev) => (prev - 1 + carouselImages.length) % carouselImages.length);
   };
@@ -976,14 +983,11 @@ export default function ProduktTestPage({
               {savingsTiers.map((tier) => (
                 <div key={tier.count} className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <span className="text-lg font-medium text-slate-900">{productCountLabel(tier.count)}</span>
-                  <div
-                    className="inline-flex flex-wrap items-center gap-3 rounded-full px-6 py-2.5 text-white shadow-md ring-1 ring-blue-200/30"
-                    style={{ backgroundImage: "linear-gradient(90deg, #1d4ed8 0%, #1e3a8a 55%, #0f172a 100%)" }}
-                  >
+                  <div className="inline-flex flex-wrap items-center gap-3 text-slate-900">
                     {tier.discountPercent > 0 && (
                       <>
-                        <span className="text-sm md:text-base text-white/70 line-through">{formatEur(tier.totalNet)}</span>
-                        <span className="text-sm md:text-base text-white/70">- {tier.discountPercent}%</span>
+                        <span className="text-sm md:text-base text-slate-500 line-through">{formatEur(tier.totalNet)}</span>
+                        <span className="text-sm md:text-base text-slate-500">- {tier.discountPercent}%</span>
                       </>
                     )}
                     <span className="text-base md:text-lg font-semibold">
@@ -996,16 +1000,29 @@ export default function ProduktTestPage({
             <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <p className="text-sm md:text-base text-slate-600 max-w-2xl">
                 {tr(
-                  "Bei mehr als 3 Produkten, schreiben Sie uns direkt an und wir unterbreiten Ihnen ein Angebot.",
+                  "Mehr als 3 Produkten? Schreiben Sie uns an und wir unterbreiten Ihnen ein Angebot.",
                   "For more than 3 products, contact us directly and we will make you an offer."
                 )}
               </p>
-              <Link
-                href="/kontakt"
-                className="rounded-full bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-black"
-              >
-                {tr("Angebot anfordern", "Request an offer")}
-              </Link>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPrecheck(true);
+                    requestAnimationFrame(() => scrollToPrecheck());
+                  }}
+                  className="rounded-full bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-black"
+                >
+                  {tr("Prüfung starten", "Test process start")}
+                </button>
+                <button
+                  type="button"
+                  onClick={scrollToProcedureDetails}
+                  className="rounded-full border border-slate-300 bg-white px-6 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:border-slate-400 hover:bg-slate-50"
+                >
+                  {tr("Prüfverfahren im Detail", "Testing procedure in Detail")}
+                </button>
+              </div>
             </div>
           </div>
 
