@@ -1,14 +1,40 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AdminSummary, AuditEntry } from '../types';
+import { Loader2, PackagePlus, Plus, Search, Trash2 } from 'lucide-react';
+import { AdminCustomerSummary, AdminSummary, AuditEntry } from '../types';
 
 type Props = {
   isOpen: boolean;
+  onProductsCreated?: () => void;
 };
 
-export default function SuperadminPanel({ isOpen }: Props) {
-  const [superTab, setSuperTab] = useState<'admins' | 'audits'>('admins');
+type ProductDraft = {
+  rowId: string;
+  productName: string;
+  brand: string;
+  category: string;
+  code: string;
+  specs: string;
+  size: string;
+  madeIn: string;
+  material: string;
+};
+
+const createProductDraft = (): ProductDraft => ({
+  rowId: crypto.randomUUID(),
+  productName: '',
+  brand: '',
+  category: '',
+  code: '',
+  specs: '',
+  size: '',
+  madeIn: '',
+  material: '',
+});
+
+export default function SuperadminPanel({ isOpen, onProductsCreated }: Props) {
+  const [superTab, setSuperTab] = useState<'products' | 'admins' | 'audits'>('products');
   const [admins, setAdmins] = useState<AdminSummary[]>([]);
   const [adminsLoading, setAdminsLoading] = useState(false);
   const [audits, setAudits] = useState<AuditEntry[]>([]);
@@ -22,6 +48,16 @@ export default function SuperadminPanel({ isOpen }: Props) {
     password: '',
     role: 'EXAMINER' as AdminSummary['role'],
   });
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerResults, setCustomerResults] = useState<AdminCustomerSummary[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<AdminCustomerSummary | null>(null);
+  const [customerLoading, setCustomerLoading] = useState(false);
+  const [productRows, setProductRows] = useState<ProductDraft[]>([createProductDraft()]);
+  const [productsSaving, setProductsSaving] = useState(false);
+  const [productsMessage, setProductsMessage] = useState<string | null>(null);
+  const productsReady =
+    Boolean(selectedCustomer) &&
+    productRows.every((row) => row.productName.trim().length >= 2 && Boolean(row.brand.trim()));
 
   const fetchAdmins = useCallback(async () => {
     setAdminsLoading(true);
@@ -110,13 +146,98 @@ export default function SuperadminPanel({ isOpen }: Props) {
     [fetchAdmins],
   );
 
+  const findCustomers = useCallback(async () => {
+    const email = customerEmail.trim();
+    setProductsMessage(null);
+    setSelectedCustomer(null);
+    setCustomerResults([]);
+    if (email.length < 3) {
+      setProductsMessage('Bitte mindestens drei Zeichen der Kunden-E-Mail eingeben.');
+      return;
+    }
+
+    setCustomerLoading(true);
+    try {
+      const params = new URLSearchParams({ email });
+      const res = await fetch(`/api/admin/users?${params.toString()}`, {
+        credentials: 'same-origin',
+        cache: 'no-store',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setProductsMessage(data?.error || 'Kundensuche fehlgeschlagen.');
+        return;
+      }
+      const users = (data.users ?? []) as AdminCustomerSummary[];
+      setCustomerResults(users);
+      if (users.length === 0) setProductsMessage('Kein Kundenkonto mit dieser E-Mail gefunden.');
+    } catch {
+      setProductsMessage('Kundensuche fehlgeschlagen.');
+    } finally {
+      setCustomerLoading(false);
+    }
+  }, [customerEmail]);
+
+  const updateProductRow = useCallback((rowId: string, field: keyof Omit<ProductDraft, 'rowId'>, value: string) => {
+    setProductRows((rows) => rows.map((row) => (row.rowId === rowId ? { ...row, [field]: value } : row)));
+  }, []);
+
+  const removeProductRow = useCallback((rowId: string) => {
+    setProductRows((rows) => (rows.length === 1 ? rows : rows.filter((row) => row.rowId !== rowId)));
+  }, []);
+
+  const createProducts = useCallback(async () => {
+    if (!selectedCustomer || productsSaving) return;
+    const invalidRow = productRows.find((row) => row.productName.trim().length < 2 || !row.brand.trim());
+    if (invalidRow) {
+      setProductsMessage('Produktname und Marke sind für jede Zeile erforderlich.');
+      return;
+    }
+
+    setProductsSaving(true);
+    setProductsMessage(null);
+    try {
+      const res = await fetch('/api/admin/products/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          userId: selectedCustomer.id,
+          products: productRows.map(({ rowId: _rowId, ...product }) => product),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const messageByError: Record<string, string> = {
+          CUSTOMER_NOT_FOUND: 'Das Kundenkonto wurde nicht gefunden.',
+          CUSTOMER_INACTIVE: 'Das Kundenkonto ist deaktiviert.',
+          INVALID_INPUT: 'Bitte die Produktdaten prüfen.',
+        };
+        setProductsMessage(messageByError[data?.error] || 'Produkte konnten nicht angelegt werden.');
+        return;
+      }
+
+      const createdCount = Array.isArray(data.products) ? data.products.length : productRows.length;
+      setSelectedCustomer((customer) =>
+        customer ? { ...customer, productCount: customer.productCount + createdCount } : customer,
+      );
+      setProductRows([createProductDraft()]);
+      setProductsMessage(`${createdCount} Produkt${createdCount === 1 ? '' : 'e'} erfolgreich angelegt.`);
+      onProductsCreated?.();
+    } catch {
+      setProductsMessage('Produkte konnten nicht angelegt werden.');
+    } finally {
+      setProductsSaving(false);
+    }
+  }, [onProductsCreated, productRows, productsSaving, selectedCustomer]);
+
   useEffect(() => {
     auditFiltersRef.current = auditFilters;
   }, [auditFilters]);
 
   useEffect(() => {
     if (isOpen) {
-      setSuperTab('admins');
+      setSuperTab('products');
     }
   }, [isOpen]);
 
@@ -133,9 +254,15 @@ export default function SuperadminPanel({ isOpen }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-indigo-500">Superadmin</p>
-          <h2 className="text-xl font-bold text-slate-900">Konten & Logs</h2>
+          <h2 className="text-xl font-bold text-slate-900">Kunden, Konten & Logs</h2>
         </div>
         <div className="flex gap-2">
+          <button
+            className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${superTab === 'products' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'}`}
+            onClick={() => setSuperTab('products')}
+          >
+            Kundenprodukte
+          </button>
           <button
             className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${superTab === 'admins' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'}`}
             onClick={() => setSuperTab('admins')}
@@ -154,6 +281,144 @@ export default function SuperadminPanel({ isOpen }: Props) {
         </div>
       </div>
       {superMessage && <p className="text-sm text-indigo-800">{superMessage}</p>}
+
+      {superTab === 'products' && (
+        <div className="space-y-5">
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr),auto]">
+            <label className="space-y-1">
+              <span className="text-xs font-semibold text-slate-700">Kunden-E-Mail</span>
+              <input
+                value={customerEmail}
+                onChange={(event) => setCustomerEmail(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') void findCustomers();
+                }}
+                type="email"
+                placeholder="kunde@unternehmen.de"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => void findCustomers()}
+              disabled={customerLoading}
+              className="mt-auto inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {customerLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              Kunde suchen
+            </button>
+          </div>
+
+          {customerResults.length > 0 && (
+            <div className="overflow-hidden rounded-lg border border-slate-200">
+              {customerResults.map((customer) => {
+                const selected = selectedCustomer?.id === customer.id;
+                return (
+                  <button
+                    key={customer.id}
+                    type="button"
+                    disabled={!customer.active}
+                    onClick={() => {
+                      setSelectedCustomer(customer);
+                      setProductsMessage(null);
+                    }}
+                    className={`flex w-full items-center justify-between gap-4 border-b border-slate-100 px-4 py-3 text-left last:border-b-0 ${
+                      selected ? 'bg-indigo-50' : 'bg-white hover:bg-slate-50'
+                    } disabled:cursor-not-allowed disabled:opacity-50`}
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold text-slate-900">{customer.name}</span>
+                      <span className="block truncate text-xs text-slate-600">
+                        {customer.email}{customer.company ? ` · ${customer.company}` : ''}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-xs font-medium text-slate-500">
+                      {customer.active ? `${customer.productCount} Produkte` : 'Deaktiviert'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {selectedCustomer && (
+            <div className="space-y-4 border-t border-slate-200 pt-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-semibold text-slate-900">{selectedCustomer.name}</div>
+                  <div className="text-xs text-slate-600">
+                    {selectedCustomer.email} · {selectedCustomer.productCount} vorhandene Produkte
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setProductRows((rows) => [...rows, createProductDraft()])}
+                  disabled={productRows.length >= 50}
+                  className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Plus className="h-4 w-4" />
+                  Weiteres Produkt hinzufügen
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {productRows.map((row, index) => (
+                  <div key={row.rowId} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase text-slate-500">Produkt {index + 1}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeProductRow(row.rowId)}
+                        disabled={productRows.length === 1}
+                        title="Produktzeile entfernen"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-white hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                      {([
+                        ['productName', 'Produktname *'],
+                        ['brand', 'Marke *'],
+                        ['category', 'Kategorie'],
+                        ['code', 'SKU / Artikelnummer'],
+                        ['size', 'Größe'],
+                        ['madeIn', 'Herkunftsland'],
+                        ['material', 'Material'],
+                        ['specs', 'Spezifikationen / Link'],
+                      ] as const).map(([field, label]) => (
+                        <label key={field} className={`space-y-1 ${field === 'specs' ? 'lg:col-span-2' : ''}`}>
+                          <span className="text-xs font-medium text-slate-600">{label}</span>
+                          <input
+                            value={row[field]}
+                            onChange={(event) => updateProductRow(row.rowId, field, event.target.value)}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="text-xs text-slate-500">Maximal 50 Produkte pro Vorgang.</span>
+                <button
+                  type="button"
+                  onClick={() => void createProducts()}
+                  disabled={productsSaving || !productsReady}
+                  className="inline-flex h-10 items-center gap-2 rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {productsSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackagePlus className="h-4 w-4" />}
+                  {productRows.length} Produkt{productRows.length === 1 ? '' : 'e'} anlegen
+                </button>
+              </div>
+            </div>
+          )}
+
+          {productsMessage && <p className="text-sm font-medium text-indigo-800">{productsMessage}</p>}
+        </div>
+      )}
 
       {superTab === 'admins' && (
         <div className="space-y-4">

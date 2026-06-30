@@ -408,7 +408,10 @@ export default function AdminPageClient({ initialAdmin }: AdminPageClientProps) 
           banner={banner}
         />
 
-        <SuperadminPanel isOpen={isSuperAdmin && showSuperControls} />
+        <SuperadminPanel
+          isOpen={isSuperAdmin && showSuperControls}
+          onProductsCreated={refreshProducts}
+        />
 
         <AnalyticsPanel />
 

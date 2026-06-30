@@ -67,6 +67,15 @@ export type AdminSummary = {
 
 export type AdminAuthInfo = Pick<AdminSummary, 'id' | 'email' | 'name' | 'role'>;
 
+export type AdminCustomerSummary = {
+  id: string;
+  name: string;
+  email: string;
+  company?: string | null;
+  active: boolean;
+  productCount: number;
+};
+
 export type AuditEntry = {
   id: string;
   action: string;
