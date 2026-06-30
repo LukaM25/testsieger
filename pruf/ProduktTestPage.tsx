@@ -998,7 +998,7 @@ export default function ProduktTestPage({
                           className="rounded-full px-3 py-1 text-sm font-extrabold shadow-sm"
                           style={{ backgroundColor: "#1d4ed8", color: "#ffffff" }}
                         >
-                          {tr("Spart", "Save")} {tier.discountPercent}%
+                          {tr("Spare", "Save")} {tier.discountPercent}%
                         </span>
                       </div>
                     )}
