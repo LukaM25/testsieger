@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { ArrowRight } from "lucide-react";
 import { stagger } from "@/lib/animation";
 import PrecheckForm from "@/components/precheck/PrecheckForm";
 import Counter from "@/components/Counter";
@@ -979,49 +980,71 @@ export default function ProduktTestPage({
                 {tr("Für die Prüfung fällt eine einmalige Testgebühr an.", "A one-time test fee applies for the review.")}
               </p>
             </div>
-            <div className="mt-8 space-y-5">
+            <div className="mt-8 grid gap-5 md:grid-cols-3">
               {savingsTiers.map((tier) => (
-                <div key={tier.count} className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <span className="text-lg font-medium text-slate-900">{productCountLabel(tier.count)}</span>
-                  <div className="inline-flex flex-wrap items-center gap-3 text-slate-900">
+                <div
+                  key={tier.count}
+                  className="relative overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50/70 via-white to-white p-6 text-center shadow-[0_18px_42px_-34px_rgba(29,78,216,0.75)] ring-1 ring-white transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_22px_50px_-34px_rgba(29,78,216,0.9)]"
+                >
+                  <span className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#1d4ed8] via-[#60a5fa] to-transparent" />
+                  <div className="flex items-center justify-center">
+                    <h4 className="text-xl font-semibold text-slate-950 [text-shadow:0_8px_16px_rgba(15,23,42,0.18)]">{productCountLabel(tier.count)}</h4>
+                  </div>
+                  <div className="mt-6 space-y-2 text-slate-700">
                     {tier.discountPercent > 0 && (
-                      <>
-                        <span className="text-sm md:text-base text-slate-500 line-through">{formatEur(tier.totalNet)}</span>
-                        <span className="text-sm md:text-base text-slate-500">- {tier.discountPercent}%</span>
-                      </>
+                      <div className="inline-flex flex-wrap items-center justify-center gap-2 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 via-white to-blue-50 px-4 py-2.5 text-base font-bold shadow-[0_12px_26px_-20px_rgba(29,78,216,0.9)]">
+                        <span className="text-slate-500 line-through decoration-2">{formatEur(tier.totalNet)}</span>
+                        <span
+                          className="rounded-full px-3 py-1 text-sm font-extrabold shadow-sm"
+                          style={{ backgroundColor: "#1d4ed8", color: "#ffffff" }}
+                        >
+                          {tr("Spart", "Save")} {tier.discountPercent}%
+                        </span>
+                      </div>
                     )}
-                    <span className="text-base md:text-lg font-semibold">
+                    <p className="text-lg font-semibold text-slate-950">
                       {tr("Testgebühr", "Test fee")} {formatEur(tier.finalNet)}
-                    </span>
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <p className="text-sm md:text-base text-slate-600 max-w-2xl">
+            <div className="mt-8 flex flex-col items-center gap-5 text-center">
+              <p className="max-w-2xl text-sm text-slate-600 md:text-base">
                 {tr(
                   "Mehr als 3 Produkten? Schreiben Sie uns an und wir unterbreiten Ihnen ein Angebot.",
                   "For more than 3 products, contact us directly and we will make you an offer."
                 )}
               </p>
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowPrecheck(true);
-                    requestAnimationFrame(() => scrollToPrecheck());
-                  }}
-                  className="rounded-full bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-black"
+              <div className="flex w-full flex-col items-center justify-center gap-3 sm:w-auto">
+                <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPrecheck(true);
+                      requestAnimationFrame(() => scrollToPrecheck());
+                    }}
+                    className="inline-flex min-w-[220px] items-center justify-center gap-4 rounded-lg bg-gradient-to-r from-[#1d4ed8] via-[#1e40af] to-[#0f172a] px-7 py-4 text-base font-semibold text-white shadow-[0_18px_34px_-18px_rgba(29,78,216,0.75)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_44px_-18px_rgba(29,78,216,0.85)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
+                  >
+                    {tr("Prüfung starten", "Test process start")}
+                    <ArrowRight className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={scrollToProcedureDetails}
+                    className="inline-flex items-center justify-center gap-3 rounded-lg px-2 py-2 text-base font-semibold text-[#1d4ed8] transition hover:text-[#1e3a8a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
+                  >
+                    {tr("Prüfverfahren im Detail", "Testing procedure in Detail")}
+                    <ArrowRight className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                </div>
+                <Link
+                  href="/kontakt"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-100 bg-blue-50 px-5 py-2.5 text-sm font-semibold text-[#1d4ed8] transition hover:border-blue-200 hover:bg-blue-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
                 >
-                  {tr("Prüfung starten", "Test process start")}
-                </button>
-                <button
-                  type="button"
-                  onClick={scrollToProcedureDetails}
-                  className="rounded-full border border-slate-300 bg-white px-6 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:border-slate-400 hover:bg-slate-50"
-                >
-                  {tr("Prüfverfahren im Detail", "Testing procedure in Detail")}
-                </button>
+                  {tr("Individuelles Angebot / Kontakt", "Custom quote / contact")}
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
               </div>
             </div>
           </div>
