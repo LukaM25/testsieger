@@ -1228,7 +1228,7 @@ export default function ProduktTestPage({
 
 
       {/* Pakete section using PackageCard */}
-      <section id="pakete" className="mx-auto max-w-6xl px-6 py-16">
+      <section id="pakete" hidden className="mx-auto max-w-6xl px-6 py-16">
         <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
           <div className="flex justify-center">
             <video

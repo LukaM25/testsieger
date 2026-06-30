@@ -52,7 +52,7 @@ export default function Logos() {
         }
         .animate-logo-marquee {
           width: max-content;
-          animation: logo-marquee 30s linear infinite;
+          animation: logo-marquee 60s linear infinite;
         }
         @media (prefers-reduced-motion: reduce) {
           .animate-logo-marquee {
