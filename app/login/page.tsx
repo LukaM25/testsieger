@@ -8,7 +8,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get('next');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState((searchParams.get('email') || '').toLowerCase());
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);

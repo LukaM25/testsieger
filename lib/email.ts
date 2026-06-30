@@ -198,6 +198,41 @@ export async function sendPrecheckConfirmation(opts: {
   });
 }
 
+export async function sendPrecheckClaimEmail(opts: {
+  to: string;
+  name: string;
+  gender?: RecipientGender;
+  productName: string;
+  claimToken: string;
+  claimUrl?: string;
+}) {
+  const { to, name, gender, productName, claimToken } = opts;
+  const claimUrl =
+    opts.claimUrl ||
+    `${APP_BASE_URL.replace(/\/$/, '')}/precheck/claim?token=${encodeURIComponent(claimToken)}`;
+
+  const html = `
+    <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.65;color:#0f172a">
+      <p>${renderFormalGreeting(name, gender)}</p>
+      <p>wir haben Ihre Produktdaten für <strong>${escapeHtml(productName)}</strong> erhalten.</p>
+      <p>Bitte bestätigen Sie Ihre E-Mail-Adresse und erstellen Sie Ihr Kundenkonto. Danach wird Ihr Produkt automatisch im Pre-Check-Portal angelegt und Sie können die nächsten Schritte wie gewohnt fortführen.</p>
+      <p style="margin:16px 0 8px;">
+        <a href="${claimUrl}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">Konto erstellen & Produkt übernehmen</a>
+      </p>
+      <p style="font-size:13px;color:#475569;">Der Link ist 48 Stunden gültig. Falls Sie bereits ein Konto mit dieser E-Mail-Adresse haben, melden Sie sich nach dem Öffnen des Links einfach an.</p>
+      <p style="margin-top:18px;">Mit besten Grüßen<br/>Deutsches Prüfsiegel Institut (DPI)</p>
+      ${renderFooter()}
+    </div>
+  `;
+
+  await sendEmail({
+    from: `${SENDER_NAME} – Pre-Check <${FROM_EMAIL}>`,
+    to,
+    subject: 'Pre-Check fortsetzen – Konto erstellen',
+    html,
+  });
+}
+
 export async function sendPrecheckRegistrationAlert(opts: {
   to: string;
   productId: string;

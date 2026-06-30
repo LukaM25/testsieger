@@ -2,10 +2,8 @@ import React from 'react';
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-const pushMock = vi.fn();
-
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: pushMock }),
+  useRouter: () => ({ push: vi.fn() }),
 }));
 
 vi.mock('next/link', () => ({
@@ -32,32 +30,15 @@ function jsonResponse(body: unknown, init?: ResponseInit) {
   );
 }
 
-function fillValidPrecheckForm(confirmPassword = 'SehrSicher123!') {
+function fillValidPrecheckForm() {
   const byName = (name: string) => document.querySelector(`[name="${name}"]`) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
-  fireEvent.change(byName('gender'), { target: { value: 'MALE' } });
-  fireEvent.change(byName('firstName'), { target: { value: 'Max' } });
-  fireEvent.change(byName('lastName'), { target: { value: 'Mustermann' } });
-  fireEvent.change(byName('company'), { target: { value: 'Muster GmbH' } });
   fireEvent.change(byName('email'), { target: { value: 'max@example.com' } });
-  fireEvent.change(byName('password'), { target: { value: 'SehrSicher123!' } });
-  fireEvent.change(byName('confirmPassword'), { target: { value: confirmPassword } });
-
-  fireEvent.change(byName('addressStreet'), { target: { value: 'Musterstraße' } });
-  fireEvent.change(byName('addressNumber'), { target: { value: '12a' } });
-  fireEvent.change(byName('addressPostal'), { target: { value: '12345' } });
-  fireEvent.change(byName('addressCity'), { target: { value: 'Berlin' } });
-  fireEvent.change(byName('addressCountry'), { target: { value: 'Deutschland' } });
 
   fireEvent.change(byName('category'), { target: { value: 'Baby' } });
   fireEvent.change(byName('productName'), { target: { value: 'Testprodukt' } });
   fireEvent.change(byName('brand'), { target: { value: 'Marke X' } });
   fireEvent.change(byName('code'), { target: { value: 'SKU-123' } });
-  fireEvent.change(byName('dimensionLength'), { target: { value: '10' } });
-  fireEvent.change(byName('dimensionWidth'), { target: { value: '20' } });
-  fireEvent.change(byName('dimensionHeight'), { target: { value: '30' } });
-  fireEvent.change(byName('madeIn'), { target: { value: 'Deutschland' } });
-  fireEvent.change(byName('material'), { target: { value: 'Edelstahl' } });
   fireEvent.change(byName('specs'), { target: { value: 'Wasserdicht, langlebig und energiesparend' } });
 
   fireEvent.click(byName('privacyAccepted'));
@@ -75,44 +56,21 @@ describe('Precheck form interactions', () => {
     vi.clearAllMocks();
   });
 
-  test('toggles password field visibility', () => {
+  test('does not ask for a password on initial precheck submission', () => {
     render(<PrecheckForm />);
 
-    let passwordInput = document.querySelector('[name="password"]') as HTMLInputElement;
-    let confirmInput = document.querySelector('[name="confirmPassword"]') as HTMLInputElement;
-
-    expect(passwordInput.type).toBe('password');
-    expect(confirmInput.type).toBe('password');
-
-    const toggleButtons = screen.getAllByRole('button', { name: 'Passwort anzeigen' });
-    fireEvent.click(toggleButtons[0]);
-    fireEvent.click(toggleButtons[1]);
-
-    passwordInput = document.querySelector('[name="password"]') as HTMLInputElement;
-    confirmInput = document.querySelector('[name="confirmPassword"]') as HTMLInputElement;
-    expect(passwordInput.type).toBe('text');
-    expect(confirmInput.type).toBe('text');
+    expect(document.querySelector('[name="password"]')).toBeNull();
+    expect(document.querySelector('[name="confirmPassword"]')).toBeNull();
+    expect(document.querySelector('[name="firstName"]')).toBeNull();
+    expect(document.querySelector('[name="addressStreet"]')).toBeNull();
+    expect(document.querySelector('[name="dimensionLength"]')).toBeNull();
   });
 
-  test('shows validation error when passwords do not match and does not submit', async () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock);
-
-    render(<PrecheckForm />);
-    fillValidPrecheckForm('NichtGleich123!');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Jetzt starten' }));
-
-    expect(await screen.findByText('Passwörter stimmen nicht überein')).toBeTruthy();
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  test('submits transformed payload and redirects on success', async () => {
+  test('submits transformed payload and shows email handoff on success', async () => {
     const fetchMock = vi.fn(async () =>
       jsonResponse({
         ok: true,
-        redirect: '/precheck?productId=prod-1',
-        productId: 'prod-1',
+        pending: true,
       })
     );
     vi.stubGlobal('fetch', fetchMock);
@@ -128,36 +86,17 @@ describe('Precheck form interactions', () => {
     expect(url).toBe('/api/precheck');
 
     const payload = JSON.parse(options.body);
-    expect(payload.name).toBe('Max Mustermann');
-    expect(payload.size).toBe('10x20x30');
-    expect(payload.address).toBe('Musterstraße 12a, 12345 Berlin, Deutschland');
-    expect(payload.confirmPassword).toBeUndefined();
+    expect(payload.email).toBe('max@example.com');
+    expect(payload.productName).toBe('Testprodukt');
+    expect(payload.brand).toBe('Marke X');
+    expect(payload.category).toBe('Baby');
+    expect(payload.code).toBe('SKU-123');
+    expect(payload.specs).toBe('Wasserdicht, langlebig und energiesparend');
+    expect(payload.name).toBeUndefined();
+    expect(payload.size).toBeUndefined();
+    expect(payload.address).toBeUndefined();
+    expect(payload.password).toBeUndefined();
 
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/precheck?productId=prod-1'), {
-      timeout: 2000,
-    });
-  });
-
-  test('redirects to login when account already exists', async () => {
-    const fetchMock = vi.fn(async () =>
-      jsonResponse({
-        error: 'LOGIN_REQUIRED',
-        redirect: '/login?next=%2Fprecheck',
-      })
-    );
-    vi.stubGlobal('fetch', fetchMock);
-
-    const alertMock = vi.fn();
-    vi.stubGlobal('alert', alertMock);
-
-    render(<PrecheckForm />);
-    fillValidPrecheckForm();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Jetzt starten' }));
-
-    await waitFor(() => {
-      expect(alertMock).toHaveBeenCalled();
-      expect(pushMock).toHaveBeenCalledWith('/login?next=%2Fprecheck');
-    });
+    expect(await screen.findByText(/Wir haben eine E-Mail an max@example.com gesendet/)).toBeTruthy();
   });
 });

@@ -1,30 +1,18 @@
 // app/api/precheck/route.ts
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { prisma } from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
-import { setSession } from '@/lib/cookies';
-import { sendPrecheckConfirmation } from '@/lib/email';
-import { getSession } from '@/lib/auth';
-import { notifySuperadminsOfPrecheckRegistration } from '@/lib/precheckNotifications';
+import { sendPrecheckClaimEmail } from '@/lib/email';
 import { hasAnalyticsConsent, recordAnalyticsEvent } from '@/lib/analytics';
+import { createPrecheckInvite } from '@/lib/precheckInvite';
 
 const PrecheckSchema = z.object({
-  gender: z.enum(['MALE', 'FEMALE', 'OTHER']),
-  name: z.string().trim().min(2),
-  company: z.string().trim().min(2),
   email: z.string().trim().email(),
-  address: z.string().min(5),
-  password: z.string().min(8, 'Passwort min. 8 Zeichen'),
   // product
   productName: z.string().trim().min(2),
   brand: z.string().trim().min(1),
   category: z.string().trim().min(1),
   code: z.string().trim().min(2),
   specs: z.string().trim().min(5),
-  size: z.string().trim().min(2),
-  madeIn: z.string().trim().min(2),
-  material: z.string().trim().min(2),
   privacyAccepted: z.literal(true),
 });
 
@@ -34,123 +22,48 @@ export async function POST(req: Request) {
     const data = PrecheckSchema.parse(json);
     const category = data.category.trim();
     const normalizedEmail = data.email.trim().toLowerCase();
-    const session = await getSession();
 
-    // 1) Ensure user exists (or create)
-    const existing = await prisma.user.findFirst({ where: { email: { equals: normalizedEmail, mode: 'insensitive' } } });
-
-    if (existing && (!session || session.userId !== existing.id)) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: 'LOGIN_REQUIRED',
-          redirect: `/login?email=${encodeURIComponent(normalizedEmail)}`,
-          message: 'Account existiert bereits. Bitte einloggen.',
-        },
-        { status: 409 }
-      );
-    }
-
-    let userId: string;
-    if (!existing) {
-      const passwordHash = await bcrypt.hash(data.password, 12);
-      const user = await prisma.user.create({
-        data: {
-          gender: data.gender,
-          name: data.name,
-          email: normalizedEmail,
-          passwordHash,
-          address: data.address,
-          company: data.company ?? undefined,
-        },
-        select: { id: true, email: true },
-      });
-      userId = user.id;
-    } else {
-      // If user exists but has no password (older data), set it; update address/name for freshness
-      let passwordHash = existing.passwordHash;
-      if (!passwordHash && data.password) {
-        passwordHash = await bcrypt.hash(data.password, 12);
-      }
-      const updated = await prisma.user.update({
-        where: { id: existing.id },
-        data: {
-          gender: data.gender,
-          name: data.name ?? existing.name,
-          address: data.address ?? existing.address,
-          company: data.company ?? existing.company ?? undefined,
-          passwordHash,
-        },
-        select: { id: true, email: true },
-      });
-      userId = updated.id;
-    }
-
-    // 2) Create Product in PRECHECK
-    const product = await prisma.product.create({
-      data: {
-        userId,
-        name: data.productName,
-        brand: data.brand,
-        category,
-        code: data.code ?? undefined,
-        specs: data.specs ?? undefined,
-        size: data.size ?? undefined,
-        madeIn: data.madeIn ?? undefined,
-        material: data.material ?? undefined,
-        status: 'PRECHECK',
-      },
-      select: { id: true, name: true, brand: true },
-    });
-
-    // 3) Prepare invoice PDF
-    // 4) Send confirmation email (fire and forget)
-    void sendPrecheckConfirmation({
-      to: normalizedEmail,
-      name: data.name,
-      gender: data.gender,
-      productName: product.name,
-    }).catch((error) => {
-      console.error('PRECHECK_CONFIRMATION_EMAIL_FAILED', { productId: product.id, error });
-    });
-
-    void notifySuperadminsOfPrecheckRegistration({
-      productId: product.id,
-      productName: product.name,
-      brand: product.brand,
+    const productData = {
+      productName: data.productName,
+      brand: data.brand,
       category,
-      code: data.code ?? null,
-      customerName: data.name,
-      customerEmail: normalizedEmail,
-      customerCompany: data.company ?? null,
-      sourceLabel: 'Precheck-Formular',
+      code: data.code,
+      specs: data.specs,
+    };
+
+    const { token } = await createPrecheckInvite({
+      email: normalizedEmail,
+      contactName: '',
+      productData,
+      privacyAccepted: data.privacyAccepted,
+    });
+    const claimUrl = `${new URL(req.url).origin}/precheck/claim?token=${encodeURIComponent(token)}`;
+
+    void sendPrecheckClaimEmail({
+      to: normalizedEmail,
+      name: '',
+      productName: data.productName,
+      claimToken: token,
+      claimUrl,
     }).catch((error) => {
-      console.error('PRECHECK_SUPERADMIN_NOTIFICATION_ERROR', { productId: product.id, error });
+      console.error('PRECHECK_CLAIM_EMAIL_FAILED', { email: normalizedEmail, error });
     });
 
     if (hasAnalyticsConsent(req)) {
       void recordAnalyticsEvent({
-        name: 'precheck_submit',
+        name: 'precheck_invite_submit',
         path: '/precheck',
-        userId,
-        productId: product.id,
         metadata: {
           category,
-          hasExistingAccount: Boolean(existing),
         },
       });
     }
 
-    // 5) Set session & respond with redirect to precheck overview
-    await setSession({ userId, email: normalizedEmail });
-
-    const params = new URLSearchParams();
-    params.set('product', product.name);
-
     return NextResponse.json({
       ok: true,
-      productId: product.id,
-      redirect: `/precheck?productId=${product.id}&${params.toString()}`,
+      pending: true,
+      message: 'Bitte prüfen Sie Ihre E-Mail, um das Konto zu erstellen und den Pre-Check fortzusetzen.',
+      claimUrl: process.env.NODE_ENV === 'production' ? undefined : claimUrl,
     });
   } catch (err: any) {
     console.error(err);

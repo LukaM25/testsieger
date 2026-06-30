@@ -23,6 +23,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   assets              Asset[]
   licenseCart         LicenseCart?
+  precheckInvites     PrecheckInvite[]
 }
 
 model Product {
@@ -53,6 +54,28 @@ model Product {
   @@index([name])
   @@index([brand])
   @@index([category])
+}
+
+model PrecheckInvite {
+  id              String    @id @default(cuid())
+  email           String
+  tokenHash       String
+  contactName     String
+  gender          Gender?
+  company         String?
+  address         String?
+  productData     Json
+  privacyAccepted Boolean   @default(false)
+  expiresAt       DateTime
+  usedAt          DateTime?
+  createdAt       DateTime  @default(now())
+  userId          String?
+  productId       String?
+  user            User?     @relation(fields: [userId], references: [id])
+
+  @@index([email])
+  @@index([expiresAt])
+  @@index([usedAt])
 }
 
 model Order {

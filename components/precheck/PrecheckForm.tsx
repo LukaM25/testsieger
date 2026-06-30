@@ -4,72 +4,28 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLocale } from '@/components/LocaleProvider';
 import { forwardRef } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
 
-const Schema = z
-  .object({
-    gender: z.enum(['MALE', 'FEMALE', 'OTHER'], { message: 'Anrede erforderlich' }),
-    firstName: z.string().trim().min(2),
-    lastName: z.string().trim().min(2),
-    company: z.string().trim().min(2),
-    email: z.string().trim().email(),
-    addressStreet: z.string().trim().min(2),
-    addressNumber: z.string().trim().min(1),
-    addressPostal: z.string().trim().min(3),
-    addressCity: z.string().trim().min(2),
-    addressCountry: z.string().trim().min(2),
-    addressLine2: z.string().trim().optional(),
-    password: z.string().min(8),
-    confirmPassword: z.string().min(8),
-    productName: z.string().trim().min(2),
-    brand: z.string().trim().min(1),
-    category: z.string().trim().min(1, 'Kategorie erforderlich'),
-    code: z.string().trim().min(2),
-    specs: z.string().trim().min(5),
-    dimensionLength: z.string().trim().min(1),
-    dimensionWidth: z.string().trim().min(1),
-    dimensionHeight: z.string().trim().min(1),
-    madeIn: z.string().trim().min(2),
-    material: z.string().trim().min(2),
-    privacyAccepted: z.boolean().refine((value) => value === true, {
-      message: 'Bitte Datenschutzerklärung akzeptieren',
-    }),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    path: ['confirmPassword'],
-    message: 'Passwörter stimmen nicht überein',
-  });
+const Schema = z.object({
+  email: z.string().trim().email(),
+  productName: z.string().trim().min(2),
+  brand: z.string().trim().min(1),
+  category: z.string().trim().min(1, 'Kategorie erforderlich'),
+  code: z.string().trim().min(2),
+  specs: z.string().trim().min(5),
+  privacyAccepted: z.boolean().refine((value) => value === true, {
+    message: 'Bitte Datenschutzerklärung akzeptieren',
+  }),
+});
 
 type FormValues = z.infer<typeof Schema>;
 
-const MADE_IN_OPTIONS = [
-  { de: 'Deutschland', en: 'Germany' },
-  { de: 'Österreich', en: 'Austria' },
-  { de: 'Schweiz', en: 'Switzerland' },
-  { de: 'Niederlande', en: 'Netherlands' },
-  { de: 'Polen', en: 'Poland' },
-  { de: 'Frankreich', en: 'France' },
-  { de: 'Italien', en: 'Italy' },
-  { de: 'Spanien', en: 'Spain' },
-  { de: 'Vereinigtes Königreich', en: 'United Kingdom' },
-  { de: 'USA', en: 'USA' },
-  { de: 'China', en: 'China' },
-  { de: 'Indien', en: 'India' },
-  { de: 'Vietnam', en: 'Vietnam' },
-  { de: 'Türkei', en: 'Turkey' },
-  { de: 'Sonstiges', en: 'Other' },
-] as const;
-
 export default function PrecheckForm() {
-  const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
-  const [redirecting, setRedirecting] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
+  const [devClaimUrl, setDevClaimUrl] = useState<string | null>(null);
   const { locale } = useLocale();
   const tr = (de: string, en: string) => (locale === 'en' ? en : de);
 
@@ -79,40 +35,19 @@ export default function PrecheckForm() {
   });
 
   const onSubmit = async (values: FormValues) => {
-    const { confirmPassword, firstName, lastName, dimensionLength, dimensionWidth, dimensionHeight, ...rest } = values;
-    const name = `${firstName} ${lastName}`.trim();
-    const size = [dimensionLength, dimensionWidth, dimensionHeight].map((value) => value.trim()).join('x');
-    const addressParts = [
-      `${rest.addressStreet} ${rest.addressNumber}`.trim(),
-      rest.addressLine2?.trim(),
-      `${rest.addressPostal} ${rest.addressCity}`.trim(),
-      rest.addressCountry.trim(),
-    ].filter(Boolean);
-    const address = addressParts.join(', ');
-
     setSubmitting(true);
-    setRedirecting(false);
+    setSubmittedEmail(null);
+    setDevClaimUrl(null);
     const res = await fetch('/api/precheck', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...rest,
-        size,
-        name,
-        address,
-      }),
+      body: JSON.stringify(values),
     });
     const data = await res.json();
-    if (data?.error === 'LOGIN_REQUIRED' && data?.redirect) {
-      alert(tr('Es existiert bereits ein Konto mit dieser E-Mail. Bitte einloggen.', 'An account with this email already exists. Please sign in.'));
-      router.push(data.redirect as string);
+    if (data?.ok && data?.pending) {
+      setSubmittedEmail(values.email.trim().toLowerCase());
+      setDevClaimUrl(typeof data.claimUrl === 'string' ? data.claimUrl : null);
       setSubmitting(false);
-      return;
-    }
-    if (data?.ok && data?.redirect) {
-      const target = data.redirect || `/precheck${data.productId ? `?productId=${data.productId}` : ''}`;
-      setRedirecting(true);
-      setTimeout(() => router.push(target), 800);
     } else {
       alert('Fehler beim Absenden. Bitte prüfen Sie Ihre Eingaben.');
       setSubmitting(false);
@@ -144,133 +79,10 @@ export default function PrecheckForm() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" autoComplete="on">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <Label>{tr('Anrede', 'Salutation')}</Label>
-            <select
-              {...register('gender')}
-              defaultValue=""
-              required
-              autoComplete="honorific-prefix"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-800"
-            >
-              <option value="">{tr('Bitte auswählen', 'Please select')}</option>
-              <option value="MALE">{tr('Herr', 'Mr')}</option>
-              <option value="FEMALE">{tr('Frau', 'Ms')}</option>
-              <option value="OTHER">{tr('Sonstiges', 'Other')}</option>
-            </select>
-            <Error msg={errors.gender?.message} />
-          </div>
-          <div>
-            <Label>{tr('Vorname', 'First name')}</Label>
-            <Input
-              {...register('firstName')}
-              placeholder={tr('Max', 'John')}
-              autoComplete="given-name"
-              required
-            />
-            <Error msg={errors.firstName?.message} />
-          </div>
-          <div>
-            <Label>{tr('Nachname', 'Last name')}</Label>
-            <Input
-              {...register('lastName')}
-              placeholder={tr('Mustermann', 'Doe')}
-              autoComplete="family-name"
-              required
-            />
-            <Error msg={errors.lastName?.message} />
-          </div>
-          <div>
-            <Label>{tr('Firma', 'Company')}</Label>
-            <Input {...register('company')} placeholder={tr('Ihre Firma GmbH', 'Your company LLC')} autoComplete="organization" required />
-            <Error msg={errors.company?.message} />
-          </div>
-          <div>
             <Label>{tr('E-Mail', 'Email')}</Label>
             <Input {...register('email')} type="email" placeholder="name@domain.tld" autoComplete="email" required />
             <Error msg={errors.email?.message} />
           </div>
-          <div>
-            <Label>{tr('Passwort', 'Password')}</Label>
-            <div className="relative">
-              <Input
-                {...register('password')}
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                autoComplete="new-password"
-                className="pr-10"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute inset-y-0 right-2 flex items-center px-2 text-gray-500"
-                aria-label={showPassword ? tr('Passwort verbergen', 'Hide password') : tr('Passwort anzeigen', 'Show password')}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-            <Error msg={errors.password?.message} />
-          </div>
-          <div>
-            <Label>{tr('Passwort wiederholen', 'Confirm password')}</Label>
-            <div className="relative">
-              <Input
-                {...register('confirmPassword')}
-                type={showConfirm ? 'text' : 'password'}
-                placeholder="••••••••"
-                autoComplete="new-password"
-                className="pr-10"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirm((v) => !v)}
-                className="absolute inset-y-0 right-2 flex items-center px-2 text-gray-500"
-                aria-label={showConfirm ? tr('Passwort verbergen', 'Hide password') : tr('Passwort anzeigen', 'Show password')}
-              >
-                {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-            <Error msg={errors.confirmPassword?.message} />
-          </div>
-          <div className="md:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <Label>{tr('Straße', 'Street')}</Label>
-              <Input {...register('addressStreet')} placeholder={tr('Musterstraße', 'Example Street')} autoComplete="address-line1" required />
-              <Error msg={errors.addressStreet?.message} />
-            </div>
-            <div>
-            <Label>{tr('Hausnummer', 'House number')}</Label>
-            <Input {...register('addressNumber')} placeholder="12a" autoComplete="address-line1" required />
-              <Error msg={errors.addressNumber?.message} />
-            </div>
-            <div>
-              <Label>{tr('PLZ', 'ZIP')}</Label>
-              <Input {...register('addressPostal')} placeholder="12345" autoComplete="postal-code" required />
-              <Error msg={errors.addressPostal?.message} />
-            </div>
-            <div>
-              <Label>{tr('Ort', 'City')}</Label>
-              <Input {...register('addressCity')} placeholder={tr('Berlin', 'City')} autoComplete="address-level2" required />
-              <Error msg={errors.addressCity?.message} />
-            </div>
-            <div>
-              <Label>{tr('Land', 'Country')}</Label>
-              <Input {...register('addressCountry')} placeholder={tr('Deutschland', 'Country')} autoComplete="country-name" required />
-              <Error msg={errors.addressCountry?.message} />
-            </div>
-            <div>
-            <Label>{tr('Adresszusatz (optional)', 'Address line 2 (optional)')}</Label>
-            <Input {...register('addressLine2')} placeholder={tr('c/o, Etage, etc.', 'c/o, floor, etc.')} autoComplete="address-line2" />
-              <Error msg={errors.addressLine2?.message} />
-            </div>
-          </div>
-        </div>
-
-        <hr className="my-2" />
-
-        <h2 className="text-xl font-semibold">{tr('Produktdaten', 'Product data')}</h2>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div className="md:col-span-2">
             <Label>{tr('Kategorie', 'Category')}</Label>
             <select
@@ -324,47 +136,6 @@ export default function PrecheckForm() {
             <Error msg={errors.code?.message} />
           </div>
           <div className="md:col-span-2">
-            <Label>{tr('Verpackungsgröße / Maße', 'Package size / dimensions')}</Label>
-            <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-4">
-              <div>
-                <Input {...register('dimensionLength')} placeholder={tr('Länge (cm)', 'Length')} required />
-                <Error msg={errors.dimensionLength?.message} />
-              </div>
-              <div>
-                <Input {...register('dimensionWidth')} placeholder={tr('Breite (cm)', 'Width')} required />
-                <Error msg={errors.dimensionWidth?.message} />
-              </div>
-              <div>
-                <Input {...register('dimensionHeight')} placeholder={tr('Höhe (cm)', 'Height')} required />
-                <Error msg={errors.dimensionHeight?.message} />
-              </div>
-              <div>
-                <select
-                  {...register('madeIn')}
-                  defaultValue=""
-                  required
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-800"
-                >
-                  <option value="">{tr('Hergestellt in', 'Made in')}</option>
-                  {MADE_IN_OPTIONS.map((option) => {
-                    const label = locale === 'en' ? option.en : option.de;
-                    return (
-                      <option key={option.de} value={label}>
-                        {label}
-                      </option>
-                    );
-                  })}
-                </select>
-                <Error msg={errors.madeIn?.message} />
-              </div>
-            </div>
-          </div>
-          <div>
-            <Label>{tr('Material (hauptsächlich)', 'Material (primary)')}</Label>
-            <Input {...register('material')} placeholder={tr('z.B. Edelstahl', 'e.g. stainless steel')} required />
-            <Error msg={errors.material?.message} />
-          </div>
-          <div className="md:col-span-2">
             <Label>{tr('Produktspezifikationen und Produkt Link', 'Product specifications and link to the product')}</Label>
             <textarea
               {...register('specs')}
@@ -405,15 +176,25 @@ export default function PrecheckForm() {
           {submitting ? tr('Wird gesendet…', 'Sending…') : tr('Jetzt starten', 'Start now')}
         </button>
 
-        {redirecting && (
-          <p className="text-sm text-gray-700">
-            {tr('Weiterleitung zum Precheck-Portal …', 'Redirecting to the Precheck portal …')}
-          </p>
+        {submittedEmail && (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+            {tr(
+              `Wir haben eine E-Mail an ${submittedEmail} gesendet. Bitte öffnen Sie den Link, erstellen Sie Ihr Konto und setzen Sie den Pre-Check fort.`,
+              `We sent an email to ${submittedEmail}. Open the link, create your account, and continue the pre-check.`
+            )}
+            {devClaimUrl && (
+              <p className="mt-3">
+                <a href={devClaimUrl} className="font-semibold underline underline-offset-2">
+                  {tr('Lokalen Test-Link öffnen', 'Open local test link')}
+                </a>
+              </p>
+            )}
+          </div>
         )}
       </form>
 
       <p className="mt-6 text-sm text-gray-600">
-        {tr('Hinweis: Nach dem Absenden wird automatisch ein Kundenkonto erstellt.', 'Note: After submitting, a customer account is created automatically.')}
+        {tr('Hinweis: Ihr Kundenkonto wird erst über den Link in der E-Mail erstellt.', 'Note: Your customer account is created through the link in the email.')}
       </p>
     </div>
   );

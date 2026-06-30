@@ -7,6 +7,8 @@ export const ANALYTICS_EVENT_NAMES = [
   "page_view",
   "cta_click",
   "precheck_submit",
+  "precheck_invite_submit",
+  "precheck_invite_claim",
   "checkout_start",
   "payment_success",
   "contact_submit",
