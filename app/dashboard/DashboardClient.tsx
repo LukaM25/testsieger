@@ -50,9 +50,9 @@ type ActiveLicenseItem = {
 };
 
 const PLAN_BASE_DEFAULT_CENTS = {
-  BASIC: 36135,
-  PREMIUM: 39785,
-  LIFETIME: 146000,
+  BASIC: 28835,
+  PREMIUM: 32120,
+  LIFETIME: 68900,
 } as const;
 
 const PLAN_COMPARISON = [
@@ -116,7 +116,7 @@ const CARD_DISCOUNT_ROWS = [
   { label: "3 Prod. -30%", discountPercent: 30, multiplier: 3 },
 ] as const;
 
-const GRUNDGEBUEHR_BASE_CENTS = 22_900;
+const GRUNDGEBUEHR_BASE_CENTS = 17_900;
 const PRIORITY_ADDON_CENTS = 6_000;
 
 const formatPlanPriceFromCents = (cents: number) =>

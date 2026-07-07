@@ -88,7 +88,7 @@ test.describe('Customer authenticated dashboard flow', () => {
       if (method === 'POST') {
         const body = route.request().postDataJSON() as { productId: string; plan: string };
         const product = productById.get(body.productId);
-        const basePriceCents = body.plan === 'PREMIUM' ? 39785 : body.plan === 'LIFETIME' ? 146000 : 36135;
+        const basePriceCents = body.plan === 'PREMIUM' ? 32120 : body.plan === 'LIFETIME' ? 68900 : 28835;
 
         cartState = {
           cartId: 'cart-1',

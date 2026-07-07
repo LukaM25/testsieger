@@ -98,7 +98,7 @@ async function seedDashboardScenario(): Promise<SeedScenario> {
       userId: user.id,
       productId: paidProduct.id,
       plan: Plan.PRECHECK_FEE,
-      priceCents: 22900,
+      priceCents: 17900,
       paidAt: new Date(),
     },
   });

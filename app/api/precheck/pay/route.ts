@@ -8,7 +8,7 @@ import { hasAnalyticsConsent, recordAnalyticsEvent } from '@/lib/analytics';
 
 export const runtime = 'nodejs';
 
-const PRECHECK_BASE_FEE_CENTS = 22_900;
+const PRECHECK_BASE_FEE_CENTS = 17_900;
 const PRECHECK_PRIORITY_ADDON_CENTS = 6_000;
 const FIXED_TAX_RATE_ID = process.env.STRIPE_TAX_RATE_19?.trim() || "";
 

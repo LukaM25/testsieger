@@ -93,13 +93,13 @@ export default async function PrecheckSuccessPage({ searchParams }: Props) {
   const testOptions = [
     {
       title: tr('Produkttest Checkout', 'Product test checkout'),
-      price: tr('229 € zzgl. MwSt.', '€229 plus VAT'),
+      price: tr('179 € zzgl. MwSt.', '€179 plus VAT'),
       timeline: tr('14–17 Werktage nach Wareneingang', '14–17 business days after receipt'),
       detail: tr('Standard-Bearbeitung nach Zahlungseingang und Wareneingang.', 'Standard processing once payment and delivery are received.'),
     },
     {
       title: tr('Produkttest Priority', 'Product test priority'),
-      price: tr('229 € + 60 € zzgl. MwSt.', '€229 + €60 plus VAT'),
+      price: tr('179 € + 60 € zzgl. MwSt.', '€179 + €60 plus VAT'),
       timeline: tr('4–7 Werktage nach Wareneingang', '4–7 business days after receipt'),
       detail: tr('Beschleunigte Prüfung mit priorisierter Auswertung.', 'Accelerated testing with prioritised reporting.'),
     },
@@ -108,17 +108,17 @@ export default async function PrecheckSuccessPage({ searchParams }: Props) {
   const plans = [
     {
       name: 'Basic',
-      price: tr('0,99 € / Tag (jährlich)', '€0.99 / day (yearly)'),
+      price: tr('0,79 € / Tag (jährlich)', '€0.79 / day (yearly)'),
       reach: tr('DE · 1 Kanal', 'DE · 1 channel'),
     },
     {
       name: 'Premium',
-      price: tr('1,09 € / Tag (jährlich)', '€1.09 / day (yearly)'),
+      price: tr('0,88 € / Tag (jährlich)', '€0.88 / day (yearly)'),
       reach: tr('EU-Sprachen · alle Kanäle', 'EU languages · all channels'),
     },
     {
       name: 'Lifetime',
-      price: tr('1460 € einmalig', '€1460 one-time'),
+      price: tr('689 € einmalig', '€689 one-time'),
       reach: tr('Zertifikat & Bericht · alle Kanäle', 'Certificate & report · all channels'),
     },
   ];
@@ -164,8 +164,8 @@ export default async function PrecheckSuccessPage({ searchParams }: Props) {
             </div>
             <p className="mt-3 text-slate-700">
               {tr(
-                'Es wird eine einmalige Testgebühr von 229 € zzgl. MwSt. fällig. Nach der Zahlung erhalten Sie die Rechnung und die Versandadresse per E-Mail.',
-                'A one-time test fee of €229 plus VAT is due. After payment you will receive the invoice and the shipping address via email.'
+                'Es wird eine einmalige Testgebühr von 179 € zzgl. MwSt. fällig. Nach der Zahlung erhalten Sie die Rechnung und die Versandadresse per E-Mail.',
+                'A one-time test fee of €179 plus VAT is due. After payment you will receive the invoice and the shipping address via email.'
               )}
             </p>
           </li>

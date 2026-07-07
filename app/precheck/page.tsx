@@ -33,20 +33,20 @@ type Plan = {
 };
 
 // --- Data ---
-const STANDARD_NET_EUR = 229;
-const PRIORITY_NET_EUR = 289;
+const STANDARD_NET_EUR = 179;
+const PRIORITY_NET_EUR = 239;
 
 const testOptions: TestOption[] = [
   {
     id: "standard",
     title: { de: "Produkttest Checkout", en: "Product test checkout" },
-    price: { de: "229,00 € zzgl. MwSt.", en: "€229 plus VAT" },
+    price: { de: "179,00 € zzgl. MwSt.", en: "€179 plus VAT" },
     timeline: { de: "14–17 Werktage nach Erhalt", en: "14–17 business days after receipt" },
   },
   {
     id: "priority",
     title: { de: "Produkttest Priority", en: "Product test priority" },
-    price: { de: "(229 € + 60 €) zzgl. MwSt.", en: "(€229 + €60) plus VAT" },
+    price: { de: "(179 € + 60 €) zzgl. MwSt.", en: "(€179 + €60) plus VAT" },
     timeline: { de: "4–7 Werktage nach Erhalt", en: "4–7 business days after receipt" },
   },
 ];
@@ -63,7 +63,7 @@ const plans: Plan[] = [
       de: ["Siegel", "Zertifikat", "Prüfbericht"],
       en: ["Seal", "Certificate", "Test report"],
     },
-    basePriceEur: 0.99,
+    basePriceEur: 0.79,
     billing: "daily",
     footer: {
       de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
@@ -81,7 +81,7 @@ const plans: Plan[] = [
       de: ["Siegel", "Zertifikat", "Prüfbericht"],
       en: ["Seal", "Certificate", "Test report"],
     },
-    basePriceEur: 1.09,
+    basePriceEur: 0.875,
     billing: "daily",
     footer: {
       de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
@@ -99,7 +99,7 @@ const plans: Plan[] = [
       de: ["Siegel", "Zertifikat", "Prüfbericht"],
       en: ["Seal", "Certificate", "Test report"],
     },
-    basePriceEur: 1460,
+    basePriceEur: 689,
     billing: "one-time",
     footer: {
       de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],

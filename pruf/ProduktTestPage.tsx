@@ -68,7 +68,7 @@ const verfahrenHighlights = [
   { src: "/images/iconen/qualitat.PNG", label: { de: "Qualität", en: "Quality" } },
 ];
 
-const STANDARD_NET_EUR = 229;
+const STANDARD_NET_EUR = 179;
 
 const plans: Plan[] = [
   {
@@ -82,7 +82,7 @@ const plans: Plan[] = [
       de: ["Siegel", "Zertifikat", "Prüfbericht"],
       en: ["Seal", "Certificate", "Test report"],
     },
-    basePriceEur: 0.99,
+    basePriceEur: 0.79,
     billing: "daily",
     footer: {
       de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
@@ -100,7 +100,7 @@ const plans: Plan[] = [
       de: ["Siegel", "Zertifikat", "Prüfbericht"],
       en: ["Seal", "Certificate", "Test report"],
     },
-    basePriceEur: 1.09,
+    basePriceEur: 0.875,
     billing: "daily",
     footer: {
       de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
@@ -118,7 +118,7 @@ const plans: Plan[] = [
       de: ["Siegel", "Zertifikat", "Prüfbericht"],
       en: ["Seal", "Certificate", "Test report"],
     },
-    basePriceEur: 1460,
+    basePriceEur: 689,
     billing: "one-time",
     footer: {
       de: ["Abrechnung einmalig", "Lizenzverlängerung jährlich."],
@@ -210,8 +210,8 @@ const phasesQa = {
     {
       question: { de: 'Welche Kosten entstehen - und wann?', en: 'What costs arise - and when?' },
       answer: {
-        de: 'Nach dem kostenlosen bestandenen Pre-Check kann das Produkt an uns geschickt werden.\nFür den Prüfungsaufwand, das Erstellen der Zertifikate und Berichte wird eine Grundgebühr von 229 € erhoben.\nNach Abschluss der Prüfung und dem vorliegenden Testergebnis kann der Lizenzplan gewählt werden.\nDer Lizenzplan ist individuell auszuwählen und wird für ein komplettes Jahr bezahlt. Ist das Ergebnis nicht zufriedenstellend, muss kein Lizenzplan ausgewählt werden - somit wird auch kein Siegel und Zertifikat ausgestellt.',
-        en: 'After the free pre-check is passed, the product can be sent to us.\nA base fee of €229 is charged for the testing effort and the creation of certificates and reports.\nAfter the test is completed and the result is available, you can choose a license plan.\nThe license plan is selected individually and paid for a full year.\nIf the result is not satisfactory, no license plan is required - therefore no seal or certificate is issued.',
+        de: 'Nach dem kostenlosen bestandenen Pre-Check kann das Produkt an uns geschickt werden.\nFür den Prüfungsaufwand, das Erstellen der Zertifikate und Berichte wird eine Grundgebühr von 179 € erhoben.\nNach Abschluss der Prüfung und dem vorliegenden Testergebnis kann der Lizenzplan gewählt werden.\nDer Lizenzplan ist individuell auszuwählen und wird für ein komplettes Jahr bezahlt. Ist das Ergebnis nicht zufriedenstellend, muss kein Lizenzplan ausgewählt werden - somit wird auch kein Siegel und Zertifikat ausgestellt.',
+        en: 'After the free pre-check is passed, the product can be sent to us.\nA base fee of €179 is charged for the testing effort and the creation of certificates and reports.\nAfter the test is completed and the result is available, you can choose a license plan.\nThe license plan is selected individually and paid for a full year.\nIf the result is not satisfactory, no license plan is required - therefore no seal or certificate is issued.',
       },
     },
     {

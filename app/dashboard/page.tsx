@@ -11,9 +11,9 @@ type Props = {
 
 export default async function DashboardPage({ searchParams }: Props) {
   const defaultPlanBasePriceCents = {
-    BASIC: 36135,
-    PREMIUM: 39785,
-    LIFETIME: 146000,
+    BASIC: 28835,
+    PREMIUM: 32120,
+    LIFETIME: 68900,
   } as const;
   let planBasePriceCents: { BASIC: number; PREMIUM: number; LIFETIME: number } = {
     ...defaultPlanBasePriceCents,
@@ -80,7 +80,7 @@ export default async function DashboardPage({ searchParams }: Props) {
           id: 'order-1',
           productId: 'prod-1',
           plan: 'PRECHECK_FEE',
-          priceCents: 22900,
+          priceCents: 17900,
           createdAt: new Date(now - 1000 * 60 * 60 * 24 * 115).toISOString(),
           paidAt: new Date(now - 1000 * 60 * 60 * 24 * 114).toISOString(),
           product: { id: 'prod-1', name: 'Kaffeemaschine Pro' },
