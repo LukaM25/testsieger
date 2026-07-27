@@ -41,10 +41,13 @@ const INFO_FONT_SIZES = {
 };
 const INFO_TEXT_SCALE_X = 0.81;
 const INFO_VALUE_GAP = 20;
-const INFO_LONG_TEXT_THRESHOLD = 18;
 const INFO_TEXT_QR_GAP = 36;
+const INFO_PANEL_RIGHT = 1500;
+const INFO_MIN_SINGLE_LINE_SCALE = 0.72;
 const INFO_WRAPPED_BODY_SCALE = 0.54;
 const INFO_WRAPPED_LINE_HEIGHT = 50;
+const QR_QUIET_ZONE_MODULES = 2;
+const QR_LIGHT_MODULE_ALPHA = "66";
 
 const DEFAULT_TEMPLATE = path.join(process.cwd(), "siegeltemplate.png");
 const DEFAULT_OUTPUT_DIR = path.join(
@@ -86,119 +89,8 @@ function formatTestDate(date: Date) {
   }
 }
 
-function shorten(input: string | null | undefined, max = 28) {
-  if (!input) return "";
-  return input.length > max ? `${input.slice(0, max)}...` : input;
-}
-
 function escapeXml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
-function estimateCondensedTextWidth(text: string, fontSize: number, scaleX: number) {
-  const units = Array.from(text).reduce((total, char) => {
-    if (char === " ") return total + 0.25;
-    if (/[,.;:|/\\-]/.test(char)) return total + 0.2;
-    if (/[ilI1!]/.test(char)) return total + 0.22;
-    if (/[mwMW]/.test(char)) return total + 0.62;
-    if (/[A-ZÄÖÜ]/.test(char)) return total + 0.48;
-    if (/[0-9]/.test(char)) return total + 0.42;
-    return total + 0.4;
-  }, 0);
-
-  return units * fontSize * scaleX;
-}
-
-function truncateTextToWidth(text: string, maxWidth: number, fontSize: number, scaleX: number) {
-  const suffix = "...";
-  if (estimateCondensedTextWidth(text, fontSize, scaleX) <= maxWidth) return text;
-
-  let candidate = text.trim();
-  while (candidate.length > 0) {
-    const next = `${candidate.replace(/\s+$/g, "")}${suffix}`;
-    if (estimateCondensedTextWidth(next, fontSize, scaleX) <= maxWidth) return next;
-    candidate = candidate.slice(0, -1);
-  }
-
-  return suffix;
-}
-
-function splitIntoBalancedTwoLines(
-  text: string,
-  maxWidth: number,
-  fontSize: number,
-  scaleX: number,
-) {
-  const words = text.split(" ");
-  if (words.length < 2) return null;
-
-  let best: { lines: [string, string]; score: number } | null = null;
-
-  for (let index = 1; index < words.length; index += 1) {
-    const first = words.slice(0, index).join(" ");
-    const second = words.slice(index).join(" ");
-    const firstWidth = estimateCondensedTextWidth(first, fontSize, scaleX);
-    const secondWidth = estimateCondensedTextWidth(second, fontSize, scaleX);
-
-    if (firstWidth > maxWidth || secondWidth > maxWidth) continue;
-
-    const score = Math.abs(firstWidth - secondWidth);
-    if (!best || score < best.score) {
-      best = { lines: [first, second], score };
-    }
-  }
-
-  return best?.lines ?? null;
-}
-
-function wrapInfoText(
-  text: string,
-  maxWidth: number,
-  fontSize: number,
-  scaleX: number,
-  forceTwoLines = false,
-) {
-  const normalized = text.replace(/\s+/g, " ").trim();
-  if (!normalized) return [];
-
-  const fitsSingleLine =
-    normalized.length <= INFO_LONG_TEXT_THRESHOLD &&
-    estimateCondensedTextWidth(normalized, fontSize, scaleX) <= maxWidth;
-
-  if (fitsSingleLine) return [normalized];
-
-  if (forceTwoLines) {
-    const balanced = splitIntoBalancedTwoLines(normalized, maxWidth, fontSize, scaleX);
-    if (balanced) return balanced;
-  }
-
-  const words = normalized.split(" ");
-  const lines: string[] = [];
-  let current = "";
-
-  for (let index = 0; index < words.length; index += 1) {
-    const word = words[index];
-    const candidate = current ? `${current} ${word}` : word;
-    if (estimateCondensedTextWidth(candidate, fontSize, scaleX) <= maxWidth) {
-      current = candidate;
-      continue;
-    }
-
-    if (current) lines.push(current);
-    current = word;
-
-    if (lines.length === 1) {
-      const remaining = [current, ...words.slice(index + 1)].join(" ");
-      lines.push(truncateTextToWidth(remaining, maxWidth, fontSize, scaleX));
-      return lines;
-    }
-  }
-
-  if (current) lines.push(current);
-
-  return lines.slice(0, 2).map((line) =>
-    truncateTextToWidth(line, maxWidth, fontSize, scaleX),
-  );
 }
 
 function makeSvgText({
@@ -216,6 +108,7 @@ function makeSvgText({
   stretch = false,
   letterSpacing = 0,
   tightenCommaBy = 0,
+  clip,
 }: {
   text: string;
   x: number;
@@ -231,6 +124,7 @@ function makeSvgText({
   stretch?: boolean;
   letterSpacing?: number;
   tightenCommaBy?: number;
+  clip?: { x: number; width: number };
 }) {
   const anchor = align === "center" ? "middle" : "start";
 
@@ -256,30 +150,230 @@ function makeSvgText({
     textContent = `${before}<tspan dx="-${tightenCommaBy}">${after}</tspan>`;
   }
 
+  const clipDefinition = clip
+    ? `<defs><clipPath id="text-clip"><rect x="${clip.x}" y="0" width="${clip.width}" height="${height}" /></clipPath></defs>`
+    : "";
+  const clipAttribute = clip ? `clip-path="url(#text-clip)"` : "";
+
   return Buffer.from(
     `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+      ${clipDefinition}
       <style>
         ${fontFace}
         .t { font-family: 'DIN Condensed', 'Arial', 'Helvetica', sans-serif; }
       </style>
-      <text 
-        x="${anchorX}" 
-        y="${adjustedY}" 
-        ${transform} 
-        text-anchor="${anchor}" 
-        class="t" 
-        font-size="${fontSize}" 
-        font-weight="${fontWeight}" 
-        fill="${color}"
-        letter-spacing="${letterSpacing}"
-      >
-        ${textContent}
-      </text>
+      <g ${clipAttribute}>
+        <text
+          x="${anchorX}"
+          y="${adjustedY}"
+          ${transform}
+          text-anchor="${anchor}"
+          class="t"
+          font-size="${fontSize}"
+          font-weight="${fontWeight}"
+          fill="${color}"
+          letter-spacing="${letterSpacing}"
+        >
+          ${textContent}
+        </text>
+      </g>
     </svg>`
   );
 }
 
-function makeInfoValueTextOverlays({
+type TextMeasurementOptions = {
+  fontSize: number;
+  fontWeight: number;
+  fontDataUrl?: string | null;
+  scaleX: number;
+};
+
+async function measureRenderedTextWidth(
+  text: string,
+  { fontSize, fontWeight, fontDataUrl, scaleX }: TextMeasurementOptions,
+) {
+  if (!text) return 0;
+
+  const padding = Math.max(24, Math.ceil(fontSize));
+  const width = Math.min(
+    32768,
+    Math.max(1024, Math.ceil((text.length + 4) * fontSize * 1.35)),
+  );
+  const height = Math.max(256, Math.ceil(fontSize * 3));
+  const input = makeSvgText({
+    text,
+    x: padding,
+    y: Math.ceil(fontSize * 1.7),
+    fontSize,
+    fontWeight,
+    color: "#000000",
+    fontDataUrl,
+    scaleX,
+    width,
+    height,
+  });
+  const { info } = await sharp(input)
+    .trim({ background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png()
+    .toBuffer({ resolveWithObject: true });
+
+  return info.width;
+}
+
+async function truncateTextToRenderedWidth(
+  text: string,
+  maxWidth: number,
+  options: TextMeasurementOptions,
+) {
+  if ((await measureRenderedTextWidth(text, options)) <= maxWidth) return text;
+
+  const suffix = "…";
+  let low = 0;
+  let high = text.length;
+  let best = suffix;
+
+  while (low <= high) {
+    const middle = Math.floor((low + high) / 2);
+    const candidate = `${text.slice(0, middle).trimEnd()}${suffix}`;
+    const candidateWidth = await measureRenderedTextWidth(candidate, options);
+
+    if (candidateWidth <= maxWidth) {
+      best = candidate;
+      low = middle + 1;
+    } else {
+      high = middle - 1;
+    }
+  }
+
+  return best;
+}
+
+async function splitIntoMeasuredTwoLines(
+  text: string,
+  maxWidth: number,
+  options: TextMeasurementOptions,
+) {
+  const words = text.split(" ");
+  if (words.length < 2) return null;
+
+  let best: { lines: [string, string]; score: number } | null = null;
+
+  for (let index = 1; index < words.length; index += 1) {
+    const first = words.slice(0, index).join(" ");
+    const second = words.slice(index).join(" ");
+    const [firstWidth, secondWidth] = await Promise.all([
+      measureRenderedTextWidth(first, options),
+      measureRenderedTextWidth(second, options),
+    ]);
+
+    if (firstWidth > maxWidth || secondWidth > maxWidth) continue;
+
+    const score = Math.max(firstWidth, secondWidth) * 2 + Math.abs(firstWidth - secondWidth);
+    if (!best || score < best.score) {
+      best = { lines: [first, second], score };
+    }
+  }
+
+  if (best) return best.lines;
+
+  let splitIndex = 1;
+  for (let index = 1; index < words.length; index += 1) {
+    const candidate = words.slice(0, index + 1).join(" ");
+    if ((await measureRenderedTextWidth(candidate, options)) > maxWidth) break;
+    splitIndex = index + 1;
+  }
+
+  const first = await truncateTextToRenderedWidth(
+    words.slice(0, splitIndex).join(" "),
+    maxWidth,
+    options,
+  );
+  const second = await truncateTextToRenderedWidth(
+    words.slice(splitIndex).join(" "),
+    maxWidth,
+    options,
+  );
+
+  return second ? ([first, second] as [string, string]) : null;
+}
+
+async function fitTextToWidth({
+  text,
+  maxWidth,
+  preferredFontSize,
+  fontWeight,
+  fontDataUrl,
+  scaleX,
+  maxLines,
+  minSingleLineScale = INFO_MIN_SINGLE_LINE_SCALE,
+  wrappedFontScale = INFO_WRAPPED_BODY_SCALE,
+  wrappedLineHeight,
+}: {
+  text: string;
+  maxWidth: number;
+  preferredFontSize: number;
+  fontWeight: number;
+  fontDataUrl?: string | null;
+  scaleX: number;
+  maxLines: 1 | 2;
+  minSingleLineScale?: number;
+  wrappedFontScale?: number;
+  wrappedLineHeight: number;
+}) {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (!normalized) return { lines: [] as string[], fontSize: preferredFontSize, lineHeight: 0 };
+
+  const preferredOptions = {
+    fontSize: preferredFontSize,
+    fontWeight,
+    fontDataUrl,
+    scaleX,
+  };
+  const preferredWidth = await measureRenderedTextWidth(normalized, preferredOptions);
+  if (preferredWidth <= maxWidth) {
+    return { lines: [normalized], fontSize: preferredFontSize, lineHeight: 0 };
+  }
+
+  const minSingleLineFontSize = Math.max(
+    1,
+    Math.round(preferredFontSize * minSingleLineScale),
+  );
+  const proportionalFontSize = Math.min(
+    preferredFontSize - 1,
+    Math.floor((preferredFontSize * maxWidth) / preferredWidth) - 1,
+  );
+
+  if (proportionalFontSize >= minSingleLineFontSize) {
+    const proportionalOptions = { ...preferredOptions, fontSize: proportionalFontSize };
+    if (
+      (await measureRenderedTextWidth(normalized, proportionalOptions)) <= maxWidth
+    ) {
+      return { lines: [normalized], fontSize: proportionalFontSize, lineHeight: 0 };
+    }
+  }
+
+  if (maxLines === 2) {
+    const wrappedFontSize = Math.max(
+      1,
+      Math.round(preferredFontSize * wrappedFontScale),
+    );
+    const wrappedOptions = { ...preferredOptions, fontSize: wrappedFontSize };
+    const lines = await splitIntoMeasuredTwoLines(normalized, maxWidth, wrappedOptions);
+    if (lines) {
+      return { lines, fontSize: wrappedFontSize, lineHeight: wrappedLineHeight };
+    }
+  }
+
+  const fallbackOptions = { ...preferredOptions, fontSize: minSingleLineFontSize };
+  const fallbackText = await truncateTextToRenderedWidth(
+    normalized,
+    maxWidth,
+    fallbackOptions,
+  );
+  return { lines: [fallbackText], fontSize: minSingleLineFontSize, lineHeight: 0 };
+}
+
+async function makeFittedTextOverlays({
   text,
   x,
   y,
@@ -291,6 +385,10 @@ function makeInfoValueTextOverlays({
   scaleX,
   width,
   height,
+  maxLines,
+  minSingleLineScale,
+  wrappedFontScale,
+  wrappedLineHeight,
 }: {
   text: string;
   x: number;
@@ -303,38 +401,39 @@ function makeInfoValueTextOverlays({
   scaleX: number;
   width: number;
   height: number;
-}): sharp.OverlayOptions[] {
-  const normalized = text.replace(/\s+/g, " ").trim();
-  if (!normalized) return [];
+  maxLines: 1 | 2;
+  minSingleLineScale?: number;
+  wrappedFontScale?: number;
+  wrappedLineHeight: number;
+}): Promise<sharp.OverlayOptions[]> {
+  const fitted = await fitTextToWidth({
+    text,
+    maxWidth,
+    preferredFontSize: fontSize,
+    fontWeight,
+    fontDataUrl,
+    scaleX,
+    maxLines,
+    minSingleLineScale,
+    wrappedFontScale,
+    wrappedLineHeight,
+  });
+  const firstLineY =
+    fitted.lines.length === 1 ? y : y - Math.round(fitted.lineHeight / 2);
 
-  const shouldWrap =
-    normalized.length > INFO_LONG_TEXT_THRESHOLD ||
-    estimateCondensedTextWidth(normalized, fontSize, scaleX) > maxWidth;
-  const forceTwoLines = normalized.length > INFO_LONG_TEXT_THRESHOLD;
-  const effectiveFontSize = shouldWrap
-    ? Math.round(fontSize * INFO_WRAPPED_BODY_SCALE)
-    : fontSize;
-  const lines = shouldWrap
-    ? wrapInfoText(normalized, maxWidth, effectiveFontSize, scaleX, forceTwoLines)
-    : [normalized];
-  const lineHeight = Math.round(
-    effectiveFontSize *
-      (INFO_WRAPPED_LINE_HEIGHT / (INFO_FONT_SIZES.body * INFO_WRAPPED_BODY_SCALE)),
-  );
-  const firstLineY = lines.length === 1 ? y : y - Math.round(lineHeight / 2);
-
-  return lines.map((line, index) => ({
+  return fitted.lines.map((line, index) => ({
     input: makeSvgText({
       text: line,
       x,
-      y: firstLineY + index * lineHeight,
-      fontSize: effectiveFontSize,
+      y: firstLineY + index * fitted.lineHeight,
+      fontSize: fitted.fontSize,
       fontWeight,
       color,
       fontDataUrl,
       scaleX,
       width,
       height,
+      clip: { x: Math.max(0, x - 2), width: maxWidth + 2 },
     }),
   }));
 }
@@ -408,8 +507,13 @@ export async function generateSealForS3({
     metaData: Math.round(INFO_FONT_SIZES.metaData * scaleY),
     smallMuted: Math.round(INFO_FONT_SIZES.smallMuted * scaleY),
   };
+  const wrappedLineHeight = Math.round(INFO_WRAPPED_LINE_HEIGHT * scaleY);
   const infoTextMaxWidth = (x: number) =>
     Math.max(80, COORDS.qr.x - x - Math.round(INFO_TEXT_QR_GAP * scaleX));
+  const footerTextMaxWidth = Math.max(
+    80,
+    Math.round(INFO_PANEL_RIGHT * scaleX) - COORDS.reportUrlValue.x,
+  );
 
   const templateBuffer = await sharp(templatePath).ensureAlpha().toBuffer();
   const composites: sharp.OverlayOptions[] = [];
@@ -455,7 +559,7 @@ export async function generateSealForS3({
 
   // --- 2. PRODUCT DETAILS ---
   composites.push(
-    ...makeInfoValueTextOverlays({
+    ...(await makeFittedTextOverlays({
       text: product.name,
       x: COORDS.productValue.x,
       y: COORDS.productValue.y,
@@ -467,11 +571,13 @@ export async function generateSealForS3({
       scaleX: INFO_TEXT_SCALE_X,
       width: canvasWidth,
       height: canvasHeight,
-    }),
+      maxLines: 2,
+      wrappedLineHeight,
+    })),
   );
 
   composites.push(
-    ...makeInfoValueTextOverlays({
+    ...(await makeFittedTextOverlays({
       text: product.brand || "",
       x: COORDS.brandValue.x,
       y: COORDS.brandValue.y,
@@ -483,7 +589,9 @@ export async function generateSealForS3({
       scaleX: INFO_TEXT_SCALE_X,
       width: canvasWidth,
       height: canvasHeight,
-    }),
+      maxLines: 2,
+      wrappedLineHeight,
+    })),
   );
 
   // --- 3. META DATA ---
@@ -505,11 +613,12 @@ export async function generateSealForS3({
     });
   }
 
-  composites.push({
-    input: makeSvgText({
+  composites.push(
+    ...(await makeFittedTextOverlays({
       text: tcCodeValue || "",
       x: COORDS.tcCodeValue.x,
       y: COORDS.tcCodeValue.y,
+      maxWidth: infoTextMaxWidth(COORDS.tcCodeValue.x),
       fontSize: infoFontSizes.metaData,
       fontWeight: FONTS.metaData.weight,
       color: FONTS.metaData.color,
@@ -517,15 +626,19 @@ export async function generateSealForS3({
       scaleX: INFO_TEXT_SCALE_X,
       width: canvasWidth,
       height: canvasHeight,
-    }),
-  });
+      maxLines: 1,
+      minSingleLineScale: 0.84,
+      wrappedLineHeight,
+    })),
+  );
 
   // --- 4. FOOTER URL ---
-  composites.push({
-    input: makeSvgText({
-      text: shorten(reportUrl, 60),
+  composites.push(
+    ...(await makeFittedTextOverlays({
+      text: reportUrl,
       x: COORDS.reportUrlValue.x,
       y: COORDS.reportUrlValue.y,
+      maxWidth: footerTextMaxWidth,
       fontSize: infoFontSizes.smallMuted,
       fontWeight: FONTS.smallMuted.weight,
       color: FONTS.smallMuted.color,
@@ -533,8 +646,11 @@ export async function generateSealForS3({
       scaleX: INFO_TEXT_SCALE_X,
       width: canvasWidth,
       height: canvasHeight,
-    }),
-  });
+      maxLines: 1,
+      minSingleLineScale: 0.86,
+      wrappedLineHeight,
+    })),
+  );
 
   // --- 5. QR CODE ---
   const qrSize = Math.max(
@@ -543,11 +659,11 @@ export async function generateSealForS3({
   );
 
   const qrBuffer = await QRCode.toBuffer(reportUrl, {
-    margin: 1,
+    margin: QR_QUIET_ZONE_MODULES,
     width: qrSize,
     color: {
       dark: "#000000",
-      light: "#0000", // transparent background
+      light: `#FFFFFF${QR_LIGHT_MODULE_ALPHA}`,
     },
   });
 
