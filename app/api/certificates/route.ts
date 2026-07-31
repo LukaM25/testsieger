@@ -8,6 +8,7 @@ import { generateCertificatePdf } from "@/pdfGenerator";
 import { generateSeal as generateSealImage } from "@/lib/seal";
 import { storeCertificateAssets } from "@/lib/certificateAssets";
 import { buildLicenseVerificationUrl } from "@/lib/licenseVerification";
+import { ensureProcessNumber } from "@/lib/processNumber";
 
 export const runtime = "nodejs";
 
@@ -105,11 +106,14 @@ export async function POST(req: Request) {
     let sealUrl = cert.sealUrl || existingCert?.sealUrl || null;
     if (!sealUrl) {
       try {
+        const processNumber =
+          product.processNumber ?? (await ensureProcessNumber(product.id));
         sealUrl = await generateSealImage({
           product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
           certificateId: cert.id,
           verificationCode,
-          tcCode: product.processNumber ?? undefined,
+          sealNumber: seal_number,
+          tcCode: processNumber,
           ratingScore: cert.ratingScore ?? 'PASS',
           ratingLabel: cert.ratingLabel ?? 'PASS',
           appUrl: baseDomain,

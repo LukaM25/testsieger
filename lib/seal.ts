@@ -2,11 +2,13 @@ import fs from "fs/promises";
 import path from "path";
 import QRCode from "qrcode";
 import sharp from "sharp";
+import { buildShortSealVerificationUrl } from "@/lib/licenseVerification";
 
 type SealInput = {
   product: { id: string; name: string; brand: string | null; createdAt: Date };
   certificateId: string;
   verificationCode?: string | null;
+  sealNumber?: string | null;
   tcCode?: string | null;
   ratingScore: string;
   ratingLabel: string;
@@ -39,6 +41,7 @@ const INFO_FONT_SIZES = {
   metaData: 42,
   smallMuted: 35,
 };
+const TC_CODE_FONT_SCALE = 1.18;
 const INFO_TEXT_SCALE_X = 0.81;
 const INFO_VALUE_GAP = 20;
 const INFO_TEXT_QR_GAP = 36;
@@ -442,6 +445,7 @@ export async function generateSealForS3({
   product,
   certificateId,
   verificationCode = null,
+  sealNumber = null,
   tcCode,
   ratingScore,
   ratingLabel,
@@ -481,7 +485,7 @@ export async function generateSealForS3({
     },
     // TC Code (Unchanged)
     tcCodeValue: {
-      x: Math.round((565 + 157 + 2) * scaleX),
+      x: Math.round((565 + 157 + 12) * scaleX),
       y: Math.round(1576 * scaleY),
     },
 
@@ -499,9 +503,12 @@ export async function generateSealForS3({
     },
   };
 
-  const reportLookupCode = verificationCode?.trim() || certificateId;
-  const reportUrl = `${appUrl.replace(/\/$/, "")}/lizenzen?q=${encodeURIComponent(reportLookupCode)}`;
-  const tcCodeValue = tcCode ?? certificateId;
+  const reportUrl = buildShortSealVerificationUrl(appUrl, sealNumber, {
+    licenseCode: verificationCode,
+    certificateId,
+    productId: product.id,
+  });
+  const tcCodeValue = tcCode?.trim().replace(/^TC-/i, "") || "—";
   const infoFontSizes = {
     body: Math.round(INFO_FONT_SIZES.body * scaleY),
     metaData: Math.round(INFO_FONT_SIZES.metaData * scaleY),
@@ -619,7 +626,9 @@ export async function generateSealForS3({
       x: COORDS.tcCodeValue.x,
       y: COORDS.tcCodeValue.y,
       maxWidth: infoTextMaxWidth(COORDS.tcCodeValue.x),
-      fontSize: infoFontSizes.metaData,
+      // The template's baked-in "TC Code:" label is visually taller than the
+      // other metadata labels, so match the generated value to that label.
+      fontSize: Math.round(infoFontSizes.metaData * TC_CODE_FONT_SCALE),
       fontWeight: FONTS.metaData.weight,
       color: FONTS.metaData.color,
       fontDataUrl,
@@ -689,6 +698,7 @@ export async function generateSeal({
   product,
   certificateId,
   verificationCode = null,
+  sealNumber = null,
   tcCode,
   ratingScore,
   ratingLabel,
@@ -702,6 +712,7 @@ export async function generateSeal({
     product,
     certificateId,
     verificationCode,
+    sealNumber,
     tcCode,
     ratingScore,
     ratingLabel,

@@ -9,6 +9,7 @@ import { CompletionJob, CompletionJobStatus, AssetType } from '@prisma/client';
 import { saveBufferToS3, signedUrlForKey } from '@/lib/storage';
 import { ensureSignedS3Url } from '@/lib/s3';
 import { fetchStoredRatingPdfAttachment, getRatingLockState } from '@/lib/ratingSheet';
+import { ensureProcessNumber } from '@/lib/processNumber';
 
 const APP_URL = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
 
@@ -243,6 +244,8 @@ async function runCompletion(productId: string, message?: string, opts?: { force
   });
 
   // Ensure seal image exists and load it (S3-backed)
+  const processNumber =
+    product.processNumber ?? (await ensureProcessNumber(product.id));
   let sealBuffer: Buffer | undefined;
   let sealUrl = cert.sealUrl || product.certificate?.sealUrl || null;
   if (!sealUrl) {
@@ -251,7 +254,8 @@ async function runCompletion(productId: string, message?: string, opts?: { force
         product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
         certificateId: cert.id,
         verificationCode,
-        tcCode: product.processNumber ?? undefined,
+        sealNumber: cert.seal_number,
+        tcCode: processNumber,
         ratingScore: cert.ratingScore ?? 'PASS',
         ratingLabel: cert.ratingLabel ?? 'PASS',
         appUrl: APP_URL,
@@ -297,7 +301,8 @@ async function runCompletion(productId: string, message?: string, opts?: { force
           product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
           certificateId: cert.id,
           verificationCode,
-          tcCode: product.processNumber ?? undefined,
+          sealNumber: cert.seal_number,
+          tcCode: processNumber,
           ratingScore: cert.ratingScore ?? 'PASS',
           ratingLabel: cert.ratingLabel ?? 'PASS',
           appUrl: APP_URL,

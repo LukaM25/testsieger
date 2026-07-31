@@ -61,6 +61,7 @@ async function main() {
     },
     certificateId,
     verificationCode,
+    sealNumber: product.certificate?.seal_number ?? null,
     tcCode: product.processNumber ?? "TC-MOCK-2026",
     ratingScore,
     ratingLabel,

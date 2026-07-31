@@ -9,6 +9,7 @@ import { generateSealForS3 } from '@/lib/seal';
 import { buildLicenseVerificationUrl } from '@/lib/licenseVerification';
 import { saveBufferToS3, signedUrlForKey, MAX_UPLOAD_BYTES } from '@/lib/storage';
 import { uploadedPdfKey, qrKey } from '@/lib/assetKeys';
+import { ensureProcessNumber } from '@/lib/processNumber';
 
 const SIGNED_URL_FALLBACK = 'SIGNED_URL_UNAVAILABLE';
 
@@ -139,11 +140,14 @@ export async function POST(req: Request) {
     });
 
     const baseAppUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const processNumber =
+      product.processNumber ?? (await ensureProcessNumber(product.id));
     const generatedSeal = await generateSealForS3({
       product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
       certificateId: cert.id,
       verificationCode,
-      tcCode: product.processNumber ?? undefined,
+      sealNumber: seal,
+      tcCode: processNumber,
       ratingScore: cert.ratingScore ?? 'PASS',
       ratingLabel: cert.ratingLabel ?? 'PASS',
       appUrl: baseAppUrl,

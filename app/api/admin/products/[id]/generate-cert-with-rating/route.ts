@@ -9,6 +9,7 @@ import { generateSealForS3 } from "@/lib/seal";
 import { storeCertificateAssets } from "@/lib/certificateAssets";
 import { buildLicenseVerificationUrl } from "@/lib/licenseVerification";
 import { saveBufferToS3, signedUrlForKey } from "@/lib/storage";
+import { ensureProcessNumber } from "@/lib/processNumber";
 
 const APP_URL = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 
@@ -134,11 +135,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       qrBuffer,
     });
 
+    const processNumber =
+      product.processNumber ?? (await ensureProcessNumber(product.id));
     const generatedSeal = await generateSealForS3({
       product: { id: product.id, name: product.name, brand: product.brand, createdAt: product.createdAt },
       certificateId,
       verificationCode,
-      tcCode: product.processNumber ?? undefined,
+      sealNumber: seal,
+      tcCode: processNumber,
       ratingScore,
       ratingLabel,
       appUrl: APP_URL,

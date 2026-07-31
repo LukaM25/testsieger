@@ -78,6 +78,7 @@ describe("seal information layout", () => {
       },
       certificateId: "70dc0fbf-230b-46b7-a505-951000000000",
       verificationCode: "70dc0fbf-230b-46b7-a505-951000000000",
+      sealNumber: "70dc0fbf-230b-46b7-a505-951000000000",
       tcCode: "cmrkggina000123456789-extra-long-process-code",
       ratingScore: "1.2",
       ratingLabel: "SEHR GUT",
@@ -122,8 +123,7 @@ describe("seal information layout", () => {
   it("renders partially transparent light modules over the QR background", async () => {
     const generated = await generateLongValueSeal(qrTransparencyTemplatePath);
     const reportUrl =
-      "https://a-very-long-certificate-hostname.example.com/lizenzen" +
-      "?q=70dc0fbf-230b-46b7-a505-951000000000";
+      "https://a-very-long-certificate-hostname.example.com/s/951000000000";
     const expectedQr = await QRCode.toBuffer(reportUrl, {
       margin: 2,
       width: QR_SIZE,
@@ -151,5 +151,55 @@ describe("seal information layout", () => {
     ]);
 
     expect(actualPixels.equals(expectedPixels)).toBe(true);
+  });
+
+  it("does not expose a certificate ID when the TC code is missing", async () => {
+    const commonInput = {
+      product: {
+        id: "missing-tc-product",
+        name: "Short product",
+        brand: "Short brand",
+        createdAt: new Date("2026-07-21T00:00:00.000Z"),
+      },
+      verificationCode: "70dc0fbf-230b-46b7-a505-951000000000",
+      sealNumber: "70dc0fbf-230b-46b7-a505-951000000000",
+      tcCode: null,
+      ratingScore: "1.2",
+      ratingLabel: "SEHR GUT",
+      appUrl: "https://dpi-siegel.de",
+      licenseDate: new Date("2026-07-21T00:00:00.000Z"),
+      templatePath,
+    };
+    const [first, second] = await Promise.all([
+      generateSealForS3({ ...commonInput, certificateId: "certificate-id-one" }),
+      generateSealForS3({ ...commonInput, certificateId: "certificate-id-two" }),
+    ]);
+
+    expect(first.buffer.equals(second.buffer)).toBe(true);
+  });
+
+  it("removes the TC prefix from the visible seal value", async () => {
+    const commonInput = {
+      product: {
+        id: "tc-prefix-product",
+        name: "Short product",
+        brand: "Short brand",
+        createdAt: new Date("2026-07-21T00:00:00.000Z"),
+      },
+      certificateId: "certificate-tc-prefix",
+      verificationCode: "70dc0fbf-230b-46b7-a505-951000000000",
+      sealNumber: "70dc0fbf-230b-46b7-a505-951000000000",
+      ratingScore: "1.2",
+      ratingLabel: "SEHR GUT",
+      appUrl: "https://dpi-siegel.de",
+      licenseDate: new Date("2026-07-21T00:00:00.000Z"),
+      templatePath,
+    };
+    const [prefixed, numeric] = await Promise.all([
+      generateSealForS3({ ...commonInput, tcCode: "TC-21843" }),
+      generateSealForS3({ ...commonInput, tcCode: "21843" }),
+    ]);
+
+    expect(prefixed.buffer.equals(numeric.buffer)).toBe(true);
   });
 });

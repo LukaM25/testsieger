@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 interface Product {
@@ -31,6 +31,7 @@ export default function LizenzenClient({ products }: { products: any[] }) {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState('');
   const [openId, setOpenId] = useState<string | null>(null);
+  const searchSectionRef = useRef<HTMLDivElement>(null);
 
   // 1. Auto-detect QR Code (URL param ?q=...)
   useEffect(() => {
@@ -47,6 +48,15 @@ export default function LizenzenClient({ products }: { products: any[] }) {
       if (exactMatch) {
         setOpenId(exactMatch.id);
       }
+
+      const animationFrame = window.requestAnimationFrame(() => {
+        searchSectionRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      });
+
+      return () => window.cancelAnimationFrame(animationFrame);
     }
   }, [searchParams, products]);
 
@@ -67,7 +77,11 @@ export default function LizenzenClient({ products }: { products: any[] }) {
   }, [query, products]);
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div
+      id="lizenzsuche"
+      ref={searchSectionRef}
+      className="scroll-mt-24 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+    >
       <h2 className="text-lg font-semibold text-slate-900">Lizenzcode prüfen</h2>
       <p className="mt-2 text-sm text-slate-600">
         Geben Sie Lizenzcode, Produktnamen, Produkt-ID, Vorgangsnummer oder Kategorie ein, um die Gültigkeit zu verifizieren.
