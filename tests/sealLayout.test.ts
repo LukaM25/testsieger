@@ -104,6 +104,41 @@ describe("seal information layout", () => {
     expectSolidWhite(safetyGap);
   });
 
+  it("keeps near-threshold product names on one smoothly scaled line", async () => {
+    const generated = await generateSealForS3({
+      product: {
+        id: "smooth-product-sizing",
+        name: "sProRun Laufband",
+        brand: "SPORTSTECH",
+        createdAt: new Date("2026-07-21T00:00:00.000Z"),
+      },
+      certificateId: "smooth-product-sizing-certificate",
+      verificationCode: "70dc0fbf-230b-46b7-a505-951000000000",
+      sealNumber: "70dc0fbf-230b-46b7-a505-951000000000",
+      tcCode: "23749",
+      ratingScore: "1.4",
+      ratingLabel: "SEHR GUT",
+      appUrl: "https://dpi-siegel.de",
+      licenseDate: new Date("2026-07-21T00:00:00.000Z"),
+      templatePath,
+    });
+    const productArea = await sharp(generated.buffer)
+      .extract({
+        left: 464,
+        top: 1260,
+        width: TEXT_SAFE_RIGHT - 464,
+        height: 150,
+      })
+      .png()
+      .toBuffer();
+    const { info: productTextBounds } = await sharp(productArea)
+      .trim({ background: { r: 255, g: 255, b: 255, alpha: 1 } })
+      .png()
+      .toBuffer({ resolveWithObject: true });
+
+    expect(productTextBounds.height).toBeLessThan(90);
+  });
+
   it("clips a long report URL at the information panel boundary", async () => {
     const generated = await generateLongValueSeal();
     const areaPastFooterBoundary = await sharp(generated.buffer)

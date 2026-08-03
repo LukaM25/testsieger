@@ -46,8 +46,10 @@ const INFO_TEXT_SCALE_X = 0.81;
 const INFO_VALUE_GAP = 20;
 const INFO_TEXT_QR_GAP = 36;
 const INFO_PANEL_RIGHT = 1500;
-const INFO_MIN_SINGLE_LINE_SCALE = 0.72;
 const INFO_WRAPPED_BODY_SCALE = 0.54;
+// Keep the single-line and wrapped thresholds aligned so crossing the wrap
+// boundary never causes an abrupt drop in font size.
+const INFO_MIN_SINGLE_LINE_SCALE = INFO_WRAPPED_BODY_SCALE;
 const INFO_WRAPPED_LINE_HEIGHT = 50;
 const QR_QUIET_ZONE_MODULES = 2;
 const QR_LIGHT_MODULE_ALPHA = "66";
