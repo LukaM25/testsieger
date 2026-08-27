@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 import { PAYMENT_STATUS_OPTIONS, STATUS_OPTIONS, STATUS_TONE, statusLabel } from '../constants';
 import { PaymentStatusOption, StatusOption } from '../types';
 
@@ -55,6 +57,14 @@ export default function AdminHeader({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {isSuperAdmin && (
+            <Link
+              href="/admin/blog"
+              className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-100"
+            >
+              Blog Beiträge verwalten
+            </Link>
+          )}
           {isSuperAdmin && (
             <button
               type="button"

@@ -27,29 +27,29 @@ model User {
 }
 
 model Product {
-  id             String          @id @default(cuid())
-  userId         String
-  name           String
-  brand          String
-  category       String?
-  code           String?
-  specs          String?
-  size           String?
-  madeIn         String?
-  material       String?
-  status         ProductStatus   @default(PRECHECK)
-  adminProgress  AdminProgress   @default(PRECHECK)
-  paymentStatus  PaymentStatus   @default(UNPAID)
-  processNumber  String?         @unique
-  createdAt      DateTime        @default(now())
-  certificate    Certificate?
-  license        License?
-  orders         Order[]
-  assets         Asset[]
-  completionJobs CompletionJob[]
+  id               String            @id @default(cuid())
+  userId           String
+  name             String
+  brand            String
+  category         String?
+  code             String?
+  specs            String?
+  size             String?
+  madeIn           String?
+  material         String?
+  status           ProductStatus     @default(PRECHECK)
+  adminProgress    AdminProgress     @default(PRECHECK)
+  paymentStatus    PaymentStatus     @default(UNPAID)
+  processNumber    String?           @unique
+  createdAt        DateTime          @default(now())
+  certificate      Certificate?
+  license          License?
+  orders           Order[]
+  assets           Asset[]
+  completionJobs   CompletionJob[]
   licenseCartItems LicenseCartItem[]
-  user           User            @relation(fields: [userId], references: [id])
-  audits         AdminAudit[]
+  user             User              @relation(fields: [userId], references: [id])
+  audits           AdminAudit[]
 
   @@index([name])
   @@index([brand])
@@ -89,12 +89,12 @@ model Order {
   createdAt       DateTime  @default(now())
   paidAt          DateTime?
 
-  stripePriceId          String?
-  stripeCurrency         String?
-  stripeUnitAmountCents  Int?
-  stripeSubtotalCents    Int?
-  stripeDiscountCents    Int       @default(0)
-  stripeTotalCents       Int?
+  stripePriceId         String?
+  stripeCurrency        String?
+  stripeUnitAmountCents Int?
+  stripeSubtotalCents   Int?
+  stripeDiscountCents   Int     @default(0)
+  stripeTotalCents      Int?
 
   easybillCustomerId     BigInt?
   easybillDocumentId     BigInt?
@@ -102,9 +102,9 @@ model Order {
   easybillSyncedAt       DateTime?
   easybillSyncError      String?
 
-  product         Product   @relation(fields: [productId], references: [id])
-  user            User      @relation(fields: [userId], references: [id])
-  license         License?
+  product Product  @relation(fields: [productId], references: [id])
+  user    User     @relation(fields: [userId], references: [id])
+  license License?
 
   @@index([stripeSessionId])
 }
@@ -217,18 +217,55 @@ model Asset {
 }
 
 model Admin {
-  id           String     @id @default(cuid())
-  email        String     @unique
+  id           String    @id @default(cuid())
+  email        String    @unique
   name         String
   passwordHash String
-  role         AdminRole  @default(EXAMINER)
-  active       Boolean    @default(true)
+  role         AdminRole @default(EXAMINER)
+  active       Boolean   @default(true)
   revokedAt    DateTime?
   lastLoginAt  DateTime?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  audits AdminAudit[]
+  audits    AdminAudit[]
+  blogPosts BlogPost[]
+}
+
+model BlogPost {
+  id             String         @id @default(cuid())
+  title          String
+  slug           String         @unique
+  excerpt        String?
+  content        String
+  status         BlogPostStatus @default(DRAFT)
+  seoTitle       String?
+  seoDescription String?
+  authorId       String
+  publishedAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  author Admin       @relation(fields: [authorId], references: [id])
+  assets BlogAsset[]
+
+  @@index([status, publishedAt])
+  @@index([authorId])
+}
+
+model BlogAsset {
+  id          String        @id @default(cuid())
+  postId      String
+  kind        BlogAssetKind
+  key         String        @unique
+  fileName    String
+  contentType String
+  sizeBytes   Int
+  createdAt   DateTime      @default(now())
+
+  post BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, kind])
 }
 
 model AdminAudit {
@@ -241,7 +278,7 @@ model AdminAudit {
   payload    Json?
   createdAt  DateTime @default(now())
 
-  admin   Admin   @relation(fields: [adminId], references: [id])
+  admin   Admin    @relation(fields: [adminId], references: [id])
   product Product? @relation(fields: [productId], references: [id])
 
   @@index([adminId])
@@ -351,4 +388,14 @@ enum CompletionJobStatus {
   RUNNING
   FAILED
   COMPLETED
+}
+
+enum BlogPostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum BlogAssetKind {
+  COVER
+  ATTACHMENT
 }

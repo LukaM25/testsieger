@@ -84,6 +84,9 @@ describe('Customer Navbar interactions', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'nav.menu.open' }));
     expect(screen.getByText('nav.services')).toBeTruthy();
+    expect(screen.getByText('nav.news')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'nav.faq' }).getAttribute('href')).toBe('/faq');
+    expect(screen.getByRole('link', { name: 'nav.blog' }).getAttribute('href')).toBe('/blog');
 
     fireEvent.click(screen.getByRole('button', { name: /EN/ }));
     expect(setLocaleMock).toHaveBeenCalledWith('en');

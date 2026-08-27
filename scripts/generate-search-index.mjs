@@ -119,6 +119,7 @@ function main() {
   const items = files
     .map(extract)
     .filter((it) => !it.href.startsWith('/admin'))
+    .filter((it) => !it.href.includes('['))
     .sort((a, b) => a.label.localeCompare(b.label));
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
   fs.writeFileSync(outFile, JSON.stringify(items, null, 2));

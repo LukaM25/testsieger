@@ -46,6 +46,13 @@ const sections: NavSection[] = [
       { labelKey: "nav.login", href: "/login" },
     ],
   },
+  {
+    labelKey: "nav.news",
+    items: [
+      { labelKey: "nav.faq", href: "/faq" },
+      { labelKey: "nav.blog", href: "/blog" },
+    ],
+  },
 ];
 
 // We'll load a prebuilt search index from /search-index.json for richer keywords
