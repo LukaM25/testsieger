@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { stagger } from '@/lib/animation';
 import { useLocale } from '@/components/LocaleProvider';
+import MarketplaceLogos from '@/components/MarketplaceLogos';
 
 export default function Expertise() {
   const { locale } = useLocale();
@@ -49,6 +50,10 @@ export default function Expertise() {
             <p className="text-lg font-semibold leading-tight text-brand-text sm:text-xl mb-5">
               {copy.block1Annotation}
             </p>
+            <MarketplaceLogos
+              className="-mt-2 mb-5"
+              label={locale === 'en' ? 'Supported sales channels' : 'Unterstützte Verkaufskanäle'}
+            />
             <p className="text-gray-600 leading-relaxed font-normal mb-8">
               {copy.block1Body}
             </p>

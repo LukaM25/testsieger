@@ -9,6 +9,7 @@ import { stagger } from "@/lib/animation";
 import PrecheckForm from "@/components/precheck/PrecheckForm";
 import Counter from "@/components/Counter";
 import { useLocale } from "@/components/LocaleProvider";
+import MarketplaceLogos from "@/components/MarketplaceLogos";
 
 type StepCard = {
   src: string;
@@ -1087,6 +1088,10 @@ export default function ProduktTestPage({
                 'Our vision is to not merely collect abstract lab data, but to test products exactly as your customers use them. The result: honest, tangible test reports and a seal that builds genuine consumer trust - and measurable revenue for you.'
               )}
             </p>
+            <MarketplaceLogos
+              className="-my-2"
+              label={tr('Unterstützte Verkaufskanäle', 'Supported sales channels')}
+            />
             <ul className="space-y-2 text-slate-800 font-medium">
               <li className="flex items-center gap-2">
                 <Image src="/checkmark.png" alt="" width={20} height={20} className="h-5 w-5 object-contain" />
