@@ -10,6 +10,22 @@ const PRICE_IDS: Partial<Record<Plan, string>> = {
   LIFETIME: process.env.STRIPE_PRICE_LIFETIME,
 };
 
+// Optionale feste Stripe-Preise für Rabattstufen (Lifetime). Fehlt eine ID, wird der Rabatt berechnet.
+const DISCOUNT_PRICE_IDS: Partial<Record<Plan, Partial<Record<number, string | undefined>>>> = {
+  PREMIUM: {
+    20: process.env.STRIPE_PRICE_PREMIUM_20,
+    30: process.env.STRIPE_PRICE_PREMIUM_30,
+  },
+  BASIC: {
+    20: process.env.STRIPE_PRICE_BASIC_20,
+    30: process.env.STRIPE_PRICE_BASIC_30,
+  },
+  LIFETIME: {
+    20: process.env.STRIPE_PRICE_LIFETIME_20,
+    30: process.env.STRIPE_PRICE_LIFETIME_30,
+  },
+};
+
 const VAT_RATE = 0.19;
 type CachedStripePrice = {
   unitAmount: number;
@@ -17,7 +33,7 @@ type CachedStripePrice = {
 };
 const priceCache = new Map<Plan, CachedStripePrice>();
 const ANNUAL_BILLING_DAYS = 365;
-const DISCOUNT_DAILY_ROUNDED_PLANS = new Set<Plan>([Plan.BASIC, Plan.PREMIUM]);
+const DISCOUNT_DAILY_ROUNDED_PLANS = new Set<Plan>([]);
 
 export function normalizeLicensePlan(raw: unknown): Plan | null {
   if (typeof raw !== "string") return null;
@@ -66,6 +82,28 @@ export async function getPlanPriceCentsMap(plans: Plan[]) {
     })
   );
   return Object.fromEntries(entries) as Record<Plan, number>;
+}
+
+const discountPriceCache = new Map<string, number>();
+
+/**
+ * Rabattierter Netto-Preis: nutzt den festen Stripe-Preis der Rabattstufe, falls hinterlegt
+ * (z. B. STRIPE_PRICE_LIFETIME_20 / _30), sonst die berechnete Variante.
+ */
+export async function getDiscountedPlanPriceCents(plan: Plan, basePriceCents: number, discountPercent: number) {
+  const priceId = DISCOUNT_PRICE_IDS[plan]?.[discountPercent]?.trim();
+  if (priceId) {
+    const cached = discountPriceCache.get(priceId);
+    if (typeof cached === "number") return cached;
+    const price = await stripe.prices.retrieve(priceId);
+    if (typeof price.unit_amount !== "number") {
+      throw new Error(`INVALID_PRICE_AMOUNT:${plan}:${discountPercent}`);
+    }
+    const net = price.tax_behavior === "inclusive" ? Math.round(price.unit_amount / (1 + VAT_RATE)) : price.unit_amount;
+    discountPriceCache.set(priceId, net);
+    return net;
+  }
+  return computeDiscountedPlanPriceCents(plan, basePriceCents, discountPercent);
 }
 
 export function computeDiscountedPlanPriceCents(plan: Plan, basePriceCents: number, discountPercent: number) {

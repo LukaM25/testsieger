@@ -25,8 +25,7 @@ const sections: NavSection[] = [
     labelKey: "nav.services",
     items: [
       { labelKey: "nav.productTest", href: "/produkte/produkt-test" },
-      { labelKey: "nav.trainingCheck", href: "/produkte/ausbildung-check" },
-      { labelKey: "nav.playgroundSafety", href: "/produkte/spielplatz-sicherheit" },
+      { labelKey: "nav.occupationalSafety", href: "/kontakt" },
     ],
   },
   {

@@ -1,12 +1,15 @@
+import { pageMetadata } from "@/lib/seo";
 import Image from 'next/image';
 import Link from 'next/link';
 import { placeholderProducts } from '@/lib/placeholderContent';
 import { stagger } from '@/lib/animation';
 
-export const metadata = {
+export const metadata = pageMetadata({
+  title: 'Leistungen: Produkttest, Spielplatz-Sicherheit und Ausbildungs-Check',
   description:
-    'Überblick über anstehende Prüfsiegel-Produkte mit thematisch passenden Platzhaltern für Inhalte und Assets.',
-};
+    'Überblick über die Leistungen des Deutschen Prüfsiegel Instituts: Produkttest mit Prüfsiegel, Spielplatz-Sicherheit und Ausbildungs-Check.',
+  path: '/produkte',
+});
 
 export default function ProductsOverviewPage() {
   return (

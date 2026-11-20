@@ -1,5 +1,6 @@
 "use client";
 
+import Link from 'next/link';
 import { useLocale } from '@/components/LocaleProvider';
 
 export default function Hero() {
@@ -43,7 +44,7 @@ export default function Hero() {
               <span className="text-brand-green text-xs uppercase tracking-[0.2em] font-semibold">
               </span>
             </div>
-            <h1 className="text-5xl font-bold leading-tight tracking-tight sm:text-6xl md:text-7xl drop-shadow-[0_10px_35px_rgba(0,0,0,0.55)]">
+            <h1 className="text-5xl font-semibold leading-tight tracking-tight text-white sm:text-6xl md:text-7xl drop-shadow-[0_10px_35px_rgba(0,0,0,0.55)]">
               {copy.title}
             </h1>
         </div>
@@ -51,6 +52,20 @@ export default function Hero() {
           <div className="inline-block space-y-4 px-4 py-3 sm:px-5 sm:py-4 text-base sm:text-lg md:text-xl text-gray-100 font-normal leading-relaxed">
             <p>{copy.body}</p>
           </div>
+        </div>
+        <div data-animate="hero-cta" className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Link
+            href="/produkte/produkt-test"
+            className="inline-flex items-center justify-center rounded-lg bg-brand-green px-7 py-3.5 text-base font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-brand-primary hover:text-white"
+          >
+            {copy.ctaPrimary}
+          </Link>
+          <Link
+            href="/precheck"
+            className="inline-flex items-center justify-center rounded-lg border border-white/40 bg-white/10 px-7 py-3.5 text-base font-semibold text-white backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/20 hover:text-white"
+          >
+            {copy.ctaSecondary}
+          </Link>
         </div>
       </div>
     </div>

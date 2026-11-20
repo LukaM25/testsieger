@@ -510,8 +510,18 @@ export async function sendPrecheckPaymentSuccess(opts: {
   productNames: string[];
   processNumber: string;
   receiptPdf?: Buffer | null;
+  credentials?: { loginUrl: string; tempPassword: string };
 }) {
-  const { to, name, gender, productNames, processNumber } = opts;
+  const { to, name, gender, productNames, processNumber, credentials } = opts;
+  const credentialsHtml = credentials
+    ? `
+      <div style="margin:18px 0;padding:16px 18px;border:1px solid #bae6fd;border-radius:12px;background:#f0f9ff;">
+        <p style="margin:0 0 8px;"><strong>Ihr Zugang zum Kundendashboard</strong></p>
+        <p style="margin:0;">E-Mail: <strong>${escapeHtml(to)}</strong><br/>Vorläufiges Passwort: <strong style="font-family:ui-monospace,Menlo,monospace;font-size:16px;">${escapeHtml(credentials.tempPassword)}</strong></p>
+        <p style="margin:12px 0 0;"><a href="${credentials.loginUrl}" style="display:inline-block;padding:10px 18px;border-radius:999px;background:#1d4ed8;color:#ffffff;text-decoration:none;font-weight:600;">Jetzt im Dashboard einloggen</a></p>
+        <p style="margin:12px 0 0;font-size:14px;color:#475569;">Bitte ändern Sie dieses Passwort direkt nach dem ersten Login unter „Konto Einstellungen“.</p>
+      </div>`
+    : '';
   const safeProductNames = productNames.map((value) => escapeHtml(value));
   const productList = safeProductNames.join(', ');
   const isPlural = productNames.length !== 1;
@@ -522,6 +532,7 @@ export async function sendPrecheckPaymentSuccess(opts: {
       <p>${renderFormalGreeting(name, gender)}</p>
       <p>vielen Dank für den Zahlungseingang der Prüfgebühr. Ihr Auftrag für den „Testsieger Check“ des Deutschen Prüfsiegel Instituts (DPI) ist damit offiziell aktiviert.</p>
       <p>${productLabel}:<br/><strong>${productList}</strong></p>
+      ${credentialsHtml}
       <p>Ihre Rechnung wird Ihnen separat über Easybill per E-Mail zugestellt.</p>
       <p>Damit wir Ihre ${isPlural ? 'Produkte' : 'Produkt'} unmittelbar in den Prüfprozess übernehmen können, senden Sie ${productObjectPronoun} bitte an folgende Versandadresse:</p>
       <p style="margin:12px 0;line-height:1.5;font-size:15.4px;font-weight:700;">

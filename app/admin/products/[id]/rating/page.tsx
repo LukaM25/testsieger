@@ -246,6 +246,9 @@ export default function AdminProductRatingPage() {
               <div className="mt-1 text-xs text-slate-600">
                 Punkte: {data?.computed?.overallAverage != null ? data.computed.overallAverage.toFixed(2) : "—"} / 10
               </div>
+              <div className="mt-1 text-xs text-slate-600">
+                Siegel ab Note 3,0 (6,4 Punkte / 64 %). Halbe Punkte sind erlaubt.
+              </div>
             </div>
           </div>
         </section>
@@ -296,13 +299,13 @@ export default function AdminProductRatingPage() {
                                 type="number"
                                 min={1}
                                 max={10}
-                                step={1}
-                                inputMode="numeric"
+                                step={0.5}
+                                inputMode="decimal"
                                 value={v.score ?? ""}
                                 disabled={isLocked}
                                 onChange={(e) => {
                                   const raw = e.target.value;
-                                  const score = raw === "" ? null : Math.max(1, Math.min(10, Math.round(Number(raw))));
+                                  const score = raw === "" ? null : Math.max(1, Math.min(10, Math.round(Number(raw) * 2) / 2));
                                   setValues((prev) => {
                                     const prevVal = prev[item.id];
                                     return { ...prev, [item.id]: { score, note: prevVal?.note ?? null } };

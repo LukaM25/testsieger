@@ -4,7 +4,7 @@ import { getSession } from "@/lib/auth";
 import { Plan } from "@prisma/client";
 import {
   LICENSE_PLAN_SET,
-  computeDiscountedPlanPriceCents,
+  getDiscountedPlanPriceCents,
   getPlanPriceCentsMap,
   normalizeLicensePlan,
 } from "@/lib/licensePricing";
@@ -45,10 +45,10 @@ async function loadCartState(userId: string) {
     .filter((plan) => LICENSE_PLAN_SET.has(plan));
   const priceMap = await getPlanPriceCentsMap(planList as Plan[]);
 
-  const items = (cart?.items || []).map((item) => {
+  const items = await Promise.all((cart?.items || []).map(async (item) => {
     const plan = item.plan as Plan;
     const basePriceCents = priceMap[plan] ?? 0;
-    const finalPriceCents = computeDiscountedPlanPriceCents(plan, basePriceCents, cartDiscountPercent);
+    const finalPriceCents = await getDiscountedPlanPriceCents(plan, basePriceCents, cartDiscountPercent);
     const savingsCents = Math.max(basePriceCents - finalPriceCents, 0);
     const paid = isPaidStatus(item.product.paymentStatus);
     const hasPassed =
@@ -72,7 +72,7 @@ async function loadCartState(userId: string) {
       eligible,
       reason,
     };
-  });
+  }));
 
   const totals = items.reduce(
     (acc, item) => {

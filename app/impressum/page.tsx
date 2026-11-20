@@ -1,4 +1,13 @@
 import TranslationNotice from "@/components/TranslationNotice";
+import { pageMetadata } from '@/lib/seo';
+
+export const metadata = pageMetadata({
+  title: 'Impressum',
+  description:
+    'Impressum und Anbieterkennzeichnung der DPI - Deutsches Prüfsiegel Institut GmbH, Waakirchen.',
+  path: '/impressum',
+});
+
 
 export default function ImpressumPage() {
   return (

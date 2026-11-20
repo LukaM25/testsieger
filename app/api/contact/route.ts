@@ -13,6 +13,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   business: "Frage zum Unternehmen",
   services: "Frage zu unseren Leistungen",
   process: "Frage zum Prozess",
+  quote: "Angebot für mehr als 3 Produkte",
+  safety: "Arbeitssicherheit",
 };
 
 function redirectWithState(req: Request, state: "sent" | "error") {

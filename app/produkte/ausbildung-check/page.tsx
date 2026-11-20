@@ -1,10 +1,13 @@
+import { pageMetadata } from "@/lib/seo";
 import Link from 'next/link';
 import { stagger } from '@/lib/animation';
 
-export const metadata = {
+export const metadata = pageMetadata({
+  title: 'Ausbildungs-Check: Ausbildungsplätze transparent bewerten',
   description:
-    'Transparente Bewertung von Ausbildungsplätzen: Praxisnähe, Betreuung, Erfolgsquote – objektiv geprüft.',
-};
+    'Transparente Bewertung von Ausbildungsplätzen: Praxisnähe, Betreuung und Erfolgsquote, objektiv geprüft.',
+  path: '/produkte/ausbildung-check',
+});
 
 export default function AusbildungCheckPage() {
   return (

@@ -50,8 +50,8 @@ type ActiveLicenseItem = {
 };
 
 const PLAN_BASE_DEFAULT_CENTS = {
-  BASIC: 28835,
-  PREMIUM: 32120,
+  BASIC: 17700,
+  PREMIUM: 22500,
   LIFETIME: 68900,
 } as const;
 
@@ -62,8 +62,8 @@ const PLAN_COMPARISON = [
     theme: "sky",
     usage: ["1 Verkaufskanal", "Sprache: Deutsch"],
     contents: ["Siegel", "Zertifikat", "Prüfbericht"],
-    billing: "daily",
-    footer: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+    billing: "yearly",
+    footer: ["Jahreslizenz, 12 Monate", "Lizenzverlängerung jährlich."],
   },
   {
     key: "PREMIUM",
@@ -71,8 +71,8 @@ const PLAN_COMPARISON = [
     theme: "indigo",
     usage: ["Alle Verkaufskanäle", "Alle Sprachen"],
     contents: ["Siegel", "Zertifikat", "Prüfbericht"],
-    billing: "daily",
-    footer: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+    billing: "yearly",
+    footer: ["Jahreslizenz, 12 Monate", "Lizenzverlängerung jährlich."],
   },
   {
     key: "LIFETIME",
@@ -123,7 +123,7 @@ const formatPlanPriceFromCents = (cents: number) =>
   new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(cents / 100);
 
 const computePlanCardPriceCents = (
-  billing: "daily" | "one-time",
+  billing: "daily" | "yearly" | "one-time",
   annualBaseCents: number,
   discountPercent: number,
   multiplier: number
@@ -132,6 +132,10 @@ const computePlanCardPriceCents = (
     const baseDailyCents = Math.round(annualBaseCents / ANNUAL_BILLING_DAYS);
     const discountedDailyCents = Math.round(baseDailyCents * (1 - discountPercent / 100));
     return { displayCents: discountedDailyCents, suffix: " / Tag" };
+  }
+  if (billing === "yearly") {
+    const yearlyDiscountedCents = Math.round(annualBaseCents * (1 - discountPercent / 100));
+    return { displayCents: yearlyDiscountedCents, suffix: " / Jahr" };
   }
   const annualDiscountedCents = Math.round(annualBaseCents * multiplier * (1 - discountPercent / 100));
   return { displayCents: annualDiscountedCents, suffix: "" };
@@ -582,6 +586,7 @@ const handleCancelLicense = async (productId: string) => {
   const [showBilling, setShowBilling] = useState(false);
   const [showProducts, setShowProducts] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
+  const [hidePwHint, setHidePwHint] = useState(false);
   const [billingMounted, setBillingMounted] = useState(false);
   const [productsMounted, setProductsMounted] = useState(false);
   const accountRef = useRef<HTMLDivElement | null>(null);
@@ -1702,6 +1707,26 @@ const handleCancelLicense = async (productId: string) => {
         : null}
 
       <div className="mx-auto max-w-6xl space-y-8">
+        {searchParams.get("pw") === "1" && !hidePwHint && (
+          <div className="flex flex-col gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-5 py-4 text-sky-900 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-semibold">Schritt 1: Passwort ändern</p>
+              <p className="text-sm">Sie haben sich mit Ihrem vorläufigen Passwort angemeldet. Bitte legen Sie jetzt ein eigenes Passwort fest.</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowAccount(true)}
+                className="rounded-full bg-gradient-to-r from-[#1d4ed8] to-[#16294d] px-5 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-110"
+              >
+                Passwort ändern
+              </button>
+              <button type="button" onClick={() => setHidePwHint(true)} className="rounded-full px-3 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-100">
+                Später
+              </button>
+            </div>
+          </div>
+        )}
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Dashboard</p>

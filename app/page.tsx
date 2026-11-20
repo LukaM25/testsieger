@@ -1,8 +1,16 @@
+import type { Metadata } from "next";
+import { SITE_DESCRIPTION, SITE_URL } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  title: { absolute: "Produkttest & Prüfsiegel für Amazon-Seller | Deutsches Prüfsiegel Institut (DPI)" },
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: SITE_URL },
+};
+
 import Hero from '@/components/home/Hero';
 import Intro from '@/components/home/Intro';
 import Logos from '@/components/home/Logos';
 import Expertise from '@/components/home/Expertise';
-import Sicherheit from '@/components/home/Sicherheit';
 import Verfahren from '@/components/home/Verfahren';
 import Image from 'next/image';
 import { stagger } from '@/lib/animation';
@@ -14,7 +22,6 @@ export default function HomePage() {
       <Intro />
       <Logos />
       <Expertise />
-      <Sicherheit />
       <Verfahren />
       <section data-animate="section" className="bg-white py-16 sm:py-20">
         <div className="mx-auto max-w-6xl px-6">

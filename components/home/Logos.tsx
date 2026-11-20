@@ -10,41 +10,41 @@ const logos: Logo[] = [
   { src: '/images/logos/Bild von 31.05.26, 17.42.png', alt: 'Partner logo', scale: 1 },
 ];
 
-const placements = [
-  'lg:col-span-2 lg:col-start-1',
-  'lg:col-span-2 lg:col-start-3',
-  'lg:col-span-2 lg:col-start-5',
-  'lg:col-span-2 lg:col-start-2',
-  'sm:col-span-2 lg:col-span-2 lg:col-start-4',
-];
+// Eine Hälfte des Laufbands: Logos doppelt, damit sie auch auf breiten Bildschirmen die Breite füllen.
+function LogoRow({ hidden = false }: { hidden?: boolean }) {
+  return (
+    <div className="flex shrink-0 items-center gap-20 pr-20" aria-hidden={hidden || undefined}>
+      {[...logos, ...logos].map((logo, index) => (
+        <div
+          key={`${logo.src}-${index}`}
+          className="flex h-20 w-48 shrink-0 items-center justify-center opacity-60 grayscale transition duration-500 hover:scale-110 hover:opacity-100 hover:grayscale-0"
+        >
+          <Image
+            src={logo.src}
+            alt={hidden ? '' : logo.alt}
+            width={220}
+            height={60}
+            className="h-16 w-auto max-w-full object-contain"
+            style={{ transform: `scale(${logo.scale})` }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function Logos() {
   return (
-    <section data-animate="section" className="bg-white">
-      <div className="flex justify-center">
-        <div className="inline-flex w-full flex-col items-center gap-10 px-4 py-6">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-brand-text sm:text-4xl">
-              Vertrauenspartner
-            </h2>
-          </div>
-          <div className="grid w-full max-w-6xl grid-cols-1 items-center gap-x-12 gap-y-10 py-5 opacity-80 sm:grid-cols-2 lg:grid-cols-6">
-            {logos.map((logo, index) => (
-              <div
-                key={logo.src}
-                className={`flex h-20 min-w-0 items-center justify-center ${placements[index]}`}
-              >
-                <Image
-                  src={logo.src}
-                  alt={logo.alt}
-                  width={220}
-                  height={60}
-                  className="h-16 w-auto max-w-full object-contain"
-                  style={{ transform: `scale(${logo.scale})` }}
-                />
-              </div>
-            ))}
-          </div>
+    <section data-animate="section" className="bg-gradient-to-b from-slate-50 to-white py-16 sm:py-20">
+      <div className="mx-auto max-w-6xl px-6 text-center">
+        <span className="eyebrow">Vertrauen uns bereits</span>
+        <h2 className="section-title">Vertrauenspartner</h2>
+      </div>
+
+      <div className="group mt-12 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
+        <div className="marquee-track flex w-max group-hover:[animation-play-state:paused] motion-reduce:animate-none">
+          <LogoRow />
+          <LogoRow hidden />
         </div>
       </div>
     </section>

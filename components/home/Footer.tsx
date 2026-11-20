@@ -11,8 +11,7 @@ export default function Footer() {
       products: 'Leistungen',
       company: 'Company',
       productTest: 'Product Tests',
-      trainingCheck: 'Training Check',
-      playgroundSafety: 'Playground Safety',
+      safety: 'Occupational Safety',
       about: 'About Us',
       contact: 'Contact',
       imprint: 'Imprint',
@@ -25,8 +24,7 @@ export default function Footer() {
       products: 'Leistungen',
       company: 'Unternehmen',
       productTest: 'Produkt Tests',
-      trainingCheck: 'Ausbildungs Check',
-      playgroundSafety: 'Spielplatz Prüfungen DIN EN',
+      safety: 'Arbeitssicherheit',
       about: 'Über uns',
       contact: 'Kontakt',
       imprint: 'Impressum',
@@ -60,13 +58,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/produkte/ausbildung-check" className="hover:text-white transition-colors">
-                  {copy.trainingCheck}
-                </Link>
-              </li>
-              <li>
-                <Link href="/produkte/spielplatz-sicherheit" className="hover:text-white transition-colors">
-                  {copy.playgroundSafety}
+                <Link href="/kontakt" className="hover:text-white transition-colors">
+                  {copy.safety}
                 </Link>
               </li>
             </ul>

@@ -11,8 +11,8 @@ type Props = {
 
 export default async function DashboardPage({ searchParams }: Props) {
   const defaultPlanBasePriceCents = {
-    BASIC: 28835,
-    PREMIUM: 32120,
+    BASIC: 17700,
+    PREMIUM: 22500,
     LIFETIME: 68900,
   } as const;
   let planBasePriceCents: { BASIC: number; PREMIUM: number; LIFETIME: number } = {

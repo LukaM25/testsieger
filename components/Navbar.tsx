@@ -19,10 +19,8 @@ const navigation: (NavItem | NavSection)[] = [
   {
     label: "Leistungen",
     items: [
-      { label: "Übersicht", href: "/produkte" },
       { label: "Produkt Test", href: "/produkte/produkt-test" },
-      { label: "Ausbildungs Check", href: "/produkte/ausbildung-check" },
-      { label: "Spielplatz Sicherheit", href: "/produkte/spielplatz-sicherheit" },
+      { label: "Arbeitssicherheit", href: "/kontakt" },
     ],
   },
   {

@@ -23,13 +23,13 @@ export default function Intro() {
         };
 
   return (
-    <section data-animate="section" className="bg-white border-b border-gray-100">
+    <section data-animate="section" className="bg-gradient-to-b from-white to-slate-50">
       <div className="mx-auto max-w-4xl px-6 py-20 sm:py-24 text-center">
-        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl text-brand-text mb-8">
+        <h2 className="section-title mb-8">
           {copy.title}
         </h2>
-        <div className="w-12 h-px bg-brand-green mx-auto mb-8"></div>
-        <p className="text-lg text-gray-600 leading-loose font-normal">
+        <div className="w-14 h-0.5 rounded-full bg-gradient-to-r from-sky-300 to-sky-600 mx-auto mb-8"></div>
+        <p className="lead">
           {copy.body}
         </p>
       </div>

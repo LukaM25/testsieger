@@ -4,12 +4,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, BadgeCheck, Check, Clock, FolderCheck, Globe, Infinity as InfinityIcon, Percent, ShieldCheck, Store, Users } from "lucide-react";
 import { stagger } from "@/lib/animation";
 import PrecheckForm from "@/components/precheck/PrecheckForm";
 import Counter from "@/components/Counter";
 import { useLocale } from "@/components/LocaleProvider";
 import MarketplaceLogos from "@/components/MarketplaceLogos";
+import AblaufTimeline from "@/components/produkt/AblaufTimeline";
+import SiegelErklaert from "@/components/produkt/SiegelErklaert";
+import PruefKriterien from "@/components/produkt/PruefKriterien";
+import SparenIllustration from "@/components/produkt/SparenIllustration";
+import WarumSeller from "@/components/produkt/WarumSeller";
+import VorteileCards from "@/components/produkt/VorteileCards";
 
 type StepCard = {
   src: string;
@@ -22,7 +28,7 @@ type Plan = {
   usage: { de: string[]; en: string[] };
   contents: { de: string[]; en: string[] };
   basePriceEur: number;
-  billing: "daily" | "one-time";
+  billing: "daily" | "yearly" | "one-time";
   footer: { de: string[]; en: string[] };
 };
 
@@ -83,10 +89,10 @@ const plans: Plan[] = [
       de: ["Siegel", "Zertifikat", "Prüfbericht"],
       en: ["Seal", "Certificate", "Test report"],
     },
-    basePriceEur: 0.79,
-    billing: "daily",
+    basePriceEur: 177,
+    billing: "yearly",
     footer: {
-      de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+      de: ["Jahreslizenz, 12 Monate", "Lizenzverlängerung jährlich."],
       en: ["Billing 365 days / year", "License renewal yearly."],
     },
   },
@@ -101,10 +107,10 @@ const plans: Plan[] = [
       de: ["Siegel", "Zertifikat", "Prüfbericht"],
       en: ["Seal", "Certificate", "Test report"],
     },
-    basePriceEur: 0.875,
-    billing: "daily",
+    basePriceEur: 225,
+    billing: "yearly",
     footer: {
-      de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+      de: ["Jahreslizenz, 12 Monate", "Lizenzverlängerung jährlich."],
       en: ["Billing 365 days / year", "License renewal yearly."],
     },
   },
@@ -152,10 +158,10 @@ const planThemes = {
   },
 } as const;
 
-const pageTitleClass = "text-4xl leading-tight tracking-tight text-slate-900 sm:text-5xl lg:text-6xl";
-const sectionTitleClass = "text-3xl font-semibold leading-tight tracking-tight text-slate-900 sm:text-4xl";
-const subsectionTitleClass = "text-2xl font-semibold leading-tight tracking-tight text-slate-900 sm:text-3xl";
-const cardTitleClass = "text-lg font-semibold leading-snug text-slate-900 sm:text-xl";
+const pageTitleClass = "text-4xl leading-tight tracking-tight text-[#2B4066] sm:text-5xl lg:text-6xl";
+const sectionTitleClass = "text-3xl font-semibold leading-tight tracking-tight text-[#2B4066] sm:text-4xl";
+const subsectionTitleClass = "text-2xl font-semibold leading-tight tracking-tight text-[#2B4066] sm:text-3xl";
+const cardTitleClass = "text-lg font-semibold leading-snug text-[#2B4066] sm:text-xl";
 const pageSubtitleClass = "text-base leading-relaxed text-slate-600 sm:text-lg";
 const carouselImages = [
   "/carosel/mole-repeller-solar.jpeg",
@@ -244,7 +250,7 @@ function LiveTestedProductsOverview({
   });
 
   return (
-    <section className="-mt-2 pb-10 lg:pb-12">
+    <section data-animate="section" className="-mt-2 pb-10 lg:pb-12">
       <div className="mx-auto max-w-6xl px-6">
         <div
           className="rounded-3xl border border-gray-100 bg-white p-7 shadow-xl shadow-brand-dark/5 animate-fade-in-up"
@@ -637,19 +643,20 @@ export default function ProduktTestPage({
   }, []);
 
   return (
-<main className="bg-white text-slate-900">
+<main className="overflow-x-clip bg-white text-slate-900">
       {precheckSticky && (
         <div className="fixed top-16 left-0 right-0 z-40 flex justify-center px-4">
           <button
             type="button"
             onClick={handleStickyClick}
-            className="group flex items-center gap-3 rounded-full px-5 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white shadow-[0_16px_30px_-18px_rgba(29,78,216,0.45)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-16px_rgba(29,78,216,0.5)] opacity-90 scale-[1.15]"
+            className="cta-enter cta-glow group relative flex items-center gap-3 overflow-hidden rounded-full px-6 py-2.5 text-xs font-semibold uppercase tracking-[0.22em] text-white shadow-[0_16px_30px_-18px_rgba(29,78,216,0.55)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_40px_-16px_rgba(29,78,216,0.6)]"
             style={{ backgroundImage: "linear-gradient(90deg, #1d4ed8 0%, #1e3a8a 55%, #0f172a 100%)" }}
             aria-label={tr('Kostenloser Pre-Check', 'Free pre-check')}
           >
-            <span>{tr('Kostenloser Pre-Check', 'Free pre-check')}</span>
+            <span aria-hidden className="cta-shimmer pointer-events-none absolute inset-0" />
+            <span className="relative">{tr('Kostenloser Pre-Check', 'Free pre-check')}</span>
             <svg
-              className="h-4 w-4 transition-transform duration-200 group-hover:translate-y-[-1px]"
+              className="relative h-4 w-4 animate-bounce"
               viewBox="0 0 20 20"
               fill="currentColor"
               aria-hidden="true"
@@ -659,7 +666,7 @@ export default function ProduktTestPage({
           </button>
         </div>
       )}
-      <section className="relative mx-auto flex max-w-6xl flex-col gap-10 px-6 py-16 sm:flex-row sm:items-center sm:justify-between lg:py-20">
+      <section data-animate="section" className="relative mx-auto flex max-w-6xl flex-col gap-10 px-6 py-16 sm:flex-row sm:items-center sm:justify-between lg:py-20">
   <div className="space-y-6 max-w-xl">
           <div className="flex items-center gap-4">
             <div>
@@ -694,10 +701,16 @@ export default function ProduktTestPage({
             <button
               data-animate="hero-cta"
               onClick={handlePrecheckCta}
-              className="inline-flex mt-3 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-lg transition hover:bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
+              className="cta-glow group relative mt-3 inline-flex items-center gap-3 overflow-hidden rounded-full px-8 py-4 text-sm font-semibold uppercase tracking-[0.2em] text-white shadow-[0_18px_40px_-16px_rgba(29,78,216,0.55)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_50px_-16px_rgba(29,78,216,0.6)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600"
+              style={{ backgroundImage: "linear-gradient(90deg, #1d4ed8 0%, #1e3a8a 60%, #0f172a 100%)" }}
             >
-              {tr('Zum Pre-Check', 'To pre-check')}
+              <span aria-hidden className="cta-shimmer pointer-events-none absolute inset-0" />
+              <span className="relative">{tr('Kostenlos Pre-Check starten', 'Start free pre-check')}</span>
+              <ArrowRight className="relative h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
             </button>
+            <p className="mt-3 w-full text-sm text-slate-500">
+              {tr('Kostenlos · Dauert nur 3 Minuten', 'Free · Takes only 3 minutes')}
+            </p>
           </div>
         </div>
         {/* right-side visual: layered siegel images with entrance animation */}
@@ -707,7 +720,7 @@ export default function ProduktTestPage({
         >
             <div
               className="relative flex items-center justify-start w-[360px] h-[360px] overflow-visible pointer-events-none"
-              style={{ marginLeft: 'auto', marginRight: '-90px' }}
+              style={{ marginLeft: 'auto', marginRight: 'clamp(0px, 4vw, 56px)' }}
             >
             {/* front card */}
             <div
@@ -717,107 +730,135 @@ export default function ProduktTestPage({
                 height: '280px',
                 opacity: heroAnim ? 1 : 0,
                 transform: heroAnim
-                  ? 'translate(20%, 10%) scale(1.05)'
-                  : 'translate(120%, 10%) scale(0.95)',
+                  ? 'translate(0%, 0%) scale(1.05)'
+                  : 'translate(60%, 6%) scale(0.95)',
               }}
             >
-              <Image
-                src="/siegel19.png"
-                alt="Testsieger Siegel"
-                fill
-                sizes="280px"
-                className="object-contain"
-                priority
-              />
+              <div className="seal-float relative h-full w-full">
+                <Image
+                  src="/siegel19.png"
+                  alt="Testsieger Siegel"
+                  fill
+                  sizes="280px"
+                  className="object-contain"
+                  priority
+                />
+                <div
+                  aria-hidden
+                  className="seal-shine pointer-events-none absolute inset-0"
+                  style={{
+                    WebkitMaskImage: "url(/siegel19.png)",
+                    maskImage: "url(/siegel19.png)",
+                    WebkitMaskSize: "contain",
+                    maskSize: "contain",
+                    WebkitMaskRepeat: "no-repeat",
+                    maskRepeat: "no-repeat",
+                    WebkitMaskPosition: "center",
+                    maskPosition: "center",
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl overflow-x-hidden px-6 py-12">
-        <h2 className={subsectionTitleClass}>{tr('Ablauf', 'Process')}</h2>
-        <div className="mt-8 flex flex-col items-center justify-center gap-6 md:flex-row md:flex-nowrap">
-          {stepSequence.map((entry, idx) =>
-            entry.type === "card" ? (
-              <div
-                key={`card-${entry.card.label.de}`}
-                data-animate="card"
-                style={stagger(idx)}
-                className="rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm w-[clamp(180px,22vw,240px)]"
-              >
-                <div className="flex justify-center">
-                  <Image
-                    src={entry.card.src}
-                    alt={entry.card.label.en}
-                    width={96}
-                    height={96}
-                    className="h-20 w-20 object-contain"
-                  />
-                </div>
-                <p className="mt-4 text-sm font-semibold uppercase tracking-[0.3em] text-slate-600">
-                  {tr(entry.card.label.de, entry.card.label.en)}
-                </p>
-              </div>
-            ) : (
-              <div key={entry.key} className="flex items-center" data-animate="card" style={stagger(idx)}>
-                <Image
-                  src="/arrow.png"
-                  alt={tr('Pfeil', 'Arrow')}
-                  width={64}
-                  height={64}
-                  className="h-[clamp(28px,4vw,48px)] w-auto object-contain"
-                />
-              </div>
-            )
-          )}
+      {/* Vertrauen in Zahlen: schlanke Leiste direkt unter dem Hero */}
+      <section data-animate="section" className="px-6 pb-4" aria-label={tr('Vertrauen in Zahlen', 'Trust in numbers')}>
+        <p className="mb-3 flex items-center justify-center gap-2 text-xs font-medium uppercase tracking-[0.22em] text-sky-700/80">
+          <span className="relative flex h-2 w-2">
+            <span className="pin-pulse absolute inline-flex h-full w-full rounded-full bg-emerald-400/70" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+          </span>
+          {tr('Live-Zahlen', 'Live numbers')}
+        </p>
+        <div className="mx-auto max-w-5xl rounded-2xl border border-slate-200/70 bg-white/90 px-4 py-4 shadow-[0_18px_50px_-38px_rgba(43,64,102,0.4)] sm:px-8">
+          <ul className="grid grid-cols-1 divide-y divide-slate-100 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+            {[
+              { Icon: BadgeCheck, label: tr('Siegel vergeben', 'Seals awarded'), prefix: '', end: 477, start: 47, duration: 4000 },
+              { Icon: Users, label: tr('Klienten', 'Clients'), prefix: '', end: 233, start: 0, duration: 3200 },
+              { Icon: FolderCheck, label: tr('Projekte abgeschlossen', 'Projects completed'), prefix: tr('über ', 'over '), end: 1500, start: 0, duration: 3600 },
+            ].map(({ Icon, label, prefix, end, start, duration }) => (
+              <li key={label} className="group flex items-center justify-center gap-3 px-4 py-3 sm:py-2">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-700 ring-1 ring-sky-100 transition duration-500 group-hover:-translate-y-0.5">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <span className="text-left leading-tight">
+                  <span className="block text-xl font-semibold tabular-nums tracking-tight text-[#2B4066]">
+                    {prefix}
+                    <Counter start={start} end={end} duration={duration} />
+                  </span>
+                  <span className="block text-xs text-slate-500">{label}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
-      <LiveTestedProductsOverview products={recentTestedProducts} tr={tr} locale={locale} />
-      {/* Inserted Pre-Check form inline so the Produkt Test page is self-contained */}
-      <section id="precheck" ref={precheckSectionRef} className="mx-auto max-w-3xl px-4 py-10">
-        <div className="flex flex-col items-center gap-4 text-slate-900">
-          <button
-            ref={precheckCtaRef}
-            type="button"
-            onClick={handlePrecheckToggle}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handlePrecheckToggle(); }}
-            className="group relative flex w-full flex-col items-center gap-2 rounded-full px-14 py-6 text-center text-white shadow-[0_18px_40px_-16px_rgba(29,78,216,0.5),0_10px_20px_-12px_rgba(30,58,138,0.35)] transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_22px_48px_-14px_rgba(29,78,216,0.5),0_12px_24px_-12px_rgba(30,58,138,0.35)] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600"
-            style={{ backgroundImage: "linear-gradient(90deg, #1d4ed8 0%, #1e3a8a 55%, #0f172a 100%)" }}
-            aria-expanded={showPrecheck}
-            aria-controls="precheck-content"
-          >
-            <span
-              className="pointer-events-none absolute inset-0 rounded-full opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-              style={{ backgroundImage: "linear-gradient(90deg, #2563eb 0%, #1e40af 55%, #0f172a 100%)" }}
-            />
-            <span className="relative z-10 text-2xl font-semibold tracking-[0.18em]">
-              {tr('Kostenloser Pre-Check', 'Free pre-check')}
-            </span>
-            <span className="relative z-10 text-sm font-semibold uppercase tracking-[0.28em] text-white/90 inline-flex items-center justify-center gap-2">
-              {tr('(Dauert nur 3 Minuten)', '(Takes only 3 minutes)')}
-              <svg
-                aria-hidden="true"
-                className="h-6 w-6 text-white/90"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.8}
+
+      <VorteileCards />
+      <SiegelErklaert />
+      <AblaufTimeline />
+      {searchParams?.get('direktZahlung') === 'success' && (
+        <div className="mx-auto mt-6 max-w-3xl px-4">
+          <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-900">
+            <Check className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+            <p className="text-sm md:text-base">
+              {tr(
+                'Zahlung erfolgreich. Wir senden Ihnen jetzt eine E-Mail mit Ihren Zugangsdaten (E-Mail-Adresse und vorläufiges Passwort) für das Kundendashboard. Bitte ändern Sie das Passwort nach dem ersten Login.',
+                'Payment successful. We are sending you an email with your dashboard login (email and temporary password). Please change the password after your first login.'
+              )}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <section id="precheck" ref={precheckSectionRef} className="mx-auto max-w-3xl scroll-mt-28 px-4 py-16 sm:py-20">
+        <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white px-6 py-12 text-center shadow-[0_30px_80px_-50px_rgba(43,64,102,0.45)] sm:px-12 sm:py-14">
+          <div className="seal-glow pointer-events-none absolute -top-20 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-sky-200/40 blur-3xl" />
+          <div className="relative">
+            <span className="eyebrow">{tr('Jetzt starten', 'Start now')}</span>
+            <h2 className={sectionTitleClass}>{tr('Ihr Produkt. Ihr Siegel. In 3 Minuten gestartet.', 'Your product. Your seal. Started in 3 minutes.')}</h2>
+            <p className="lead mx-auto mt-4 max-w-xl">
+              {tr('Geben Sie Ihre Produktdaten ein. Wir prüfen vorab, ob Ihr Produkt für eine Prüfung in Frage kommt.', 'Enter your product data. We check up front whether your product qualifies for testing.')}
+            </p>
+
+            <ul className="mx-auto mt-8 flex max-w-xl flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm font-medium text-[#2B4066]">
+              <li className="inline-flex items-center gap-2">
+                <Check className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+                {tr('Kostenlos', 'Free of charge')}
+              </li>
+              <li className="inline-flex items-center gap-2">
+                <Clock className="h-4 w-4 text-sky-600" aria-hidden="true" />
+                {tr('Dauert nur 3 Minuten', 'Takes only 3 minutes')}
+              </li>
+              <li className="inline-flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-sky-600" aria-hidden="true" />
+                {tr('Ergebnis vor der Testgebühr', 'Result before any test fee')}
+              </li>
+            </ul>
+
+            <div className="mt-9 flex flex-col items-center gap-4">
+              <button
+                ref={precheckCtaRef}
+                type="button"
+                onClick={handlePrecheckToggle}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handlePrecheckToggle(); }}
+                className="group relative inline-flex items-center gap-3 overflow-hidden rounded-full px-9 py-4 text-base font-semibold text-white shadow-[0_18px_40px_-18px_rgba(30,58,138,0.7)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_48px_-16px_rgba(30,58,138,0.75)] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600"
+                style={{ backgroundImage: "linear-gradient(90deg, #1E3A8A 0%, #2B4066 100%)" }}
+                aria-expanded={showPrecheck}
+                aria-controls="precheck-content"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a6.75 6.75 0 1 0 6.75 6.75" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.5v5.25l3 1.5" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.5 2.75h5M10.75 3.5l-.5 2.25M13.25 3.5l.5 2.25" />
-              </svg>
-            </span>
-            <svg
-              className={`relative z-10 h-6 w-6 transition-transform duration-200 ${showPrecheck ? 'rotate-180' : 'rotate-0'}`}
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.06z" />
-            </svg>
-          </button>
-          {ctaNotice && <p className="text-sm font-semibold text-emerald-900 text-center px-4">{ctaNotice}</p>}
+                <span aria-hidden className="cta-shimmer pointer-events-none absolute inset-0" />
+                <span className="relative">{showPrecheck ? tr('Pre-Check schließen', 'Close pre-check') : tr('Kostenlosen Pre-Check starten', 'Start free pre-check')}</span>
+                <ArrowRight
+                  className={`relative h-5 w-5 transition-transform duration-300 ${showPrecheck ? '-rotate-90' : 'group-hover:translate-x-1'}`}
+                  aria-hidden="true"
+                />
+              </button>
+              {ctaNotice && <p className="text-sm font-semibold text-emerald-900 text-center px-4">{ctaNotice}</p>}
+            </div>
+          </div>
         </div>
 
         <div
@@ -832,183 +873,30 @@ export default function ProduktTestPage({
         </div>
       </section>
 
-      {/* Vorteile / Highlights */}
-      <section className="mx-auto max-w-6xl px-6 pt-12 pb-6">
-        <div className="flex items-center justify-between">
-          <h2 className={subsectionTitleClass}>{tr('Ihr Vorteil', 'Your benefit')}</h2>
-          <span className="text-xs uppercase tracking-[0.3em] text-slate-500">{tr('klar & strukturiert', 'clear & structured')}</span>
-        </div>
-        <div className="mt-8 grid gap-8 md:grid-cols-3">
-          {advantanges.map((item, i) => (
-            <div
-              key={item.label.de}
-              data-animate="card"
-              style={stagger(i)}
-              className="relative flex flex-col items-center gap-5 rounded-[40px] border border-slate-200 bg-white p-8 text-center shadow-sm shadow-slate-200 w-[clamp(240px,32vw,360px)]"
-            >
-              <span className="absolute right-3 top-3 rounded-full bg-slate-100 p-1 shadow-inner">
-                <Image src="/checkmark.png" alt="Check" width={24} height={24} className="h-6 w-6 object-contain" />
-              </span>
-              <Image src={item.src} alt={tr(item.label.de, item.label.en)} width={96} height={96} className="h-20 w-20 object-contain" />
-              <p className={cardTitleClass}>{tr(item.label.de, item.label.en)}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="bg-white">
-        <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
-          <div className="grid items-center gap-12 md:grid-cols-2">
-            <div className="space-y-6 text-left">
-              <h2 className={sectionTitleClass}>
-                <span>{tr('Sparen Sie mehrere Hundert Euro Werbebudget ein.', 'Save hundreds of euros in marketing budget.')}</span>
-                <span className="ml-3 inline-flex align-middle sm:ml-4">
-                  <Image
-                    src="/checkmark.png"
-                    alt={tr('Checkmark', 'Checkmark')}
-                    width={60}
-                    height={60}
-                    className="h-10 w-10 object-contain sm:h-[3rem] sm:w-[3rem]"
-                  />
-                </span>
-              </h2>
-              <p className="text-lg font-medium leading-relaxed text-slate-600 sm:text-xl">
-                {tr('Verbrenne nicht unnötig Werbebudget', "Don't burn marketing budget unnecessarily")}
-              </p>
-            </div>
-            <div className="flex h-full items-center justify-center md:justify-end">
-              <img
-                src="/cashdrop.jpeg"
-                alt={tr('Cash drop', 'Cash drop')}
-                className="h-full w-full max-w-[421px] object-contain sm:max-w-[518px]"
-                loading="lazy"
-                decoding="async"
-                fetchPriority="low"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      
-
-
-      <section className="mx-auto max-w-6xl px-6 pt-6 pb-12 sm:pt-8 sm:pb-14">
-        <div className="text-center">
-          <h2 className={sectionTitleClass}>
-            {tr('Zufriedene Kunden', 'Satisfied customers')}
-          </h2>
-          <p className="mt-4 text-lg text-slate-600">
-            {tr('Über', 'Over')} <Counter end={1500} /> {tr('Projekte erfolgreich abgeschlossen.', 'projects successfully completed.')}
-          </p>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-6 py-10 sm:py-12">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Exklusivitaet */}
-          <div
-            className="flex flex-col items-center justify-center rounded-2xl bg-white p-8 text-center text-slate-900"
-          >
-            <div className="text-5xl font-bold">
-              <Counter start={0} end={1} duration={1875} />
-            </div>
-            <div className="mt-2 text-sm font-medium uppercase tracking-wide">
-              {tr('Exklusivität', 'Exclusivity')}
-            </div>
-          </div>
-
-          {/* Ranking Top */}
-          <div
-            className="flex flex-col items-center justify-center rounded-2xl bg-white p-8 text-center text-slate-900"
-          >
-            <div className="text-5xl font-bold">
-              <Counter start={1} end={10} duration={2813} />
-            </div>
-            <div className="mt-2 text-sm font-medium uppercase tracking-wide">
-              {tr('Ranking Top', 'Top ranking')}
-            </div>
-          </div>
-
-          {/* Klienten */}
-          <div
-            className="flex flex-col items-center justify-center rounded-2xl bg-white p-8 text-center text-slate-900"
-          >
-            <div className="text-5xl font-bold">
-              <Counter start={0} end={233} duration={3750} />
-            </div>
-            <div className="mt-2 text-sm font-medium uppercase tracking-wide">
-              {tr('Klienten', 'Clients')}
-            </div>
-          </div>
-
-          {/* Siegel vergaben */}
-          <div
-            className="flex flex-col items-center justify-center rounded-2xl bg-white p-8 text-center text-slate-900"
-          >
-            <div className="text-5xl font-bold">
-              <Counter start={47} end={477} duration={4688} />
-            </div>
-            <div className="mt-2 text-sm font-medium uppercase tracking-wide">
-              {tr('Siegel vergaben', 'Seals awarded')}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-6 pb-14 sm:pb-18">
-        <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)]">
-          <div className="relative aspect-[16/9] w-full">
-            <Image
-              src="/prodtestbild/emotion.jpeg"
-              alt={tr("Emotionale Produktmomente", "Emotional product moments")}
-              fill
-              className="object-cover"
-              sizes="(min-width: 1024px) 960px, (min-width: 640px) 90vw, 100vw"
-            />
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-6 pb-14 sm:pb-18">
-        <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)]">
-          <div className="relative aspect-[1402/1122] w-full">
-            <Image
-              src="/grunfus.jpeg"
-              alt={tr("Nachhaltige Produktpruefung", "Sustainable product testing")}
-              fill
-              className="object-contain"
-              sizes="(min-width: 1024px) 960px, (min-width: 640px) 90vw, 100vw"
-            />
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-6 pt-8 pb-16">
-        <div className="space-y-12">
+      <section data-animate="section" className="mx-auto max-w-6xl px-6 pt-4 pb-12">
           <div className="rounded-3xl border border-slate-100 bg-white/90 p-8 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)] md:p-10">
             <div className="space-y-3 text-center">
               <h3 className={subsectionTitleClass}>
                 {tr("Weitere Produkte hinzufügen und sparen.", "Add more products and save.")}
               </h3>
               <p className={pageSubtitleClass}>
-                {tr("Für die Prüfung fällt eine einmalige Testgebühr an.", "A one-time test fee applies for the review.")}
+                {tr("Für den Prüfaufwand fällt eine einmalige Testgebühr an.", "A one-time test fee applies for the testing effort.")}
               </p>
             </div>
             <div className="mt-8 grid gap-5 md:grid-cols-3">
               {savingsTiers.map((tier) => (
                 <div
                   key={tier.count}
-                  className="relative overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50/70 via-white to-white p-6 text-center shadow-[0_18px_42px_-34px_rgba(29,78,216,0.75)] ring-1 ring-white transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_22px_50px_-34px_rgba(29,78,216,0.9)]"
+                  className="relative flex flex-col overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50/70 via-white to-white p-6 text-center shadow-[0_18px_42px_-34px_rgba(29,78,216,0.75)] ring-1 ring-white transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_22px_50px_-34px_rgba(29,78,216,0.9)]"
                 >
                   <span className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#1d4ed8] via-[#60a5fa] to-transparent" />
                   <div className="flex items-center justify-center">
-                    <h4 className="text-xl font-semibold text-slate-950 [text-shadow:0_8px_16px_rgba(15,23,42,0.18)]">{productCountLabel(tier.count)}</h4>
+                    <h4 className="text-xl font-semibold text-[#2B4066]">{productCountLabel(tier.count)}</h4>
                   </div>
-                  <div className="mt-6 space-y-2 text-slate-700">
-                    {tier.discountPercent > 0 && (
+                  <div className="mb-6 mt-6 space-y-2 text-slate-700">
+                    <div className="flex h-16 items-center justify-center">
                       <div className="inline-flex flex-wrap items-center justify-center gap-2 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 via-white to-blue-50 px-4 py-2.5 text-base font-bold shadow-[0_12px_26px_-20px_rgba(29,78,216,0.9)]">
-                        <span className="text-slate-500 line-through decoration-2">{formatEur(tier.totalNet)}</span>
+                        <span className={`text-slate-500 line-through decoration-2 ${tier.discountPercent === 0 ? "hidden" : ""}`}>{formatEur(baseNetPerProduct)}</span>
                         <span
                           className="rounded-full px-3 py-1 text-sm font-extrabold shadow-sm"
                           style={{ backgroundColor: "#1d4ed8", color: "#ffffff" }}
@@ -1016,21 +904,49 @@ export default function ProduktTestPage({
                           {tr("Spare", "Save")} {tier.discountPercent}%
                         </span>
                       </div>
-                    )}
-                    <p className="text-lg font-semibold text-slate-950">
-                      {tr("Testgebühr", "Test fee")} {formatEur(tier.finalNet)}
+                    </div>
+                    <p className="text-sm font-medium text-slate-500">{tr("Testgebühr pro Produkt", "Test fee per product")}</p>
+                    <p className="text-3xl font-semibold tracking-tight text-[#2B4066] tabular-nums">
+                      {formatEur(roundEur(tier.finalNet / tier.count))}
+                    </p>
+                    <p className="text-sm text-slate-600">
+                      {tier.count > 1
+                        ? tr(`Gesamt ${formatEur(tier.finalNet)} für ${tier.count} Produkte`, `Total ${formatEur(tier.finalNet)} for ${tier.count} products`)
+                        : tr("einmalig, netto", "one-time, net")}
                     </p>
                   </div>
+                  <Link
+                    href={`/precheck?produkte=${tier.count}#checkout-options`}
+                    className="group mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#1d4ed8] to-[#16294d] shadow-[0_14px_28px_-16px_rgba(29,78,216,0.7)] px-5 py-3 text-sm font-semibold !text-white transition hover:-translate-y-0.5 hover:brightness-110"
+                  >
+                    {tier.count === 1 ? tr("Produkt einreichen", "Submit product") : tr(`${tier.count} Produkte einreichen`, `Submit ${tier.count} products`)}
+                    <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+                  </Link>
                 </div>
               ))}
             </div>
+            <Link
+              href="/kontakt?kategorie=quote"
+              className="group relative mt-6 flex flex-col items-center gap-4 overflow-hidden rounded-2xl border border-sky-200/70 bg-gradient-to-r from-sky-50 via-white to-sky-50 p-5 text-center shadow-[0_18px_44px_-34px_rgba(43,64,102,0.5)] transition duration-500 hover:-translate-y-0.5 hover:border-sky-300 sm:flex-row sm:text-left"
+            >
+              <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-100 to-sky-200 text-sky-700 ring-1 ring-sky-200">
+                <span className="vorteil-halo absolute inset-0 rounded-2xl" aria-hidden="true" />
+                <Users className="vorteil-bob relative h-6 w-6" aria-hidden="true" />
+              </span>
+              <span className="flex-1">
+                <span className="block text-lg font-semibold text-[#2B4066]">
+                  {tr("Mehr als 3 Produkte?", "More than 3 products?")}
+                </span>
+                <span className="block text-sm text-slate-600">
+                  {tr("Sie erhalten ein individuelles Angebot mit besseren Konditionen.", "You get a custom quote with better terms.")}
+                </span>
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#1d4ed8] to-[#16294d] shadow-[0_14px_28px_-16px_rgba(29,78,216,0.7)] px-5 py-2.5 text-sm font-semibold !text-white transition group-hover:brightness-110">
+                {tr("Angebot anfragen", "Request a quote")}
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+              </span>
+            </Link>
             <div className="mt-8 flex flex-col items-center gap-5 text-center">
-              <p className="max-w-2xl text-sm text-slate-600 md:text-base">
-                {tr(
-                  "Mehr als 3 Produkten? Schreiben Sie uns an und wir unterbreiten Ihnen ein Angebot.",
-                  "For more than 3 products, contact us directly and we will make you an offer."
-                )}
-              </p>
               <div className="flex w-full flex-col items-center justify-center gap-3 sm:w-auto">
                 <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-5">
                   <button
@@ -1053,192 +969,128 @@ export default function ProduktTestPage({
                     <ArrowRight className="h-5 w-5" aria-hidden="true" />
                   </button>
                 </div>
-                <Link
-                  href="/kontakt"
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-100 bg-blue-50 px-5 py-2.5 text-sm font-semibold text-[#1d4ed8] transition hover:border-blue-200 hover:bg-blue-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
-                >
-                  {tr("Individuelles Angebot / Kontakt", "Custom quote / contact")}
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
               </div>
             </div>
           </div>
+      </section>
+
+      <LiveTestedProductsOverview products={recentTestedProducts} tr={tr} locale={locale} />
+      {/* Inserted Pre-Check form inline so the Produkt Test page is self-contained */}
+      <section data-animate="section" className="bg-gradient-to-b from-white to-slate-50">
+        <div className="mx-auto max-w-6xl px-6 py-16 sm:py-24">
+          <div className="grid items-center gap-12 md:grid-cols-2">
+            <div className="space-y-6 text-left">
+              <span className="eyebrow !mb-0">{tr('Werbebudget', 'Ad budget')}</span>
+              <h2 className={sectionTitleClass}>
+                <span>{tr('Sparen Sie mehrere Hundert Euro Werbebudget ein.', 'Save hundreds of euros in marketing budget.')}</span>
+                <span className="ml-3 inline-flex align-middle sm:ml-4">
+                  <Image
+                    src="/checkmark.png"
+                    alt={tr('Checkmark', 'Checkmark')}
+                    width={60}
+                    height={60}
+                    className="h-10 w-10 object-contain sm:h-[3rem] sm:w-[3rem]"
+                  />
+                </span>
+              </h2>
+              <p className="lead">
+                {tr('Verbrenne nicht unnötig Werbebudget', "Don't burn marketing budget unnecessarily")}
+              </p>
+            </div>
+            <div className="flex h-full items-center justify-center md:justify-end">
+              <div data-animate="card" className="aspect-square w-full max-w-[420px]">
+                <SparenIllustration label={tr('Münze fällt in eine offene Hand', 'Coin falling into an open hand')} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      
+
+
+      <section data-animate="section" className="mx-auto max-w-6xl px-6 pt-8 pb-16">
+        <div className="space-y-12">
 
 
             {/* NEW SECTION */}
-      <section className="mx-auto max-w-6xl px-6 py-16">
-
-        {/* First paragraph - full width */}
-        <h2 className={`${sectionTitleClass} mb-6`}>
-          {tr('Warum E-Commerce-Seller auf Testsieger Check setzen', 'Why e-commerce sellers rely on Testsieger Check')}
-        </h2>
-        <p className="text-slate-700 leading-relaxed mb-8">
-          {tr(
-            'Wir wissen, worauf es im modernen Handel ankommt. Das DPI steht für eine neue Generation der Produktprüfung: Wir verbinden tiefgreifendes technisches Verständnis mit kompromissloser Praxisnähe.',
-            'We know what matters in modern commerce. DPI stands for a new generation of product testing: combining deep technical expertise with uncompromising real-world relevance.'
-          )}
-        </p>
-
-        {/* Second paragraph + bullets float left, futur.jpeg floats right */}
-        <div className="grid gap-8 lg:grid-cols-2 lg:items-center mb-14">
-          <div className="space-y-6">
-            <p className="text-slate-700 leading-relaxed">
-              {tr(
-                'Unsere Vision ist es, nicht nur abstrakte Labordaten zu erheben, sondern Produkte exakt so zu testen, wie Ihre Kunden sie nutzen. Das Ergebnis sind ehrliche, greifbare Prüfberichte und ein Siegel, das bei Verbrauchern echtes Vertrauen weckt - und bei Ihnen messbare Umsätze generiert.',
-                'Our vision is to not merely collect abstract lab data, but to test products exactly as your customers use them. The result: honest, tangible test reports and a seal that builds genuine consumer trust - and measurable revenue for you.'
-              )}
-            </p>
-            <MarketplaceLogos
-              className="-my-2"
-              label={tr('Unterstützte Verkaufskanäle', 'Supported sales channels')}
-            />
-            <ul className="space-y-2 text-slate-800 font-medium">
-              <li className="flex items-center gap-2">
-                <Image src="/checkmark.png" alt="" width={20} height={20} className="h-5 w-5 object-contain" />
-                {tr('Machen Sie Ihr Produkt zum unangefochtenen Bestseller.', 'Make your product the undisputed bestseller.')}
-              </li>
-              <li className="flex items-center gap-2">
-                <Image src="/checkmark.png" alt="" width={20} height={20} className="h-5 w-5 object-contain" />
-                {tr('Verlieren Sie keine wertvollen Kunden mehr an die Konkurrenz.', 'Stop losing valuable customers to competitors.')}
-              </li>
-              <li className="flex items-center gap-2">
-                <Image src="/checkmark.png" alt="" width={20} height={20} className="h-5 w-5 object-contain" />
-                {tr('Zeigen Sie, was in Ihrem Produkt steckt.', 'Show what your product is truly made of.')}
-              </li>
-            </ul>
-          </div>
-
-          {/* futur.jpeg - right, same height as text block */}
-          <div className="overflow-hidden rounded-3xl border border-slate-100 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)]">
-            <img
-              src="/futur.jpeg"
-              alt={tr('Zukunft des E-Commerce', 'Future of e-commerce')}
-              className="w-full h-full object-cover"
-              style={{ maxHeight: '280px' }}
-              loading="lazy"
-              decoding="async"
-              fetchPriority="low"
-            />
-          </div>
-        </div>
-
-        {/* Banner - full width */}
-        <div className="rounded-3xl border border-slate-100 bg-slate-50 px-8 py-10 shadow-sm text-center space-y-3">
-          <h3 className={subsectionTitleClass}>
-            {tr(
-              'Heben Sie Ihr Produkt mit dem DPI-Prüfsiegel aus der Masse ab.',
-              'Stand out from the crowd with the DPI quality seal.'
-            )}
-          </h3>
-          <p className="text-slate-600 leading-relaxed max-w-3xl mx-auto">
-            {tr(
-              'Auf Amazon und im E-Commerce ist der Wettbewerb gnadenlos. Kunden vergleichen Dutzende identisch aussehende Produkte in Sekunden. Wer den Zuschlag bekommt, entscheidet oft nur ein einziger Faktor: Sichtbares Vertrauen.',
-              'On Amazon and in e-commerce, competition is ruthless. Customers compare dozens of identical-looking products in seconds. What makes the difference is often just one factor: visible trust.'
-            )}
-          </p>
-        </div>
-
-        {/* mitsiegel.jpeg - full width below banner */}
-        <div className="mt-10 overflow-hidden rounded-3xl border border-slate-100 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)]">
-          <img
-            src="/mitsiegel.jpeg"
-            alt={tr('Produkt mit Siegel', 'Product with seal')}
-            className="w-full object-cover"
-            style={{ maxHeight: '400px' }}
-            loading="lazy"
-            decoding="async"
-            fetchPriority="low"
-          />
-        </div>
-
-      </section>
+      <WarumSeller onCta={handlePrecheckCta} />
       {/* END NEW SECTION */}
 
-          <h3 className={`${subsectionTitleClass} text-center`}>
-            {tr("Lizenzpläne werden von Ihnen nur für bestandene Produkte aktiviert.", "License plans are only activated for existing products.")}
-          </h3>
-
-          <div className="space-y-6">
-            <h3 className={`${subsectionTitleClass} text-center`}>{tr("Lizenzpläne", "License plans")}</h3>
-            <div className="grid gap-6 md:grid-cols-3">
-              {plans.map((plan) => {
-                const theme = planThemes[plan.theme];
-                const usageLines = locale === "en" ? plan.usage.en : plan.usage.de;
-                const contentLines = locale === "en" ? plan.contents.en : plan.contents.de;
-                const footerLines = locale === "en" ? plan.footer.en : plan.footer.de;
-                const priceSuffix = plan.billing === "daily" ? (locale === "en" ? " / day" : " / Tag") : "";
-                const priceRows =
-                  plan.billing === "daily"
-                    ? [
-                        {
-                          label: `${locale === "en" ? "1 prod." : "1 Prod."}`,
-                          price: `${formatEur(roundEur(plan.basePriceEur))}${priceSuffix}`,
-                        },
-                        {
-                          label: `${locale === "en" ? "2 prod." : "2 Prod."} -20%`,
-                          price: `${formatEur(roundEur(plan.basePriceEur * 0.8))}${priceSuffix}`,
-                        },
-                        {
-                          label: `${locale === "en" ? "3 prod." : "3 Prod."} -30%`,
-                          price: `${formatEur(roundEur(plan.basePriceEur * 0.7))}${priceSuffix}`,
-                        },
-                      ]
-                    : [
-                        {
-                          label: `${locale === "en" ? "1 prod." : "1 Prod."}`,
-                          price: `${formatEur(roundEur(plan.basePriceEur))}`,
-                        },
-                        {
-                          label: `${locale === "en" ? "2 prod." : "2 Prod."} -20%`,
-                          price: `${formatEur(roundEur(plan.basePriceEur * 2 * 0.8))}`,
-                        },
-                        {
-                          label: `${locale === "en" ? "3 prod." : "3 Prod."} -30%`,
-                          price: `${formatEur(roundEur(plan.basePriceEur * 3 * 0.7))}`,
-                        },
-                      ];
-                return (
-                  <div key={plan.name} className="flex h-full flex-col items-center gap-4">
-                    <h4 className={cardTitleClass}>{plan.name}</h4>
-                    <div
-                      className={`flex h-full w-full flex-col justify-between rounded-[28px] border ${theme.border} ${theme.card} p-6 text-center font-semibold shadow-[0_28px_60px_-40px_rgba(15,23,42,0.65)] transition-transform duration-300 hover:-translate-y-1`}
-                    >
-                      <div className="space-y-6">
-                        <div className="space-y-2">
-                          <div className={`text-[15.4px] font-semibold ${theme.label}`}>{tr("Nutzung:", "Usage:")}</div>
-                          <div className={`space-y-1 text-[15.4px] ${theme.body}`}>
-                            {usageLines.map((line) => (
-                              <div key={line}>{line}</div>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className={`text-[15.4px] font-semibold ${theme.label}`}>{tr("Inhalt:", "Contents:")}</div>
-                          <div className={`space-y-1 text-[15.4px] ${theme.body}`}>
-                            {contentLines.map((line) => (
-                              <div key={line}>- {line}</div>
-                            ))}
-                          </div>
-                        </div>
-                        <div className={`space-y-1 text-[15.4px] ${theme.body} w-full max-w-[240px] mx-auto`}>
-                          {priceRows.map((row) => (
-                            <div key={`${row.label}-${row.price}`} className="flex items-center justify-between gap-4 tabular-nums">
-                              <span className="text-left">{row.label}</span>
-                              <span className="text-right">{row.price}</span>
-                            </div>
-                          ))}
-                        </div>
+          {/* Lizenzpläne: kompakte Übersicht, Details auf /pakete */}
+          <div className="pt-10 text-center">
+            <span className="eyebrow">{tr("Lizenzpläne", "License plans")}</span>
+            <h3 className={subsectionTitleClass}>
+              {tr("Erst nach bestandener Prüfung.", "Only after your product passes.")}
+            </h3>
+            <p className="lead mx-auto mt-3 max-w-xl">
+              {tr("Die Lizenz wird nur für bestandene Produkte aktiviert.", "The license is only activated for products that pass.")}
+            </p>
+          </div>
+          <div className="mx-auto mt-8 grid max-w-4xl gap-4 sm:grid-cols-3">
+            {plans.map((plan, i) => {
+              const PlanIcon = plan.name === "Basic" ? Store : plan.name === "Premium" ? Globe : InfinityIcon;
+              const isDaily = plan.billing !== "one-time";
+              const yearly = plan.billing === "daily" ? roundEur(plan.basePriceEur * 365) : plan.basePriceEur;
+              const tagline =
+                plan.name === "Basic"
+                  ? tr("Ein Verkaufskanal", "One sales channel")
+                  : plan.name === "Premium"
+                  ? tr("Alle Kanäle & Sprachen", "All channels & languages")
+                  : tr("Einmal zahlen", "Pay once");
+              return (
+                <Link
+                  key={plan.name}
+                  href={`/pakete?plan=${plan.name.toUpperCase()}`}
+                  data-animate="card"
+                  style={stagger(i)}
+                  className="group relative flex flex-col items-center overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 text-center shadow-[0_20px_60px_-40px_rgba(43,64,102,0.35)] transition duration-500 hover:-translate-y-1.5 hover:shadow-[0_28px_70px_-34px_rgba(43,64,102,0.45)]"
+                >
+                  <span className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-sky-100/70 blur-2xl transition-transform duration-700 group-hover:scale-150" />
+                  <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-50 to-sky-100 text-sky-700 ring-1 ring-sky-100 transition duration-500 group-hover:rotate-3">
+                    <PlanIcon className="h-6 w-6" aria-hidden="true" />
+                  </span>
+                  <p className="relative mt-4 text-lg font-semibold text-[#2B4066]">{plan.name}</p>
+                  <p className="relative text-sm text-slate-500">{tagline}</p>
+                  <p className="relative mt-4 text-sm text-slate-700">
+                    {isDaily ? (
+                      <>
+                        <span className="text-lg font-semibold tabular-nums text-[#2B4066]">{formatEur(yearly)}</span>{" "}
+                        {tr("pro Jahr", "per year")}
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-lg font-semibold tabular-nums text-[#2B4066]">{formatEur(plan.basePriceEur)}</span>{" "}
+                        {tr("einmalig", "one-time")}
+                      </>
+                    )}
+                  </p>
+                  <div className="relative mt-4 w-full space-y-1.5 rounded-2xl bg-slate-50 px-2.5 py-3 text-[13px]">
+                    {[
+                      { label: tr("2 Produkte", "2 products"), pct: 20, f: 0.8 },
+                      { label: tr("3+ Produkte", "3+ products"), pct: 30, f: 0.7 },
+                    ].map((row) => (
+                      <div key={row.pct} className="flex items-center justify-between gap-1.5 whitespace-nowrap text-slate-600">
+                        <span className="flex items-center gap-1">
+                          {row.label}
+                          <span className="rounded-full bg-emerald-50 px-1 py-0.5 text-[10px] font-semibold text-emerald-700">-{row.pct}%</span>
+                        </span>
+                        <span className="font-semibold tabular-nums text-[#2B4066]">
+                          {formatEur(roundEur((isDaily ? yearly : plan.basePriceEur) * row.f))}
+                        </span>
                       </div>
-                      <div className={`mt-6 space-y-1 text-[12.1px] leading-relaxed ${theme.muted}`}>
-                        {footerLines.map((line) => (
-                          <div key={line}>{line}</div>
-                        ))}
-                      </div>
-                    </div>
+                    ))}
+                    <p className="pt-0.5 text-[11px] text-slate-400">
+                      {isDaily ? tr("pro Produkt und Jahr", "per product per year") : tr("pro Produkt, einmalig", "per product, one-time")}
+                    </p>
                   </div>
-                );
-              })}
-            </div>
+                  <span className="relative mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-sky-700 transition-colors group-hover:text-[#2B4066]">
+                    {tr("Details ansehen", "View details")}
+                    <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -1266,7 +1118,7 @@ export default function ProduktTestPage({
           <div className="w-full max-w-xl lg:ml-4 flex justify-center lg:justify-start">
             <h2
               data-animate="card"
-              className={`${sectionTitleClass} drop-shadow-sm transition-all duration-700 text-balance`}
+              className={`${sectionTitleClass} transition-all duration-700 text-balance`}
             >
               {tr('Machen Sie ihr Produkt sichtbar', 'Make your product visible')}
             </h2>
@@ -1274,14 +1126,14 @@ export default function ProduktTestPage({
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-12">
+      <section data-animate="section" className="mx-auto max-w-6xl px-6 py-12">
         <div className="rounded-3xl border border-slate-200 bg-slate-50/80 p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.45)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
                 {tr('Produkt Vorschau', 'Product preview')}
               </p>
-              <h2 className="text-2xl font-semibold text-slate-900">
+              <h2 className="text-2xl font-semibold text-[#2B4066]">
                 {tr('So sehen geprüfte Produkte einer unserer Vertrauenspartner aus - EdenGardens', 'A look at tested products from our trusted partner, EdenGardens.')}
               </h2>
               <p className="text-sm text-slate-600">
@@ -1344,13 +1196,13 @@ export default function ProduktTestPage({
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 pb-2">
+      <section data-animate="section" className="mx-auto max-w-6xl px-6 pb-2">
         <h3 className={`${subsectionTitleClass} text-center`}>
           {tr("Produktsiegel für Amazon Seller, Otto, Kaufland und Ebay", "Product seals for Amazon sellers, Otto, Kaufland and eBay")}
         </h3>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-6">
+      <section data-animate="section" className="mx-auto max-w-6xl px-6 py-6">
         <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_20px_50px_-40px_rgba(15,23,42,0.4)]">
           <Image
             src="/images/neuetestsieger.jpeg"
@@ -1363,7 +1215,7 @@ export default function ProduktTestPage({
       </section>
 
       {/* Prüfverfahren and FAQ */}
-      <section className="mx-auto max-w-6xl px-6 py-16">
+      <section data-animate="section" className="mx-auto max-w-6xl px-6 py-16">
         <div className="grid gap-8" id="unser-pruefverfahren" ref={procedureTopRef}>
           <div className="grid gap-6 rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-lg">
             <h2 className={subsectionTitleClass}>{tr('Unser Prüfverfahren', 'Our testing procedure')}</h2>
@@ -1387,95 +1239,9 @@ export default function ProduktTestPage({
         <div
           id="pruefverfahren-pdf"
           ref={procedureDetailRef}
-          className="mt-12 grid gap-8 rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-lg"
+          className="mt-16 rounded-3xl"
         >
-          <div className="space-y-4">
-            <h3 className={subsectionTitleClass}>
-              {tr('VERTRAUEN DURCH PRÜFUNG: Die Testsieger-Check-System Kriterien', 'TRUST THROUGH TESTING: The Testsieger-Check system criteria')}
-            </h3>
-            <p className="text-sm text-slate-700">
-              {tr(
-                'Dieses Dokument beschreibt das einheitliche und nachvollziehbare Prüfsystem mit den TC-DPI-Prüfkriterien des Deutschen Prüfsiegel Instituts. Grundlage ist ein standardisiertes Bewertungsverfahren, das sicherstellt, dass alle geprüften Produkte nach denselben objektiven Maßstäben bewertet werden. Die Bewertung erfolgt über ein numerisches System von 1 bis 10 Punkten (Halbpunkte möglich), sodass eine präzise und faire Beurteilung möglich ist. Die Bewertung umfasst folgende Hauptkategorien, um ein ganzheitliches und objektives Ergebnis sicherzustellen:',
-                'This document describes the consistent and traceable testing system with the TC-DPI criteria of the Deutsches Prüfsiegel Institut. It is based on a standardized evaluation method to ensure all tested products are rated by the same objective standards. Scoring is on a numeric scale from 1 to 10 points (half-points allowed) for precise, fair assessment. The evaluation covers the following main categories to ensure a holistic and objective result:'
-              )}
-            </p>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <blockquote className="flex h-full flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-slate-900 shadow-sm">
-              <span className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-600">
-                {tr('Kriterium A: Verpackung', 'Criterion A: Packaging')}
-              </span>
-              <p className="text-sm text-slate-700">
-                {tr(
-                  'Wir bewerten die Verpackung auf Schutzfunktion, Materialwahl, Stabilität und Produktsicherheit bei Transport und Lagerung. Zusätzlich prüfen wir Kennzeichnungen und Nachhaltigkeit.',
-                  'We assess packaging for protection, material choice, stability, and product safety during transport and storage. We also review labeling and sustainability.'
-                )}
-              </p>
-            </blockquote>
-            <blockquote className="flex h-full flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-slate-900 shadow-sm">
-              <span className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-600">
-                {tr('Kriterium B: Verarbeitung und Erscheinungsbild', 'Criterion B: Workmanship and appearance')}
-              </span>
-              <p className="text-sm text-slate-700">
-                {tr(
-                  'Bewertung der Materialqualität, Präzision der Verarbeitung, Stabilität sowie des gesamten optischen Eindrucks und Erscheinungsbilds des Produkts.',
-                  'Assessing material quality, precision of workmanship, stability, and the overall visual impression of the product.'
-                )}
-              </p>
-            </blockquote>
-            <blockquote className="flex h-full flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-slate-900 shadow-sm">
-              <span className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-600">
-                {tr('Kriterium C: Praxistest - Hält der Hersteller seine Werbeversprechen?', 'Criterion C: Practical test - does the manufacturer deliver on promises?')}
-              </span>
-              <p className="text-sm text-slate-700">
-                {tr(
-                  'Im praktischen Einsatz überprüfen wir, ob die beworbenen Features, Leistungsversprechen und Produktvorteile tatsächlich eingehalten werden.',
-                  'In practical use we verify whether the advertised features, performance promises, and product benefits are truly met.'
-                )}
-              </p>
-            </blockquote>
-            <blockquote className="flex h-full flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-slate-900 shadow-sm">
-              <span className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-600">
-                {tr('Kriterium D: Preis-/Leistungsverhältnis und Verbraucherbewertungen', 'Criterion D: Price-performance and consumer reviews')}
-              </span>
-              <p className="text-sm text-slate-700">
-                {tr(
-                  'Das Verhältnis von Preis zu tatsächlicher Leistung wird analysiert und um reale Nutzermeinungen ergänzt. Dadurch entsteht ein ausgewogenes Gesamtbild aus objektiven Tests und Praxiserfahrungen.',
-                  'We analyze the price-to-performance ratio and complement it with real user opinions. This creates a balanced overall picture from objective tests and practical experiences.'
-                )}
-              </p>
-            </blockquote>
-          </div>
-
-          <p className="text-sm font-semibold text-slate-800">
-            {tr(
-              'Alle Kriterien werden mit 1 bis 10 Punkten bewertet. Der Durchschnitt dieser Kriterien ergibt die Gesamtnote und dient als Grundlage für die Auszeichnung im Testsieger-Check.',
-              'All criteria are scored from 1 to 10. The average of these criteria forms the overall grade and is the basis for the Testsieger-Check award.'
-            )}
-          </p>
-          <p className="text-sm font-semibold text-indigo-800">
-              {tr(
-                'Hinweis: Zertifikat und Siegel werden nur bis zu einem Testergebnis von 85% ausgestellt.',
-                'Note: Certificate and seal are issued only up to a test result of 85%.'
-              )}
-            </p>
-
-          <div className="flex justify-start">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-              <a
-                href="/verfahrenpdf/pruefkriterium.pdf"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-lg transition hover:bg-black"
-              >
-                {tr('Mehr Details Hier (PDF)', 'More details here (PDF)')}
-              </a>
-              <span className="text-sm text-slate-700">
-                
-              </span>
-            </div>
-          </div>
+          <PruefKriterien />
         </div>
 
         <div className="mt-12 bg-white pt-8">

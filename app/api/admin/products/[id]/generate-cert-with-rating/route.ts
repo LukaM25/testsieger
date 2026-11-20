@@ -10,6 +10,7 @@ import { storeCertificateAssets } from "@/lib/certificateAssets";
 import { buildLicenseVerificationUrl } from "@/lib/licenseVerification";
 import { saveBufferToS3, signedUrlForKey } from "@/lib/storage";
 import { ensureProcessNumber } from "@/lib/processNumber";
+import { isSealEligible } from "@/lib/ratingV1";
 
 const APP_URL = process.env.APP_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 
@@ -70,6 +71,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const ratingLabel = product.certificate?.ratingLabel || "";
     if (!ratingScore || !ratingLabel) {
       return NextResponse.json({ error: "RATING_MISSING" }, { status: 400 });
+    }
+    // Siegel nur bei Note 3,0 oder besser (64 % bzw. 6,4 Punkte)
+    if (!isSealEligible(Number(String(ratingScore).replace(",", ".")))) {
+      return NextResponse.json({ error: "SEAL_GRADE_TOO_LOW" }, { status: 400 });
     }
 
     const seal = product.certificate?.seal_number ?? (await generateSealNumber());

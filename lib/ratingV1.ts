@@ -15,7 +15,7 @@ export type RatingValue = {
 export type RatingValues = Record<string, RatingValue | undefined>;
 
 export const RATING_CRITERIA_V1: RatingCriterion[] = [
-  // A (rows 2-23)
+  // A (rows 2-24)
   { id: 'B2', section: 'A', row: 2, label: 'Stabilität der Verpackung (Stöße)' },
   { id: 'B3', section: 'A', row: 3, label: 'Stabilität der Verpackung (Stürze)' },
   { id: 'B4', section: 'A', row: 4, label: 'Stabilität der Verpackung (Druck)' },
@@ -38,6 +38,7 @@ export const RATING_CRITERIA_V1: RatingCriterion[] = [
   { id: 'B21', section: 'A', row: 21, label: 'Gebrauchsanweisung: Notwendigkeit' },
   { id: 'B22', section: 'A', row: 22, label: 'Gebrauchsanweisung: Mehrsprachigkeit' },
   { id: 'B23', section: 'A', row: 23, label: 'Gebrauchsanweisung: Verständlichkeit' },
+  { id: 'B24', section: 'A', row: 24, label: 'Gebrauchsanweisung: Vollständigkeit' },
 
   // B (rows 29-42)
   { id: 'B29', section: 'B', row: 29, label: 'Gesamtoptik' },
@@ -61,12 +62,13 @@ export const RATING_CRITERIA_V1: RatingCriterion[] = [
   { id: 'B50', section: 'C', row: 50, label: 'Reaktion auf Nutzungsszenarien' },
   { id: 'B51', section: 'C', row: 51, label: 'Einzigartige Produktmerkmale' },
 
-  // D (rows 57-61)
+  // D (rows 57-62)
   { id: 'B57', section: 'D', row: 57, label: 'Preis/Leistung' },
   { id: 'B58', section: 'D', row: 58, label: 'Marktvergleich' },
   { id: 'B59', section: 'D', row: 59, label: 'Wahrgenommener Nutzen' },
   { id: 'B60', section: 'D', row: 60, label: 'Durchschnittliche Kundenbewertungen' },
   { id: 'B61', section: 'D', row: 61, label: 'Anzahl & Verteilung der Bewertungen' },
+  { id: 'B62', section: 'D', row: 62, label: 'Konsistenz der Nutzererfahrungen mit den Prüfergebnissen' },
 ];
 
 const SECTION_WEIGHTS: Record<RatingSectionKey, number> = { A: 1, B: 2, C: 2, D: 1 };
@@ -84,6 +86,13 @@ function average(values: Array<number | null | undefined>) {
 export function gradeFromAverage(score1to10: number) {
   // Matches sheet formula: ROUND(6-(C-1)*5/9, 1)
   return round1(6 - (score1to10 - 1) * 5 / 9);
+}
+
+// Siegel und Zertifikat nur bei Note 3,0 oder besser (entspricht 6,4 Punkten bzw. 64 %)
+export const SEAL_MAX_GRADE = 3.0;
+
+export function isSealEligible(grade: number | null | undefined) {
+  return typeof grade === 'number' && Number.isFinite(grade) && grade <= SEAL_MAX_GRADE;
 }
 
 export function categoryFromGrade(grade: number) {
@@ -152,6 +161,11 @@ function csvLine(cols: any[]) {
   return cols.map(csvEscape).join(',');
 }
 
+function fmtScore(value: number | null) {
+  if (value == null || !Number.isFinite(value)) return '';
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
 function fmtNumber(value: number | null, decimals = 1) {
   if (value == null || !Number.isFinite(value)) return '';
   return decimals === 0 ? String(Math.round(value)) : value.toFixed(decimals);
@@ -176,9 +190,9 @@ export function buildRatingCsvV1(opts: {
 
   // Header A
   rows.push(['Kriterium A Produktschutz (Gewichtung 1x)', 'Bewertung (1–10)', 'Bemerkung', '', '']);
-  for (let r = 2; r <= 23; r++) {
+  for (let r = 2; r <= 24; r++) {
     const crit = RATING_CRITERIA_V1.find((c) => c.row === r && c.section === 'A');
-    rows.push([crit?.label || '', fmtNumber(getScore(r), 0), getNote(r) || '', '', '']);
+    rows.push([crit?.label || '', fmtScore(getScore(r)), getNote(r) || '', '', '']);
   }
   rows.push(['Ergebnis:', fmtNumber(computed.sectionAverage.A, 2), ' ', '', '']);
   rows.push(['', '', '', '', '']);
@@ -189,7 +203,7 @@ export function buildRatingCsvV1(opts: {
   rows.push(['Unterkategorie', 'Bewertung (1-10)', 'Bemerkung', '', '']);
   for (let r = 29; r <= 42; r++) {
     const crit = RATING_CRITERIA_V1.find((c) => c.row === r && c.section === 'B');
-    rows.push([crit?.label || '', fmtNumber(getScore(r), 0), getNote(r) || '', '', '']);
+    rows.push([crit?.label || '', fmtScore(getScore(r)), getNote(r) || '', '', '']);
   }
   rows.push(['Ergebnis', fmtNumber(computed.sectionAverage.B, 2), ' ', '', '']);
   rows.push(['', '', '', '', '']);
@@ -200,7 +214,7 @@ export function buildRatingCsvV1(opts: {
   rows.push(['Unterkategorie', 'Bewertung (1–10)', 'Bemerkung', '', '']);
   for (let r = 48; r <= 51; r++) {
     const crit = RATING_CRITERIA_V1.find((c) => c.row === r && c.section === 'C');
-    rows.push([crit?.label || '', fmtNumber(getScore(r), 0), getNote(r) || '', '', '']);
+    rows.push([crit?.label || '', fmtScore(getScore(r)), getNote(r) || '', '', '']);
   }
   rows.push(['Ergebnis', fmtNumber(computed.sectionAverage.C, 2), ' ', '', '']);
   rows.push(['', '', '', '', '']);
@@ -209,9 +223,9 @@ export function buildRatingCsvV1(opts: {
   // Header D
   rows.push(['Kriterium D Preis-/Leistungsverhältnis & Verbraucherbewertungen (Gewichtung 1x)', '', '', '', '']);
   rows.push(['Unterkategorie', 'Bewertung (1–10)', 'Bemerkung', '', '']);
-  for (let r = 57; r <= 61; r++) {
+  for (let r = 57; r <= 62; r++) {
     const crit = RATING_CRITERIA_V1.find((c) => c.row === r && c.section === 'D');
-    rows.push([crit?.label || '', fmtNumber(getScore(r), 0), getNote(r) || '', '', '']);
+    rows.push([crit?.label || '', fmtScore(getScore(r)), getNote(r) || '', '', '']);
   }
   rows.push(['Ergebnis', fmtNumber(computed.sectionAverage.D, 2), ' ', '', '']);
   rows.push(['', '', '', '', '']);
@@ -262,14 +276,11 @@ export function buildRatingCsvV1(opts: {
   // Notenschlüssel (static)
   rows.push(['Notenschlüssel', '', '', '', '']);
   rows.push(['Punktebereich', 'Note (deutsch, 1–5)', 'Bewertungskategorie', '', '']);
-  rows.push(['9,0 – 10,0', '1,0 – 1,5', 'Hervorragend', '', '']);
-  rows.push(['8,0 – 8,9', '1,6 – 2,0', 'Sehr gut', '', '']);
-  rows.push(['7,0 – 7,9', '2,1 – 2,5', 'Gut', '', '']);
-  rows.push(['6,0 – 6,9', '2,6 – 3,0', 'Befriedigend', '', '']);
-  rows.push(['5,0 – 5,9', '3,1 – 3,5', 'Ausreichend', '', '']);
-  rows.push(['4,0 – 4,9', '3,6 – 4,0', 'Mangelhaft', '', '']);
-  rows.push(['3,0 – 3,9', '4,1 – 4,5', 'Schlecht', '', '']);
-  rows.push(['0 – 2,9', '4,6 – 5,0', 'Sehr schlecht', '', '']);
+  rows.push(['8,3 – 10,0', '1,0 – 1,9', 'Sehr gut', '', '']);
+  rows.push(['6,5 – 8,2', '2,0 – 2,9', 'Gut', '', '']);
+  rows.push(['4,7 – 6,4', '3,0 – 3,9', 'Befriedigend', '', '']);
+  rows.push(['2,9 – 4,6', '4,0 – 4,9', 'Ausreichend', '', '']);
+  rows.push(['unter 2,9', 'ab 5,0', 'Nicht bestanden', '', '']);
 
   const csv = rows.map((r) => csvLine(r)).join('\n');
   return Buffer.from(csv, 'utf-8');
@@ -280,7 +291,8 @@ export function normalizeScore(raw: unknown): number | null {
   const n = typeof raw === 'number' ? raw : Number(String(raw).trim().replace(',', '.'));
   if (!Number.isFinite(n)) return null;
   if (n < 1 || n > 10) return null;
-  return Math.round(n);
+  // Halbe Punkte sind zulässig (Schritt 0,5)
+  return Math.round(n * 2) / 2;
 }
 
 export function normalizeNote(raw: unknown): string | null {
