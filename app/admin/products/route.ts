@@ -1,11 +1,5 @@
-import  {NextResponse } from "next/server";
-import {prisma} from "@/lib/prisma";
+// Keep the legacy URL behind the same authorization and field selection as the admin API.
+export { GET } from '@/app/api/admin/products/route';
 
-export async function GET() {
-  const products = await prisma.product.findMany({
-    include: { user: true },
-    orderBy: { createdAt: "desc" },
-  });
-
-  return NextResponse.json({ products });
-}
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
