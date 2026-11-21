@@ -1,0 +1,98 @@
+import sys
+root = sys.argv[1]
+
+# ---- Register ----
+p = root + '/app/api/auth/register/route.ts'
+s = open(p, encoding='utf-8').read()
+if 'ARBEITSSICHERHEIT' not in s:
+    s = s.replace("import { setSession } from '@/lib/cookies';",
+        "import { setSession } from '@/lib/cookies';\nimport { arbeitssicherheitEnabled } from '@/lib/arbeitssicherheit/gate';\nimport { EXISTING_IDS, RISK_IDS } from '@/lib/arbeitssicherheit/options';\nimport { postAuthRedirect } from '@/lib/areas';", 1)
+    s = s.replace("  redirectTo: z.string().optional().nullable(),\n});",
+"""  redirectTo: z.string().optional().nullable(),
+  area: z.enum(['PRODUKTTEST', 'ARBEITSSICHERHEIT']).optional().default('PRODUKTTEST'),
+  org: z
+    .object({
+      legalForm: z.string().trim().max(60).optional().nullable(),
+      industry: z.string().trim().min(2, 'ORG_INDUSTRY').max(100),
+      employees: z.coerce.number().int().min(1, 'ORG_EMPLOYEES').max(100000),
+      locations: z.coerce.number().int().min(1).max(1000).optional().default(1),
+      bg: z.string().trim().max(60).optional().nullable(),
+      memberNumber: z.string().trim().max(40).optional().nullable(),
+      phone: z.string().trim().max(40).optional().nullable(),
+      contactRole: z.string().trim().max(80).optional().nullable(),
+      risks: z.array(z.string()).optional().default([]),
+      existing: z.array(z.string()).optional().default([]),
+      notes: z.string().trim().max(1000).optional().nullable(),
+    })
+    .optional()
+    .nullable(),
+});""", 1)
+    s = s.replace("  WEAK_PASSWORD: 'Das Passwort muss mindestens 8 Zeichen lang sein.',\n};",
+"""  WEAK_PASSWORD: 'Das Passwort muss mindestens 8 Zeichen lang sein.',
+  ORG_INDUSTRY: 'Bitte wählen Sie Ihre Branche.',
+  ORG_EMPLOYEES: 'Bitte geben Sie die Zahl der Beschäftigten an (mindestens 1).',
+};""", 1)
+    s = s.replace("  const data = parsed.data;\n",
+"""  const data = parsed.data;
+
+  if (data.area === 'ARBEITSSICHERHEIT') {
+    if (!arbeitssicherheitEnabled()) {
+      return NextResponse.json({ error: 'Dieser Bereich ist noch nicht verfügbar.' }, { status: 403 });
+    }
+    if (!data.org) {
+      return NextResponse.json({ error: 'Bitte machen Sie Angaben zu Ihrem Betrieb.' }, { status: 400 });
+    }
+    if (!data.company) {
+      return NextResponse.json({ error: 'Bitte geben Sie den Firmennamen an.' }, { status: 400 });
+    }
+  }
+""", 1)
+    old_create = s[s.index("  const user = await prisma.user.create({"):s.index("  await setSession")]
+    new_create = """  const user = await prisma.user.create({
+    data: {
+      name: data.name,
+      email: data.email,
+      passwordHash,
+      gender: data.gender || null,
+      company: data.company || null,
+      address: address || null,
+      area: data.area,
+      ...(data.area === 'ARBEITSSICHERHEIT' && data.org
+        ? {
+            asOrganization: {
+              create: {
+                name: data.company as string,
+                legalForm: data.org.legalForm || null,
+                industry: data.org.industry,
+                employees: data.org.employees,
+                locations: data.org.locations,
+                bg: data.org.bg || null,
+                memberNumber: data.org.memberNumber || null,
+                phone: data.org.phone || null,
+                contactRole: data.org.contactRole || null,
+                risks: data.org.risks.filter((r) => RISK_IDS.includes(r)),
+                existing: data.org.existing.filter((r) => EXISTING_IDS.includes(r)),
+                notes: data.org.notes || null,
+              },
+            },
+          }
+        : {}),
+    },
+  });
+
+"""
+    s = s.replace(old_create, new_create, 1)
+    a = s.index("  const redirectTo = typeof data.redirectTo")
+    b = s.index("  return NextResponse.json({ ok: true, redirect: redirectTo });")
+    s = s[:a] + "  const redirectTo = postAuthRedirect(data.area, typeof data.redirectTo === 'string' ? data.redirectTo : null);\n" + s[b:]
+    open(p, 'w', encoding='utf-8').write(s)
+
+# ---- Login ----
+p = root + '/app/api/auth/login/route.ts'
+s = open(p, encoding='utf-8').read()
+if 'postAuthRedirect' not in s:
+    s = s.replace("import { loginUser } from '@/lib/auth';", "import { loginUser } from '@/lib/auth';\nimport { postAuthRedirect } from '@/lib/areas';", 1)
+    s = s.replace("    await loginUser(email.trim(), password); // sets the cookie via setSession()\n    const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '';\n    return NextResponse.json({ ok: true, redirect: safeRedirect || '/dashboard' });",
+                  "    const user = await loginUser(email.trim(), password); // sets the cookie via setSession()\n    return NextResponse.json({ ok: true, redirect: postAuthRedirect(user.area, redirectTo) });", 1)
+    open(p, 'w', encoding='utf-8').write(s)
+print('ok')

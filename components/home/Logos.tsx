@@ -35,13 +35,13 @@ function LogoRow({ hidden = false }: { hidden?: boolean }) {
 
 export default function Logos() {
   return (
-    <section data-animate="section" className="bg-gradient-to-b from-slate-50 to-white py-16 sm:py-20">
+    <section data-animate="section" className="bg-gradient-to-b from-slate-50 to-white py-12 sm:py-14">
       <div className="mx-auto max-w-6xl px-6 text-center">
         <span className="eyebrow">Vertrauen uns bereits</span>
         <h2 className="section-title">Vertrauenspartner</h2>
       </div>
 
-      <div className="group mt-12 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
+      <div className="group mt-8 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
         <div className="marquee-track flex w-max group-hover:[animation-play-state:paused] motion-reduce:animate-none">
           <LogoRow />
           <LogoRow hidden />

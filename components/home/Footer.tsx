@@ -57,7 +57,7 @@ export default function Footer() {
                   {copy.productTest}
                 </Link>
               </li>
-              <li>
+              <li className="as-only">
                 <Link href="/kontakt" className="hover:text-white transition-colors">
                   {copy.safety}
                 </Link>

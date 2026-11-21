@@ -111,6 +111,7 @@ export default async function DashboardPage({ searchParams }: Props) {
       gender: true,
       email: true,
       address: true,
+      area: true,
       products: {
         select: {
           id: true,
@@ -141,6 +142,7 @@ export default async function DashboardPage({ searchParams }: Props) {
   });
 
   if (!user) redirect('/login');
+  if (user.area === 'ARBEITSSICHERHEIT') redirect('/arbeitssicherheit/dashboard');
 
   return (
     <DashboardClient

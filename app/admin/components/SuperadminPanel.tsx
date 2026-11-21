@@ -7,6 +7,7 @@ import { AdminCustomerSummary, AdminSummary, AuditEntry } from '../types';
 type Props = {
   isOpen: boolean;
   onProductsCreated?: () => void;
+  presetCustomer?: AdminCustomerSummary | null;
 };
 
 type ProductDraft = {
@@ -33,7 +34,7 @@ const createProductDraft = (): ProductDraft => ({
   material: '',
 });
 
-export default function SuperadminPanel({ isOpen, onProductsCreated }: Props) {
+export default function SuperadminPanel({ isOpen, onProductsCreated, presetCustomer }: Props) {
   const [superTab, setSuperTab] = useState<'products' | 'admins' | 'audits'>('products');
   const [admins, setAdmins] = useState<AdminSummary[]>([]);
   const [adminsLoading, setAdminsLoading] = useState(false);
@@ -246,6 +247,14 @@ export default function SuperadminPanel({ isOpen, onProductsCreated }: Props) {
     fetchAdmins();
     fetchAudits(auditFiltersRef.current);
   }, [fetchAdmins, fetchAudits, isOpen]);
+
+  useEffect(() => {
+    if (!presetCustomer) return;
+    setSuperTab('products');
+    setSelectedCustomer(presetCustomer);
+    setCustomerResults([]);
+    setCustomerEmail(presetCustomer.email);
+  }, [presetCustomer]);
 
   if (!isOpen) return null;
 

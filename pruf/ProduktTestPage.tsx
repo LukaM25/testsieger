@@ -668,21 +668,20 @@ export default function ProduktTestPage({
       )}
       <section data-animate="section" className="relative mx-auto flex max-w-6xl flex-col gap-10 px-6 py-16 sm:flex-row sm:items-center sm:justify-between lg:py-20">
   <div className="space-y-6 max-w-xl">
-          <div className="flex items-center gap-4">
-            <div>
-              <p data-animate="hero-badge" className="text-xs font-semibold uppercase tracking-[0.4em] text-slate-500"></p>
-              <Image src="/tclogo.png" alt="TC Logo" width={525} height={138} className="mb-4 h-[138px] w-[275px] object-contain" />
-            </div>
+          <div data-animate="hero-badge" className="inline-flex items-center gap-2.5 rounded-full border border-slate-200/80 bg-white/80 px-3.5 py-1.5 shadow-sm backdrop-blur">
+            <span aria-hidden="true" className="relative inline-block h-[14px] w-5 overflow-hidden rounded-[3px] shadow-[0_1px_3px_rgba(15,23,42,0.25)] ring-1 ring-black/5">
+              <svg viewBox="0 0 5 3" className="h-full w-full" preserveAspectRatio="none">
+                <rect width="5" height="1" y="0" fill="#1a1a1a" />
+                <rect width="5" height="1" y="1" fill="#d6001c" />
+                <rect width="5" height="1" y="2" fill="#f5c400" />
+              </svg>
+              <span className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/35 via-transparent to-black/10" />
+            </span>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-600">
+              {tr('Unabhängig geprüft in Deutschland', 'Independently tested in Germany')}
+            </span>
           </div>
-          <div className="flex items-end gap-4">
-            <Image
-              src="/images/iconen/destripe.jpeg"
-              alt="Deutschlandfarben"
-              width={12}
-              height={64}
-              className="h-20 w-auto object-contain self-end"
-              priority
-            />
+          <div>
             <div className="space-y-3">
               <h1 data-animate="hero-title" className={pageTitleClass}>
   <span className="font-light">{tr('Ihr Produkt', 'Your product')}</span>{' '}

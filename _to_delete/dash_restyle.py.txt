@@ -1,0 +1,110 @@
+import re, sys
+root = sys.argv[1]
+
+CARD = 'rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_20px_60px_-45px_rgba(43,64,102,0.35)]'
+SOFT = 'rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_12px_30px_-26px_rgba(43,64,102,0.4)]'
+INPUT = 'rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#1d4ed8]/50 focus:bg-white focus:ring-4 focus:ring-[#1d4ed8]/10'
+GRAD = 'bg-gradient-to-r from-[#1d4ed8] to-[#16294d]'
+
+def common(s):
+    s = s.replace('rounded-2xl border border-slate-200 bg-white p-5 shadow-sm', CARD)
+    s = s.replace('rounded-2xl border border-slate-200 bg-white p-6 shadow-sm', CARD)
+    s = s.replace('rounded-2xl border border-slate-100 bg-white p-4 shadow-sm', SOFT)
+    s = s.replace('rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_30px_70px_-34px_rgba(15,23,42,0.58)] ring-1 ring-slate-200/80', CARD)
+    s = s.replace('rounded-xl border border-slate-200 bg-slate-50/70 p-4', 'rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4')
+    s = s.replace('rounded-lg border border-slate-200 px-3 py-2 text-sm"', INPUT + '"')
+    s = re.sub(r'rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900( placeholder:text-slate-400)?', INPUT, s)
+    # Überschriften
+    s = re.sub(r'(<h[1-3] className="[^"]*?)text-slate-900', r'\1text-[#2B4066]', s)
+    s = s.replace('text-3xl font-bold text-[#2B4066]', 'text-3xl font-semibold tracking-tight text-[#2B4066]')
+    s = s.replace('text-2xl font-bold text-slate-900', 'text-2xl font-semibold text-[#2B4066]')
+    # Primäre Buttons
+    def btn(m):
+        cls = m.group(0)
+        if 'bg-slate-900' in cls and 'text-white' in cls and 'hover:bg-black' in cls:
+            cls = cls.replace('bg-slate-900', GRAD).replace('hover:bg-black', 'hover:brightness-110')
+            cls = re.sub(r'rounded-(lg|xl)', 'rounded-full', cls)
+            cls = re.sub(r'(?<![!\w-])text-white', '!text-white', cls)
+        if 'bg-emerald-600' in cls and 'text-white' in cls:
+            cls = cls.replace('border border-emerald-700 bg-emerald-600', GRAD).replace('hover:bg-emerald-700', 'hover:brightness-110')
+            cls = re.sub(r'(?<![!\w-])text-white', '!text-white', cls)
+        return cls
+    s = re.sub(r'className="[^"]*"', btn, s)
+    s = s.replace('rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400',
+                  'rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:border-slate-300 hover:bg-slate-50')
+    s = s.replace('inline-flex w-full items-center justify-center rounded-lg border border-slate-300', 'inline-flex w-full items-center justify-center rounded-full border border-slate-200')
+    s = s.replace('from-slate-900 via-blue-700 to-sky-400', 'from-[#1d4ed8] to-[#16294d]')
+    s = s.replace('rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-sm',
+                  'rounded-full ' + GRAD + ' px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] !text-white shadow-sm')
+    return s
+
+# ---- DashboardClient ----
+p = root + '/app/dashboard/DashboardClient.tsx'
+s = open(p, encoding='utf-8').read()
+s = common(s)
+
+# Kopfbereich
+s = s.replace('<p className="text-sm text-slate-600">Status im Blick, Zertifikat sicher abrufen.</p>',
+              '<p className="mt-1 text-sm text-slate-500">Status im Blick, Zertifikate sicher abrufen.</p>')
+s = s.replace('<p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Dashboard</p>',
+              '<p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-500">Kundenbereich</p>')
+s = s.replace('<header className="flex flex-wrap items-center justify-between gap-3">',
+              '<header className="flex flex-wrap items-end justify-between gap-4">')
+s = s.replace('<div className="relative flex items-center gap-3" ref={accountRef}>',
+              '<div className="relative flex items-center gap-2" ref={accountRef}>')
+
+# KPI-Kacheln direkt nach dem Header
+kpi = '''        </header>
+
+        {products.length > 0 && (
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {[
+              { label: "Produkte", value: products.length, tone: "bg-slate-400" },
+              {
+                label: "In Prüfung",
+                value: products.filter((p: any) => !["PASS", "FAIL", "COMPLETION"].includes(String(p.adminProgress))).length,
+                tone: "bg-indigo-500",
+              },
+              {
+                label: "Bestanden",
+                value: products.filter((p: any) => ["PASS", "COMPLETION"].includes(String(p.adminProgress))).length,
+                tone: "bg-emerald-500",
+              },
+              {
+                label: "Aktive Lizenzen",
+                value: products.filter((p: any) => p.license?.status === "ACTIVE").length,
+                tone: "bg-[#1d4ed8]",
+              },
+            ].map((k) => (
+              <div
+                key={k.label}
+                className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_12px_30px_-26px_rgba(43,64,102,0.4)] transition duration-200 hover:-translate-y-0.5"
+              >
+                <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  <span className={`h-2 w-2 rounded-full ${k.tone}`} />
+                  {k.label}
+                </span>
+                <span className="mt-2 block text-3xl font-semibold tabular-nums text-[#2B4066]">{k.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
+'''
+assert '        </header>\n' in s
+s = s.replace('        </header>\n', kpi, 1)
+
+# Konto-Dropdown moderner
+s = s.replace('absolute right-0 top-full z-20 mt-3 w-[min(440px,90vw)] rounded-2xl border border-slate-200 bg-white p-4 shadow-xl',
+              'absolute right-0 top-full z-20 mt-3 w-[min(440px,90vw)] rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_30px_80px_-40px_rgba(43,64,102,0.55)]')
+s = s.replace('className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-600 hover:border-rose-300 disabled:opacity-60"',
+              'className="rounded-full border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-60"')
+s = s.replace('min-h-screen bg-slate-50 px-4 py-8', 'min-h-screen bg-slate-50 px-4 pb-20 pt-8')
+s = s.replace('<div className="mx-auto max-w-6xl space-y-8">', '<div className="mx-auto max-w-6xl space-y-6">')
+open(p, 'w', encoding='utf-8').write(s)
+
+# ---- weitere Dateien ----
+for rel in ['components/PrecheckStatusCard.tsx', 'app/dashboard/ProductPayButton.tsx']:
+    p = root + '/' + rel
+    t = open(p, encoding='utf-8').read()
+    open(p, 'w', encoding='utf-8').write(common(t))
+print('ok')

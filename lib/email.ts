@@ -917,3 +917,52 @@ function escapeHtml(input: string) {
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
 }
+
+/**
+ * Willkommens-Mail für Kunden, die vom Admin angelegt wurden.
+ * Der Link führt auf die Passwort-Seite und ist 7 Tage gültig.
+ */
+export async function sendWelcomeEmail(opts: {
+  to: string;
+  name?: string | null;
+  gender?: RecipientGender | null;
+  company?: string | null;
+  setPasswordUrl: string;
+  validDays?: number;
+  area?: 'PRODUKTTEST' | 'ARBEITSSICHERHEIT';
+}) {
+  const { to, name, gender, company, setPasswordUrl, validDays = 7, area = 'PRODUKTTEST' } = opts;
+  const greeting = renderFormalGreeting(name || '', gender ?? undefined);
+  const base = APP_BASE_URL.replace(/\/$/, '');
+  const forWhom = company ? `für ${escapeHtml(company)}` : 'für Sie';
+  const companyLine =
+    area === 'ARBEITSSICHERHEIT'
+      ? `Wir haben ${forWhom} ein Kundenkonto für Arbeitssicherheit angelegt.`
+      : `Wir haben ${forWhom} ein Kundenkonto beim Deutschen Prüfsiegel Institut angelegt.`;
+  const whatYouSee =
+    area === 'ARBEITSSICHERHEIT'
+      ? 'Dort sehen Sie, welche gesetzlichen Pflichten Ihr Betrieb erfüllt, welche Fristen anstehen und was noch zu tun ist. Ihre Unterlagen finden Sie in der Dokumentenmappe.'
+      : 'Dort sehen Sie den Stand Ihrer Prüfungen, laden Zertifikate herunter und verwalten Ihre Produkte.';
+  const html = `
+    <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a;max-width:560px">
+      <p>${greeting}</p>
+      <p>${companyLine} ${whatYouSee}</p>
+      <p>Bitte legen Sie zuerst Ihr Passwort fest:</p>
+      <p style="margin:20px 0;">
+        <a href="${setPasswordUrl}" style="display:inline-block;padding:13px 22px;border-radius:999px;background:#16294d;color:#ffffff;text-decoration:none;font-weight:700;">Passwort festlegen</a>
+      </p>
+      <p style="font-size:13px;color:#475569;">Der Link ist ${validDays} Tage gültig. Danach melden Sie sich unter <a href="${base}/login" style="color:#1d4ed8;text-decoration:none;">${base}/login</a> mit dieser E-Mail-Adresse an.</p>
+      <p style="font-size:13px;color:#475569;">Falls der Link abgelaufen ist, nutzen Sie dort „Passwort vergessen“ oder antworten Sie einfach auf diese Nachricht.</p>
+      <p style="margin-top:20px;">Freundliche Grüße<br/>Ihr Team vom Deutschen Prüfsiegel Institut</p>
+      ${renderFooter()}
+    </div>
+  `;
+
+  await sendEmail({
+    from: `${SENDER_NAME} – Konto <${FROM_EMAIL}>`,
+    to,
+    subject: area === 'ARBEITSSICHERHEIT' ? 'Willkommen bei DPI Arbeitssicherheit: Passwort festlegen' : 'Willkommen beim Deutschen Prüfsiegel Institut: Passwort festlegen',
+    html,
+    replyTo: CONTACT_RECIPIENT,
+  });
+}

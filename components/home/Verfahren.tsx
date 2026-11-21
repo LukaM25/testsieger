@@ -58,9 +58,9 @@ export default function Verfahren() {
           </p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2">
+        <div className="as-solo grid gap-8 md:grid-cols-2">
           {cards.map(({ Icon, title, body, href }, index) => (
-            <div key={href} data-animate="card" style={stagger(index)}>
+            <div key={href} data-animate="card" style={stagger(index)} className={href === "/kontakt" ? "as-only" : undefined}>
               <Link
                 href={href}
                 className="group relative block h-full overflow-hidden rounded-3xl border border-slate-100 bg-white p-10 shadow-[0_18px_50px_-35px_rgba(43,64,102,0.35)] transition duration-500 hover:-translate-y-1.5 hover:shadow-[0_32px_70px_-35px_rgba(43,64,102,0.5)]"

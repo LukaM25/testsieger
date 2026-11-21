@@ -144,8 +144,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const locale = normalizeLocale(cookieStore.get("lang")?.value || "de");
 
   return (
-    <html lang={locale} className="no-js">
+    <html lang={locale} className="no-js" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var m=document.cookie.match(/(?:^|; )dpi_area=([^;]*)/);if(m)document.documentElement.setAttribute("data-area",decodeURIComponent(m[1]))}catch(e){}`,
+          }}
+        />
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `html[data-area="produkttest"] .as-only{display:none!important}@keyframes asShine{0%{background-position:200% 0}100%{background-position:-200% 0}}.as-shine{background-image:linear-gradient(100deg,#6ee7b7 0%,#6ee7b7 38%,#ffffff 50%,#6ee7b7 62%,#6ee7b7 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:asShine 3.6s linear infinite}@media (prefers-reduced-motion:reduce){.as-shine{animation:none;background-image:none;color:#6ee7b7;-webkit-text-fill-color:#6ee7b7}}html[data-area="arbeitssicherheit"] .pt-only{display:none!important}html[data-area="produkttest"] .as-solo{grid-template-columns:minmax(0,1fr)!important;max-width:46rem;margin-inline:auto}`,
+          }}
+        />
         <link rel="stylesheet" href="/styles/animations.css" />
         <JsonLd data={siteJsonLd} />
       </head>

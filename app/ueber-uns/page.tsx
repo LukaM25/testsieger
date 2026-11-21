@@ -10,8 +10,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import JsonLd from "@/components/seo/JsonLd";
-import HeroSealGraphic from "@/components/ueber-uns/HeroSealGraphic";
-import ProcessGraphic from "@/components/ueber-uns/ProcessGraphic";
 import { absoluteUrl, breadcrumbJsonLd, pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
@@ -135,7 +133,7 @@ export default function UeberUnsPage() {
       <section data-animate="section" className="relative overflow-hidden px-6 pb-14 pt-16 sm:pt-20">
         <div aria-hidden="true" className="pointer-events-none absolute -left-24 top-0 h-72 w-72 rounded-full bg-sky-200/40 blur-3xl" />
         <div aria-hidden="true" className="pointer-events-none absolute -right-24 top-24 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
-        <div className="relative mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.05fr,0.95fr]">
+        <div className="relative mx-auto max-w-4xl">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-700 ring-1 ring-sky-100">
               <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
@@ -147,20 +145,7 @@ export default function UeberUnsPage() {
             <p className="mt-5 text-lg leading-relaxed text-slate-600">
               Zwei Brüder, zwei Fachgebiete: <strong className="font-semibold text-slate-800">Sebastian Lang</strong> verantwortet Produkttests und Prüfsiegel, <strong className="font-semibold text-slate-800">Ferdinand Lang</strong> baut die Arbeitssicherheit auf. Beides mit demselben Anspruch: Prüfungen aus der Praxis, nachvollziehbar und ehrlich.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              <Link
-                href="/precheck"
-                className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#1d4ed8] to-[#16294d] px-7 py-3.5 text-sm font-semibold !text-white shadow-[0_14px_28px_-16px_rgba(29,78,216,0.7)] transition duration-300 hover:-translate-y-0.5"
-              >
-                Produkt testen lassen
-                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
-              </Link>
-              <Link href="/kontakt" className="text-sm font-semibold text-sky-700 hover:underline">
-                Kontakt aufnehmen
-              </Link>
-            </div>
           </div>
-          <HeroSealGraphic />
         </div>
       </section>
 
@@ -201,15 +186,34 @@ export default function UeberUnsPage() {
         </div>
       </section>
 
+      {/* Vision */}
+      <section data-animate="section" className="px-6 py-12">
+        <div className="mx-auto max-w-3xl">
+          <div>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-700">Unsere Vision</span>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#2B4066]">Qualität und Sicherheit, die man nachvollziehen kann</h2>
+            <p className="mt-4 text-base leading-8 text-slate-600">
+              Das DPI entstand aus eigener Erfahrung: Wir kommen aus der Praxis, vom Garten- und Landschaftsbau über Maschinenbau und Qualitätssicherung bis zur eigenen Produktentwicklung. Dabei haben wir gelernt, wie viel an sauberer Arbeit hängt, ob bei einem Produkt oder an einem Arbeitsplatz.
+            </p>
+            <p className="mt-4 text-base leading-8 text-slate-600">
+              Unsere Vision ist ein Standard, dem man vertrauen kann. Gute Produkte sollen sich von der Masse abheben, und Betriebe sollen sicher arbeiten, ohne dass Sicherheit zur Papierpflicht wird. Beides gehört für uns zusammen: Qualität und Sicherheit, ehrlich geprüft und verständlich dokumentiert.
+            </p>
+            <p className="mt-4 text-base leading-8 text-slate-600">
+              Deshalb arbeiten wir unabhängig, praxisnah und mit persönlicher Verantwortung. Was unser Haus verlässt, haben wir selbst geprüft.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Zwei Bereiche */}
       <section data-animate="section" className="px-6 py-10">
         <div className="mx-auto max-w-6xl">
           <h2 className="text-3xl font-semibold tracking-tight text-[#2B4066]">Was wir für Sie tun</h2>
-          <div className="mt-8 grid gap-6 lg:grid-cols-2">
+          <div className="as-solo mt-8 grid gap-6 lg:grid-cols-2">
             {areas.map(({ Icon, eyebrow, title, lead, body, points, href, cta }, i) => (
               <article
                 key={title}
-                className={`flex flex-col rounded-3xl border p-7 transition duration-500 hover:-translate-y-1 ${
+                className={`flex flex-col rounded-3xl border p-7 transition duration-500 hover:-translate-y-1 ${i === 1 ? "as-only" : ""} ${
                   i === 0
                     ? "border-slate-200/80 bg-white shadow-[0_20px_60px_-40px_rgba(43,64,102,0.35)]"
                     : "border-blue-900/40 bg-gradient-to-b from-[#16294d] to-[#0b1730] text-white shadow-[0_30px_70px_-35px_rgba(11,23,48,0.8)]"
@@ -244,26 +248,6 @@ export default function UeberUnsPage() {
               </article>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Vision */}
-      <section data-animate="section" className="px-6 py-12">
-        <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.1fr,0.9fr] lg:items-center">
-          <div>
-            <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-700">Unsere Vision</span>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#2B4066]">Von der eigenen Idee zur Qualitätssicherung im E-Commerce</h2>
-            <p className="mt-4 text-base leading-8 text-slate-600">
-              Das DPI entstand aus eigener Erfahrung. Wir haben selbst Artikel von der ersten Zeichnung bis zur Marktreife entwickelt und erfolgreich auf Amazon verkauft. Dabei wurde uns klar: Der deutsche Markt wird zunehmend mit minderwertigen Billigprodukten überflutet.
-            </p>
-            <p className="mt-4 text-base leading-8 text-slate-600">
-              Deshalb sollen sich gute Seller auf Amazon, Otto oder eBay durch einen unabhängigen Produkttest von der Masse abheben. Wer viel Herzblut in seine Artikel steckt, soll auf den ersten Blick als vertrauenswürdig erkannt werden.
-            </p>
-            <p className="mt-4 text-base leading-8 text-slate-600">
-              Bevor ein Prüfsiegel unser Haus verlässt, werfen wir selbst den letzten Blick auf den Bericht. So bleibt unser Anspruch an jeder Prüfung gewahrt.
-            </p>
-          </div>
-          <ProcessGraphic />
         </div>
       </section>
 

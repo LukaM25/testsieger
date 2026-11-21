@@ -34,7 +34,7 @@ export default function ProcessGraphic() {
   const { ref, inView } = useInView<HTMLDivElement>(0.3);
 
   return (
-    <div ref={ref} data-in={inView ? 'true' : 'false'} className="dpi-proc relative">
+    <div ref={ref} data-in={inView ? 'true' : 'false'} className="dpi-proc relative mx-auto w-full max-w-[420px]">
       <style>{CSS}</style>
       <svg viewBox="0 0 640 300" role="img" aria-labelledby="dpi-proc-title" className="block h-auto w-full">
         <title id="dpi-proc-title">Grafik: Der DPI-Prozess aus Erfassen, Bewerten, Dokumentieren und Verbessern, gültig für Produkttest und Arbeitssicherheit</title>
@@ -66,11 +66,11 @@ export default function ProcessGraphic() {
             <g className="node" style={{ animationDelay: `${0.3 + i * 0.6}s` }}>
               <circle cx={s.x} cy="80" r="22" fill="#ffffff" stroke={INK} strokeOpacity="0.55" strokeWidth="1.2" />
               <circle cx={s.x} cy="80" r="28" fill="none" stroke={SKY} strokeOpacity="0.3" strokeWidth="0.8" strokeDasharray="1.5 5" />
-              <text x={s.x} y="85.5" fontSize="15" fontWeight="600" fill={INK} textAnchor="middle" fontFamily="inherit">{i + 1}</text>
+              <text x={s.x} y="87" fontSize="20" fontWeight="600" fill={INK} textAnchor="middle" fontFamily="inherit">{i + 1}</text>
             </g>
             <g className="label" style={{ animationDelay: `${0.6 + i * 0.6}s` }}>
-              <text x={s.x} y="132" fontSize="14" fontWeight="600" fill={INK} textAnchor="middle" fontFamily="inherit">{s.title}</text>
-              <text x={s.x} y="150" fontSize="11.5" fill="#64748b" textAnchor="middle" fontFamily="inherit">{s.sub}</text>
+              <text x={s.x} y="134" fontSize="19" fontWeight="600" fill={INK} textAnchor="middle" fontFamily="inherit">{s.title}</text>
+              <text x={s.x} y="157" fontSize="14.5" fill="#64748b" textAnchor="middle" fontFamily="inherit">{s.sub}</text>
             </g>
           </g>
         ))}
@@ -81,11 +81,11 @@ export default function ProcessGraphic() {
         <path d="M74.5 178 L80 168 L86.5 177" fill="none" stroke={INK} strokeOpacity="0.5" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
 
         <g className="tag" style={{ animationDelay: '3.6s' }}>
-          <text x="320" y="214" fontSize="11" fontWeight="600" fill={INK} fillOpacity="0.75" textAnchor="middle" fontFamily="inherit" letterSpacing="2.6">
+          <text x="320" y="202" fontSize="15" fontWeight="600" fill={INK} fillOpacity="0.75" textAnchor="middle" fontFamily="inherit" letterSpacing="3">
             PRODUKTTEST
           </text>
-          <circle cx="320" cy="226" r="1.6" fill={SKY} />
-          <text x="320" y="244" fontSize="11" fontWeight="600" fill={INK} fillOpacity="0.75" textAnchor="middle" fontFamily="inherit" letterSpacing="2.6">
+          <circle cx="320" cy="214" r="1.8" fill={SKY} />
+          <text x="320" y="232" fontSize="15" fontWeight="600" fill={INK} fillOpacity="0.75" textAnchor="middle" fontFamily="inherit" letterSpacing="3">
             ARBEITSSICHERHEIT
           </text>
         </g>

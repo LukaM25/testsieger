@@ -3,6 +3,9 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { setSession } from '@/lib/cookies';
+import { arbeitssicherheitEnabled } from '@/lib/arbeitssicherheit/gate';
+import { EXISTING_IDS, RISK_IDS } from '@/lib/arbeitssicherheit/options';
+import { postAuthRedirect } from '@/lib/areas';
 
 export const runtime = 'nodejs';
 
@@ -17,12 +20,31 @@ const RegisterSchema = z.object({
   postalCode: z.string().trim().max(12).optional().nullable(),
   city: z.string().trim().max(100).optional().nullable(),
   redirectTo: z.string().optional().nullable(),
+  area: z.enum(['PRODUKTTEST', 'ARBEITSSICHERHEIT']).optional().default('PRODUKTTEST'),
+  org: z
+    .object({
+      legalForm: z.string().trim().max(60).optional().nullable(),
+      industry: z.string().trim().min(2, 'ORG_INDUSTRY').max(100),
+      employees: z.coerce.number().int().min(1, 'ORG_EMPLOYEES').max(100000),
+      locations: z.coerce.number().int().min(1).max(1000).optional().default(1),
+      bg: z.string().trim().max(60).optional().nullable(),
+      memberNumber: z.string().trim().max(40).optional().nullable(),
+      phone: z.string().trim().max(40).optional().nullable(),
+      contactRole: z.string().trim().max(80).optional().nullable(),
+      risks: z.array(z.string()).optional().default([]),
+      existing: z.array(z.string()).optional().default([]),
+      notes: z.string().trim().max(1000).optional().nullable(),
+    })
+    .optional()
+    .nullable(),
 });
 
 const MESSAGES: Record<string, string> = {
   NAME_REQUIRED: 'Bitte geben Sie Ihren Namen an.',
   INVALID_EMAIL: 'Bitte geben Sie eine gültige E-Mail-Adresse an.',
   WEAK_PASSWORD: 'Das Passwort muss mindestens 8 Zeichen lang sein.',
+  ORG_INDUSTRY: 'Bitte wählen Sie Ihre Branche.',
+  ORG_EMPLOYEES: 'Bitte geben Sie die Zahl der Beschäftigten an (mindestens 1).',
 };
 
 export async function POST(req: Request) {
@@ -60,6 +82,18 @@ export async function POST(req: Request) {
   }
   const data = parsed.data;
 
+  if (data.area === 'ARBEITSSICHERHEIT') {
+    if (!arbeitssicherheitEnabled()) {
+      return NextResponse.json({ error: 'Dieser Bereich ist noch nicht verfügbar.' }, { status: 403 });
+    }
+    if (!data.org) {
+      return NextResponse.json({ error: 'Bitte machen Sie Angaben zu Ihrem Betrieb.' }, { status: 400 });
+    }
+    if (!data.company) {
+      return NextResponse.json({ error: 'Bitte geben Sie den Firmennamen an.' }, { status: 400 });
+    }
+  }
+
   const existing = await prisma.user.findFirst({
     where: { email: { equals: data.email, mode: 'insensitive' } },
     select: { id: true },
@@ -85,12 +119,31 @@ export async function POST(req: Request) {
       gender: data.gender || null,
       company: data.company || null,
       address: address || null,
+      area: data.area,
+      ...(data.area === 'ARBEITSSICHERHEIT' && data.org
+        ? {
+            asOrganization: {
+              create: {
+                name: data.company as string,
+                legalForm: data.org.legalForm || null,
+                industry: data.org.industry,
+                employees: data.org.employees,
+                locations: data.org.locations,
+                bg: data.org.bg || null,
+                memberNumber: data.org.memberNumber || null,
+                phone: data.org.phone || null,
+                contactRole: data.org.contactRole || null,
+                risks: data.org.risks.filter((r) => RISK_IDS.includes(r)),
+                existing: data.org.existing.filter((r) => EXISTING_IDS.includes(r)),
+                notes: data.org.notes || null,
+              },
+            },
+          }
+        : {}),
     },
   });
 
   await setSession({ userId: user.id, email: user.email });
-  const redirectTo = typeof data.redirectTo === 'string' && data.redirectTo.startsWith('/') && !data.redirectTo.startsWith('//')
-    ? data.redirectTo
-    : '/dashboard';
+  const redirectTo = postAuthRedirect(data.area, typeof data.redirectTo === 'string' ? data.redirectTo : null);
   return NextResponse.json({ ok: true, redirect: redirectTo });
 }

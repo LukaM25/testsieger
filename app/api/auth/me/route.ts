@@ -7,5 +7,6 @@ export async function GET() {
     return NextResponse.json({ user: null });
   }
   const { id, name, email, gender } = user;
-  return NextResponse.json({ user: { id, name, email, gender } });
+  const area = (user as { area?: string }).area === 'ARBEITSSICHERHEIT' ? 'ARBEITSSICHERHEIT' : 'PRODUKTTEST';
+  return NextResponse.json({ user: { id, name, email, gender, area } });
 }

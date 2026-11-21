@@ -1,0 +1,62 @@
+// ENTWURF, noch NICHT in schema.prisma übernommen (keine Migration ausgeführt).
+// Zum Aktivieren: Modelle in prisma/schema.prisma einfügen, im User-Model
+// `asOrganizations ASOrganization[]` ergänzen, dann `npx prisma migrate dev --name arbeitssicherheit`.
+// Danach loadDashboardData() in lib/arbeitssicherheit/data.ts um die Abfragen erweitern.
+
+model ASOrganization {
+  id         String   @id @default(cuid())
+  userId     String
+  name       String
+  industry   String?
+  employees  Int?
+  nextInspectionAt DateTime?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+  documents  ASDocument[]
+  trainings  ASTraining[]
+  deadlines  ASDeadline[]
+
+  @@index([userId])
+}
+
+model ASDocument {
+  id             String   @id @default(cuid())
+  organizationId String
+  categoryId     String   // entspricht DocCategoryId in lib/arbeitssicherheit/types.ts
+  title          String
+  fileName       String?
+  assetKey       String?  // S3-Key, Download über signedUrlForKey
+  validUntil     DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organization   ASOrganization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, categoryId])
+}
+
+model ASTraining {
+  id                 String   @id @default(cuid())
+  organizationId     String
+  title              String
+  topic              String
+  dueAt              DateTime?
+  completedAt        DateTime?
+  participantsDone   Int      @default(0)
+  participantsTotal  Int      @default(0)
+  organization       ASOrganization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+}
+
+model ASDeadline {
+  id             String   @id @default(cuid())
+  organizationId String
+  kind           String   // dokument | unterweisung | begehung
+  title          String
+  detail         String?
+  dueAt          DateTime
+  doneAt         DateTime?
+  organization   ASOrganization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, dueAt])
+}

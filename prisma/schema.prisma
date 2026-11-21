@@ -24,6 +24,8 @@ model User {
   assets              Asset[]
   licenseCart         LicenseCart?
   precheckInvites     PrecheckInvite[]
+  area                UserArea             @default(PRODUKTTEST)
+  asOrganization      ASOrganization?
 }
 
 model Product {
@@ -398,4 +400,86 @@ enum BlogPostStatus {
 enum BlogAssetKind {
   COVER
   ATTACHMENT
+}
+
+// ---------------------------------------------------------------------------
+// Bereiche: Ein Konto gehört zu genau einem Bereich. Bestehende Konten bleiben PRODUKTTEST.
+// ---------------------------------------------------------------------------
+enum UserArea {
+  PRODUKTTEST
+  ARBEITSSICHERHEIT
+}
+
+// Betrieb eines Arbeitssicherheits-Kunden (Angaben wie bei den großen Anbietern: Größe, Branche, BG, Risiken)
+model ASOrganization {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  name          String
+  legalForm     String?
+  industry      String
+  employees     Int
+  locations     Int      @default(1)
+  bg            String?  // zuständige Berufsgenossenschaft / Unfallkasse
+  memberNumber  String?  // Mitgliedsnummer bei der BG
+  phone         String?
+  contactRole   String?
+  risks         String[] // Gefährdungsschwerpunkte, z. B. HOEHE, MASCHINEN, GEFAHRSTOFFE, FAHRZEUGE
+  existing      String[] // bereits vorhanden, z. B. GEFAEHRDUNGSBEURTEILUNG, SIFA, BETRIEBSARZT, ERSTHELFER
+  notes         String?
+  nextInspectionAt DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user      User         @relation(fields: [userId], references: [id])
+  documents ASDocument[]
+  trainings ASTraining[]
+  deadlines ASDeadline[]
+}
+
+model ASDocument {
+  id             String    @id @default(cuid())
+  organizationId String
+  categoryId     String // entspricht DocCategoryId in lib/arbeitssicherheit/types.ts
+  title          String
+  fileName       String?
+  assetKey       String? // S3-Key, Download über signierte URL
+  contentType    String?
+  validUntil     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization ASOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, categoryId])
+}
+
+model ASTraining {
+  id                String    @id @default(cuid())
+  organizationId    String
+  title             String
+  topic             String
+  dueAt             DateTime?
+  completedAt       DateTime?
+  participantsDone  Int       @default(0)
+  participantsTotal Int       @default(0)
+  createdAt         DateTime  @default(now())
+
+  organization ASOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model ASDeadline {
+  id             String    @id @default(cuid())
+  organizationId String
+  kind           String // dokument | unterweisung | begehung
+  title          String
+  detail         String?
+  dueAt          DateTime
+  doneAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  organization ASOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, dueAt])
 }

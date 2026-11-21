@@ -11,7 +11,7 @@ export const metadata = pageMetadata({
   path: '/kontakt',
 });
 
-type SP = { sent?: string; error?: string; kategorie?: string };
+type SP = { sent?: string; error?: string; kategorie?: string; nachricht?: string };
 type Props = { searchParams?: Promise<SP> | SP };
 
 const CATEGORIES = [
@@ -121,7 +121,7 @@ export default async function KontaktPage({ searchParams }: Props = {}) {
                   Bitte auswählen
                 </option>
                 {CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>
+                  <option key={c.value} value={c.value} className={c.value === 'safety' ? 'as-only' : undefined}>
                     {c.label}
                   </option>
                 ))}
@@ -130,7 +130,7 @@ export default async function KontaktPage({ searchParams }: Props = {}) {
 
             <label className={labelCls}>
               <span className={labelTextCls}>Ihre Nachricht</span>
-              <textarea name="message" required rows={5} className={inputCls} />
+              <textarea name="message" required rows={5} defaultValue={(sp?.nachricht ?? "").slice(0, 500)} className={inputCls} />
             </label>
 
             <div className="flex flex-col gap-4 pt-1 sm:flex-row sm:items-center sm:justify-between">

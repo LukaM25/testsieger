@@ -1,0 +1,282 @@
+import sys, os
+root = sys.argv[1]
+old = root + '/app/login/page.tsx'
+new = root + '/app/login/LoginClient.tsx'
+s = open(old, encoding='utf-8').read() if not os.path.exists(new) else open(new, encoding='utf-8').read()
+
+def rep(a, b, count=1):
+    global s
+    assert a in s, 'missing: ' + a[:70]
+    s = s.replace(a, b, count)
+
+rep("import { ArrowRight, BadgeCheck, Eye, EyeOff, FileCheck2, LayoutDashboard, ShieldCheck, Wallet } from 'lucide-react';",
+    "import { ArrowRight, BadgeCheck, Check, ClipboardCheck, Eye, EyeOff, FileCheck2, HardHat, LayoutDashboard, ShieldCheck, Wallet, CalendarCheck, FolderCheck } from 'lucide-react';\nimport { BERUFSGENOSSENSCHAFTEN, EMPLOYEE_HINT, EXISTING, INDUSTRIES, LEGAL_FORMS, RISKS } from '@/lib/arbeitssicherheit/options';")
+
+rep("type Mode = 'login' | 'register';", "type Mode = 'login' | 'register';\ntype Area = 'PRODUKTTEST' | 'ARBEITSSICHERHEIT';")
+
+rep("const LOGIN_ERRORS", """const AS_BENEFITS = [
+  { Icon: ClipboardCheck, title: 'Ihr rechtlicher Mindestrahmen', body: 'Sie sehen sofort, welche Pflichten erfüllt sind.' },
+  { Icon: CalendarCheck, title: 'Alle Fristen im Blick', body: 'Unterweisungen und Begehungen, ohne Zettelwirtschaft.' },
+  { Icon: FolderCheck, title: 'Dokumentenmappe', body: 'Gefährdungsbeurteilung und Nachweise an einem Ort.' },
+  { Icon: HardHat, title: 'Fachkraft aus der Praxis', body: 'Ein fester Ansprechpartner für Ihren Betrieb.' },
+];
+
+const LOGIN_ERRORS""")
+
+rep("export default function LoginPage() {", "export default function LoginClient({ asEnabled }: { asEnabled: boolean }) {")
+
+rep("""  const setRegField = (key: keyof typeof reg, value: string | boolean) => setReg((prev) => ({ ...prev, [key]: value }));
+  const isRegister = mode === 'register';""",
+"""  const setRegField = (key: keyof typeof reg, value: string | boolean) => setReg((prev) => ({ ...prev, [key]: value }));
+  const areaParam = searchParams.get('area');
+  const [area, setArea] = useState<Area | ''>(
+    !asEnabled
+      ? 'PRODUKTTEST'
+      : areaParam === 'arbeitssicherheit'
+        ? 'ARBEITSSICHERHEIT'
+        : areaParam === 'produkttest'
+          ? 'PRODUKTTEST'
+          : ''
+  );
+  const [org, setOrg] = useState({
+    legalForm: '',
+    industry: '',
+    employees: '',
+    locations: '1',
+    bg: '',
+    memberNumber: '',
+    phone: '',
+    contactRole: '',
+    risks: [] as string[],
+    existing: [] as string[],
+    notes: '',
+  });
+  const setOrgField = (key: 'legalForm' | 'industry' | 'employees' | 'locations' | 'bg' | 'memberNumber' | 'phone' | 'contactRole' | 'notes', value: string) =>
+    setOrg((prev) => ({ ...prev, [key]: value }));
+  const toggleOrgList = (key: 'risks' | 'existing', id: string) =>
+    setOrg((prev) => ({ ...prev, [key]: prev[key].includes(id) ? prev[key].filter((x) => x !== id) : [...prev[key], id] }));
+  const isRegister = mode === 'register';
+  const isAs = area === 'ARBEITSSICHERHEIT';
+  const needsArea = isRegister && asEnabled && !area;
+  const benefits = isAs ? AS_BENEFITS : BENEFITS;""")
+
+rep("""      if (!reg.accepted) return setError('Bitte akzeptieren Sie AGB und Datenschutzerklärung.');""",
+"""      if (!reg.accepted) return setError('Bitte akzeptieren Sie AGB und Datenschutzerklärung.');
+      if (isAs) {
+        if (!reg.company.trim()) return setError('Bitte geben Sie den Firmennamen an.');
+        if (!org.industry) return setError('Bitte wählen Sie Ihre Branche.');
+        if (!org.employees || Number(org.employees) < 1) return setError('Bitte geben Sie die Zahl der Beschäftigten an.');
+      }""")
+
+rep("""            redirectTo: next,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.ok) {
+          router.push(data.redirect || '/dashboard');""",
+"""            redirectTo: next,
+            area: area || 'PRODUKTTEST',
+            org: isAs
+              ? {
+                  legalForm: org.legalForm || null,
+                  industry: org.industry,
+                  employees: Number(org.employees),
+                  locations: Number(org.locations) || 1,
+                  bg: org.bg || null,
+                  memberNumber: org.memberNumber.trim() || null,
+                  phone: org.phone.trim() || null,
+                  contactRole: org.contactRole.trim() || null,
+                  risks: org.risks,
+                  existing: org.existing,
+                  notes: org.notes.trim() || null,
+                }
+              : null,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.ok) {
+          router.push(data.redirect || '/dashboard');""")
+
+# Aside
+rep("{isRegister ? 'Ihr Prüfsiegel. Ein Dashboard.' : 'Willkommen zurück.'}",
+    "{isRegister ? (isAs ? 'Ihre Arbeitssicherheit. Ein Dashboard.' : 'Ihr Prüfsiegel. Ein Dashboard.') : 'Willkommen zurück.'}")
+rep("""              {isRegister
+                ? 'Erstellen Sie Ihr Konto in zwei Minuten und behalten Sie Produkte, Prüfungen und Lizenzen im Blick.'""",
+"""              {isRegister
+                ? isAs
+                  ? 'Beschreiben Sie Ihren Betrieb in zwei Minuten. Wir zeigen Ihnen, welche Pflichten gelten und was noch zu tun ist.'
+                  : 'Erstellen Sie Ihr Konto in zwei Minuten und behalten Sie Produkte, Prüfungen und Lizenzen im Blick.'""")
+rep("{BENEFITS.map(({ Icon, title, body }) => (", "{benefits.map(({ Icon, title, body }) => (")
+
+# Überschrift
+rep("""            {isRegister ? 'Konto erstellen' : 'Anmelden'}
+          </h1>""", """            {needsArea ? 'Wofür möchten Sie sich registrieren?' : isRegister ? (isAs ? 'Konto für Arbeitssicherheit' : 'Konto für Produkttest') : 'Anmelden'}
+          </h1>""")
+rep("""            {isRegister
+              ? 'Kostenlos. Ihre Daten nutzen wir für Prüfung, Rechnung und Siegel.'
+              : 'Zugang zu Ihrem Dashboard.'}""",
+"""            {needsArea
+              ? 'Wählen Sie Ihren Bereich. Sie landen danach direkt im passenden Dashboard.'
+              : isRegister
+                ? isAs
+                  ? 'Ihre Angaben bestimmen, welche Pflichten und Fristen wir für Ihren Betrieb anzeigen.'
+                  : 'Kostenlos. Ihre Daten nutzen wir für Prüfung, Rechnung und Siegel.'
+                : 'Zugang zu Ihrem Dashboard.'}""")
+
+# Bereichswahl + Wrapper um Formularteil
+start = s.index("          <div key={mode} className=\"mt-6 space-y-4 animate-[fadeIn_0.35s_ease-out]\">")
+end_marker = "          <p className=\"mt-5 text-center text-sm text-slate-600\">"
+end = s.index(end_marker)
+form_part = s[start:end]
+
+chooser = """          {needsArea && (
+            <div className="mt-6 grid gap-3 animate-[fadeIn_0.35s_ease-out]" role="radiogroup" aria-label="Bereich wählen">
+              {([
+                { id: 'PRODUKTTEST', Icon: BadgeCheck, title: 'Produkttest & Prüfsiegel', body: 'Für Marken und Händler, die ihre Produkte prüfen lassen und das Siegel nutzen wollen.' },
+                { id: 'ARBEITSSICHERHEIT', Icon: HardHat, title: 'Arbeitssicherheit', body: 'Für Betriebe, die ihre gesetzlichen Pflichten erfüllen und alle Nachweise an einem Ort haben wollen.' },
+              ] as { id: Area; Icon: typeof BadgeCheck; title: string; body: string }[]).map(({ id, Icon, title, body }) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="radio"
+                  aria-checked={false}
+                  onClick={() => setArea(id)}
+                  className="group flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5 text-left transition duration-200 hover:-translate-y-0.5 hover:border-[#1d4ed8]/40 hover:shadow-[0_18px_40px_-28px_rgba(29,78,216,0.45)]"
+                >
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#1d4ed8] to-[#16294d] text-white">
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <span className="flex-1">
+                    <span className="block text-base font-semibold text-[#2B4066]">{title}</span>
+                    <span className="mt-0.5 block text-sm text-slate-500">{body}</span>
+                  </span>
+                  <ArrowRight className="mt-1 h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-[#1d4ed8]" aria-hidden="true" />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {isRegister && asEnabled && area && (
+            <div className="mt-4 flex items-center justify-between rounded-full bg-slate-50 px-4 py-2 text-sm">
+              <span className="flex items-center gap-2 font-semibold text-[#2B4066]">
+                <Check className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+                {isAs ? 'Arbeitssicherheit' : 'Produkttest & Prüfsiegel'}
+              </span>
+              <button type="button" onClick={() => setArea('')} className="text-xs font-semibold text-sky-700 hover:underline">
+                Ändern
+              </button>
+            </div>
+          )}
+
+"""
+
+# Firma-Label
+form_part = form_part.replace("Firma (optional)", "{isAs ? 'Firma *' : 'Firma (optional)'}").replace(">{isAs ? 'Firma *' : 'Firma (optional)'}</label>", ">{isAs ? 'Firma *' : 'Firma (optional)'}</label>")
+form_part = form_part.replace("autoComplete=\"organization\"\n                  />", "autoComplete=\"organization\"\n                    required={isAs}\n                  />", 1)
+
+# Betriebsangaben vor dem Passwort
+pw_marker = "            <div>\n              <div className=\"flex items-center justify-between\">\n                <label className={label} htmlFor=\"auth-password\">"
+assert pw_marker in form_part
+fieldset = """            {isRegister && isAs && (
+              <fieldset className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 sm:p-5">
+                <legend className="px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Ihr Betrieb</legend>
+                <div className="grid grid-cols-6 gap-3">
+                  <div className="col-span-6 sm:col-span-3">
+                    <label className={label} htmlFor="org-form">Rechtsform</label>
+                    <select id="org-form" value={org.legalForm} onChange={(e) => setOrgField('legalForm', e.target.value)} className={field}>
+                      <option value="">Bitte wählen</option>
+                      {LEGAL_FORMS.map((f) => (<option key={f} value={f}>{f}</option>))}
+                    </select>
+                  </div>
+                  <div className="col-span-6 sm:col-span-3">
+                    <label className={label} htmlFor="org-industry">Branche *</label>
+                    <select id="org-industry" value={org.industry} onChange={(e) => setOrgField('industry', e.target.value)} className={field} required>
+                      <option value="">Bitte wählen</option>
+                      {INDUSTRIES.map((f) => (<option key={f} value={f}>{f}</option>))}
+                    </select>
+                  </div>
+                  <div className="col-span-3">
+                    <label className={label} htmlFor="org-emp">Beschäftigte *</label>
+                    <input id="org-emp" type="number" inputMode="numeric" min={1} value={org.employees} onChange={(e) => setOrgField('employees', e.target.value)} className={field} required />
+                  </div>
+                  <div className="col-span-3">
+                    <label className={label} htmlFor="org-loc">Standorte</label>
+                    <input id="org-loc" type="number" inputMode="numeric" min={1} value={org.locations} onChange={(e) => setOrgField('locations', e.target.value)} className={field} />
+                  </div>
+                  <p className="col-span-6 -mt-1 text-[11px] text-slate-500">{EMPLOYEE_HINT}</p>
+                  <div className="col-span-6 sm:col-span-3">
+                    <label className={label} htmlFor="org-bg">Berufsgenossenschaft</label>
+                    <select id="org-bg" value={org.bg} onChange={(e) => setOrgField('bg', e.target.value)} className={field}>
+                      <option value="">Bitte wählen</option>
+                      {BERUFSGENOSSENSCHAFTEN.map((f) => (<option key={f} value={f}>{f}</option>))}
+                    </select>
+                  </div>
+                  <div className="col-span-6 sm:col-span-3">
+                    <label className={label} htmlFor="org-mitglied">Mitgliedsnummer</label>
+                    <input id="org-mitglied" type="text" value={org.memberNumber} onChange={(e) => setOrgField('memberNumber', e.target.value)} className={field} />
+                  </div>
+                  <div className="col-span-6 sm:col-span-3">
+                    <label className={label} htmlFor="org-role">Ihre Funktion</label>
+                    <input id="org-role" type="text" placeholder="z. B. Geschäftsführer" value={org.contactRole} onChange={(e) => setOrgField('contactRole', e.target.value)} className={field} />
+                  </div>
+                  <div className="col-span-6 sm:col-span-3">
+                    <label className={label} htmlFor="org-phone">Telefon</label>
+                    <input id="org-phone" type="tel" value={org.phone} onChange={(e) => setOrgField('phone', e.target.value)} className={field} autoComplete="tel" />
+                  </div>
+                </div>
+
+                <div>
+                  <p className={label}>Was trifft auf Ihren Betrieb zu?</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {RISKS.map((r) => (
+                      <label key={r.id} className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[13px] text-slate-700 transition hover:border-slate-300">
+                        <input type="checkbox" checked={org.risks.includes(r.id)} onChange={() => toggleOrgList('risks', r.id)} className="mt-0.5 h-4 w-4 accent-[#1d4ed8]" />
+                        <span>{r.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className={label}>Was ist schon vorhanden?</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {EXISTING.map((r) => (
+                      <label key={r.id} className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[13px] text-slate-700 transition hover:border-slate-300">
+                        <input type="checkbox" checked={org.existing.includes(r.id)} onChange={() => toggleOrgList('existing', r.id)} className="mt-0.5 h-4 w-4 accent-[#1d4ed8]" />
+                        <span>{r.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className={label} htmlFor="org-notes">Anmerkung (optional)</label>
+                  <textarea id="org-notes" rows={2} value={org.notes} onChange={(e) => setOrgField('notes', e.target.value)} className={field} placeholder="Besonderheiten, Anlass der Anfrage, Fristen" />
+                </div>
+              </fieldset>
+            )}
+
+"""
+form_part = form_part.replace(pw_marker, fieldset + pw_marker, 1)
+wrapped = chooser + "          {!needsArea && (\n            <>\n" + form_part + "            </>\n          )}\n\n"
+s = s[:start] + wrapped + s[end:]
+
+# Texte zum Wechsel unten: im Chooser keinen Submit-Link
+open(new, 'w', encoding='utf-8').write(s)
+
+# Server-Seite
+open(root + '/app/login/page.tsx', 'w', encoding='utf-8').write("""import { Suspense } from 'react';
+import { arbeitssicherheitEnabled } from '@/lib/arbeitssicherheit/gate';
+import LoginClient from './LoginClient';
+
+export const dynamic = 'force-dynamic';
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginClient asEnabled={arbeitssicherheitEnabled()} />
+    </Suspense>
+  );
+}
+""")
+print('ok')

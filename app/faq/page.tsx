@@ -180,7 +180,7 @@ export default function FaqPage() {
               <a
                 key={href}
                 href={href}
-                className="group flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-white p-4 text-left shadow-[0_20px_60px_-45px_rgba(43,64,102,0.35)] transition duration-300 hover:-translate-y-0.5 hover:border-sky-300"
+                className={`${href === '#arbeitssicherheit' ? 'as-only ' : ''}group flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-white p-4 text-left shadow-[0_20px_60px_-45px_rgba(43,64,102,0.35)] transition duration-300 hover:-translate-y-0.5 hover:border-sky-300`}
               >
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-50 to-sky-100 text-sky-700 ring-1 ring-sky-100">
                   <Icon className="h-5 w-5" aria-hidden="true" />
@@ -206,16 +206,18 @@ export default function FaqPage() {
           items={produkttest}
         />
 
-        <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+        <div className="as-only space-y-16">
+          <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
 
-        <Section
-          id="arbeitssicherheit"
-          Icon={HardHat}
-          eyebrow="Arbeitssicherheit"
-          title="Arbeitssicherheit"
-          lead="Unterstützung für Betriebe, individuell und auf Anfrage."
-          items={arbeitssicherheit}
-        />
+          <Section
+            id="arbeitssicherheit"
+            Icon={HardHat}
+            eyebrow="Arbeitssicherheit"
+            title="Arbeitssicherheit"
+            lead="Unterstützung für Betriebe, individuell und auf Anfrage."
+            items={arbeitssicherheit}
+          />
+        </div>
 
         <div className="rounded-3xl bg-gradient-to-b from-[#16294d] to-[#0b1730] px-6 py-8 text-center text-white sm:px-10">
           <h2 className="text-2xl font-semibold">Ihre Frage ist noch offen?</h2>

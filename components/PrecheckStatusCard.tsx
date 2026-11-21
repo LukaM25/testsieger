@@ -168,7 +168,7 @@ export function PrecheckStatusCard({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-500">{tr("Fortschritt", "Progress")}</p>
-          <h2 className="text-2xl font-bold text-slate-900">{tr("Status Ihrer Prüfung", "Your review status")}</h2>
+          <h2 className="text-2xl font-bold text-[#2B4066]">{tr("Status Ihrer Prüfung", "Your review status")}</h2>
           {productStatus?.name && (
             <p className="text-sm text-slate-600">
               {tr("Produkt", "Product")}: <span className="font-semibold text-slate-900">{productStatus.name}</span>
@@ -181,7 +181,7 @@ export function PrecheckStatusCard({
           )}
           {errorMessage && <p className="text-sm text-rose-600">{errorMessage}</p>}
         </div>
-        <div className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-sm">
+        <div className="rounded-full bg-gradient-to-r from-[#1d4ed8] to-[#16294d] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] !text-white shadow-sm">
           {statusLoading ? tr("Lädt Status…", "Loading status…") : stageLabel}
         </div>
       </div>
@@ -301,7 +301,7 @@ export function PrecheckStatusCard({
 
           {/* Only show Aktionen if NOT delegating to rightColumn for payment */}
           {showLegacyPayButton && (
-            <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_12px_30px_-26px_rgba(43,64,102,0.4)]">
               <div className="text-sm font-semibold text-slate-900">{tr("Aktionen", "Actions")}</div>
               {!productStatus && (
                 <p className="mt-2 text-sm text-slate-600">
@@ -336,7 +336,7 @@ export function PrecheckStatusCard({
 
           {/* Show CertificateAction even when rightColumn handles payment */}
           {!showLegacyPayButton && productStatus && !isOptimistic && (
-            <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_12px_30px_-26px_rgba(43,64,102,0.4)]">
               <CertificateAction
                 productId={productStatus.id}
                 initialCertificate={productStatus.certificate}
@@ -360,7 +360,7 @@ export function PrecheckStatusCard({
         </div>
         <div className="relative h-3 overflow-hidden rounded-full bg-slate-200">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-slate-900 via-blue-700 to-sky-400 transition-all duration-500"
+            className="h-full rounded-full bg-gradient-to-r from-[#1d4ed8] to-[#16294d] transition-all duration-500"
             style={{ width: `${activePercent}%` }}
           />
         </div>
@@ -417,7 +417,7 @@ function CertificateAction({
         href={effectivePdf}
         target="_blank"
         rel="noreferrer"
-        className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50"
+        className="inline-flex w-full items-center justify-center rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50"
       >
         {tr("Zertifikat ansehen (PDF)", "View certificate (PDF)")}
       </a>

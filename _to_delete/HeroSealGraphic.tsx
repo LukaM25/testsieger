@@ -59,8 +59,8 @@ function Node({
         <g transform={`translate(${cx} ${cy}) scale(1.15)`} fill="none" stroke={INK} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           {children}
         </g>
-        <text x={cx} y={cy + 72} fontSize="14" fontWeight="600" fill={INK} textAnchor="middle" fontFamily="inherit">{title}</text>
-        <text x={cx} y={cy + 90} fontSize="11.5" fill="#64748b" textAnchor="middle" fontFamily="inherit">{sub}</text>
+        <text x={cx} y={cy + 78} fontSize="20" fontWeight="600" fill={INK} textAnchor="middle" fontFamily="inherit">{title}</text>
+        <text x={cx} y={cy + 99} fontSize="15" fill="#64748b" textAnchor="middle" fontFamily="inherit">{sub}</text>
       </g>
     </g>
   );
@@ -81,7 +81,7 @@ export default function HeroSealGraphic() {
   ];
 
   return (
-    <div ref={ref} data-in={inView ? 'true' : 'false'} className="dpi-hero relative">
+    <div ref={ref} data-in={inView ? 'true' : 'false'} className="dpi-hero relative mx-auto w-full max-w-[360px]">
       <style>{CSS}</style>
       <svg viewBox="0 0 600 440" role="img" aria-labelledby="dpi-hero-title" className="block h-auto w-full">
         <title id="dpi-hero-title">Grafik: Produkttest und Arbeitssicherheit, verbunden durch Qualität, Sicherheit und Prozess</title>
@@ -157,8 +157,8 @@ export default function HeroSealGraphic() {
         />
 
         {/* Verbindungen */}
-        <path className="flow" d="M128 190 H196" stroke={SKY} strokeOpacity="0.7" strokeWidth="1.1" strokeLinecap="round" />
-        <path className="flow" d="M472 190 H404" stroke={SKY} strokeOpacity="0.7" strokeWidth="1.1" strokeLinecap="round" style={{ animationDirection: 'reverse' }} />
+        <path className="flow" d="M137 190 H196" stroke={SKY} strokeOpacity="0.7" strokeWidth="1.1" strokeLinecap="round" />
+        <path className="flow" d="M463 190 H404" stroke={SKY} strokeOpacity="0.7" strokeWidth="1.1" strokeLinecap="round" style={{ animationDirection: 'reverse' }} />
 
         {/* Siegel */}
         <g className="breathe">
@@ -177,11 +177,11 @@ export default function HeroSealGraphic() {
         </g>
 
         {/* Fachgebiete */}
-        <Node cx={88} cy={190} title="Produkttest" sub="Prüfsiegel für Händler" float="float-a" delay={0.8}>
+        <Node cx={95} cy={190} title="Produkttest" sub="Prüfsiegel für Händler" float="float-a" delay={0.8}>
           <path className="draw" d="M0 -17 L16 -8 V10 L0 19 L-16 10 V-8 Z" style={{ animationDelay: '1s' }} />
           <path className="draw" d="M0 -17 V2 M-16 -8 L0 2 L16 -8" style={{ animationDelay: '1.4s' }} />
         </Node>
-        <Node cx={512} cy={190} title="Arbeitssicherheit" sub="Praxisnah im Betrieb" float="float-b" delay={1.1}>
+        <Node cx={505} cy={190} title="Arbeitssicherheit" sub="Praxisnah im Betrieb" float="float-b" delay={1.1}>
           <path className="draw" d="M-17 7 C-17 -6 -9 -15 0 -15 C9 -15 17 -6 17 7 Z" style={{ animationDelay: '1.3s' }} />
           <path className="draw" d="M-21 7 H21 M0 -15 V7" style={{ animationDelay: '1.7s' }} />
         </Node>
@@ -190,13 +190,13 @@ export default function HeroSealGraphic() {
         <rect x="100" y="352" width="400" height="1" fill="url(#hero-rule)" />
         {words.map((w, i) => (
           <g key={w.label} className="fade-up" style={{ animationDelay: `${2 + i * 0.25}s` }}>
-            <text x={w.x} y="384" fontSize="11" fontWeight="600" fill={INK} fillOpacity="0.75" textAnchor="middle" fontFamily="inherit" letterSpacing="2.6">
+            <text x={w.x} y="388" fontSize="16" fontWeight="600" fill={INK} fillOpacity="0.75" textAnchor="middle" fontFamily="inherit" letterSpacing="3">
               {w.label}
             </text>
           </g>
         ))}
-        <circle cx="225" cy="380" r="1.6" fill={SKY} />
-        <circle cx="375" cy="380" r="1.6" fill={SKY} />
+        <circle cx="225" cy="383" r="1.8" fill={SKY} />
+        <circle cx="375" cy="383" r="1.8" fill={SKY} />
       </svg>
     </div>
   );
