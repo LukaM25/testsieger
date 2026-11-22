@@ -795,9 +795,6 @@ export default function ProduktTestPage({
         </div>
       </section>
 
-      <VorteileCards />
-      <SiegelErklaert />
-      <AblaufTimeline />
       {searchParams?.get('direktZahlung') === 'success' && (
         <div className="mx-auto mt-6 max-w-3xl px-4">
           <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-900">
@@ -871,6 +868,10 @@ export default function ProduktTestPage({
           </div>
         </div>
       </section>
+
+      <VorteileCards />
+      <SiegelErklaert />
+      <AblaufTimeline />
 
       <section data-animate="section" className="mx-auto max-w-6xl px-6 pt-4 pb-12">
           <div className="rounded-3xl border border-slate-100 bg-white/90 p-8 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)] md:p-10">

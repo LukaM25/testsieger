@@ -59,15 +59,15 @@ export default function AreaChooser() {
       <div aria-hidden="true" className="pointer-events-none absolute -right-24 bottom-0 h-80 w-80 rounded-full bg-emerald-200/40 blur-3xl" />
 
       <div className="relative mx-auto w-full max-w-5xl">
-        <p className="ac-in text-center text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-500">Deutsches Prüfsiegel Institut</p>
-        <h1 className="ac-in mt-3 text-center text-3xl font-semibold tracking-tight text-[#2B4066] sm:text-4xl" style={{ animationDelay: '.1s' }}>Wofür sind Sie hier?</h1>
-        <p className="ac-in mx-auto mt-3 max-w-xl text-center text-slate-600" style={{ animationDelay: '.2s' }}>Wählen Sie Ihren Bereich. Die Seite zeigt Ihnen danach nur, was dazu gehört.</p>
+        <p className="ac-in text-center text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-500">Willkommen beim Deutschen Prüfsiegel Institut</p>
+        <h1 className="ac-in mt-3 text-center text-3xl font-semibold tracking-tight text-[#2B4066] sm:text-4xl" style={{ animationDelay: '.1s' }}>Was dürfen wir für Sie tun?</h1>
+        <p className="ac-in mx-auto mt-3 max-w-xl text-center text-slate-600" style={{ animationDelay: '.2s' }}>Mehr Vertrauen für Ihre Produkte oder mehr Sicherheit für Ihren Betrieb. Wählen Sie, womit wir starten, und Sie sehen genau das, was für Sie zählt.</p>
 
         <div className="mt-10 grid gap-6 md:grid-cols-2">
           <a href="/api/area?set=produkttest" className={`${CARD} ac-in`} style={{ animationDelay: '.3s' }}>
             <SealArt />
             <h2 className="mt-4 text-xl font-semibold text-[#2B4066]">Produkttest &amp; Prüfsiegel</h2>
-            <p className="mt-1.5 text-sm text-slate-600">Für Amazon-Seller, Hersteller und Händler.</p>
+            <p className="mt-1.5 text-sm text-slate-600">Zeigen Sie Käufern, dass Ihr Produkt im Alltag hält, was es verspricht.</p>
             <ul className="mt-5 flex-1 space-y-2.5 text-sm text-slate-700">
               {PRODUKT.map((t) => (
                 <li key={t} className="flex items-start gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-[#1d4ed8]" aria-hidden="true" />{t}</li>
@@ -84,7 +84,7 @@ export default function AreaChooser() {
             </span>
             <ShieldArt />
             <h2 className="mt-4 text-xl font-semibold text-[#2B4066]">Arbeitssicherheit</h2>
-            <p className="mt-1.5 text-sm text-slate-600">Für Betriebe mit Beschäftigten, vom Handwerk bis zur kleinen Produktion.</p>
+            <p className="mt-1.5 text-sm text-slate-600">Erfüllen Sie Ihre gesetzlichen Pflichten, ohne sich selbst darum zu kümmern.</p>
             <ul className="mt-5 flex-1 space-y-2.5 text-sm text-slate-700">
               {SAFETY.map((t) => (
                 <li key={t} className="flex items-start gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />{t}</li>

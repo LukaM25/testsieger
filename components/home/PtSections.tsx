@@ -7,7 +7,6 @@ import {
   BadgeCheck,
   ClipboardCheck,
   Euro,
-  Handshake,
   PackageCheck,
   QrCode,
   Repeat,
@@ -234,30 +233,82 @@ export function PtAblauf() {
 }
 
 /* 4. Partner Sportstech */
+const SPORTSTECH_IMAGES: { src: string; w: number; h: number; href?: string; de: { alt: string; cap: string }; en: { alt: string; cap: string } }[] = [
+  {
+    href: "https://www.amazon.de/dp/B0FC2KW72F",
+    src: "/images/partner/sportstech-laufband.jpg", w: 1455, h: 1500,
+    de: { alt: "Sportstech Laufband mit DPI-Siegel im Amazon-Listing", cap: "Laufband, Note 1,4 (Sehr gut)" },
+    en: { alt: "Sportstech treadmill with the DPI seal in the Amazon listing", cap: "Treadmill, grade 1.4 (very good)" },
+  },
+  {
+    href: "https://www.amazon.de/dp/B0DRPGVJNQ",
+    src: "/images/partner/sportstech-rudergeraet.jpg", w: 1484, h: 1461,
+    de: { alt: "Sportstech Rudergerät mit DPI-Siegel im Amazon-Listing", cap: "Rudergerät, Note 1,2 (Sehr gut)" },
+    en: { alt: "Sportstech rowing machine with the DPI seal in the Amazon listing", cap: "Rowing machine, grade 1.2 (very good)" },
+  },
+];
+
 export function PtPartner() {
   const { locale } = useLocale();
   const en = locale === "en";
+  const stats = en
+    ? [["5", "products tested"], ["Official", "partner"], ["1.2 / 1.4", "best grades so far"]]
+    : [["5", "Produkte getestet"], ["Offizieller", "Partner"], ["1,2 / 1,4", "Noten im Listing"]];
   return (
     <section data-animate="section" className="bg-gradient-to-b from-slate-50 to-white px-6 pt-20 sm:pt-24">
       <div className="mx-auto max-w-6xl">
-        <div className={`${CARD} relative grid overflow-hidden md:grid-cols-[320px_1fr]`}>
-          <div className="relative flex items-center justify-center bg-gradient-to-br from-slate-50 to-sky-50 p-10">
-            <span aria-hidden="true" className="pt-a absolute h-40 w-40 rounded-full bg-sky-200/40 blur-2xl" style={{ animation: "ptFloat 6s ease-in-out infinite" }} />
-            <Image src="/images/logos/sportstech.png" alt="Sportstech" width={260} height={90} className="relative h-auto w-56 object-contain" />
-          </div>
-          <div className="p-8 sm:p-10">
+        <div className={`${CARD} relative grid overflow-hidden lg:grid-cols-[0.95fr_1.05fr]`}>
+          <div className="p-8 sm:p-10 lg:p-12">
             <Eyebrow>{en ? "Trusted partner" : "Vertrauenspartner"}</Eyebrow>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[#2B4066] sm:text-3xl">Sportstech</h2>
-            {/* TODO Ferdi: Text zu Sportstech ergänzen (Zusammenarbeit, getestete Produkte, Zitat, soweit freigegeben) */}
-            <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-600">
+            <Image src="/images/logos/sportstech.png" alt="Sportstech" width={260} height={90} className="mt-4 h-auto w-44 object-contain" />
+            <h2 className="mt-6 text-2xl font-semibold tracking-tight text-[#2B4066] sm:text-3xl">
+              {en ? "Official partner of Sportstech" : "Offizieller Partner von Sportstech"}
+            </h2>
+            <p className="mt-3 max-w-xl text-base leading-relaxed text-slate-600">
               {en
-                ? "Sportstech is one of our trusted partners. More about our collaboration will follow here."
-                : "Sportstech gehört zu unseren Vertrauenspartnern. Mehr zur Zusammenarbeit folgt an dieser Stelle."}
+                ? "We work with Sportstech in a cooperation. Five of their products have already gone through our everyday test. The seal is part of the product image on Amazon, and the QR code opens the full test report."
+                : "Mit Sportstech verbindet uns eine Kooperation. Fünf Produkte des Herstellers haben unseren Alltagstest bereits durchlaufen. Das Siegel ist Teil des Produktbilds auf Amazon, und der QR-Code öffnet den vollständigen Prüfbericht."}
             </p>
-            <span className="mt-5 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3.5 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
-              <Handshake className="h-4 w-4" aria-hidden="true" />
-              {en ? "Partner of the German Seal Institute" : "Partner des Deutschen Prüfsiegel Instituts"}
-            </span>
+            <dl className="mt-7 grid grid-cols-3 gap-3">
+              {stats.map(([n, l]) => (
+                <div key={l} className="rounded-2xl bg-slate-50 px-3 py-3 text-center ring-1 ring-slate-200/70">
+                  <dt className="text-lg font-semibold text-[#2B4066] sm:text-xl">{n}</dt>
+                  <dd className="mt-0.5 text-[11px] leading-tight text-slate-500">{l}</dd>
+                </div>
+              ))}
+            </dl>
+            <Link href="/produkte/produkt-test" className="group mt-8 inline-flex items-center gap-2 rounded-full bg-[#2B4066] px-6 py-3 text-sm font-semibold !text-white transition duration-300 hover:-translate-y-0.5 hover:bg-[#1e3050]">
+              {en ? "Have your product tested" : "Auch Ihr Produkt testen lassen"}
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+            </Link>
+          </div>
+          <div className="relative flex items-center justify-center bg-gradient-to-br from-slate-50 to-sky-50 p-6 sm:p-8">
+            <span aria-hidden="true" className="pt-a absolute h-56 w-56 rounded-full bg-sky-200/50 blur-3xl" style={{ animation: "ptGlow 6s ease-in-out infinite" }} />
+            <div className="relative grid w-full grid-cols-1 gap-5 sm:grid-cols-2">
+              {SPORTSTECH_IMAGES.map((im, i) => {
+                const t = en ? im.en : im.de;
+                return (
+                  <figure key={im.src} className={i === 1 ? "sm:mt-8" : ""}>
+                    <Image
+                      src={im.src}
+                      alt={t.alt}
+                      width={im.w}
+                      height={im.h}
+                      sizes="(min-width:1024px) 280px, (min-width:640px) 40vw, 90vw"
+                      className="pt-a h-auto w-full rounded-2xl shadow-[0_30px_60px_-30px_rgba(11,23,48,0.6)]"
+                      style={{ animation: `ptFloat ${6 + i}s ease-in-out ${i * 0.8}s infinite` }}
+                    />
+                    <figcaption className="mt-3 text-center text-xs text-slate-500">{t.cap}</figcaption>
+                    {im.href && (
+                      <a href={im.href} target="_blank" rel="noopener noreferrer nofollow" className="mt-2 flex items-center justify-center gap-1.5 text-xs font-semibold text-[#1d4ed8] hover:underline">
+                        {en ? "View Amazon listing" : "Zum Amazon-Listing"}
+                        <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                      </a>
+                    )}
+                  </figure>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

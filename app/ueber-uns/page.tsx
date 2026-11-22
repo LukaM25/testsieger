@@ -10,6 +10,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import JsonLd from "@/components/seo/JsonLd";
+import { arbeitssicherheitEnabled } from "@/lib/arbeitssicherheit/gate";
 import { absoluteUrl, breadcrumbJsonLd, pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
@@ -27,8 +28,8 @@ const areas = [
     lead: "Verantwortlich: Sebastian Lang",
     body: "Wir prüfen Produkte von Händlern und Herstellern nach dokumentierten Kriterien und machen Qualität für Ihre Kunden sichtbar: mit Prüfbericht und Prüfsiegel für Ihre Produktseite.",
     points: ["Unabhängige Prüfung nach festen Kriterien", "Prüfbericht und Prüfsiegel", "Persönliche Betreuung"],
-    href: "/precheck",
-    cta: "Produkt testen lassen",
+    href: "/produkte/produkt-test",
+    cta: "Mehr zu Produkttest & Prüfsiegel",
   },
   {
     Icon: HardHat,
@@ -37,8 +38,8 @@ const areas = [
     lead: "Verantwortlich: Ferdinand Lang",
     body: "Wir unterstützen Betriebe dabei, Gefährdungen am Arbeitsplatz sichtbar zu machen und Arbeitssicherheit nachvollziehbar zu dokumentieren, orientiert an den Vorgaben der DGUV. Ferdinand absolviert dafür die Ausbildung zur Fachkraft für Arbeitssicherheit (SiFa).",
     points: ["Praxisnah aus dem Handwerk", "Orientiert an der DGUV", "Persönliches Erstgespräch"],
-    href: "/kontakt",
-    cta: "Arbeitssicherheit anfragen",
+    href: arbeitssicherheitEnabled() ? "/arbeitssicherheit" : "/kontakt",
+    cta: arbeitssicherheitEnabled() ? "Mehr zu Arbeitssicherheit" : "Arbeitssicherheit anfragen",
   },
 ];
 
@@ -275,7 +276,7 @@ export default function UeberUnsPage() {
             Ob Produkttest für Ihre Amazon-Produktseite oder Arbeitssicherheit für Ihren Betrieb: Wir melden uns persönlich bei Ihnen. Sitz: Kirchseestraße 2, 83666 Waakirchen, Landkreis Miesbach.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
-            <Link href="/precheck" className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold !text-[#16294d] transition duration-300 hover:-translate-y-0.5 hover:bg-sky-50">
+            <Link href="/produkte/produkt-test?precheck=open#precheck" className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold !text-[#16294d] transition duration-300 hover:-translate-y-0.5 hover:bg-sky-50">
               Kostenlosen Pre-Check starten
               <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
             </Link>
