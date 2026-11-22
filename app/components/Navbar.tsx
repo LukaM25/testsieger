@@ -506,7 +506,7 @@ export default function Navbar() {
         {areaCookie && (
           <a
             href="/api/area?set="
-            className="mr-3 hidden shrink-0 items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-white md:inline-flex"
+            className="mr-3 hidden shrink-0 items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-white lg:inline-flex"
             title="Bereich wechseln"
           >
             {areaCookie === 'arbeitssicherheit' ? 'Arbeitssicherheit' : 'Produkttest'} · wechseln

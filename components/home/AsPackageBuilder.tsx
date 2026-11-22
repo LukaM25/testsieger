@@ -146,7 +146,7 @@ export default function AsPackageBuilder({ pkgKey, km, plz, ready, onBlocked }: 
           <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold">{pkgKey === "enterprise" ? `${included.length} Leistungen, Begehungen nach Bedarf` : `${included.length} Leistungen + ${visitsText} pro Jahr`}</span>
         </div>
         <div className="grid gap-2.5 p-5 sm:grid-cols-2 lg:grid-cols-3">{included.map(chip)}</div>
-        {pkgKey === "enterprise" && <p className="border-t border-emerald-200/70 px-5 py-3 text-xs text-slate-600">Fair-Use: ein Standort, Erfassung von bis zu 50 Maschinen und Geräten sowie 30 Gefahrstoffen, Begehungen und Unterweisungen vor Ort nach Bedarf (bis zu 3 Begehungen und 2 Unterweisungen pro Jahr), Anfahrt bis 150 km inklusive.</p>}
+        {pkgKey === "enterprise" && <p className="border-t border-emerald-200/70 px-5 py-3 text-xs text-slate-600">Fair-Use: ein Standort, Erfassung von bis zu 50 Maschinen und Geräten sowie 30 Gefahrstoffen, Begehungen und Unterweisungen vor Ort in angemessenem Umfang, Anfahrt bis 150 km inklusive. Die genauen Grenzen regelt der Vertrag.</p>}
       </div>
 
       {/* Zusätzlich buchbar */}
