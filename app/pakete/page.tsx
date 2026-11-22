@@ -171,15 +171,6 @@ export default function Packages() {
             <p className="lead mx-auto mt-5 max-w-2xl">
               Wir prüfen Ihr Produkt im Testsieger Check. Erst nach bestandenem Ergebnis wählen Sie den passenden Lizenzplan für das Siegel.
             </p>
-            <Link
-              href="/produkte/produkt-test"
-              className="cta-glow group relative mt-8 inline-flex items-center gap-3 overflow-hidden rounded-full px-8 py-4 text-sm font-semibold uppercase tracking-[0.2em] !text-white shadow-[0_18px_40px_-16px_rgba(29,78,216,0.55)] transition duration-300 hover:-translate-y-0.5"
-              style={{ backgroundImage: "linear-gradient(90deg, #1d4ed8 0%, #1e3a8a 60%, #0f172a 100%)" }}
-            >
-              <span aria-hidden className="cta-shimmer pointer-events-none absolute inset-0" />
-              <span className="relative">Kostenlos Pre-Check starten</span>
-              <ArrowRight className="relative h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
-            </Link>
           </Reveal>
         </div>
       </section>
