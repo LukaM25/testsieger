@@ -38,7 +38,7 @@ import { ORG, absoluteUrl, breadcrumbJsonLd, faqJsonLd, pageMetadata } from "@/l
  */
 export const dynamic = "force-dynamic";
 
-const LIVE = process.env.SHOW_ARBEITSSICHERHEIT === "1";
+const LIVE = true; // seit 22.11.2026 freigegeben; false sperrt die Seite wieder
 
 export const metadata = pageMetadata({
   title: "Arbeitssicherheit für Handwerk und kleine Betriebe aus Oberbayern",

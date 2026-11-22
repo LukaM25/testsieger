@@ -17,6 +17,7 @@ const STATIC: { path: string; priority: number; changeFrequency: 'weekly' | 'mon
   { path: '/produkte', priority: 0.7, changeFrequency: 'monthly' },
   { path: '/produkte/spielplatz-sicherheit', priority: 0.6, changeFrequency: 'monthly' },
   { path: '/produkte/ausbildung-check', priority: 0.6, changeFrequency: 'monthly' },
+  { path: '/arbeitssicherheit', priority: 0.9, changeFrequency: 'weekly' },
   { path: '/ueber-uns', priority: 0.7, changeFrequency: 'monthly' },
   { path: '/lizenzen', priority: 0.6, changeFrequency: 'monthly' },
   { path: '/blog', priority: 0.7, changeFrequency: 'weekly' },
