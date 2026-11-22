@@ -3,14 +3,10 @@ import Link from "next/link";
 import {
   ArrowRight,
   BadgeCheck,
-  HardHat,
   MapPin,
-  PackageSearch,
   ShieldCheck,
-  type LucideIcon,
 } from "lucide-react";
 import JsonLd from "@/components/seo/JsonLd";
-import { arbeitssicherheitEnabled } from "@/lib/arbeitssicherheit/gate";
 import { absoluteUrl, breadcrumbJsonLd, pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
@@ -19,29 +15,6 @@ export const metadata = pageMetadata({
     "Deutsches Prüfsiegel Institut aus Waakirchen in Oberbayern: Sebastian Lang verantwortet Produkttests und Prüfsiegel, Ferdinand Lang baut die Arbeitssicherheit nach DGUV auf.",
   path: "/ueber-uns",
 });
-
-const areas = [
-  {
-    Icon: PackageSearch,
-    eyebrow: "Bereich 1",
-    title: "Produkttest & Prüfsiegel",
-    lead: "Verantwortlich: Sebastian Lang",
-    body: "Wir prüfen Produkte von Händlern und Herstellern nach dokumentierten Kriterien und machen Qualität für Ihre Kunden sichtbar: mit Prüfbericht und Prüfsiegel für Ihre Produktseite.",
-    points: ["Unabhängige Prüfung nach festen Kriterien", "Prüfbericht und Prüfsiegel", "Persönliche Betreuung"],
-    href: "/produkte/produkt-test",
-    cta: "Mehr zu Produkttest & Prüfsiegel",
-  },
-  {
-    Icon: HardHat,
-    eyebrow: "Bereich 2",
-    title: "Arbeitssicherheit",
-    lead: "Verantwortlich: Ferdinand Lang",
-    body: "Wir unterstützen Betriebe dabei, Gefährdungen am Arbeitsplatz sichtbar zu machen und Arbeitssicherheit nachvollziehbar zu dokumentieren, orientiert an den Vorgaben der DGUV. Ferdinand absolviert dafür die Ausbildung zur Fachkraft für Arbeitssicherheit (SiFa).",
-    points: ["Praxisnah aus dem Handwerk", "Orientiert an der DGUV", "Persönliches Erstgespräch"],
-    href: arbeitssicherheitEnabled() ? "/arbeitssicherheit" : "/kontakt",
-    cta: arbeitssicherheitEnabled() ? "Mehr zu Arbeitssicherheit" : "Arbeitssicherheit anfragen",
-  },
-];
 
 const team = [
   {
@@ -202,52 +175,6 @@ export default function UeberUnsPage() {
             <p className="mt-4 text-base leading-8 text-slate-600">
               Deshalb arbeiten wir unabhängig, praxisnah und mit persönlicher Verantwortung. Was unser Haus verlässt, haben wir selbst geprüft.
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Zwei Bereiche */}
-      <section data-animate="section" className="px-6 py-10">
-        <div className="mx-auto max-w-6xl">
-          <h2 className="text-3xl font-semibold tracking-tight text-[#2B4066]">Was wir für Sie tun</h2>
-          <div className="as-solo mt-8 grid gap-6 lg:grid-cols-2">
-            {areas.map(({ Icon, eyebrow, title, lead, body, points, href, cta }, i) => (
-              <article
-                key={title}
-                className={`flex flex-col rounded-3xl border p-7 transition duration-500 hover:-translate-y-1 ${i === 1 ? "as-only" : ""} ${
-                  i === 0
-                    ? "border-slate-200/80 bg-white shadow-[0_20px_60px_-40px_rgba(43,64,102,0.35)]"
-                    : "border-blue-900/40 bg-gradient-to-b from-[#16294d] to-[#0b1730] text-white shadow-[0_30px_70px_-35px_rgba(11,23,48,0.8)]"
-                }`}
-              >
-                <span className={`flex h-12 w-12 items-center justify-center rounded-2xl ring-1 ${i === 0 ? "bg-gradient-to-br from-sky-50 to-sky-100 text-sky-700 ring-sky-100" : "bg-white/10 text-sky-200 ring-white/10"}`}>
-                  <Icon className="h-6 w-6" aria-hidden="true" />
-                </span>
-                <span className={`mt-5 text-[11px] font-semibold uppercase tracking-[0.16em] ${i === 0 ? "text-sky-700" : "text-sky-200"}`}>{eyebrow}</span>
-                <h3 className={`mt-1 text-2xl font-semibold ${i === 0 ? "text-[#2B4066]" : "text-white"}`}>{title}</h3>
-                <p className={`mt-1 text-sm font-medium ${i === 0 ? "text-slate-500" : "text-white/70"}`}>{lead}</p>
-                <p className={`mt-4 text-[15px] leading-relaxed ${i === 0 ? "text-slate-600" : "text-white/80"}`}>{body}</p>
-                <ul className="mt-5 space-y-2.5">
-                  {points.map((p) => (
-                    <li key={p} className={`flex items-center gap-2.5 text-sm ${i === 0 ? "text-slate-700" : "text-white/90"}`}>
-                      <BadgeCheck className={`h-5 w-5 shrink-0 ${i === 0 ? "text-emerald-600" : "text-emerald-300"}`} aria-hidden="true" />
-                      {p}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-auto pt-7">
-                  <Link
-                    href={href}
-                    className={`group inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition duration-300 hover:-translate-y-0.5 ${
-                      i === 0 ? "bg-[#2B4066] !text-white hover:bg-[#1e3050]" : "bg-white !text-[#16294d] hover:bg-sky-50"
-                    }`}
-                  >
-                    {cta}
-                    <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
-                  </Link>
-                </div>
-              </article>
-            ))}
           </div>
         </div>
       </section>
