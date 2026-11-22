@@ -353,9 +353,6 @@ export default function Packages() {
                 Zum Pre-Check
                 <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
               </Link>
-              <Link href="/precheck" className="rounded-full border border-white/30 px-7 py-3.5 text-sm font-semibold !text-white transition hover:bg-white/10">
-                Mehr zum Ablauf
-              </Link>
             </div>
           </div>
         </Reveal>
