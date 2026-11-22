@@ -30,9 +30,9 @@ export default async function HomePage() {
       <Hero />
       <Logos />
       <PtAlltag />
+      <PtPartner />
       <PtNutzen />
       <PtAblauf />
-      <PtPartner />
       <section data-animate="section" className="bg-white py-16 sm:py-20">
         <div className="mx-auto max-w-6xl px-6">
           <div
