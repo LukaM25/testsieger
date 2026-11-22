@@ -15,6 +15,7 @@ import SiegelErklaert from "@/components/produkt/SiegelErklaert";
 import PruefKriterien from "@/components/produkt/PruefKriterien";
 import SparenIllustration from "@/components/produkt/SparenIllustration";
 import WarumSeller from "@/components/produkt/WarumSeller";
+import { PtPartner } from "@/components/home/PtSections";
 import VorteileCards from "@/components/produkt/VorteileCards";
 
 type StepCard = {
@@ -163,10 +164,6 @@ const sectionTitleClass = "text-3xl font-semibold leading-tight tracking-tight t
 const subsectionTitleClass = "text-2xl font-semibold leading-tight tracking-tight text-[#2B4066] sm:text-3xl";
 const cardTitleClass = "text-lg font-semibold leading-snug text-[#2B4066] sm:text-xl";
 const pageSubtitleClass = "text-base leading-relaxed text-slate-600 sm:text-lg";
-const carouselImages = [
-  "/carosel/mole-repeller-solar.jpeg",
-  "/carosel/mole-repeller-akku.jpeg",
-];
 
 // Reuse the full precheck page component here to keep validation and behavior consistent
 
@@ -414,7 +411,6 @@ export default function ProduktTestPage({
       precheckSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
-  const [carouselIndex, setCarouselIndex] = useState(0);
   const [contentMaxHeight, setContentMaxHeight] = useState<string>('0px');
   const [heroAnim, setHeroAnim] = useState(false);
   const formatEur = (amountEur: number) =>
@@ -568,13 +564,6 @@ export default function ProduktTestPage({
       procedureDetailRef.current?.classList.remove('ring-2', 'ring-[#134074]', 'shadow-2xl', 'transition', 'duration-500');
     }, 1800);
   };
-  const goPrevSlide = () => {
-    setCarouselIndex((prev) => (prev - 1 + carouselImages.length) % carouselImages.length);
-  };
-  const goNextSlide = () => {
-    setCarouselIndex((prev) => (prev + 1) % carouselImages.length);
-  };
-
   const handlePrecheckCta = async (e: React.MouseEvent) => {
     e.preventDefault();
     setCtaNotice(null);
@@ -612,14 +601,6 @@ export default function ProduktTestPage({
       });
     }
   }, [searchParams, prefersReducedMotion]);
-
-  useEffect(() => {
-    if (isCoarsePointer || prefersReducedMotion || showPrecheck) return;
-    const id = setInterval(() => {
-      setCarouselIndex((prev) => (prev + 1) % carouselImages.length);
-    }, 3200);
-    return () => clearInterval(id);
-  }, [isCoarsePointer, prefersReducedMotion, showPrecheck]);
 
   useEffect(() => {
     const videoEl = videoRef.current;
@@ -1126,75 +1107,9 @@ export default function ProduktTestPage({
         </div>
       </section>
 
-      <section data-animate="section" className="mx-auto max-w-6xl px-6 py-12">
-        <div className="rounded-3xl border border-slate-200 bg-slate-50/80 p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.45)]">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
-                {tr('Produkt Vorschau', 'Product preview')}
-              </p>
-              <h2 className="text-2xl font-semibold text-[#2B4066]">
-                {tr('So sehen geprüfte Produkte einer unserer Vertrauenspartner aus - EdenGardens', 'A look at tested products from our trusted partner, EdenGardens.')}
-              </h2>
-              <p className="text-sm text-slate-600">
-                {tr(
-                  'Beispiele aus aktuellen Bewertungen. Blättern oder warten, um weitere zu sehen.',
-                  'Examples from recent reviews. Browse or wait to see more.'
-                )}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              {carouselImages.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setCarouselIndex(i)}
-                  className={`h-2.5 w-2.5 rounded-full transition ${carouselIndex === i ? 'bg-slate-900' : 'bg-slate-300'}`}
-                  aria-label={`${tr('Slide', 'Slide')} ${i + 1}`}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="relative mt-6 max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-white">
-            <button
-              type="button"
-              onClick={goPrevSlide}
-              aria-label={tr('Vorheriges Bild', 'Previous image')}
-              className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow-sm ring-1 ring-slate-200 transition hover:bg-white hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
-            >
-              <span className="block h-4 w-4 rotate-180 border-b-2 border-r-2 border-slate-800" />
-            </button>
-            <button
-              type="button"
-              onClick={goNextSlide}
-              aria-label={tr('Nächstes Bild', 'Next image')}
-              className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow-sm ring-1 ring-slate-200 transition hover:bg-white hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
-            >
-              <span className="block h-4 w-4 border-b-2 border-r-2 border-slate-800" />
-            </button>
-            <div className="relative h-[280px] w-full sm:h-[340px] md:h-[420px] lg:h-[500px]">
-              {carouselImages.map((src, idx) => (
-                <div
-                  key={src}
-                  className={`absolute inset-0 flex items-center justify-center bg-slate-50 transition-opacity duration-500 ${
-                    carouselIndex === idx ? 'opacity-100' : 'pointer-events-none opacity-0'
-                  }`}
-                  aria-hidden={carouselIndex !== idx}
-                >
-                  <Image
-                    src={src}
-                    alt={tr('Produkt Vorschaubild', 'Product preview image')}
-                    fill
-                    sizes="(min-width: 1024px) 960px, (min-width: 768px) 90vw, 100vw"
-                    className="object-contain"
-                    priority={idx === 0}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      <div className="pb-12">
+        <PtPartner />
+      </div>
 
       <section data-animate="section" className="mx-auto max-w-6xl px-6 pb-2">
         <h3 className={`${subsectionTitleClass} text-center`}>
