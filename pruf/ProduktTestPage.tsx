@@ -437,7 +437,6 @@ export default function ProduktTestPage({
       ? window.matchMedia('(pointer: coarse)').matches
       : false
   );
-  const [ctaNotice, setCtaNotice] = useState<string | null>(null);
 
   // update max-height when showPrecheck toggles to enable smooth height transition
   useEffect(() => {
@@ -566,7 +565,6 @@ export default function ProduktTestPage({
   };
   const handlePrecheckCta = async (e: React.MouseEvent) => {
     e.preventDefault();
-    setCtaNotice(null);
     try {
       const res = await fetch('/api/precheck/status', { method: 'GET' });
       if (res.ok) {
@@ -576,7 +574,6 @@ export default function ProduktTestPage({
     } catch {
       // ignore and fall back to opening form
     }
-    setCtaNotice(tr('Bitte Konto erstellen und Produkt für den Pre-Check einreichen.', 'Please create an account and submit your product for the pre-check.'));
     setShowPrecheck(true);
     // ensure height animation opens
     requestAnimationFrame(() => {
@@ -834,7 +831,6 @@ export default function ProduktTestPage({
                   aria-hidden="true"
                 />
               </button>
-              {ctaNotice && <p className="text-sm font-semibold text-emerald-900 text-center px-4">{ctaNotice}</p>}
             </div>
           </div>
         </div>
