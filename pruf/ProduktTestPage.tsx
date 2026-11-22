@@ -1150,7 +1150,12 @@ export default function ProduktTestPage({
           </div>
         </div>
 
-        <div className="mt-12 bg-white pt-8">
+      </section>
+
+      <PtCta />
+
+      <section data-animate="section" className="mx-auto max-w-6xl px-6 pb-16">
+        <div className="bg-white">
           <h3 className={subsectionTitleClass}>{tr('Häufige Fragen', 'Frequently asked questions')}</h3>
           <div className="mt-6 space-y-6">
             {phasesQa.qa.map((item, i) => (
@@ -1195,7 +1200,6 @@ export default function ProduktTestPage({
           </div>
         </div>
       </section>
-      <PtCta />
     </main>
   );
 }
