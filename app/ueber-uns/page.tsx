@@ -12,7 +12,7 @@ import { absoluteUrl, breadcrumbJsonLd, pageMetadata } from "@/lib/seo";
 export const metadata = pageMetadata({
   title: "Über uns: Produkttest & Arbeitssicherheit aus Oberbayern",
   description:
-    "Deutsches Prüfsiegel Institut aus Waakirchen in Oberbayern: Sebastian Lang verantwortet Produkttests und Prüfsiegel, Ferdinand Lang baut die Arbeitssicherheit nach DGUV auf.",
+    "Deutsches Prüfsiegel Institut aus Waakirchen in Oberbayern: Sebastian Lang leitet die Abteilung Produkttest und Prüfsiegel, Ferdinand Lang die Abteilung Arbeitssicherheit nach DGUV.",
   path: "/ueber-uns",
 });
 
@@ -20,19 +20,19 @@ const team = [
   {
     id: "sebastian-lang",
     name: "Sebastian Lang",
-    role: "Produkttest & Prüfsiegel",
+    role: "Leitung Produkttest & Prüfsiegel",
     image: "/ueberuns/sebastian-lang.jpeg",
-    alt: "Sebastian Lang, Geschäftsführer des Deutschen Prüfsiegel Instituts, verantwortlich für Produkttests",
-    body: "Sebastian steht für technische Genauigkeit und industrielle Standards. Als Feinwerker im Maschinenbau mit Erfahrung in Qualitätssicherung und technischer Abnahme, unter anderem bei der Kinshofer GmbH, kennt er die Bedeutung fehlerfreier Prozesse bis ins Detail. Er verantwortet beim DPI den kompletten Produkttest: von den Prüfkriterien über die Prüfung bis zum Bericht und Siegel.",
-    points: ["Feinwerker im Maschinenbau", "Qualitätssicherung & technische Abnahme", "Verantwortlich für Prüfkriterien und Prüfberichte"],
+    alt: "Sebastian Lang, Geschäftsführer des Deutschen Prüfsiegel Instituts, Leitung der Abteilung Produkttest",
+    body: "Sebastian steht für technische Genauigkeit und industrielle Standards. Als Feinwerker im Maschinenbau mit Erfahrung in Qualitätssicherung und technischer Abnahme, unter anderem bei der Kinshofer GmbH, kennt er die Bedeutung fehlerfreier Prozesse bis ins Detail. Er leitet beim DPI die Abteilung Produkttest und ist Ihr Ansprechpartner für alles rund um Prüfung, Bericht und Siegel.",
+    points: ["Feinwerker im Maschinenbau", "Qualitätssicherung & technische Abnahme", "Leitung der Abteilung Produkttest & Prüfsiegel"],
   },
   {
     id: "ferdinand-lang",
     name: "Ferdinand Lang",
-    role: "Arbeitssicherheit",
+    role: "Leitung Arbeitssicherheit",
     image: "/ueberuns/ferdinand-lang.jpeg",
-    alt: "Ferdinand Lang, Geschäftsführer des Deutschen Prüfsiegel Instituts, verantwortlich für Arbeitssicherheit",
-    body: "Ferdinand ist gelernter Garten- und Landschaftsbauer mit Meisterabschluss in Management und Gestaltung und einem Abschluss als Wirtschafter (Landshut). Aus zehn Jahren Praxis weiß er, wo im Betriebsalltag die sicherheitsrelevanten Details liegen. Beim DPI verantwortet er die Arbeitssicherheit und absolviert dafür derzeit die Ausbildung zur Fachkraft für Arbeitssicherheit (SiFa) nach den Vorgaben der DGUV. Der Abschluss ist für Sommer 2027 vorgesehen.",
+    alt: "Ferdinand Lang, Geschäftsführer des Deutschen Prüfsiegel Instituts, Leitung der Abteilung Arbeitssicherheit",
+    body: "Ferdinand ist gelernter Garten- und Landschaftsbauer mit Meisterabschluss in Management und Gestaltung und einem Abschluss als Wirtschafter (Landshut). Aus zehn Jahren Praxis weiß er, wo im Betriebsalltag die sicherheitsrelevanten Details liegen. Beim DPI leitet er die Abteilung Arbeitssicherheit und ist Ihr Ansprechpartner für den Bereich. Dafür absolviert er derzeit die Ausbildung zur Fachkraft für Arbeitssicherheit (SiFa) nach den Vorgaben der DGUV. Der Abschluss ist für Sommer 2027 vorgesehen.",
     points: ["Meister im Garten- und Landschaftsbau", "In Ausbildung zur Fachkraft für Arbeitssicherheit (SiFa), DGUV", "Praxiserfahrung aus 10 Jahren im Handwerk"],
   },
 ];
@@ -76,7 +76,7 @@ export default function UeberUnsPage() {
         "sebastian-lang",
         "Sebastian Lang",
         "Geschäftsführer, Produkttest und Prüfsiegel",
-        "Feinwerker im Maschinenbau mit Erfahrung in Qualitätssicherung und technischer Abnahme. Verantwortet beim DPI Produkttests und Prüfsiegel.",
+        "Feinwerker im Maschinenbau mit Erfahrung in Qualitätssicherung und technischer Abnahme. Leitet beim DPI die Abteilung Produkttest und Prüfsiegel und ist Ansprechpartner für den Bereich.",
         "/ueberuns/sebastian-lang.jpeg",
         ["Produkttest", "Qualitätssicherung", "Technische Abnahme", "Prüfsiegel"],
       ),
@@ -84,7 +84,7 @@ export default function UeberUnsPage() {
         "ferdinand-lang",
         "Ferdinand Lang",
         "Geschäftsführer, Arbeitssicherheit",
-        "Gelernter Garten- und Landschaftsbauer mit Meisterabschluss, in Ausbildung zur Fachkraft für Arbeitssicherheit nach den Vorgaben der DGUV. Verantwortet beim DPI die Arbeitssicherheit.",
+        "Gelernter Garten- und Landschaftsbauer mit Meisterabschluss, in Ausbildung zur Fachkraft für Arbeitssicherheit nach den Vorgaben der DGUV. Leitet beim DPI die Abteilung Arbeitssicherheit und ist Ansprechpartner für den Bereich.",
         "/ueberuns/ferdinand-lang.jpeg",
         ["Arbeitssicherheit", "DGUV", "Garten- und Landschaftsbau", "Gefährdungsbeurteilung"],
       ),
@@ -117,7 +117,7 @@ export default function UeberUnsPage() {
               Über das Deutsche Prüfsiegel Institut
             </h1>
             <p className="mt-5 text-lg leading-relaxed text-slate-600">
-              Zwei Brüder, zwei Fachgebiete: <strong className="font-semibold text-slate-800">Sebastian Lang</strong> verantwortet Produkttests und Prüfsiegel, <strong className="font-semibold text-slate-800">Ferdinand Lang</strong> baut die Arbeitssicherheit auf. Beides mit demselben Anspruch: Prüfungen aus der Praxis, nachvollziehbar und ehrlich.
+              Zwei Brüder, zwei Fachgebiete: <strong className="font-semibold text-slate-800">Sebastian Lang</strong> leitet die Abteilung Produkttest und Prüfsiegel, <strong className="font-semibold text-slate-800">Ferdinand Lang</strong> leitet die Abteilung Arbeitssicherheit. Beide sind Ihre Ansprechpartner für den jeweiligen Bereich. Beide arbeiten mit demselben Anspruch: Prüfungen aus der Praxis, nachvollziehbar und ehrlich.
             </p>
           </div>
         </div>
