@@ -276,12 +276,9 @@ export default function UeberUnsPage() {
             Ob Produkttest für Ihre Amazon-Produktseite oder Arbeitssicherheit für Ihren Betrieb: Wir melden uns persönlich bei Ihnen. Sitz: Kirchseestraße 2, 83666 Waakirchen, Landkreis Miesbach.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
-            <Link href="/produkte/produkt-test?precheck=open#precheck" className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold !text-[#16294d] transition duration-300 hover:-translate-y-0.5 hover:bg-sky-50">
-              Kostenlosen Pre-Check starten
+            <Link href="/kontakt" className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold !text-[#16294d] transition duration-300 hover:-translate-y-0.5 hover:bg-sky-50">
+              Zum Kontaktformular
               <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
-            </Link>
-            <Link href="/kontakt" className="inline-flex items-center gap-2 rounded-full border border-white/30 px-7 py-3 text-sm font-semibold !text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white/10">
-              Kontakt
             </Link>
           </div>
         </div>
