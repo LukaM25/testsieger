@@ -33,6 +33,7 @@ export default async function HomePage() {
       <PtPartner />
       <PtNutzen />
       <PtAblauf />
+      <PtCta />
       <section data-animate="section" className="bg-white py-16 sm:py-20">
         <div className="mx-auto max-w-6xl px-6">
           <div
@@ -51,7 +52,6 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-      <PtCta />
     </main>
   );
 }

@@ -12,10 +12,6 @@ export default function Hero() {
       ctaPrimary: 'Have product tested from 179 EUR net',
       ctaSecondary: 'Free Pre-Check',
       chips: ['Tested in everyday use', 'Report with QR code', 'Seal from grade 3.0', 'Resubmit free of charge'],
-      example: 'Example result',
-      grade: 'Overall grade',
-      awarded: 'Seal awarded',
-      crit: ['Protection and packaging', 'Workmanship', 'Everyday test', 'Value for money'],
     }
     : {
       title: <>Zeigen Sie, dass Ihr Produkt im <span className="text-brand-green">Alltag</span> besteht</>,
@@ -23,10 +19,6 @@ export default function Hero() {
       ctaPrimary: 'Produkt testen lassen ab 179 € netto',
       ctaSecondary: 'Kostenloser Pre-Check',
       chips: ['Im Alltag getestet', 'Prüfbericht mit QR-Code', 'Siegel ab Note 3,0', 'Erneut prüfen kostenlos'],
-      example: 'Beispiel-Ergebnis',
-      grade: 'Gesamtnote',
-      awarded: 'Siegel erteilt',
-      crit: ['Produktschutz und Verpackung', 'Verarbeitung', 'Praxistest im Alltag', 'Preis-Leistung'],
     };
 
   return (
@@ -48,31 +40,7 @@ export default function Hero() {
       />
 
       <div className="relative z-10 mx-auto max-w-6xl px-6 py-20 sm:py-24 lg:py-28 animate-fade-in-up">
-      <style>{`@keyframes hBar{from{width:0}}@keyframes hRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}@keyframes hFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}@media (prefers-reduced-motion:reduce){.h-a{animation:none!important}}`}</style>
-      <div aria-hidden="true" className="h-a absolute right-6 top-1/2 hidden w-[330px] -translate-y-1/2 lg:block xl:right-10" style={{ animation: 'hRise .9s ease .3s both' }}>
-        <div className="h-a rounded-3xl border border-white/15 bg-white/10 p-6 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.7)] backdrop-blur-md" style={{ animation: 'hFloat 7s ease-in-out 1.2s infinite' }}>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300">{copy.example}</p>
-          <div className="mt-4 space-y-3.5">
-            {copy.crit.map((c, i) => (
-              <div key={c}>
-                <div className="flex justify-between text-xs text-white/80"><span>{c}</span></div>
-                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/15">
-                  <div className="h-a h-full rounded-full bg-gradient-to-r from-sky-300 to-emerald-400" style={{ width: [86, 78, 90, 72][i] + '%', animation: 'hBar 1.4s ease ' + (0.6 + i * 0.2) + 's both' }} />
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-6 flex items-center justify-between rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/10">
-            <div>
-              <p className="text-xs text-white/65">{copy.grade}</p>
-              <p className="text-2xl font-semibold text-white">1,8</p>
-            </div>
-            <span className="rounded-full bg-emerald-400 px-3.5 py-1.5 text-xs font-semibold text-emerald-950">{copy.awarded}</span>
-          </div>
-        </div>
-      </div>
-
-        <div className="max-w-3xl space-y-8 lg:max-w-[600px] lg:space-y-10 xl:max-w-2xl">
+        <div className="max-w-3xl space-y-8 lg:space-y-10">
           <div className="space-y-5">
             <div className="inline-block border-b border-brand-green pb-1.5 mb-3">
               <span className="text-brand-green text-xs uppercase tracking-[0.2em] font-semibold">
