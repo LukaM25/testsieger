@@ -89,6 +89,12 @@ export default function Footer() {
       {copy.agb}
     </Link>
   </li>
+  <li>
+    {/* bewusst <a>: Link würde die Route vorab laden und die Bereichswahl zu früh löschen */}
+    <a href="/api/area?set=" className="hover:text-white transition-colors">
+      {locale === 'en' ? 'Switch area' : 'Bereich wechseln'}
+    </a>
+  </li>
 </ul>
 
           </div>

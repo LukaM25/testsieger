@@ -861,6 +861,13 @@ export default function Navbar() {
                   </details>
                 ))}
               </nav>
+              <a
+                href="/api/area?set="
+                className="flex items-center justify-between border-t border-gray-100 px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+              >
+                <span>{locale === 'en' ? 'Back to area selection' : 'Zurück zur Bereichswahl'}</span>
+                <span aria-hidden="true">↩</span>
+              </a>
               <div className="border-t border-gray-100 px-4 py-3">
                 <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 mb-2">
                   {t('lang.label')}
