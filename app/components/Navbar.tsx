@@ -506,10 +506,12 @@ export default function Navbar() {
         {areaCookie && (
           <a
             href="/api/area?set="
-            className="mr-3 hidden shrink-0 items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-white lg:inline-flex"
+            className="mr-1 inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-white sm:mr-3 sm:px-3 sm:text-xs"
             title="Bereich wechseln"
           >
-            {areaCookie === 'arbeitssicherheit' ? 'Arbeitssicherheit' : 'Produkttest'} · wechseln
+            <span aria-hidden="true">⇄</span>
+            <span className="hidden xl:inline">{areaCookie === 'arbeitssicherheit' ? 'Arbeitssicherheit' : 'Produkttest'} · wechseln</span>
+            <span className="xl:hidden">Bereich</span>
           </a>
         )}
         <a href="/" className="flex h-full min-w-0 items-center shrink py-2">
