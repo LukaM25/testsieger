@@ -13,7 +13,6 @@ import MarketplaceLogos from "@/components/MarketplaceLogos";
 import AblaufTimeline from "@/components/produkt/AblaufTimeline";
 import SiegelErklaert from "@/components/produkt/SiegelErklaert";
 import PruefKriterien from "@/components/produkt/PruefKriterien";
-import WarumSeller from "@/components/produkt/WarumSeller";
 import { PtPartner, PtCta } from "@/components/home/PtSections";
 import VorteileCards from "@/components/produkt/VorteileCards";
 
@@ -969,9 +968,6 @@ export default function ProduktTestPage({
         <div className="space-y-12">
 
 
-            {/* NEW SECTION */}
-      <WarumSeller onCta={handlePrecheckCta} />
-      {/* END NEW SECTION */}
 
           {/* Lizenzpläne: kompakte Übersicht, Details auf /pakete */}
           <div className="pt-10 text-center">
