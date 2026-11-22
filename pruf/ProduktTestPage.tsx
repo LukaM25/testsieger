@@ -13,9 +13,8 @@ import MarketplaceLogos from "@/components/MarketplaceLogos";
 import AblaufTimeline from "@/components/produkt/AblaufTimeline";
 import SiegelErklaert from "@/components/produkt/SiegelErklaert";
 import PruefKriterien from "@/components/produkt/PruefKriterien";
-import SparenIllustration from "@/components/produkt/SparenIllustration";
 import WarumSeller from "@/components/produkt/WarumSeller";
-import { PtPartner } from "@/components/home/PtSections";
+import { PtPartner, PtCta } from "@/components/home/PtSections";
 import VorteileCards from "@/components/produkt/VorteileCards";
 
 type StepCard = {
@@ -850,6 +849,10 @@ export default function ProduktTestPage({
         </div>
       </section>
 
+      <div className="pb-12">
+        <PtPartner />
+      </div>
+
       <VorteileCards />
       <SiegelErklaert />
       <AblaufTimeline />
@@ -957,35 +960,7 @@ export default function ProduktTestPage({
 
       <LiveTestedProductsOverview products={recentTestedProducts} tr={tr} locale={locale} />
       {/* Inserted Pre-Check form inline so the Produkt Test page is self-contained */}
-      <section data-animate="section" className="bg-gradient-to-b from-white to-slate-50">
-        <div className="mx-auto max-w-6xl px-6 py-16 sm:py-24">
-          <div className="grid items-center gap-12 md:grid-cols-2">
-            <div className="space-y-6 text-left">
-              <span className="eyebrow !mb-0">{tr('Werbebudget', 'Ad budget')}</span>
-              <h2 className={sectionTitleClass}>
-                <span>{tr('Sparen Sie mehrere Hundert Euro Werbebudget ein.', 'Save hundreds of euros in marketing budget.')}</span>
-                <span className="ml-3 inline-flex align-middle sm:ml-4">
-                  <Image
-                    src="/checkmark.png"
-                    alt={tr('Checkmark', 'Checkmark')}
-                    width={60}
-                    height={60}
-                    className="h-10 w-10 object-contain sm:h-[3rem] sm:w-[3rem]"
-                  />
-                </span>
-              </h2>
-              <p className="lead">
-                {tr('Verbrenne nicht unnötig Werbebudget', "Don't burn marketing budget unnecessarily")}
-              </p>
-            </div>
-            <div className="flex h-full items-center justify-center md:justify-end">
-              <div data-animate="card" className="aspect-square w-full max-w-[420px]">
-                <SparenIllustration label={tr('Münze fällt in eine offene Hand', 'Coin falling into an open hand')} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+
 
       
 
@@ -1107,10 +1082,6 @@ export default function ProduktTestPage({
         </div>
       </section>
 
-      <div className="pb-12">
-        <PtPartner />
-      </div>
-
       <section data-animate="section" className="mx-auto max-w-6xl px-6 pb-2">
         <h3 className={`${subsectionTitleClass} text-center`}>
           {tr("Produktsiegel für Amazon Seller, Otto, Kaufland und Ebay", "Product seals for Amazon sellers, Otto, Kaufland and eBay")}
@@ -1204,6 +1175,7 @@ export default function ProduktTestPage({
           </div>
         </div>
       </section>
+      <PtCta />
     </main>
   );
 }
