@@ -1112,27 +1112,12 @@ export default function ProduktTestPage({
                 </div>
               ))}
             </div>
-            <Link
-              href="#pruefverfahren-pdf"
-              className="mt-4 inline-flex items-center justify-center rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-lg transition hover:bg-black"
-            >
-              {tr('Zum Prüfverfahren', 'View procedure')}
-            </Link>
-          </div>
-        </div>
-
-        <div
-          id="pruefverfahren-pdf"
-          ref={procedureDetailRef}
-          className="mt-10 rounded-3xl"
-        >
-          <div className="flex justify-center">
             <button
               type="button"
               onClick={() => setKritOpen((v) => !v)}
               aria-expanded={kritOpen}
               aria-controls="testsieger-check-system"
-              className="group inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-[#2B4066] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              className="mt-4 inline-flex items-center justify-center gap-3 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white shadow-lg transition hover:bg-black"
             >
               {kritOpen
                 ? tr('Testsieger-Check-System einklappen', 'Hide the Testsieger-Check system')
@@ -1140,6 +1125,13 @@ export default function ProduktTestPage({
               <span aria-hidden="true" className={`block h-2.5 w-2.5 -translate-y-0.5 border-b-2 border-r-2 border-current transition-transform duration-300 ${kritOpen ? '-rotate-[135deg] translate-y-0.5' : 'rotate-45'}`} />
             </button>
           </div>
+        </div>
+
+        <div
+          id="pruefverfahren-pdf"
+          ref={procedureDetailRef}
+          className="mt-6 rounded-3xl"
+        >
           <div
             id="testsieger-check-system"
             className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out ${kritOpen ? 'mt-10 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
