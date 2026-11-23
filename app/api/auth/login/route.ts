@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { loginUser } from '@/lib/auth';
+import { postAuthRedirect } from '@/lib/areas';
 
 export async function POST(req: Request) {
   // Accept either FormData or JSON
@@ -25,9 +26,8 @@ export async function POST(req: Request) {
   }
 
   try {
-    await loginUser(email.trim(), password); // sets the cookie via setSession()
-    const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '';
-    return NextResponse.json({ ok: true, redirect: safeRedirect || '/dashboard' });
+    const user = await loginUser(email.trim(), password); // sets the cookie via setSession()
+    return NextResponse.json({ ok: true, redirect: postAuthRedirect(user.area, redirectTo) });
   } catch (e: any) {
     const code = e?.message || 'LOGIN_FAILED';
     const status =

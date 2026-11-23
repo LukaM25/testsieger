@@ -1,0 +1,28 @@
+# Deutsches Prüfsiegel Institut (DPI)
+
+> Das Deutsche Prüfsiegel Institut (DPI - Deutsches Prüfsiegel Institut GmbH) prüft Produkte nach dokumentierten Kriterien und vergibt ein Prüfsiegel mit Prüfbericht und QR-Code. Zielgruppe: Amazon-Seller, Hersteller und Händler, die Vertrauen und Conversion ihrer Produktseiten steigern wollen. Sitz: Waakirchen, Landkreis Miesbach, Oberbayern. Tätig in ganz Deutschland.
+
+## Kernfakten
+- Testgebühr: 179 € netto pro Produkt, einmalig. Rabatt: 20 % ab 2 Produkten, 30 % ab 3 Produkten. Mehr als 3 Produkte: Angebot auf Anfrage.
+- Lizenzpläne (netto, pro Produkt): Basic 177 € pro Jahr (ein Verkaufskanal, Deutsch), Premium 225 € pro Jahr (alle Verkaufskanäle und Sprachen), Lifetime 689 € einmalig. Rabatt 20 % ab 2 und 30 % ab 3 Produkten.
+- Der Lizenzplan für die Siegelnutzung wird erst nach bestandener Prüfung gewählt.
+- Bewertung: vier Kriterien (Produktschutz & Verpackung, Verarbeitung & Erscheinungsbild, Praxistest, Preis-Leistung & Nutzerstimmen), gewichteter Durchschnitt als Schulnote 1,0 bis 6,0. Zertifikat und Siegel ab Note 3,0 (64 % der Punkte).
+- Dauer: in der Regel 14 bis 21 Tage nach Eingang des Produkts.
+- Region: Sitz Waakirchen, Landkreis Miesbach, Oberbayern (Bayern). Prüfung für Händler in ganz Deutschland, Beauftragung online.
+- Direkter Testauftrag ohne Anmeldung möglich; Zugangsdaten zum Kundendashboard kommen nach der Zahlung per E-Mail.
+- Jedes Siegel ist über einen QR-Code und Lizenzcode öffentlich verifizierbar.
+- Kontakt: info@dpi-siegel.de, Tel. +49 156 79790129, Mo bis Fr 9 bis 17 Uhr.
+- Geschäftsführer: Ferdinand Lang, Sebastian Lang.
+
+## Wichtige Seiten
+- [Produkttest und Preise](https://dpi-siegel.de/produkte/produkt-test): Leistung, Testgebühr, Rabatte
+- [Jetzt direkt testen lassen](https://dpi-siegel.de/precheck): Auftrag ohne Anmeldung
+- [Lizenzpläne](https://dpi-siegel.de/pakete): Basic, Premium, Lifetime
+- [Prüfverfahren](https://dpi-siegel.de/pruefverfahren): Kriterien und Ablauf
+- [FAQ](https://dpi-siegel.de/faq): Produkttest und Arbeitssicherheit getrennt beantwortet
+- [Kontakt](https://dpi-siegel.de/kontakt)
+- [Über uns](https://dpi-siegel.de/ueber-uns)
+- [Blog](https://dpi-siegel.de/blog)
+- [Lizenz prüfen](https://dpi-siegel.de/lizenzen)
+- [Karriere: Praktikum (m/w/d)](https://dpi-siegel.de/karriere): offene Stelle mit Einarbeitung und Schulung
+- [Ausführliche Fakten für KI-Systeme](https://dpi-siegel.de/llms-full.txt)

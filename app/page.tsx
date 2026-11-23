@@ -1,21 +1,39 @@
+import type { Metadata } from "next";
+import { SITE_DESCRIPTION, SITE_URL } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  title: { absolute: "Produkttest & Prüfsiegel für Amazon-Seller | Deutsches Prüfsiegel Institut (DPI)" },
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: SITE_URL },
+};
+
 import Hero from '@/components/home/Hero';
-import Intro from '@/components/home/Intro';
+import { PtAlltag, PtNutzen, PtAblauf, PtPartner, PtCta } from '@/components/home/PtSections';
 import Logos from '@/components/home/Logos';
-import Expertise from '@/components/home/Expertise';
-import Sicherheit from '@/components/home/Sicherheit';
-import Verfahren from '@/components/home/Verfahren';
 import Image from 'next/image';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import AreaChooser from '@/components/home/AreaChooser';
+import { arbeitssicherheitEnabled } from '@/lib/arbeitssicherheit/gate';
 import { stagger } from '@/lib/animation';
 
-export default function HomePage() {
+export const dynamic = 'force-dynamic';
+
+export default async function HomePage() {
+  if (arbeitssicherheitEnabled()) {
+    const area = (await cookies()).get('dpi_area')?.value;
+    if (!area) return <AreaChooser />;
+    if (area === 'arbeitssicherheit') redirect('/arbeitssicherheit');
+  }
   return (
     <main className="bg-white text-gray-900">
       <Hero />
-      <Intro />
       <Logos />
-      <Expertise />
-      <Sicherheit />
-      <Verfahren />
+      <PtAlltag />
+      <PtPartner />
+      <PtNutzen />
+      <PtAblauf />
+      <PtCta />
       <section data-animate="section" className="bg-white py-16 sm:py-20">
         <div className="mx-auto max-w-6xl px-6">
           <div

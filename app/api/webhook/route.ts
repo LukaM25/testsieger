@@ -3,6 +3,9 @@ import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { sendPrecheckPaymentSuccess } from "@/lib/email";
 import { ensureProcessNumber } from "@/lib/processNumber";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
+import { getPublicBaseUrl } from "@/lib/baseUrl";
 import { Plan } from "@prisma/client";
 import {
   createEasybillInvoiceForPaidCheckout,
@@ -361,6 +364,12 @@ async function syncEasybillForSession(params: {
   });
 }
 
+const TEMP_PASSWORD_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+function generateTempPassword(length = 12) {
+  const bytes = crypto.randomBytes(length);
+  return Array.from(bytes, (b) => TEMP_PASSWORD_ALPHABET[b % TEMP_PASSWORD_ALPHABET.length]).join("");
+}
+
 async function handleCheckoutSession(cs: any) {
   const { reference, productIds, plan, metadataPriceCents, cartId } =
     parseCheckoutSession(cs);
@@ -378,6 +387,7 @@ async function handleCheckoutSession(cs: any) {
 
   const isPrecheckPlan =
     plan === "PRECHECK_FEE" || plan === "PRECHECK_PRIORITY";
+  const alreadyProcessed = orders.some((order) => Boolean(order.paidAt));
 
   if (orders.length) {
     const now = new Date();
@@ -590,12 +600,26 @@ async function handleCheckoutSession(cs: any) {
         ? await ensureProcessNumber(mainProductId)
         : await ensureProcessNumber(products[0].id);
 
+      let credentials: { loginUrl: string; tempPassword: string } | undefined;
+      if (cs.metadata?.guest === "true" && !alreadyProcessed) {
+        const tempPassword = generateTempPassword();
+        await prisma.user.update({
+          where: { id: recipient.id },
+          data: { passwordHash: await bcrypt.hash(tempPassword, 10) },
+        });
+        credentials = {
+          loginUrl: `${getPublicBaseUrl()}/login?next=${encodeURIComponent("/dashboard?pw=1")}`,
+          tempPassword,
+        };
+      }
+
       await sendPrecheckPaymentSuccess({
         to: recipient.email,
         name: recipient.name,
         gender: recipient.gender ?? undefined,
         productNames,
         processNumber,
+        credentials,
       });
     } catch (err) {
       console.error("PRECHECK_PAYMENT_EMAIL_ERROR", err);

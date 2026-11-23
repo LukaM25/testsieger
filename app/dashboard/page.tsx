@@ -11,8 +11,8 @@ type Props = {
 
 export default async function DashboardPage({ searchParams }: Props) {
   const defaultPlanBasePriceCents = {
-    BASIC: 28835,
-    PREMIUM: 32120,
+    BASIC: 17700,
+    PREMIUM: 22500,
     LIFETIME: 68900,
   } as const;
   let planBasePriceCents: { BASIC: number; PREMIUM: number; LIFETIME: number } = {
@@ -111,6 +111,7 @@ export default async function DashboardPage({ searchParams }: Props) {
       gender: true,
       email: true,
       address: true,
+      area: true,
       products: {
         select: {
           id: true,
@@ -141,6 +142,7 @@ export default async function DashboardPage({ searchParams }: Props) {
   });
 
   if (!user) redirect('/login');
+  if (user.area === 'ARBEITSSICHERHEIT') redirect('/arbeitssicherheit/dashboard');
 
   return (
     <DashboardClient

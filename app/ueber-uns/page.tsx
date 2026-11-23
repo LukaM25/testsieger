@@ -1,95 +1,157 @@
 import Image from "next/image";
+import Link from "next/link";
+import {
+  ArrowRight,
+  BadgeCheck,
+  MapPin,
+  ShieldCheck,
+} from "lucide-react";
+import JsonLd from "@/components/seo/JsonLd";
+import { absoluteUrl, breadcrumbJsonLd, pageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  description: "Über das Deutsche Prüfsiegel Institut (DPI) und den Testsieger Check.",
-};
+export const metadata = pageMetadata({
+  title: "Über uns: Produkttest & Arbeitssicherheit aus Oberbayern",
+  description:
+    "Deutsches Prüfsiegel Institut aus Waakirchen in Oberbayern: Sebastian Lang leitet die Abteilung Produkttest und Prüfsiegel, Ferdinand Lang die Abteilung Arbeitssicherheit nach DGUV.",
+  path: "/ueber-uns",
+});
+
+const team = [
+  {
+    id: "sebastian-lang",
+    name: "Sebastian Lang",
+    role: "Leitung Produkttest & Prüfsiegel",
+    image: "/ueberuns/sebastian-lang.jpeg",
+    alt: "Sebastian Lang, Geschäftsführer des Deutschen Prüfsiegel Instituts, Leitung der Abteilung Produkttest",
+    body: "Sebastian steht für technische Genauigkeit und industrielle Standards. Als Feinwerker im Maschinenbau mit Erfahrung in Qualitätssicherung und technischer Abnahme, unter anderem bei der Kinshofer GmbH, kennt er die Bedeutung fehlerfreier Prozesse bis ins Detail. Er leitet beim DPI die Abteilung Produkttest und ist Ihr Ansprechpartner für alles rund um Prüfung, Bericht und Siegel.",
+    points: ["Feinwerker im Maschinenbau", "Qualitätssicherung & technische Abnahme", "Leitung der Abteilung Produkttest & Prüfsiegel"],
+  },
+  {
+    id: "ferdinand-lang",
+    name: "Ferdinand Lang",
+    role: "Leitung Arbeitssicherheit",
+    image: "/ueberuns/ferdinand-lang.jpeg",
+    alt: "Ferdinand Lang, Geschäftsführer des Deutschen Prüfsiegel Instituts, Leitung der Abteilung Arbeitssicherheit",
+    body: "Ferdinand ist gelernter Garten- und Landschaftsbauer mit Meisterabschluss in Management und Gestaltung und einem Abschluss als Wirtschafter (Landshut). Aus zehn Jahren Praxis weiß er, wo im Betriebsalltag die sicherheitsrelevanten Details liegen. Beim DPI leitet er die Abteilung Arbeitssicherheit und ist Ihr Ansprechpartner für den Bereich. Dafür absolviert er derzeit die Ausbildung zur Fachkraft für Arbeitssicherheit (SiFa) nach den Vorgaben der DGUV. Der Abschluss ist für Sommer 2027 vorgesehen.",
+    points: ["Meister im Garten- und Landschaftsbau", "In Ausbildung zur Fachkraft für Arbeitssicherheit (SiFa), DGUV", "Praxiserfahrung aus 10 Jahren im Handwerk"],
+  },
+];
+
+const principles = [
+  { title: "Aus der Praxis", body: "Wir bewerten nicht nach reinen Labormaßstäben, sondern danach, was im echten Einsatz zählt: Funktion, Sicherheit und Qualität." },
+  { title: "Nachvollziehbar", body: "Feste Kriterien und dokumentierte Ergebnisse, damit jede Bewertung verständlich und überprüfbar bleibt." },
+  { title: "Ehrlich", body: "Wir sagen klar, was gut ist und was fehlt. Ein Siegel gibt es nur, wenn die Prüfung bestanden ist." },
+  { title: "Persönlich", body: "Sie sprechen direkt mit uns Gründern. Der letzte Blick auf jeden Bericht kommt von uns." },
+];
+
+const personJsonLd = (id: string, name: string, jobTitle: string, description: string, image: string, knowsAbout: string[]) => ({
+  "@type": "Person",
+  "@id": `${absoluteUrl("/ueber-uns")}#${id}`,
+  name,
+  jobTitle,
+  description,
+  image: absoluteUrl(image),
+  url: absoluteUrl("/ueber-uns"),
+  worksFor: { "@id": absoluteUrl("/#organization") },
+  knowsAbout,
+});
 
 export default function UeberUnsPage() {
-  const team = [
-    {
-      name: "Ferdinand Lang",
-      title: "Experte für Freiraum, Sicherheit und Spielplatzprüfungen nach DIN",
-      image: "/ueberuns/ferdinand-lang.jpeg",
-      body: "Als gelernter Garten- und Landschaftsbauer mit Meisterabschluss in Management und Gestaltung sowie einem Abschluss als Wirtschafter (Landshut) bringt Ferdinand fundiertes, operatives Fachwissen in unsere Prüfungsprozesse ein. Sein besonderer Fokus liegt auf der Sicherheit im öffentlichen und privaten Raum, insbesondere auf professionellen Spielplatzprüfungen nach DIN (wie der DIN EN 1176). Diese Expertise ist nicht am Schreibtisch entstanden, sondern tief in der handwerklichen Realität verwurzelt: Durch seine weitreichende Erfahrung im direkten Spielplatzbau und der baulichen Abnahme weiß er exakt, wo die sicherheitsrelevanten Details in der praktischen Umsetzung liegen.",
-    },
-    {
-      name: "Sebastian Lang",
-      title: "Präzision in Maschinenbau, Qualitätssicherung und Produkttest",
-      image: "/ueberuns/sebastian-lang.jpeg",
-      body: "Sebastian steht für höchste technische Genauigkeit und industrielle Standards. Als Feinwerker im Maschinenbau mit umfassender Expertise in der Qualitätssicherung und technischen Abnahme – unter anderem geprägt durch seine anspruchsvolle Tätigkeit bei der Kinshofer GmbH – kennt er die Bedeutung von fehlerfreien Prozessen bis ins kleinste Detail. Sein ausgeprägtes technisches Verständnis garantiert, dass die Prüfkriterien und Produkttests des DPI den höchsten qualitativen und mechanischen Anforderungen des Marktes vollumfänglich gerecht werden.",
-    },
-  ];
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "AboutPage",
+        "@id": `${absoluteUrl("/ueber-uns")}#aboutpage`,
+        url: absoluteUrl("/ueber-uns"),
+        name: "Über das Deutsche Prüfsiegel Institut",
+        inLanguage: "de-DE",
+        about: { "@id": absoluteUrl("/#organization") },
+        mainEntity: [
+          { "@id": `${absoluteUrl("/ueber-uns")}#sebastian-lang` },
+          { "@id": `${absoluteUrl("/ueber-uns")}#ferdinand-lang` },
+        ],
+      },
+      personJsonLd(
+        "sebastian-lang",
+        "Sebastian Lang",
+        "Geschäftsführer, Produkttest und Prüfsiegel",
+        "Feinwerker im Maschinenbau mit Erfahrung in Qualitätssicherung und technischer Abnahme. Leitet beim DPI die Abteilung Produkttest und Prüfsiegel und ist Ansprechpartner für den Bereich.",
+        "/ueberuns/sebastian-lang.jpeg",
+        ["Produkttest", "Qualitätssicherung", "Technische Abnahme", "Prüfsiegel"],
+      ),
+      personJsonLd(
+        "ferdinand-lang",
+        "Ferdinand Lang",
+        "Geschäftsführer, Arbeitssicherheit",
+        "Gelernter Garten- und Landschaftsbauer mit Meisterabschluss, in Ausbildung zur Fachkraft für Arbeitssicherheit nach den Vorgaben der DGUV. Leitet beim DPI die Abteilung Arbeitssicherheit und ist Ansprechpartner für den Bereich.",
+        "/ueberuns/ferdinand-lang.jpeg",
+        ["Arbeitssicherheit", "DGUV", "Garten- und Landschaftsbau", "Gefährdungsbeurteilung"],
+      ),
+    ],
+  };
 
   return (
-    <main className="bg-white text-gray-900">
+    <main className="bg-gradient-to-b from-slate-50 via-white to-sky-50/50 text-slate-900">
+      <JsonLd
+        data={[
+          jsonLd,
+          breadcrumbJsonLd([
+            { name: "Start", path: "/" },
+            { name: "Über uns", path: "/ueber-uns" },
+          ]),
+        ]}
+      />
 
       {/* Hero */}
-      <section data-animate="section" className="relative overflow-hidden border-b border-gray-200 bg-[#ececec] py-20 sm:py-24">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="grid gap-12 lg:grid-cols-[1.04fr_0.96fr] lg:items-start lg:gap-14">
-            <div className="lg:mt-20 lg:flex lg:h-[335px] lg:flex-col lg:justify-between">
-              <span className="mb-4 block text-sm font-semibold uppercase tracking-[0.24em] text-[#1E6091]">Unternehmen</span>
-              <h1 className="max-w-[24ch] text-4xl font-bold leading-[1.08] text-brand-text sm:text-5xl">
-                Über uns – Das Deutsche Prüfsiegel Institut (DPI)
-              </h1>
-              <h2 className="mt-4 text-lg font-semibold text-slate-600">
-                Unsere Vision: Aussagekräftige Produkt- und Dienstleistungstests aus der Praxis, für die Praxis
-              </h2>
-            </div>
-            <div className="relative h-[250px] w-full overflow-hidden rounded-[3rem] border border-[#9ebde3] bg-white shadow-[0_18px_40px_-28px_rgba(15,23,42,0.65)] sm:h-[290px] lg:mt-20 lg:h-[335px]">
-              <Image
-                src="/ueberuns/vision-regalgang.jpeg"
-                alt="Regalgang mit Produkten"
-                fill
-                className="object-cover"
-                priority
-              />
-            </div>
-          </div>
-          <p className="mt-7 text-[clamp(1rem,1.02vw,1.12rem)] leading-[1.7] text-slate-600 lg:mt-10 lg:max-w-none">
-            Hinter dem Deutschen Prüfsiegel Institut (DPI) stehen wir – die im oberbayerischen Tegernsee geborenen Brüder Ferdinand und Sebastian Lang. Als dynamisches Unternehmen haben wir es uns zur Aufgabe gemacht, Prüfsiegel und Zertifizierungen transparent, verständlich und vor allem realitätsnah zu gestalten. Wir sind der festen Überzeugung: Ein professioneller Produkttest ist nur dann wirklich wertvoll, wenn er den alltäglichen Bedingungen und dem tatsächlichen Kundennutzen entspricht.
-          </p>
-        </div>
-      </section>
-
-      {/* Vision */}
-      <section data-animate="section" className="bg-white py-16 sm:py-20">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="rounded-3xl border border-slate-200 bg-slate-50/75 p-8 shadow-[0_22px_70px_-42px_rgba(15,23,42,0.35)] sm:p-10">
-            <span className="text-brand-green text-xs uppercase tracking-widest block font-semibold">Unsere Vision</span>
-            <h3 className="mt-3 text-2xl font-bold text-brand-text sm:text-3xl">
-              Von der eigenen Idee zur Qualitätssicherung im E-Commerce
-            </h3>
-            <p className="mt-4 max-w-5xl text-base text-gray-600 leading-8 sm:text-lg">
-              Unser Antrieb für das DPI entstand aus unmittelbarer, eigener Erfahrung. Wir haben selbst Artikel von der ersten Zeichnung bis zur Marktreife entwickelt und erfolgreich auf Plattformen wie Amazon verkauft. Dabei ist uns ein massives Problem bewusst geworden: Der deutsche Markt wird zunehmend mit minderwertigen Billigprodukten überflutet. Genau hier bringen wir Licht ins Dunkel. Unser Ziel ist es, dass sich herausragende Seller auf Marktplätzen wie Amazon, Otto oder eBay durch unser Siegel deutlich von der Masse abheben. Wer viel Herzblut in seine Artikel steckt, soll durch einen unabhängigen DPI-Produkttest auf den ersten Blick als vertrauenswürdig erkannt werden und für echte Qualität stehen.
+      <section data-animate="section" className="relative overflow-hidden px-6 pb-14 pt-16 sm:pt-20">
+        <div aria-hidden="true" className="pointer-events-none absolute -left-24 top-0 h-72 w-72 rounded-full bg-sky-200/40 blur-3xl" />
+        <div aria-hidden="true" className="pointer-events-none absolute -right-24 top-24 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
+        <div className="relative mx-auto max-w-4xl">
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-700 ring-1 ring-sky-100">
+              <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+              Waakirchen, Oberbayern
+            </span>
+            <h1 className="mt-5 text-4xl font-semibold leading-tight tracking-tight text-[#2B4066] sm:text-5xl">
+              Über das Deutsche Prüfsiegel Institut
+            </h1>
+            <p className="mt-5 text-lg leading-relaxed text-slate-600">
+              Zwei Brüder, zwei Fachgebiete: <strong className="font-semibold text-slate-800">Sebastian Lang</strong> leitet die Abteilung Produkttest und Prüfsiegel, <strong className="font-semibold text-slate-800">Ferdinand Lang</strong> leitet die Abteilung Arbeitssicherheit. Beide sind Ihre Ansprechpartner für den jeweiligen Bereich. Beide arbeiten mit demselben Anspruch: Prüfungen aus der Praxis, nachvollziehbar und ehrlich.
             </p>
           </div>
         </div>
       </section>
 
       {/* Team */}
-      <section data-animate="section" className="border-t border-gray-200 py-16 sm:py-20" style={{ backgroundColor: "#f3f4f6" }}>
-        <div className="mx-auto max-w-6xl px-6">
-          <span className="text-brand-green text-xs uppercase tracking-widest block font-semibold">Qualitätsanspruch</span>
-          <h2 className="mt-3 text-3xl font-bold text-brand-text sm:text-4xl">
-            Unsere Struktur: Höchste Standards und qualifizierte Prüfer
-          </h2>
-          <p className="mt-4 max-w-5xl text-base text-gray-600 leading-8 sm:text-lg">
-            Als Gründer sind wir, Ferdinand und Sebastian Lang, die Köpfe und fachlichen Leiter hinter den verschiedenen Abteilungen des Deutschen Prüfsiegel Instituts. Um eine breite Palette an Kategorien professionell abdecken zu können, beschäftigen wir ein starkes Team aus spezialisierten Prüfern in den unterschiedlichsten Bereichen. Jeder unserer Mitarbeiter wird intensiv nach unseren strengen DPI-Standards geschult, um praxisnahe und objektive Bewertungen zu garantieren. Dabei überlassen wir nichts dem Zufall: Bevor ein Prüfsiegel unser Haus verlässt, durchläuft es eine finale Qualitätskontrolle durch uns. Wir werfen den letzten, entscheidenden Blick auf jeden Bericht und garantieren so, dass unsere hohen Ansprüche an Professionalität bei jeder Zertifizierung gewahrt bleiben.
+      <section data-animate="section" className="px-6 py-12">
+        <div className="mx-auto max-w-6xl">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-700">Das Team</span>
+          <h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#2B4066]">Wer hinter dem DPI steht</h2>
+          <p className="mt-3 max-w-3xl text-base leading-relaxed text-slate-600">
+            Wir sind die im oberbayerischen Tegernsee geborenen Brüder Ferdinand und Sebastian Lang und leiten das Deutsche Prüfsiegel Institut gemeinsam.
           </p>
-
-          <div className="mt-12 grid gap-8">
-            {team.map((member, idx) => (
-              <article key={member.name} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md sm:p-8">
-                <div className="grid items-start gap-8 md:grid-cols-2 md:gap-10">
-                  <div className={idx % 2 === 0 ? "order-1" : "order-1 md:order-2"}>
-                    <h3 className="text-2xl font-bold text-brand-text sm:text-[1.7rem]">{member.name} – {member.title}</h3>
-                    <p className="mt-4 text-base text-gray-600 leading-8 sm:text-lg">{member.body}</p>
-                  </div>
-                  <div className={idx % 2 === 0 ? "order-2" : "order-2 md:order-1"}>
-                    <div className="relative mx-auto aspect-[3/4] w-full max-w-[360px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-lg ring-1 ring-slate-200/60">
-                      <Image src={member.image} alt={member.name} fill className="object-cover" />
+          <div className="mt-10 grid gap-8">
+            {team.map((m, idx) => (
+              <article key={m.id} id={m.id} className="scroll-mt-24 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_20px_60px_-40px_rgba(43,64,102,0.35)] sm:p-8">
+                <div className="grid items-center gap-8 md:grid-cols-[0.8fr,1.2fr] md:gap-10">
+                  <div className={idx % 2 === 0 ? "" : "md:order-2"}>
+                    <div className="relative mx-auto aspect-[3/4] w-full max-w-[340px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-lg ring-1 ring-slate-200/60">
+                      <Image src={m.image} alt={m.alt} fill sizes="(min-width: 768px) 340px, 80vw" className="object-cover" />
                     </div>
+                  </div>
+                  <div className={idx % 2 === 0 ? "" : "md:order-1"}>
+                    <span className="inline-flex rounded-full bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700 ring-1 ring-sky-100">{m.role}</span>
+                    <h3 className="mt-3 text-2xl font-semibold text-[#2B4066]">{m.name}</h3>
+                    <p className="mt-3 text-[15px] leading-relaxed text-slate-600">{m.body}</p>
+                    <ul className="mt-5 space-y-2.5">
+                      {m.points.map((p) => (
+                        <li key={p} className="flex items-start gap-2.5 text-sm text-slate-700">
+                          <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" aria-hidden="true" />
+                          {p}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
               </article>
@@ -98,31 +160,56 @@ export default function UeberUnsPage() {
         </div>
       </section>
 
-      {/* Why DPI */}
-      <section data-animate="section" className="bg-white py-16 sm:py-20">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="grid gap-10 lg:grid-cols-[1.12fr_0.88fr] lg:items-center lg:gap-12">
-            <div>
-              <span className="text-brand-green text-xs uppercase tracking-widest block font-semibold">Warum DPI?</span>
-              <h2 className="mt-3 text-3xl font-bold text-brand-text sm:text-4xl">
-                Warum DPI? Unser Versprechen an Seller und Verbraucher
-              </h2>
-              <p className="mt-4 max-w-3xl text-base text-gray-600 leading-8 sm:text-lg">
-                Wir kommen aus der Praxis und genau so prüfen wir auch. Wir bewerten nicht nach rein theoretischen Labormaßstäben, sondern mit dem unbestechlichen Blick aus der echten Welt. Das Deutsche Prüfsiegel Institut steht für Bewertungen, die exakt das widerspiegeln, was für den Endkunden am Ende zählt: Funktion, Sicherheit und Qualität im realen Einsatz. Egal ob fundierter Produkttest für Amazon und Otto oder normgerechte Spielplatzprüfung nach DIN – mit unserer Erfahrung, unserem qualifizierten Prüfer-Team und absoluter Bodenhaftung schaffen wir Prüfsiegel, auf die sich ehrliche Händler und anspruchsvolle Verbraucher gleichermaßen verlassen können.
-              </p>
-            </div>
-            <div className="relative aspect-[16/9] overflow-hidden rounded-3xl border border-gray-200 bg-gray-100 shadow-xl ring-1 ring-slate-200/60">
-              <Image
-                src="/ueberuns/technologie-pruefprozess.jpeg"
-                alt="Technologischer Prüfprozess"
-                fill
-                className="object-cover"
-              />
-            </div>
+      {/* Vision */}
+      <section data-animate="section" className="px-6 py-12">
+        <div className="mx-auto max-w-3xl">
+          <div>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-700">Unsere Vision</span>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#2B4066]">Qualität und Sicherheit, die man nachvollziehen kann</h2>
+            <p className="mt-4 text-base leading-8 text-slate-600">
+              Das DPI entstand aus eigener Erfahrung: Wir kommen aus der Praxis, vom Garten- und Landschaftsbau über Maschinenbau und Qualitätssicherung bis zur eigenen Produktentwicklung. Dabei haben wir gelernt, wie viel an sauberer Arbeit hängt, ob bei einem Produkt oder an einem Arbeitsplatz.
+            </p>
+            <p className="mt-4 text-base leading-8 text-slate-600">
+              Unsere Vision ist ein Standard, dem man vertrauen kann. Gute Produkte sollen sich von der Masse abheben, und Betriebe sollen sicher arbeiten, ohne dass Sicherheit zur Papierpflicht wird. Beides gehört für uns zusammen: Qualität und Sicherheit, ehrlich geprüft und verständlich dokumentiert.
+            </p>
+            <p className="mt-4 text-base leading-8 text-slate-600">
+              Deshalb arbeiten wir unabhängig, praxisnah und mit persönlicher Verantwortung. Was unser Haus verlässt, haben wir selbst geprüft.
+            </p>
           </div>
         </div>
       </section>
 
+      {/* Prinzipien */}
+      <section data-animate="section" className="px-6 py-12">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="text-3xl font-semibold tracking-tight text-[#2B4066]">Warum DPI?</h2>
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {principles.map((p) => (
+              <div key={p.title} className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_20px_60px_-45px_rgba(43,64,102,0.35)] transition duration-300 hover:-translate-y-1">
+                <ShieldCheck className="h-6 w-6 text-sky-600" aria-hidden="true" />
+                <h3 className="mt-3 font-semibold text-slate-900">{p.title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{p.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Abschluss-CTA */}
+      <section data-animate="section" className="px-6 pb-20 pt-6">
+        <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl bg-gradient-to-b from-[#16294d] to-[#0b1730] p-8 text-center text-white shadow-[0_30px_70px_-35px_rgba(11,23,48,0.8)] sm:p-12">
+          <h2 className="text-2xl font-semibold sm:text-3xl">Sprechen Sie mit uns</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-white/75 sm:text-base">
+            Ob Produkttest für Ihre Amazon-Produktseite oder Arbeitssicherheit für Ihren Betrieb: Wir melden uns persönlich bei Ihnen. Sitz: Kirchseestraße 2, 83666 Waakirchen, Landkreis Miesbach.
+          </p>
+          <div className="mt-7 flex flex-wrap justify-center gap-3">
+            <Link href="/kontakt" className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold !text-[#16294d] transition duration-300 hover:-translate-y-0.5 hover:bg-sky-50">
+              Zum Kontaktformular
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+            </Link>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

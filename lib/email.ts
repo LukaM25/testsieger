@@ -510,8 +510,18 @@ export async function sendPrecheckPaymentSuccess(opts: {
   productNames: string[];
   processNumber: string;
   receiptPdf?: Buffer | null;
+  credentials?: { loginUrl: string; tempPassword: string };
 }) {
-  const { to, name, gender, productNames, processNumber } = opts;
+  const { to, name, gender, productNames, processNumber, credentials } = opts;
+  const credentialsHtml = credentials
+    ? `
+      <div style="margin:18px 0;padding:16px 18px;border:1px solid #bae6fd;border-radius:12px;background:#f0f9ff;">
+        <p style="margin:0 0 8px;"><strong>Ihr Zugang zum Kundendashboard</strong></p>
+        <p style="margin:0;">E-Mail: <strong>${escapeHtml(to)}</strong><br/>Vorläufiges Passwort: <strong style="font-family:ui-monospace,Menlo,monospace;font-size:16px;">${escapeHtml(credentials.tempPassword)}</strong></p>
+        <p style="margin:12px 0 0;"><a href="${credentials.loginUrl}" style="display:inline-block;padding:10px 18px;border-radius:999px;background:#1d4ed8;color:#ffffff;text-decoration:none;font-weight:600;">Jetzt im Dashboard einloggen</a></p>
+        <p style="margin:12px 0 0;font-size:14px;color:#475569;">Bitte ändern Sie dieses Passwort direkt nach dem ersten Login unter „Konto Einstellungen“.</p>
+      </div>`
+    : '';
   const safeProductNames = productNames.map((value) => escapeHtml(value));
   const productList = safeProductNames.join(', ');
   const isPlural = productNames.length !== 1;
@@ -522,6 +532,7 @@ export async function sendPrecheckPaymentSuccess(opts: {
       <p>${renderFormalGreeting(name, gender)}</p>
       <p>vielen Dank für den Zahlungseingang der Prüfgebühr. Ihr Auftrag für den „Testsieger Check“ des Deutschen Prüfsiegel Instituts (DPI) ist damit offiziell aktiviert.</p>
       <p>${productLabel}:<br/><strong>${productList}</strong></p>
+      ${credentialsHtml}
       <p>Ihre Rechnung wird Ihnen separat über Easybill per E-Mail zugestellt.</p>
       <p>Damit wir Ihre ${isPlural ? 'Produkte' : 'Produkt'} unmittelbar in den Prüfprozess übernehmen können, senden Sie ${productObjectPronoun} bitte an folgende Versandadresse:</p>
       <p style="margin:12px 0;line-height:1.5;font-size:15.4px;font-weight:700;">
@@ -905,4 +916,53 @@ function escapeHtml(input: string) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
+}
+
+/**
+ * Willkommens-Mail für Kunden, die vom Admin angelegt wurden.
+ * Der Link führt auf die Passwort-Seite und ist 7 Tage gültig.
+ */
+export async function sendWelcomeEmail(opts: {
+  to: string;
+  name?: string | null;
+  gender?: RecipientGender | null;
+  company?: string | null;
+  setPasswordUrl: string;
+  validDays?: number;
+  area?: 'PRODUKTTEST' | 'ARBEITSSICHERHEIT';
+}) {
+  const { to, name, gender, company, setPasswordUrl, validDays = 7, area = 'PRODUKTTEST' } = opts;
+  const greeting = renderFormalGreeting(name || '', gender ?? undefined);
+  const base = APP_BASE_URL.replace(/\/$/, '');
+  const forWhom = company ? `für ${escapeHtml(company)}` : 'für Sie';
+  const companyLine =
+    area === 'ARBEITSSICHERHEIT'
+      ? `Wir haben ${forWhom} ein Kundenkonto für Arbeitssicherheit angelegt.`
+      : `Wir haben ${forWhom} ein Kundenkonto beim Deutschen Prüfsiegel Institut angelegt.`;
+  const whatYouSee =
+    area === 'ARBEITSSICHERHEIT'
+      ? 'Dort sehen Sie, welche gesetzlichen Pflichten Ihr Betrieb erfüllt, welche Fristen anstehen und was noch zu tun ist. Ihre Unterlagen finden Sie in der Dokumentenmappe.'
+      : 'Dort sehen Sie den Stand Ihrer Prüfungen, laden Zertifikate herunter und verwalten Ihre Produkte.';
+  const html = `
+    <div style="font-family:system-ui,Arial;line-height:1.65;color:#0f172a;max-width:560px">
+      <p>${greeting}</p>
+      <p>${companyLine} ${whatYouSee}</p>
+      <p>Bitte legen Sie zuerst Ihr Passwort fest:</p>
+      <p style="margin:20px 0;">
+        <a href="${setPasswordUrl}" style="display:inline-block;padding:13px 22px;border-radius:999px;background:#16294d;color:#ffffff;text-decoration:none;font-weight:700;">Passwort festlegen</a>
+      </p>
+      <p style="font-size:13px;color:#475569;">Der Link ist ${validDays} Tage gültig. Danach melden Sie sich unter <a href="${base}/login" style="color:#1d4ed8;text-decoration:none;">${base}/login</a> mit dieser E-Mail-Adresse an.</p>
+      <p style="font-size:13px;color:#475569;">Falls der Link abgelaufen ist, nutzen Sie dort „Passwort vergessen“ oder antworten Sie einfach auf diese Nachricht.</p>
+      <p style="margin-top:20px;">Freundliche Grüße<br/>Ihr Team vom Deutschen Prüfsiegel Institut</p>
+      ${renderFooter()}
+    </div>
+  `;
+
+  await sendEmail({
+    from: `${SENDER_NAME} – Konto <${FROM_EMAIL}>`,
+    to,
+    subject: area === 'ARBEITSSICHERHEIT' ? 'Willkommen bei DPI Arbeitssicherheit: Passwort festlegen' : 'Willkommen beim Deutschen Prüfsiegel Institut: Passwort festlegen',
+    html,
+    replyTo: CONTACT_RECIPIENT,
+  });
 }

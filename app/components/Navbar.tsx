@@ -25,8 +25,7 @@ const sections: NavSection[] = [
     labelKey: "nav.services",
     items: [
       { labelKey: "nav.productTest", href: "/produkte/produkt-test" },
-      { labelKey: "nav.trainingCheck", href: "/produkte/ausbildung-check" },
-      { labelKey: "nav.playgroundSafety", href: "/produkte/spielplatz-sicherheit" },
+      { labelKey: "nav.occupationalSafety", href: "/kontakt" },
     ],
   },
   {
@@ -57,7 +56,7 @@ const sections: NavSection[] = [
 
 // We'll load a prebuilt search index from /search-index.json for richer keywords
 type SearchEntry = { label: string; href: string; keywords?: string[]; excerpt?: string };
-type ProfileUser = { id: string; name: string; email: string; gender?: 'MALE' | 'FEMALE' | 'OTHER' | null };
+type ProfileUser = { id: string; name: string; email: string; gender?: 'MALE' | 'FEMALE' | 'OTHER' | null; area?: 'PRODUKTTEST' | 'ARBEITSSICHERHEIT' };
 
 
 export default function Navbar() {
@@ -80,6 +79,11 @@ export default function Navbar() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [areaCookie, setAreaCookie] = useState<string | null>(null);
+  useEffect(() => {
+    const m = document.cookie.match(/(?:^|; )dpi_area=([^;]*)/);
+    setAreaCookie(m ? decodeURIComponent(m[1]) : null);
+  }, [pathname]);
   const [profileUser, setProfileUser] = useState<ProfileUser | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [adminAuthed, setAdminAuthed] = useState(false);
@@ -487,7 +491,7 @@ export default function Navbar() {
         <Link
           key={item.href}
           href={item.href}
-          className="block px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-gray-50"
+          className={`block px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-gray-50 ${item.labelKey === "nav.occupationalSafety" ? "as-only" : item.labelKey === "nav.productTest" ? "pt-only" : ""}`}
           onClick={() => setOpen(false)}
         >
           {label}
@@ -499,6 +503,17 @@ export default function Navbar() {
     <header className="relative z-50 w-full border-b border-gray-200 bg-white/90 backdrop-blur-none sm:backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-3 sm:gap-3 sm:px-6">
         {/* Logo */}
+        {areaCookie && (
+          <a
+            href="/api/area?set="
+            className="mr-1 inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-white sm:mr-3 sm:px-3 sm:text-xs"
+            title="Bereich wechseln"
+          >
+            <span aria-hidden="true">⇄</span>
+            <span className="hidden xl:inline">{areaCookie === 'arbeitssicherheit' ? 'Arbeitssicherheit' : 'Produkttest'} · wechseln</span>
+            <span className="xl:hidden">Bereich</span>
+          </a>
+        )}
         <a href="/" className="flex h-full min-w-0 items-center shrink py-2">
           <Image
             src="/dpilogo-v3.png"
@@ -637,7 +652,7 @@ export default function Navbar() {
                     <p className="text-sm font-semibold text-slate-900">{formatContactName(profileUser.name, profileUser.gender, profileUser.email)}</p>
                     <div className="space-y-2">
                       <Link
-                        href="/dashboard"
+                        href={profileUser.area === 'ARBEITSSICHERHEIT' ? '/arbeitssicherheit/dashboard' : '/dashboard'}
                         className="block rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 text-left transition hover:bg-slate-50"
                         onClick={() => setProfileOpen(false)}
                       >
@@ -837,7 +852,7 @@ export default function Navbar() {
                 {sections.map((section) => (
                   <details
                     key={section.labelKey}
-                    className="group border-b border-gray-100 first:border-t-0"
+                    className={`group border-b border-gray-100 first:border-t-0 ${section.labelKey === "nav.licenses" ? "pt-only" : ""}`}
                     role="list"
                   >
                     <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-[11px] font-bold uppercase tracking-[0.36em] text-slate-900 outline-none transition hover:text-brand-green">
@@ -848,6 +863,13 @@ export default function Navbar() {
                   </details>
                 ))}
               </nav>
+              <a
+                href="/api/area?set="
+                className="flex items-center justify-between border-t border-gray-100 px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+              >
+                <span>{locale === 'en' ? 'Back to area selection' : 'Zurück zur Bereichswahl'}</span>
+                <span aria-hidden="true">↩</span>
+              </a>
               <div className="border-t border-gray-100 px-4 py-3">
                 <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 mb-2">
                   {t('lang.label')}

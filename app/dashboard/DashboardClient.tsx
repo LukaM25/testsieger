@@ -50,8 +50,8 @@ type ActiveLicenseItem = {
 };
 
 const PLAN_BASE_DEFAULT_CENTS = {
-  BASIC: 28835,
-  PREMIUM: 32120,
+  BASIC: 17700,
+  PREMIUM: 22500,
   LIFETIME: 68900,
 } as const;
 
@@ -62,8 +62,8 @@ const PLAN_COMPARISON = [
     theme: "sky",
     usage: ["1 Verkaufskanal", "Sprache: Deutsch"],
     contents: ["Siegel", "Zertifikat", "Prüfbericht"],
-    billing: "daily",
-    footer: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+    billing: "yearly",
+    footer: ["Jahreslizenz, 12 Monate", "Lizenzverlängerung jährlich."],
   },
   {
     key: "PREMIUM",
@@ -71,8 +71,8 @@ const PLAN_COMPARISON = [
     theme: "indigo",
     usage: ["Alle Verkaufskanäle", "Alle Sprachen"],
     contents: ["Siegel", "Zertifikat", "Prüfbericht"],
-    billing: "daily",
-    footer: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+    billing: "yearly",
+    footer: ["Jahreslizenz, 12 Monate", "Lizenzverlängerung jährlich."],
   },
   {
     key: "LIFETIME",
@@ -123,7 +123,7 @@ const formatPlanPriceFromCents = (cents: number) =>
   new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(cents / 100);
 
 const computePlanCardPriceCents = (
-  billing: "daily" | "one-time",
+  billing: "daily" | "yearly" | "one-time",
   annualBaseCents: number,
   discountPercent: number,
   multiplier: number
@@ -132,6 +132,10 @@ const computePlanCardPriceCents = (
     const baseDailyCents = Math.round(annualBaseCents / ANNUAL_BILLING_DAYS);
     const discountedDailyCents = Math.round(baseDailyCents * (1 - discountPercent / 100));
     return { displayCents: discountedDailyCents, suffix: " / Tag" };
+  }
+  if (billing === "yearly") {
+    const yearlyDiscountedCents = Math.round(annualBaseCents * (1 - discountPercent / 100));
+    return { displayCents: yearlyDiscountedCents, suffix: " / Jahr" };
   }
   const annualDiscountedCents = Math.round(annualBaseCents * multiplier * (1 - discountPercent / 100));
   return { displayCents: annualDiscountedCents, suffix: "" };
@@ -582,6 +586,7 @@ const handleCancelLicense = async (productId: string) => {
   const [showBilling, setShowBilling] = useState(false);
   const [showProducts, setShowProducts] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
+  const [hidePwHint, setHidePwHint] = useState(false);
   const [billingMounted, setBillingMounted] = useState(false);
   const [productsMounted, setProductsMounted] = useState(false);
   const accountRef = useRef<HTMLDivElement | null>(null);
@@ -1102,7 +1107,7 @@ const handleCancelLicense = async (productId: string) => {
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-700">
               Grundgebühr
             </p>
-            <h2 className="text-lg font-semibold text-slate-900">Grundgebühr bezahlen</h2>
+            <h2 className="text-lg font-semibold text-[#2B4066]">Grundgebühr bezahlen</h2>
             <p className="text-sm text-slate-500">
               Produkte auswählen und gemeinsam mit Rabatt bezahlen.
             </p>
@@ -1199,7 +1204,7 @@ const handleCancelLicense = async (productId: string) => {
   const certificationsPanel = (
     <section
       id="certifications-section"
-      className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+      className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_20px_60px_-45px_rgba(43,64,102,0.35)]"
     >
       <button
         type="button"
@@ -1208,7 +1213,7 @@ const handleCancelLicense = async (productId: string) => {
         aria-expanded={showProducts}
       >
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">Meine Zertifizierungen</h2>
+          <h2 className="text-lg font-semibold text-[#2B4066]">Meine Zertifizierungen</h2>
           <p className="text-sm text-slate-500">Produkte und Lizenzen kompakt im Überblick.</p>
         </div>
         <span className={`text-slate-400 transition ${showProducts ? "rotate-180" : ""}`}>▾</span>
@@ -1296,7 +1301,7 @@ const handleCancelLicense = async (productId: string) => {
                           href={`/api/certificates/${p.id}/download`}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-black"
+                          className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#1d4ed8] to-[#16294d] px-4 py-2 text-xs font-semibold !text-white shadow-sm transition hover:brightness-110"
                         >
                           Zertifikat öffnen (PDF)
                         </a>
@@ -1352,7 +1357,7 @@ const handleCancelLicense = async (productId: string) => {
   );
 
   const cartPanel = (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_30px_70px_-34px_rgba(15,23,42,0.58)] ring-1 ring-slate-200/80">
+    <section className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_20px_60px_-45px_rgba(43,64,102,0.35)]">
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="text-lg font-semibold text-slate-900">Warenkorb</div>
@@ -1465,11 +1470,11 @@ const handleCancelLicense = async (productId: string) => {
   const rightColumnPanel = hasOpenLicensePayments ? cartPanel : baseFeeCartPanel;
 
   const planSelectionSection = (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_20px_60px_-45px_rgba(43,64,102,0.35)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500">2. Lizenzplan</p>
-          <h2 className="text-2xl font-semibold text-slate-900">Wählen Sie jetzt Ihre Lizenz</h2>
+          <h2 className="text-2xl font-semibold text-[#2B4066]">Wählen Sie jetzt Ihre Lizenz</h2>
           <p className="text-sm text-slate-500">Plan auswählen und direkt in den Warenkorb legen.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -1616,7 +1621,7 @@ const handleCancelLicense = async (productId: string) => {
   const greetingName = `${formalTitle}${contactLastName}`.trim();
 
   return (
-    <div id="dashboard-top" className="min-h-screen bg-slate-50 px-4 py-8">
+    <div id="dashboard-top" className="min-h-screen bg-slate-50 px-4 pb-20 pt-8">
       {/* License success modal */}
       {showLicenseSuccess && typeof document !== "undefined"
         ? createPortal(
@@ -1629,7 +1634,7 @@ const handleCancelLicense = async (productId: string) => {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-500">Lizenzzahlung</p>
-                    <h2 className="text-xl font-semibold text-slate-900">Zahlung bestätigt</h2>
+                    <h2 className="text-xl font-semibold text-[#2B4066]">Zahlung bestätigt</h2>
                   </div>
                   <button
                     type="button"
@@ -1648,7 +1653,7 @@ const handleCancelLicense = async (productId: string) => {
                   <button
                     type="button"
                     onClick={() => setShowLicenseSuccess(false)}
-                    className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-black"
+                    className="rounded-full bg-gradient-to-r from-[#1d4ed8] to-[#16294d] px-4 py-2 text-xs font-semibold !text-white shadow-sm hover:brightness-110"
                   >
                     Weiter
                   </button>
@@ -1671,7 +1676,7 @@ const handleCancelLicense = async (productId: string) => {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-500">Grundgebühr</p>
-                    <h2 className="text-xl font-semibold text-slate-900">Zahlung bestätigt</h2>
+                    <h2 className="text-xl font-semibold text-[#2B4066]">Zahlung bestätigt</h2>
                   </div>
                   <button
                     type="button"
@@ -1690,7 +1695,7 @@ const handleCancelLicense = async (productId: string) => {
                   <button
                     type="button"
                     onClick={() => setShowBaseFeeSuccess(false)}
-                    className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-black"
+                    className="rounded-full bg-gradient-to-r from-[#1d4ed8] to-[#16294d] px-4 py-2 text-xs font-semibold !text-white shadow-sm hover:brightness-110"
                   >
                     Weiter
                   </button>
@@ -1701,32 +1706,52 @@ const handleCancelLicense = async (productId: string) => {
           )
         : null}
 
-      <div className="mx-auto max-w-6xl space-y-8">
-        <header className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Dashboard</p>
-            <h1 className="text-3xl font-bold text-slate-900">Willkommen, {greetingName}</h1>
-            <p className="text-sm text-slate-600">Status im Blick, Zertifikat sicher abrufen.</p>
+      <div className="mx-auto max-w-6xl space-y-6">
+        {searchParams.get("pw") === "1" && !hidePwHint && (
+          <div className="flex flex-col gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-5 py-4 text-sky-900 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-semibold">Schritt 1: Passwort ändern</p>
+              <p className="text-sm">Sie haben sich mit Ihrem vorläufigen Passwort angemeldet. Bitte legen Sie jetzt ein eigenes Passwort fest.</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowAccount(true)}
+                className="rounded-full bg-gradient-to-r from-[#1d4ed8] to-[#16294d] px-5 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-110"
+              >
+                Passwort ändern
+              </button>
+              <button type="button" onClick={() => setHidePwHint(true)} className="rounded-full px-3 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-100">
+                Später
+              </button>
+            </div>
           </div>
-          <div className="relative flex items-center gap-3" ref={accountRef}>
+        )}
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-500">Kundenbereich</p>
+            <h1 className="text-3xl font-semibold tracking-tight text-[#2B4066]">Willkommen, {greetingName}</h1>
+            <p className="mt-1 text-sm text-slate-500">Status im Blick, Zertifikate sicher abrufen.</p>
+          </div>
+          <div className="relative flex items-center gap-2" ref={accountRef}>
             <button
               type="button"
               onClick={() => setShowAccount((open) => !open)}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400"
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:border-slate-300 hover:bg-slate-50"
               aria-expanded={showAccount}
             >
               Konto Einstellungen
             </button>
-            <LogoutButton className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-black" label="Logout" />
+            <LogoutButton className="rounded-full bg-gradient-to-r from-[#1d4ed8] to-[#16294d] px-4 py-2 text-sm font-semibold !text-white shadow-sm hover:brightness-110" label="Logout" />
             {showAccount && (
-              <div className="absolute right-0 top-full z-20 mt-3 w-[min(440px,90vw)] rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
+              <div className="absolute right-0 top-full z-20 mt-3 w-[min(440px,90vw)] rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_30px_80px_-40px_rgba(43,64,102,0.55)]">
                 <div>
-                  <h2 className="text-base font-semibold text-slate-900">Konto Einstellungen</h2>
+                  <h2 className="text-base font-semibold text-[#2B4066]">Konto Einstellungen</h2>
                   <p className="text-xs text-slate-500">Adresse ändern, E-Mail bearbeiten oder Konto löschen.</p>
                 </div>
                 <div className="mt-4 grid gap-3">
                   <input
-                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#1d4ed8]/50 focus:bg-white focus:ring-4 focus:ring-[#1d4ed8]/10"
                     placeholder="E-Mail-Adresse"
                     value={accountEmail}
                     onChange={(e) => setAccountEmail(e.target.value)}
@@ -1734,13 +1759,13 @@ const handleCancelLicense = async (productId: string) => {
                   />
                   <div className="grid gap-3 sm:grid-cols-[1.4fr,0.6fr]">
                     <input
-                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#1d4ed8]/50 focus:bg-white focus:ring-4 focus:ring-[#1d4ed8]/10"
                       placeholder="Straße"
                       value={accountStreet}
                       onChange={(e) => setAccountStreet(e.target.value)}
                     />
                     <input
-                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#1d4ed8]/50 focus:bg-white focus:ring-4 focus:ring-[#1d4ed8]/10"
                       placeholder="Hausnr."
                       value={accountHouseNumber}
                       onChange={(e) => setAccountHouseNumber(e.target.value)}
@@ -1748,13 +1773,13 @@ const handleCancelLicense = async (productId: string) => {
                   </div>
                   <div className="grid gap-3 sm:grid-cols-[0.7fr,1.3fr]">
                     <input
-                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#1d4ed8]/50 focus:bg-white focus:ring-4 focus:ring-[#1d4ed8]/10"
                       placeholder="PLZ"
                       value={accountPostalCode}
                       onChange={(e) => setAccountPostalCode(e.target.value)}
                     />
                     <input
-                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#1d4ed8]/50 focus:bg-white focus:ring-4 focus:ring-[#1d4ed8]/10"
                       placeholder="Stadt"
                       value={accountCity}
                       onChange={(e) => setAccountCity(e.target.value)}
@@ -1762,7 +1787,7 @@ const handleCancelLicense = async (productId: string) => {
                   </div>
                   <div className="grid gap-3">
                     <input
-                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#1d4ed8]/50 focus:bg-white focus:ring-4 focus:ring-[#1d4ed8]/10"
                       placeholder="Aktuelles Passwort"
                       type="password"
                       value={currentPassword}
@@ -1770,7 +1795,7 @@ const handleCancelLicense = async (productId: string) => {
                       autoComplete="current-password"
                     />
                     <input
-                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#1d4ed8]/50 focus:bg-white focus:ring-4 focus:ring-[#1d4ed8]/10"
                       placeholder="Neues Passwort"
                       type="password"
                       value={newPassword}
@@ -1778,7 +1803,7 @@ const handleCancelLicense = async (productId: string) => {
                       autoComplete="new-password"
                     />
                     <input
-                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#1d4ed8]/50 focus:bg-white focus:ring-4 focus:ring-[#1d4ed8]/10"
                       placeholder="Neues Passwort bestätigen"
                       type="password"
                       value={confirmPassword}
@@ -1794,7 +1819,7 @@ const handleCancelLicense = async (productId: string) => {
                       type="button"
                       onClick={handleAccountSave}
                       disabled={accountSaving}
-                      className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-60"
+                      className="rounded-full bg-gradient-to-r from-[#1d4ed8] to-[#16294d] px-4 py-2 text-sm font-semibold !text-white hover:brightness-110 disabled:opacity-60"
                     >
                       {accountSaving ? "Speichere…" : "Änderungen speichern"}
                     </button>
@@ -1802,7 +1827,7 @@ const handleCancelLicense = async (productId: string) => {
                       type="button"
                       onClick={handleAccountDelete}
                       disabled={accountDeleting}
-                      className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-600 hover:border-rose-300 disabled:opacity-60"
+                      className="rounded-full border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-60"
                     >
                       {accountDeleting ? "Löscht…" : "Konto löschen"}
                     </button>
@@ -1814,10 +1839,44 @@ const handleCancelLicense = async (productId: string) => {
           </div>
         </header>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        {products.length > 0 && (
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {[
+              { label: "Produkte", value: products.length, tone: "bg-slate-400" },
+              {
+                label: "In Prüfung",
+                value: products.filter((p: any) => !["PASS", "FAIL", "COMPLETION"].includes(String(p.adminProgress))).length,
+                tone: "bg-indigo-500",
+              },
+              {
+                label: "Bestanden",
+                value: products.filter((p: any) => ["PASS", "COMPLETION"].includes(String(p.adminProgress))).length,
+                tone: "bg-emerald-500",
+              },
+              {
+                label: "Aktive Lizenzen",
+                value: products.filter((p: any) => p.license?.status === "ACTIVE").length,
+                tone: "bg-[#1d4ed8]",
+              },
+            ].map((k) => (
+              <div
+                key={k.label}
+                className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_12px_30px_-26px_rgba(43,64,102,0.4)] transition duration-200 hover:-translate-y-0.5"
+              >
+                <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  <span className={`h-2 w-2 rounded-full ${k.tone}`} />
+                  {k.label}
+                </span>
+                <span className="mt-2 block text-3xl font-semibold tabular-nums text-[#2B4066]">{k.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <section className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_20px_60px_-45px_rgba(43,64,102,0.35)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Neues Produkt einreichen</h2>
+              <h2 className="text-lg font-semibold text-[#2B4066]">Neues Produkt einreichen</h2>
               <p className="text-sm text-slate-500">Weitere Produkte hinzufügen und automatisch Rabatt erhalten.</p>
             </div>
             <button
@@ -1829,7 +1888,7 @@ const handleCancelLicense = async (productId: string) => {
               }}
               aria-expanded={showAddProduct}
               aria-controls="dashboard-inline-add-product"
-              className="rounded-full border border-emerald-700 bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+              className="rounded-full bg-gradient-to-r from-[#1d4ed8] to-[#16294d] px-4 py-2 text-sm font-semibold !text-white shadow-sm transition hover:brightness-110"
             >
               +hinzufügen
             </button>
@@ -1842,13 +1901,13 @@ const handleCancelLicense = async (productId: string) => {
               >
                 <div className="grid gap-3 md:grid-cols-2">
                   <input
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#1d4ed8]/50 focus:bg-white focus:ring-4 focus:ring-[#1d4ed8]/10"
                     placeholder="Produktname"
                     value={newProduct.productName}
                     onChange={(e) => setNewProduct((p) => ({ ...p, productName: e.target.value }))}
                   />
                   <input
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#1d4ed8]/50 focus:bg-white focus:ring-4 focus:ring-[#1d4ed8]/10"
                     placeholder="Marke"
                     value={newProduct.brand}
                     onChange={(e) => setNewProduct((p) => ({ ...p, brand: e.target.value }))}
@@ -1856,7 +1915,7 @@ const handleCancelLicense = async (productId: string) => {
                   <select
                     value={newProduct.category}
                     onChange={(e) => setNewProduct((p) => ({ ...p, category: e.target.value }))}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#1d4ed8]/50 focus:bg-white focus:ring-4 focus:ring-[#1d4ed8]/10"
                   >
                     <option value="">Nichts ausgewählt</option>
                     {QUICK_CREATE_CATEGORY_OPTIONS.map((option) => (
@@ -1866,32 +1925,32 @@ const handleCancelLicense = async (productId: string) => {
                     ))}
                   </select>
                   <input
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#1d4ed8]/50 focus:bg-white focus:ring-4 focus:ring-[#1d4ed8]/10"
                     placeholder="Artikelnummer"
                     value={newProduct.code}
                     onChange={(e) => setNewProduct((p) => ({ ...p, code: e.target.value }))}
                   />
                   <input
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 md:col-span-2"
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#1d4ed8]/50 focus:bg-white focus:ring-4 focus:ring-[#1d4ed8]/10 md:col-span-2"
                     placeholder="Spezifikationen"
                     value={newProduct.specs}
                     onChange={(e) => setNewProduct((p) => ({ ...p, specs: e.target.value }))}
                   />
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-4 md:col-span-2">
                     <input
-                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#1d4ed8]/50 focus:bg-white focus:ring-4 focus:ring-[#1d4ed8]/10"
                       placeholder="Länge"
                       value={newProduct.sizeLength}
                       onChange={(e) => setNewProduct((p) => ({ ...p, sizeLength: e.target.value }))}
                     />
                     <input
-                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#1d4ed8]/50 focus:bg-white focus:ring-4 focus:ring-[#1d4ed8]/10"
                       placeholder="Breite"
                       value={newProduct.sizeWidth}
                       onChange={(e) => setNewProduct((p) => ({ ...p, sizeWidth: e.target.value }))}
                     />
                     <input
-                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#1d4ed8]/50 focus:bg-white focus:ring-4 focus:ring-[#1d4ed8]/10"
                       placeholder="Höhe"
                       value={newProduct.sizeHeight}
                       onChange={(e) => setNewProduct((p) => ({ ...p, sizeHeight: e.target.value }))}
@@ -1899,7 +1958,7 @@ const handleCancelLicense = async (productId: string) => {
                     <select
                       value={newProduct.madeIn}
                       onChange={(e) => setNewProduct((p) => ({ ...p, madeIn: e.target.value }))}
-                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#1d4ed8]/50 focus:bg-white focus:ring-4 focus:ring-[#1d4ed8]/10"
                     >
                       <option value="">Hergestellt in</option>
                       {QUICK_CREATE_MADE_IN_OPTIONS.map((option) => (
@@ -1910,7 +1969,7 @@ const handleCancelLicense = async (productId: string) => {
                     </select>
                   </div>
                   <input
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 md:col-span-2"
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#1d4ed8]/50 focus:bg-white focus:ring-4 focus:ring-[#1d4ed8]/10 md:col-span-2"
                     placeholder="Material"
                     value={newProduct.material}
                     onChange={(e) => setNewProduct((p) => ({ ...p, material: e.target.value }))}
@@ -1920,7 +1979,7 @@ const handleCancelLicense = async (productId: string) => {
                       type="button"
                       onClick={handleAddProductSubmit}
                       disabled={addProductSubmitting}
-                      className="rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-black disabled:opacity-60"
+                      className="rounded-full bg-gradient-to-r from-[#1d4ed8] to-[#16294d] px-5 py-2 text-sm font-semibold !text-white shadow-sm transition hover:brightness-110 disabled:opacity-60"
                     >
                       {addProductSubmitting ? "Wird gesendet…" : "Produkt einreichen"}
                     </button>
@@ -1952,9 +2011,9 @@ const handleCancelLicense = async (productId: string) => {
             {planSelectionSection}
           </>
         ) : (
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <section className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_20px_60px_-45px_rgba(43,64,102,0.35)]">
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500">Status</p>
-            <h2 className="mt-1 text-2xl font-semibold text-slate-900">Keine aktuelle Prüfung</h2>
+            <h2 className="mt-1 text-2xl font-semibold text-[#2B4066]">Keine aktuelle Prüfung</h2>
             <p className="mt-2 text-sm text-slate-500">
               Aktuell ist keine neue Prüfung in Arbeit. Reichen Sie ein neues Produkt ein, um zu starten.
             </p>
@@ -1963,7 +2022,7 @@ const handleCancelLicense = async (productId: string) => {
 
         {certificationsPanel}
 
-        <section id="billing-licenses" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section id="billing-licenses" className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_20px_60px_-45px_rgba(43,64,102,0.35)]">
           <button
             type="button"
             onClick={() => setShowBilling((open) => !open)}
@@ -1971,7 +2030,7 @@ const handleCancelLicense = async (productId: string) => {
             aria-expanded={showBilling}
           >
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Abrechnung & Lizenzen</h2>
+              <h2 className="text-lg font-semibold text-[#2B4066]">Abrechnung & Lizenzen</h2>
               <p className="text-sm text-slate-500">Rechnungen und Lizenzstatus im Überblick.</p>
             </div>
             <span className={`text-slate-400 transition ${showBilling ? "rotate-180" : ""}`}>▾</span>
@@ -1983,7 +2042,7 @@ const handleCancelLicense = async (productId: string) => {
               }`}
             >
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4">
                   <div className="text-sm font-semibold text-slate-800">Rechnungen</div>
                   <div className="mt-3 space-y-2">
                     {paidOrders.length === 0 && <p className="text-sm text-slate-500">Noch keine Rechnungen.</p>}
@@ -1996,7 +2055,7 @@ const handleCancelLicense = async (productId: string) => {
                         <button
                           type="button"
                           onClick={() => handleReceipt(order.id)}
-                          className="rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-black"
+                          className="rounded-full bg-gradient-to-r from-[#1d4ed8] to-[#16294d] px-3 py-1.5 text-[11px] font-semibold !text-white hover:brightness-110"
                         >
                           Rechnung PDF
                         </button>
@@ -2004,7 +2063,7 @@ const handleCancelLicense = async (productId: string) => {
                     ))}
                   </div>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4">
                   <div className="text-sm font-semibold text-slate-800">Lizenzen</div>
                   <div className="mt-3 space-y-2">
                     {products.filter((p: any) => p.license?.status).length === 0 && (
@@ -2041,9 +2100,9 @@ const handleCancelLicense = async (productId: string) => {
           )}
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_20px_60px_-45px_rgba(43,64,102,0.35)]">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Aktive Lizenzen</h2>
+            <h2 className="text-lg font-semibold text-[#2B4066]">Aktive Lizenzen</h2>
             <p className="text-sm text-slate-500">Ihre aktiven Produkte mit direktem Siegel-Download (PNG).</p>
           </div>
           {activeLicensesLoading ? (

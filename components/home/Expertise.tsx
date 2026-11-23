@@ -1,116 +1,128 @@
 "use client";
-import Image from 'next/image';
 import Link from 'next/link';
+import { ArrowRight, BadgeCheck, HardHat, PackageSearch } from 'lucide-react';
 import { stagger } from '@/lib/animation';
 import { useLocale } from '@/components/LocaleProvider';
-import MarketplaceLogos from '@/components/MarketplaceLogos';
 
 export default function Expertise() {
   const { locale } = useLocale();
-  const copy = locale === 'en'
+  const en = locale === 'en';
+  const copy = en
     ? {
       title: 'Our Expertise',
-      block1Title: 'Product tests for companies',
-      block1Annotation: 'Amazon, OTTO, Etsy, or other platforms',
-      block1Body:
-        'We don’t just test – we compare, question, and deliver clear results procurement and product teams can act on. We make transparent what others hide: quality, safety, and everyday usability.',
-      more: 'LEARN MORE',
-      block2Title: 'Company assessments for training',
-      block2Body:
-        'We evaluate training positions transparently and systematically. With our seal, companies belong to the best training places – for smart decisions by trainees.',
+      label1: 'For companies',
+      title1: 'Product tests & seal',
+      annotation1: 'Amazon, OTTO, eBay or other platforms',
+      body1:
+        'We don’t just test – we compare, question, and deliver clear results procurement and product teams can act on. We make quality, safety, and everyday usability transparent.',
+      extra1:
+        'This lets retailers and manufacturers show their customers that a product was independently tested: documented in a traceable way, with a test report and a seal for the product page.',
+      points1: ['Independent testing against fixed criteria', 'Test report and test seal', 'Personal support'],
+      cta1: 'Learn more',
+      label2: 'For safety',
+      title2: 'Occupational Safety',
+      body2:
+        'Every company with employees has to meet a legal minimum of occupational safety: risk assessment, instruction, documentation and support from an occupational safety specialist (SiFa) under the Occupational Safety Act and DGUV Regulation 2. We help companies cover this legal framework in a practical, verifiable way.',
+      extra2:
+        'The area is being built by Ferdinand Lang, who is completing his training as an occupational safety specialist (SiFa).',
+      points2: ['Risk assessment under the Occupational Health and Safety Act', 'Instruction and documentation', 'Support per Occupational Safety Act and DGUV Regulation 2', 'Practical, from the trades'],
+      cta2: 'Request occupational safety',
     }
     : {
       title: 'Unsere Expertise',
-      block1Title: 'Einzelprodukttest für Unternehmen',
-      block1Annotation: 'Amazon, OTTO, Ebay oder andere Platformen',
-      block1Body:
-        'Wir prüfen nicht nur – wir vergleichen, hinterfragen und liefern klare Ergebnisse, auf die Einkauf und Produktteams bauen können. Wir machen transparent, was andere verschweigen: Qualität, Sicherheit und Alltagstauglichkeit.',
-      more: 'MEHR ERFAHREN',
-      block2Title: 'Betriebsbewertung für Ausbildung',
-      block2Body:
-        'Wir bewerten Ausbildungsplätze transparent und strukturiert. Mit unserem Siegel zählen Betriebe zu den besten Ausbildungsstellen – für kluge Entscheidungen von Azubis.',
+      label1: 'Für Unternehmen',
+      title1: 'Produkttest & Prüfsiegel',
+      annotation1: 'Amazon, OTTO, eBay oder andere Plattformen',
+      body1:
+        'Wir prüfen nicht nur – wir vergleichen, hinterfragen und liefern klare Ergebnisse, auf die Einkauf und Produktteams bauen können. Wir machen Qualität, Sicherheit und Alltagstauglichkeit transparent.',
+      extra1:
+        'So zeigen Händler und Hersteller ihren Kunden, dass ein Produkt unabhängig geprüft wurde: nachvollziehbar dokumentiert, mit Prüfbericht und Siegel für die Produktseite.',
+      points1: ['Unabhängige Prüfung nach festen Kriterien', 'Prüfbericht und Prüfsiegel', 'Persönliche Betreuung'],
+      cta1: 'Mehr erfahren',
+      label2: 'Für Sicherheit',
+      title2: 'Arbeitssicherheit',
+      body2:
+        'Jeder Betrieb mit Beschäftigten muss ein gesetzliches Mindestmaß an Arbeitssicherheit erfüllen: Gefährdungsbeurteilung, Unterweisungen, Dokumentation und die Betreuung durch eine Fachkraft für Arbeitssicherheit (SiFa) nach Arbeitssicherheitsgesetz und DGUV Vorschrift 2. Wir helfen Unternehmen, diesen rechtlichen Rahmen praxisnah und nachweisbar abzudecken.',
+      extra2:
+        'Aufgebaut wird der Bereich von Ferdinand Lang, der die Ausbildung zur Fachkraft für Arbeitssicherheit (SiFa) absolviert.',
+      points2: ['Gefährdungsbeurteilung nach Arbeitsschutzgesetz', 'Unterweisungen und Dokumentation', 'Betreuung nach ASiG und DGUV Vorschrift 2', 'Praxisnah aus dem Handwerk'],
+      cta2: 'Arbeitssicherheit anfragen',
     };
+
   return (
     <section data-animate="section" className="bg-white py-20 sm:py-24">
       <div className="mx-auto max-w-6xl px-6">
-        <div className="flex items-end justify-between mb-16">
-          <h2 className="text-4xl font-bold text-brand-text">{copy.title}</h2>
-          <div className="hidden sm:block h-px bg-gray-200 w-1/3 mb-2"></div>
+        <div className="mb-12 flex items-end justify-between">
+          <h2 className="section-title">{copy.title}</h2>
+          <div className="mb-2 hidden h-px w-1/3 bg-gradient-to-r from-slate-200 to-transparent sm:block"></div>
         </div>
 
-        {/* Block 1 */}
-        <div className="grid items-center gap-12 md:grid-cols-2 mb-24">
-          <div className="order-1">
-            <span className="text-brand-green text-xs uppercase tracking-widest mb-2 block font-semibold">
-              Für Unternehmen
+        <div className="as-solo grid gap-6 lg:grid-cols-2">
+          {/* Karte 1: Produkttest */}
+          <article
+            data-animate="card"
+            style={stagger(0)}
+            className="flex flex-col rounded-3xl border border-slate-200/80 bg-white p-7 shadow-[0_20px_60px_-40px_rgba(43,64,102,0.35)] transition duration-500 hover:-translate-y-1"
+          >
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-50 to-sky-100 text-sky-700 ring-1 ring-sky-100">
+              <PackageSearch className="h-5 w-5" aria-hidden="true" />
             </span>
-            <h3 className="text-3xl font-bold text-brand-text mb-3">
-              {copy.block1Title}
-            </h3>
-            <p className="text-lg font-semibold leading-tight text-brand-text sm:text-xl mb-5">
-              {copy.block1Annotation}
-            </p>
-            <MarketplaceLogos
-              className="-mt-2 mb-5"
-              label={locale === 'en' ? 'Supported sales channels' : 'Unterstützte Verkaufskanäle'}
-            />
-            <p className="text-gray-600 leading-relaxed font-normal mb-8">
-              {copy.block1Body}
-            </p>
-            <Link
-              href="/produkte/produkt-test"
-              className="group inline-flex items-center text-sm font-bold text-brand-green uppercase tracking-wider hover:text-brand-text transition-colors"
-            >
-              {copy.more}
-              <span className="ml-2 group-hover:translate-x-1 transition-transform">
-                &rarr;
-              </span>
-            </Link>
-          </div>
-          <div className="order-2 relative aspect-[4/3] overflow-hidden bg-gray-100 shadow-xl rounded-lg">
-            <Image
-              src="/images/expertise_produkt.jpeg"
-              alt={copy.block1Title}
-              fill
-              className="object-cover transition-all duration-700"
-            />
-            <div className="absolute inset-0 border-4 border-white/10"></div>
-          </div>
-        </div>
+            <span className="mt-5 text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-700">{copy.label1}</span>
+            <h3 className="mt-1 text-2xl font-semibold text-[#2B4066]">{copy.title1}</h3>
+            <p className="mt-1 text-sm font-medium text-slate-500">{copy.annotation1}</p>
+            <p className="mt-4 text-[15px] leading-relaxed text-slate-600">{copy.body1}</p>
+            <p className="mt-3 text-[15px] leading-relaxed text-slate-600">{copy.extra1}</p>
+            <ul className="mt-5 space-y-2.5">
+              {copy.points1.map((p) => (
+                <li key={p} className="flex items-center gap-2.5 text-sm text-slate-700">
+                  <BadgeCheck className="h-5 w-5 shrink-0 text-emerald-600" aria-hidden="true" />
+                  {p}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-auto pt-7">
+              <Link
+                href="/produkte/produkt-test"
+                className="group inline-flex items-center gap-2 rounded-full bg-[#2B4066] px-6 py-3 text-sm font-semibold !text-white transition duration-300 hover:-translate-y-0.5 hover:bg-[#1e3050]"
+              >
+                {copy.cta1}
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+              </Link>
+            </div>
+          </article>
 
-        {/* Block 2 (Reversed) */}
-        <div className="grid items-center gap-12 md:grid-cols-2">
-          <div className="order-2 md:order-1 relative aspect-[4/3] overflow-hidden bg-gray-100 shadow-xl rounded-lg">
-            <Image
-              src="/images/expertise_training.jpeg"
-              alt={copy.block2Title}
-              fill
-              className="object-cover transition-all duration-700"
-            />
-            <div className="absolute inset-0 border-4 border-white/10"></div>
-          </div>
-          <div className="order-1 md:order-2">
-            <span className="text-brand-green text-xs uppercase tracking-widest mb-2 block font-semibold">
-              Für Ausbildung
+          {/* Karte 2: Arbeitssicherheit */}
+          <article
+            data-animate="card"
+            style={stagger(1)}
+            className="as-only flex flex-col rounded-3xl border border-blue-900/40 bg-gradient-to-b from-[#16294d] to-[#0b1730] p-7 text-white shadow-[0_30px_70px_-35px_rgba(11,23,48,0.8)] transition duration-500 hover:-translate-y-1"
+          >
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-sky-200 ring-1 ring-white/10">
+              <HardHat className="h-5 w-5" aria-hidden="true" />
             </span>
-            <h3 className="text-3xl font-bold text-brand-text mb-6">
-              {copy.block2Title}
-            </h3>
-            <p className="text-gray-600 leading-relaxed font-normal mb-8">
-              {copy.block2Body}
-            </p>
-            <Link
-              href="/produkte/ausbildung-check"
-              className="group inline-flex items-center text-sm font-bold text-brand-green uppercase tracking-wider hover:text-brand-text transition-colors"
-            >
-              {copy.more}
-              <span className="ml-2 group-hover:translate-x-1 transition-transform">
-                &rarr;
-              </span>
-            </Link>
-          </div>
+            <span className="mt-5 text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-200">{copy.label2}</span>
+            <h3 className="mt-1 text-2xl font-semibold text-white">{copy.title2}</h3>
+            <p className="mt-4 text-[15px] leading-relaxed text-white/80">{copy.body2}</p>
+            <p className="mt-3 text-[15px] leading-relaxed text-white/80">{copy.extra2}</p>
+            <ul className="mt-5 space-y-2.5">
+              {copy.points2.map((p) => (
+                <li key={p} className="flex items-center gap-2.5 text-sm text-white/90">
+                  <BadgeCheck className="h-5 w-5 shrink-0 text-emerald-300" aria-hidden="true" />
+                  {p}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-auto pt-7">
+              <Link
+                href="/kontakt"
+                className="group inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold !text-[#16294d] transition duration-300 hover:-translate-y-0.5 hover:bg-sky-50"
+              >
+                {copy.cta2}
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+              </Link>
+            </div>
+          </article>
         </div>
-
       </div>
     </section>
   );

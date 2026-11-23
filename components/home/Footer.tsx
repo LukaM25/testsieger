@@ -11,8 +11,7 @@ export default function Footer() {
       products: 'Leistungen',
       company: 'Company',
       productTest: 'Product Tests',
-      trainingCheck: 'Training Check',
-      playgroundSafety: 'Playground Safety',
+      safety: 'Occupational Safety',
       about: 'About Us',
       contact: 'Contact',
       imprint: 'Imprint',
@@ -25,8 +24,7 @@ export default function Footer() {
       products: 'Leistungen',
       company: 'Unternehmen',
       productTest: 'Produkt Tests',
-      trainingCheck: 'Ausbildungs Check',
-      playgroundSafety: 'Spielplatz Prüfungen DIN EN',
+      safety: 'Arbeitssicherheit',
       about: 'Über uns',
       contact: 'Kontakt',
       imprint: 'Impressum',
@@ -59,14 +57,9 @@ export default function Footer() {
                   {copy.productTest}
                 </Link>
               </li>
-              <li>
-                <Link href="/produkte/ausbildung-check" className="hover:text-white transition-colors">
-                  {copy.trainingCheck}
-                </Link>
-              </li>
-              <li>
-                <Link href="/produkte/spielplatz-sicherheit" className="hover:text-white transition-colors">
-                  {copy.playgroundSafety}
+              <li className="as-only">
+                <Link href="/kontakt" className="hover:text-white transition-colors">
+                  {copy.safety}
                 </Link>
               </li>
             </ul>
@@ -95,6 +88,12 @@ export default function Footer() {
     <Link href="/agb" className="hover:text-white transition-colors">
       {copy.agb}
     </Link>
+  </li>
+  <li>
+    {/* bewusst <a>: Link würde die Route vorab laden und die Bereichswahl zu früh löschen */}
+    <a href="/api/area?set=" className="hover:text-white transition-colors">
+      {locale === 'en' ? 'Switch area' : 'Bereich wechseln'}
+    </a>
   </li>
 </ul>
 

@@ -1,13 +1,16 @@
+import { pageMetadata } from "@/lib/seo";
 import Image from 'next/image';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { stagger } from '@/lib/animation';
 import { normalizeLocale } from '@/lib/i18n';
 
-export const metadata = {
+export const metadata = pageMetadata({
+  title: 'Spielplatz-Sicherheit: Prüfung nach DIN EN 1176/1177',
   description:
-    'DIN EN 1176/1177 konforme Spielplatzprüfungen – zuverlässig, dokumentiert und auditready.',
-};
+    'DIN EN 1176/1177 konforme Spielplatzprüfungen: zuverlässig, dokumentiert und auditready. Mit Prüfbericht, Maßnahmenliste und QR-Verifikation.',
+  path: '/produkte/spielplatz-sicherheit',
+});
 
 const copyMap = {
   de: {

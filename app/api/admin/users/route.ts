@@ -1,6 +1,12 @@
+import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
+import { z } from 'zod';
 import { AdminRole } from '@prisma/client';
 import { NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/admin';
+import { requireAdmin, logAdminAudit } from '@/lib/admin';
+import { sendWelcomeEmail } from '@/lib/email';
+import { EXISTING_IDS, RISK_IDS } from '@/lib/arbeitssicherheit/options';
+import { getPublicBaseUrl } from '@/lib/baseUrl';
 import { prisma } from '@/lib/prisma';
 
 export const runtime = 'nodejs';
@@ -43,4 +49,146 @@ export async function GET(request: Request) {
       productCount: user._count.products,
     })),
   });
+}
+
+const INVITE_TTL_DAYS = 7;
+
+const CreateCustomerSchema = z.object({
+  firstName: z.string().trim().min(1, 'NAME_REQUIRED').max(80),
+  lastName: z.string().trim().min(1, 'NAME_REQUIRED').max(80),
+  email: z.string().trim().toLowerCase().email('INVALID_EMAIL').max(200),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional().nullable(),
+  company: z.string().trim().max(160).optional().nullable(),
+  street: z.string().trim().max(120).optional().nullable(),
+  houseNumber: z.string().trim().max(20).optional().nullable(),
+  postalCode: z.string().trim().max(12).optional().nullable(),
+  city: z.string().trim().max(100).optional().nullable(),
+  sendInvite: z.boolean().optional().default(true),
+  area: z.enum(['PRODUKTTEST', 'ARBEITSSICHERHEIT']).optional().default('PRODUKTTEST'),
+  org: z
+    .object({
+      legalForm: z.string().trim().max(60).optional().nullable(),
+      industry: z.string().trim().min(2, 'ORG_INDUSTRY').max(100),
+      employees: z.coerce.number().int().min(1, 'ORG_EMPLOYEES').max(100000),
+      locations: z.coerce.number().int().min(1).max(1000).optional().default(1),
+      bg: z.string().trim().max(60).optional().nullable(),
+      phone: z.string().trim().max(40).optional().nullable(),
+      risks: z.array(z.string()).optional().default([]),
+      existing: z.array(z.string()).optional().default([]),
+    })
+    .optional()
+    .nullable(),
+});
+
+const CREATE_MESSAGES: Record<string, string> = {
+  NAME_REQUIRED: 'Bitte Vor- und Nachnamen angeben.',
+  INVALID_EMAIL: 'Bitte eine gültige E-Mail-Adresse angeben.',
+  ORG_INDUSTRY: 'Bitte die Branche wählen.',
+  ORG_EMPLOYEES: 'Bitte die Zahl der Beschäftigten angeben.',
+};
+
+/**
+ * Legt ein echtes Kundenkonto an. Das Passwort setzt der Kunde selbst über einen
+ * Einladungslink (7 Tage gültig). Der Link wird per E-Mail verschickt und zusätzlich
+ * zurückgegeben, damit er sich auch manuell weitergeben lässt.
+ */
+export async function POST(request: Request) {
+  const admin = await requireAdmin(AdminRole.SUPERADMIN).catch(() => null);
+  if (!admin) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+
+  const raw = await request.json().catch(() => null);
+  const parsed = CreateCustomerSchema.safeParse(raw ?? {});
+  if (!parsed.success) {
+    const code = parsed.error.issues[0]?.message || '';
+    return NextResponse.json({ error: CREATE_MESSAGES[code] || 'Bitte Eingaben prüfen.' }, { status: 400 });
+  }
+  const data = parsed.data;
+  if (data.area === 'ARBEITSSICHERHEIT' && (!data.org || !data.company)) {
+    return NextResponse.json({ error: 'Für Arbeitssicherheit werden Firma, Branche und Beschäftigte gebraucht.' }, { status: 400 });
+  }
+
+  const existing = await prisma.user.findFirst({
+    where: { email: { equals: data.email, mode: 'insensitive' } },
+    select: { id: true, name: true },
+  });
+  if (existing) {
+    return NextResponse.json(
+      { error: 'Zu dieser E-Mail gibt es schon ein Kundenkonto.', existingId: existing.id },
+      { status: 409 },
+    );
+  }
+
+  const streetLine = [data.street, data.houseNumber].filter(Boolean).join(' ').trim();
+  const cityLine = [data.postalCode, data.city].filter(Boolean).join(' ').trim();
+  const address = [streetLine, cityLine].filter(Boolean).join(', ');
+
+  // Zufallspasswort, das niemand kennt. Der Kunde legt sein eigenes über den Link fest.
+  const passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 10);
+  const user = await prisma.user.create({
+    data: {
+      name: `${data.firstName} ${data.lastName}`.replace(/\s+/g, ' ').trim(),
+      email: data.email,
+      passwordHash,
+      gender: data.gender || null,
+      company: data.company || null,
+      address: address || null,
+      area: data.area,
+      ...(data.area === 'ARBEITSSICHERHEIT' && data.org
+        ? {
+            asOrganization: {
+              create: {
+                name: data.company as string,
+                legalForm: data.org.legalForm || null,
+                industry: data.org.industry,
+                employees: data.org.employees,
+                locations: data.org.locations,
+                bg: data.org.bg || null,
+                phone: data.org.phone || null,
+                risks: data.org.risks.filter((r) => RISK_IDS.includes(r)),
+                existing: data.org.existing.filter((r) => EXISTING_IDS.includes(r)),
+              },
+            },
+          }
+        : {}),
+    },
+    select: { id: true, name: true, email: true, company: true, gender: true, asOrganization: { select: { id: true } } },
+  });
+
+  const token = crypto.randomBytes(32).toString('hex');
+  await prisma.passwordResetToken.create({
+    data: {
+      userId: user.id,
+      tokenHash: await bcrypt.hash(token, 10),
+      expiresAt: new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000),
+    },
+  });
+  const inviteUrl = `${getPublicBaseUrl()}/reset-password?token=${encodeURIComponent(token)}`;
+
+  let inviteSent = false;
+  if (data.sendInvite) {
+    try {
+      await sendWelcomeEmail({ to: user.email, name: user.name, gender: user.gender, company: user.company, setPasswordUrl: inviteUrl, validDays: INVITE_TTL_DAYS, area: data.area });
+      inviteSent = true;
+    } catch (err) {
+      console.error('ADMIN_CUSTOMER_INVITE_EMAIL_FAILED', err);
+    }
+  }
+
+  await logAdminAudit({
+    adminId: admin.id,
+    action: 'CUSTOMER_CREATED',
+    entityType: 'User',
+    entityId: user.id,
+    payload: { email: user.email, company: user.company, inviteSent, area: data.area },
+  });
+
+  return NextResponse.json(
+    {
+      user: { id: user.id, name: user.name, email: user.email, company: user.company, active: true, productCount: 0 },
+      organizationId: user.asOrganization?.id ?? null,
+      inviteSent,
+      inviteUrl,
+    },
+    { status: 201 },
+  );
 }

@@ -1,8 +1,12 @@
+import { pageMetadata } from "@/lib/seo";
 import TranslationNotice from "@/components/TranslationNotice";
 
-export const metadata = {
-  description: "Allgemeine Geschäftsbedingungen der DPI - Deutsches Prüfsiegel Institut GmbH.",
-};
+export const metadata = pageMetadata({
+  title: 'AGB',
+  description:
+    'Allgemeine Geschäftsbedingungen der DPI - Deutsches Prüfsiegel Institut GmbH.',
+  path: '/agb',
+});
 
 const agbText = `Allgemeine Geschäftsbedingungen (AGB)
 Anbieter und Vertragspartner:

@@ -1,11 +1,16 @@
+import { pageMetadata, absoluteUrl, breadcrumbJsonLd } from "@/lib/seo";
+import JsonLd from "@/components/seo/JsonLd";
 import ProduktTestPage from "@/pruf/ProduktTestPage";
 import type { LiveTestedProduct } from "@/pruf/ProduktTestPage";
 import { prisma } from "@/lib/prisma";
 import { ensureSignedS3Url, signedS3Url } from "@/lib/s3";
 
-export const metadata = {
-  description: "Testsieger Check – Prüfung von Produkten mit nachverfolgbarer Methodik.",
-};
+export const metadata = pageMetadata({
+  title: 'Produkt testen lassen: Prüfsiegel mit Prüfbericht ab 179 € netto',
+  description:
+    'Produkt direkt testen lassen: transparente Prüfkriterien, Prüfbericht mit QR-Code und Prüfsiegel für Ihre Amazon-Produktseite. Testgebühr 179 € netto, Rabatt ab 2 Produkten. Lizenzplan erst nach bestandener Prüfung.',
+  path: '/produkte/produkt-test',
+});
 
 export const dynamic = "force-dynamic";
 
@@ -80,5 +85,46 @@ async function getRecentTestedProducts(): Promise<LiveTestedProduct[]> {
 export default async function ProduktTestRoute() {
   const recentTestedProducts = await getRecentTestedProducts();
 
-  return <ProduktTestPage recentTestedProducts={recentTestedProducts} />;
+  const serviceJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    '@id': absoluteUrl('/produkte/produkt-test#service'),
+    name: 'Produkttest mit Prüfsiegel',
+    serviceType: 'Produktprüfung und Prüfsiegel-Lizenzierung',
+    description:
+      'Produkttest nach transparenten DPI-Prüfkriterien mit Prüfbericht, Zertifikat und Prüfsiegel (QR-Code) für Amazon-Produktseiten. Der Lizenzplan wird erst nach bestandener Prüfung gewählt.',
+    url: absoluteUrl('/produkte/produkt-test'),
+    provider: { '@id': absoluteUrl('/#organization') },
+    areaServed: { '@type': 'Country', name: 'Deutschland' },
+    audience: { '@type': 'BusinessAudience', audienceType: 'Amazon-Seller, Hersteller und Händler' },
+    offers: {
+      '@type': 'Offer',
+      name: 'Testgebühr pro Produkt',
+      price: '179.00',
+      priceCurrency: 'EUR',
+      url: absoluteUrl('/precheck'),
+      priceSpecification: {
+        '@type': 'UnitPriceSpecification',
+        price: '179.00',
+        priceCurrency: 'EUR',
+        valueAddedTaxIncluded: false,
+        unitText: 'pro Produkt',
+      },
+    },
+  };
+
+  return (
+    <>
+      <JsonLd
+        data={[
+          serviceJsonLd,
+          breadcrumbJsonLd([
+            { name: 'Start', path: '/' },
+            { name: 'Produkttest', path: '/produkte/produkt-test' },
+          ]),
+        ]}
+      />
+      <ProduktTestPage recentTestedProducts={recentTestedProducts} />
+    </>
+  );
 }

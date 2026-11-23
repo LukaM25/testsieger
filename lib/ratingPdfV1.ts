@@ -64,7 +64,7 @@ export function buildRatingPdfHtmlV1(opts: {
       const rows = items
         .map((c) => {
           const v = (values as any)?.[c.id] as { score?: number | null; note?: string | null } | undefined;
-          const score = typeof v?.score === 'number' && Number.isFinite(v.score) ? String(Math.round(v.score)) : '—';
+          const score = typeof v?.score === 'number' && Number.isFinite(v.score) ? (Number.isInteger(v.score) ? String(v.score) : v.score.toFixed(1)) : '—';
           const note = v?.note ? escapeHtml(String(v.note)) : '—';
           return `
             <tr>

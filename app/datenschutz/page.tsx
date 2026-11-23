@@ -1,4 +1,13 @@
 import TranslationNotice from "@/components/TranslationNotice";
+import { pageMetadata } from '@/lib/seo';
+
+export const metadata = pageMetadata({
+  title: 'Datenschutzerklärung',
+  description:
+    'Datenschutzerklärung des Deutschen Prüfsiegel Instituts: Informationen zur Verarbeitung personenbezogener Daten.',
+  path: '/datenschutz',
+});
+
 
 export default function DatenschutzPage() {
   return (

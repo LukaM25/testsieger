@@ -4,7 +4,9 @@ import { getSession } from '@/lib/auth';
 import { LOCALE_COOKIE, normalizeLocale } from '@/lib/i18n';
 
 export const metadata = {
-  description: 'Nächste Schritte nach bestandenem Pre-Check inklusive Testgebühr, Versand und Lizenzplänen.',
+  title: "Nächste Schritte",
+  description: "Nächste Schritte nach bestandenem Pre-Check.",
+  robots: { index: false, follow: false },
 };
 
 type Props = {
@@ -108,12 +110,12 @@ export default async function PrecheckSuccessPage({ searchParams }: Props) {
   const plans = [
     {
       name: 'Basic',
-      price: tr('0,79 € / Tag (jährlich)', '€0.79 / day (yearly)'),
+      price: tr('177 € / Jahr', '€177 / year'),
       reach: tr('DE · 1 Kanal', 'DE · 1 channel'),
     },
     {
       name: 'Premium',
-      price: tr('0,88 € / Tag (jährlich)', '€0.88 / day (yearly)'),
+      price: tr('225 € / Jahr', '€225 / year'),
       reach: tr('EU-Sprachen · alle Kanäle', 'EU languages · all channels'),
     },
     {

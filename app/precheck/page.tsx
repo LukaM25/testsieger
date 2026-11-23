@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLocale } from "@/components/LocaleProvider";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight, Check, Users } from "lucide-react";
+import DirectTestForm from "@/components/precheck/DirectTestForm";
 import { usePrecheckStatusData, type ProductStatusPayload } from "@/hooks/usePrecheckStatusData";
 import {
   QUICK_CREATE_CATEGORY_OPTIONS,
@@ -28,7 +30,7 @@ type Plan = {
   usage: { de: string[]; en: string[] };
   contents: { de: string[]; en: string[] };
   basePriceEur: number;
-  billing: "daily" | "one-time";
+  billing: "daily" | "yearly" | "one-time";
   footer: { de: string[]; en: string[] };
 };
 
@@ -63,10 +65,10 @@ const plans: Plan[] = [
       de: ["Siegel", "Zertifikat", "Prüfbericht"],
       en: ["Seal", "Certificate", "Test report"],
     },
-    basePriceEur: 0.79,
-    billing: "daily",
+    basePriceEur: 177,
+    billing: "yearly",
     footer: {
-      de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+      de: ["Jahreslizenz, 12 Monate", "Lizenzverlängerung jährlich."],
       en: ["Billing 365 days / year", "License renewal yearly."],
     },
   },
@@ -81,10 +83,10 @@ const plans: Plan[] = [
       de: ["Siegel", "Zertifikat", "Prüfbericht"],
       en: ["Seal", "Certificate", "Test report"],
     },
-    basePriceEur: 0.875,
-    billing: "daily",
+    basePriceEur: 225,
+    billing: "yearly",
     footer: {
-      de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+      de: ["Jahreslizenz, 12 Monate", "Lizenzverlängerung jährlich."],
       en: ["Billing 365 days / year", "License renewal yearly."],
     },
   },
@@ -102,7 +104,7 @@ const plans: Plan[] = [
     basePriceEur: 689,
     billing: "one-time",
     footer: {
-      de: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+      de: ["Jahreslizenz, 12 Monate", "Lizenzverlängerung jährlich."],
       en: ["Billing 365 days / year", "License renewal yearly."],
     },
   },
@@ -110,22 +112,22 @@ const plans: Plan[] = [
 
 const planThemes = {
   sky: {
-    card: "bg-gradient-to-b from-sky-300 via-sky-200 to-sky-50",
-    border: "border-sky-200/70",
-    label: "text-slate-900",
-    body: "text-slate-800",
-    muted: "text-slate-700/80",
+    card: "bg-white",
+    border: "border-slate-200/80",
+    label: "text-[#2B4066]",
+    body: "text-slate-700",
+    muted: "text-slate-500",
   },
   indigo: {
-    card: "bg-gradient-to-b from-indigo-500 via-indigo-700 to-slate-950",
-    border: "border-indigo-400/30",
-    label: "text-white",
-    body: "text-white/90",
-    muted: "text-white/70",
+    card: "bg-gradient-to-b from-sky-50 to-white",
+    border: "border-sky-200/80",
+    label: "text-[#2B4066]",
+    body: "text-slate-700",
+    muted: "text-slate-500",
   },
   midnight: {
-    card: "bg-gradient-to-b from-blue-950 via-slate-950 to-black",
-    border: "border-blue-500/20",
+    card: "bg-gradient-to-b from-[#16294d] to-[#0b1730]",
+    border: "border-blue-900/40",
     label: "text-white",
     body: "text-white/90",
     muted: "text-white/70",
@@ -345,6 +347,20 @@ export default function PrecheckPage() {
       openInlinePrecheck();
     }
   };
+
+  const wantedCountParam = Number(searchParams?.get("produkte") || "0");
+  const wantedCount = wantedCountParam >= 1 && wantedCountParam <= 3 ? wantedCountParam : 0;
+  const directEntryDone = useRef(false);
+  useEffect(() => {
+    if (!wantedCount || directEntryDone.current || productsLoading) return;
+    directEntryDone.current = true;
+    const timer = setTimeout(() => {
+      document.getElementById(isUnauthorized ? "direkt" : "checkout-options")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (!isUnauthorized && products.length < wantedCount) openInlinePrecheck();
+    }, 400);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantedCount, productsLoading, isUnauthorized, products.length]);
 
   const handleInlinePrecheckSubmit = async () => {
     setInlineSubmitMessage(null);
@@ -598,19 +614,93 @@ export default function PrecheckPage() {
   // Removed auto-scroll to avoid disrupting mobile keyboards
 
   return (
-    <main className="text-slate-900 font-sans" style={{ backgroundColor: '#EEF4ED' }}>
+    <main className="overflow-x-clip bg-gradient-to-b from-slate-50 via-white to-slate-50 font-sans text-slate-900">
       <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_20%_10%,#e0f2fe_0%,transparent_50%),radial-gradient(140%_90%_at_80%_-10%,#eef2ff_0%,transparent_55%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_60%_at_20%_0%,#e0f2fe_0%,transparent_55%),radial-gradient(90%_60%_at_85%_-10%,#f0f9ff_0%,transparent_55%)]" />
 
         <div className="relative mx-auto max-w-6xl px-6 py-20 md:py-24 space-y-16">
+          {isUnauthorized && (
+            <>
+              <FadeIn delay={100}>
+                <div className="relative overflow-hidden rounded-3xl border border-slate-200/70 bg-white p-8 shadow-[0_24px_70px_-45px_rgba(43,64,102,0.35)] md:p-12">
+                  <div className="grid items-center gap-10 md:grid-cols-[1.25fr_1fr]">
+                    <div className="space-y-6">
+                      <p className="eyebrow">{tr("Produkttest mit Siegel", "Product test with seal")}</p>
+                      <h1 className="text-4xl font-semibold tracking-tight text-[#2B4066] md:text-5xl">
+                        {tr("Ihr Produkt. Geprüft. Mit Siegel.", "Your product. Tested. With seal.")}
+                      </h1>
+                      <p className="max-w-xl text-base leading-relaxed text-slate-600 md:text-lg">
+                        {tr(
+                          "Ein sichtbares Prüfsiegel schafft Vertrauen auf Ihrer Produktseite und hilft Ihnen, mehr zu verkaufen.",
+                          "A visible test seal builds trust on your product page and helps you sell more."
+                        )}
+                      </p>
+                      <ul className="space-y-2.5 text-sm text-slate-700 md:text-base">
+                        {[
+                          tr("Einmalige Testgebühr, bis zu 30 % Rabatt bei mehreren Produkten", "One-time test fee, up to 30% off for multiple products"),
+                          tr("Prüfbericht mit QR-Code zur Verifizierung", "Test report with QR code for verification"),
+                          tr("Lizenzplan erst nach bestandener Prüfung", "License plan only after a passed test"),
+                        ].map((t) => (
+                          <li key={t} className="flex items-center gap-3">
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-50 text-sky-700 ring-1 ring-sky-100">
+                              <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                            </span>
+                            {t}
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="flex flex-wrap items-center gap-4">
+                        <a
+                          href="#direkt"
+                          className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#1d4ed8] to-[#16294d] px-7 py-3.5 text-base font-semibold !text-white shadow-[0_18px_34px_-18px_rgba(29,78,216,0.75)] transition hover:-translate-y-0.5"
+                        >
+                          {tr("Jetzt direkt testen lassen", "Test directly now")}
+                          <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                        </a>
+                        <Link
+                          href="/produkte/produkt-test?precheck=open#precheck"
+                          className="text-sm font-semibold text-sky-700 transition hover:text-[#2B4066]"
+                        >
+                          {tr("Oder erst kostenlos Pre-Check starten", "Or start with a free pre-check")}
+                        </Link>
+                      </div>
+                    </div>
+                    <div className="relative mx-auto h-64 w-64 md:h-80 md:w-80">
+                      <div className="seal-float relative h-full w-full">
+                        <Image src="/siegel19.png" alt={tr("Testsieger Siegel", "Test seal")} fill sizes="320px" className="object-contain" priority />
+                        <div
+                          aria-hidden
+                          className="seal-shine pointer-events-none absolute inset-0"
+                          style={{
+                            WebkitMaskImage: "url(/siegel19.png)",
+                            maskImage: "url(/siegel19.png)",
+                            WebkitMaskSize: "contain",
+                            maskSize: "contain",
+                            WebkitMaskRepeat: "no-repeat",
+                            maskRepeat: "no-repeat",
+                            WebkitMaskPosition: "center",
+                            maskPosition: "center",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </FadeIn>
+              <div className="scroll-mt-24">
+                <DirectTestForm initialCount={wantedCount || 1} nextPath={`/precheck${search ? `?${search}` : ""}`} />
+              </div>
+            </>
+          )}
+          {!isUnauthorized && !productsLoading && (
           <FadeIn delay={100}>
-            <div className="flex flex-col gap-10 rounded-3xl border border-slate-100/70 bg-white/80 p-8 shadow-[0_30px_80px_-50px_rgba(15,23,42,0.45)] md:flex-row md:items-start md:justify-between md:p-10">
+            <div className="flex flex-col gap-10 rounded-3xl border border-slate-200/70 bg-white p-8 shadow-[0_24px_70px_-45px_rgba(43,64,102,0.35)] md:flex-row md:items-start md:justify-between md:p-10">
               <div className="space-y-6 max-w-3xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">
+                <p className="text-xs font-medium uppercase tracking-[0.22em] text-sky-700/80">
                   {tr("1. Ergebnis", "1. Result")}
                 </p>
                 <div className="space-y-4">
-                  <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-slate-900">
+                  <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-[#2B4066]">
                     {heroHeading}
                   </h1>
                   {checkout === "success" && !showPaidView && !isUnauthorized ? (
@@ -635,7 +725,7 @@ export default function PrecheckPage() {
                       <div className="flex flex-wrap gap-3">
                         <Link
                           href={`/login?next=${nextAfterLogin}`}
-                          className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-black"
+                          className="rounded-full bg-gradient-to-r from-[#1d4ed8] to-[#16294d] shadow-[0_14px_28px_-16px_rgba(29,78,216,0.7)] px-6 py-2.5 text-sm font-semibold !text-white transition duration-300 hover:-translate-y-0.5 hover:brightness-110"
                         >
                           {tr("Einloggen", "Sign in")}
                         </Link>
@@ -643,7 +733,7 @@ export default function PrecheckPage() {
                     </>
                   ) : showPaidView ? (
                     <>
-                      <p className="text-lg md:text-xl font-medium text-slate-800">
+                      <p className="text-lg md:text-xl font-medium text-[#2B4066]">
                         {tr("Vielen Dank für Ihre Zahlung.", "Thanks for your payment!")}
                       </p>
                       <p className="text-base md:text-lg text-slate-600 leading-relaxed">
@@ -678,7 +768,7 @@ export default function PrecheckPage() {
                     </>
                   ) : checkout === "success" && !showPaidView ? (
                     <>
-                      <p className="text-lg md:text-xl font-medium text-slate-800">
+                      <p className="text-lg md:text-xl font-medium text-[#2B4066]">
                         {tr("Wir prüfen den Zahlungseingang …", "We’re confirming your payment …")}
                       </p>
                       <p className="text-base md:text-lg text-slate-600 leading-relaxed">
@@ -698,7 +788,7 @@ export default function PrecheckPage() {
                     </>
                   ) : (
                     <>
-                      <p className="text-lg md:text-xl font-medium text-slate-800">
+                      <p className="text-lg md:text-xl font-medium text-[#2B4066]">
                         {tr("Produkt jetzt an uns senden.", "Send your product to us now.")}
                       </p>
                       <p className="text-base md:text-lg text-slate-600 leading-relaxed">
@@ -737,6 +827,7 @@ export default function PrecheckPage() {
               </div>
             </div>
           </FadeIn>
+          )}
 
           {showPaidView && previewMulti && previewVariant === "3" && hasMultiPaid && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-6 py-10">
@@ -746,7 +837,7 @@ export default function PrecheckPage() {
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
                       {tr("Mehrfachzahlung", "Multi-payment")}
                     </p>
-                    <h2 className="text-2xl font-semibold text-slate-900">
+                    <h2 className="text-2xl font-semibold tracking-tight text-[#2B4066]">
                       {tr("Zahlung bestätigt", "Payment confirmed")}
                     </h2>
                   </div>
@@ -825,31 +916,30 @@ export default function PrecheckPage() {
             {!showPaidView && (
               <FadeIn delay={180}>
                 <div className="space-y-3" id="checkout-options" ref={checkoutRef}>
-                <div className="text-2xl font-semibold text-slate-900">
+                <div className={`text-2xl font-semibold tracking-tight text-[#2B4066] ${isUnauthorized ? "hidden" : ""}`}>
                   {tr("2. Produkte hinzufügen", "2. Add products")}
                 </div>
 
-                <div className="mt-10 rounded-3xl border border-slate-100 bg-white/90 p-8 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)] md:p-10">
+                <div className="mt-10 rounded-3xl border border-slate-200/70 bg-white p-8 shadow-[0_24px_70px_-45px_rgba(43,64,102,0.35)] md:p-10">
                   <div className="space-y-3">
-                    <h3 className="text-3xl md:text-4xl font-semibold text-slate-900">
+                    <h3 className="text-3xl md:text-4xl font-semibold tracking-tight text-[#2B4066]">
                       {tr("Weitere Produkte hinzufügen und sparen.", "Add more products and save.")}
                     </h3>
                     <p className="text-lg md:text-xl text-slate-600">
-                      {tr("Für die Prüfung fällt eine einmalige Testgebühr an.", "A one-time test fee applies for the review.")}
+                      {tr("Für den Prüfaufwand fällt eine einmalige Testgebühr an.", "A one-time test fee applies for the testing effort.")}
                     </p>
                   </div>
                   <div className="mt-8 space-y-5">
                     {savingsTiers.map((tier) => (
                       <div key={tier.count} className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                        <span className="text-lg font-medium text-slate-900">{productCountLabel(tier.count)}</span>
+                        <span className="text-lg font-medium text-[#2B4066]">{productCountLabel(tier.count)}</span>
                         <div
-                          className="inline-flex flex-wrap items-center gap-3 rounded-full px-6 py-2.5 text-white shadow-md ring-1 ring-blue-200/30"
-                          style={{ backgroundImage: "linear-gradient(90deg, #1d4ed8 0%, #1e3a8a 55%, #0f172a 100%)" }}
+                          className="inline-flex flex-wrap items-center gap-3 rounded-full bg-sky-50 px-6 py-2.5 text-[#2B4066] ring-1 ring-sky-100"
                         >
                           {tier.discountPercent > 0 && (
                             <>
-                              <span className="text-sm md:text-base text-white/70 line-through">{formatEur(tier.totalNet)}</span>
-                              <span className="text-sm md:text-base text-white/70">- {tier.discountPercent}%</span>
+                              <span className="text-sm md:text-base text-slate-400 line-through">{formatEur(tier.totalNet)}</span>
+                              <span className="text-sm md:text-base font-medium text-emerald-700">- {tier.discountPercent}%</span>
                             </>
                           )}
                           <span className="text-base md:text-lg font-semibold">
@@ -859,30 +949,51 @@ export default function PrecheckPage() {
                       </div>
                     ))}
                   </div>
-                  <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <p className="text-sm md:text-base text-slate-600 max-w-2xl">
-                      {tr(
-                        "Bei mehr als 3 Produkten, schreiben Sie uns direkt an und wir unterbreiten Ihnen ein Angebot.",
-                        "For more than 3 products, contact us directly and we will make you an offer."
-                      )}
-                    </p>
-                    <Link
-                      href="/kontakt"
-                      className="rounded-full bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-black"
-                    >
-                      {tr("Angebot anfordern", "Request an offer")}
-                    </Link>
-                  </div>
+                  <Link
+                    href="/kontakt?kategorie=quote"
+                    className="group relative mt-8 flex flex-col items-center gap-4 overflow-hidden rounded-2xl border border-sky-200/70 bg-gradient-to-r from-sky-50 via-white to-sky-50 p-5 text-center shadow-[0_18px_44px_-34px_rgba(43,64,102,0.5)] transition duration-500 hover:-translate-y-0.5 hover:border-sky-300 sm:flex-row sm:text-left"
+                  >
+                    <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-100 to-sky-200 text-sky-700 ring-1 ring-sky-200">
+                      <span className="vorteil-halo absolute inset-0 rounded-2xl" aria-hidden="true" />
+                      <Users className="vorteil-bob relative h-6 w-6" aria-hidden="true" />
+                    </span>
+                    <span className="flex-1">
+                      <span className="block text-lg font-semibold text-[#2B4066]">
+                        {tr("Mehr als 3 Produkte?", "More than 3 products?")}
+                      </span>
+                      <span className="block text-sm text-slate-600">
+                        {tr("Schreiben Sie uns direkt an. Wir unterbreiten Ihnen ein Angebot.", "Contact us directly. We will make you an offer.")}
+                      </span>
+                    </span>
+                    <span className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#1d4ed8] to-[#16294d] shadow-[0_14px_28px_-16px_rgba(29,78,216,0.7)] px-5 py-2.5 text-sm font-semibold !text-white transition group-hover:brightness-110">
+                      {tr("Angebot anfordern", "Request a quote")}
+                      <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+                    </span>
+                  </Link>
                 </div>
 
-                <div className="mt-8 flex justify-center items-start">
+                {wantedCount > 0 && !isUnauthorized && (
+                  <div className="mt-8 flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-5 py-4 text-[#2B4066]">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-sky-700 ring-1 ring-sky-100">
+                      <Check className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <p className="text-sm md:text-base">
+                      {tr(
+                        `Sie reichen ${wantedCount} Produkt${wantedCount === 1 ? "" : "e"} ein${discountPercentForCount(wantedCount) > 0 ? ` und sparen ${discountPercentForCount(wantedCount)} % auf die Testgebühr` : ""}. Legen Sie Ihre Produkte unten an, wählen Sie sie aus und zahlen Sie direkt.`,
+                        `You are submitting ${wantedCount} product${wantedCount === 1 ? "" : "s"}${discountPercentForCount(wantedCount) > 0 ? ` and save ${discountPercentForCount(wantedCount)}% on the test fee` : ""}. Add your products below, select them and pay directly.`
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                <div className={isUnauthorized ? "hidden" : "mt-8 flex justify-center items-start"}>
                   <div
                     id="discount-upsell"
-                    className={`w-full rounded-3xl p-6 md:p-7 shadow-[0_30px_90px_-55px_rgba(15,23,42,0.7)] ring-1 ring-white/10 ${
+                    className={`w-full rounded-3xl p-6 md:p-7 shadow-[0_30px_80px_-45px_rgba(11,23,48,0.7)] ${
                       showInlinePrecheck ? "h-auto min-h-0" : ""
                     }`}
                     style={{
-                      background: "linear-gradient(90deg, #020617 0%, #1e3a8a 52%, #0f172a 100%)",
+                      background: "linear-gradient(135deg, #16294d 0%, #1E3A8A 55%, #0b1730 100%)",
                       opacity: 1,
                       filter: "none",
                     }}
@@ -1178,8 +1289,8 @@ export default function PrecheckPage() {
                   </div>
                 </div>
 
-                <div className="mt-12 space-y-6">
-                  <div className="text-2xl font-semibold text-slate-900">
+                <div className={isUnauthorized ? "hidden" : "mt-12 space-y-6"}>
+                  <div className="text-2xl font-semibold tracking-tight text-[#2B4066]">
                     {tr("3. Checkout", "3. Checkout")}
                   </div>
                   {/* AGB Agreement */}
@@ -1228,19 +1339,12 @@ export default function PrecheckPage() {
                   const showCheckoutDiscount = totals.savingsCents > 0;
                   const isPriority = option.id === "priority";
                   const checkoutCtaClass =
-                    "text-slate-900 shadow-[0_18px_45px_-18px_rgba(245,158,11,0.85)] ring-2 ring-amber-200/90 group-hover:brightness-110 group-hover:shadow-[0_22px_55px_-18px_rgba(245,158,11,0.95)] group-hover:scale-[1.02]";
-                  const checkoutCtaStyle = {
-                    backgroundImage: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 55%, #d97706 100%)",
-                  };
+                    "bg-white text-[#16294d] shadow-lg group-hover:bg-sky-50 group-hover:-translate-y-0.5";
+                  const checkoutCtaStyle = {};
                   const timelineClass = isPriority
-                    ? "mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-white/95 shadow-sm ring-1 ring-emerald-200/40"
-                    : "mt-2 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-white/85";
-                  const timelineStyle = {
-                    fontSize: "12.1px",
-                    ...(isPriority
-                      ? { backgroundImage: "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #4ade80 100%)" }
-                      : {}),
-                  };
+                    ? "mt-2 inline-flex items-center gap-2 rounded-full bg-emerald-400/20 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-emerald-100 ring-1 ring-emerald-200/30"
+                    : "mt-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-white/85";
+                  const timelineStyle = { fontSize: "12px" };
                   const disableCheckout = isUnauthorized || !hasPayableSelection || paying === option.id || !agbAccepted;
                   const checkoutLabel = isUnauthorized
                     ? tr("Bitte einloggen", "Please sign in")
@@ -1261,27 +1365,27 @@ export default function PrecheckPage() {
                     type="button"
                     onClick={() => handlePayClick(option.id)}
                     disabled={disableCheckout}
-                    className={`group relative flex h-full flex-col items-center justify-between overflow-hidden rounded-3xl border border-white/15 px-8 py-10 text-center text-white shadow-[0_28px_80px_-45px_rgba(15,23,42,0.55)] ring-1 ring-slate-900/10 transition-all duration-300 ${
+                    className={`group relative flex h-full flex-col items-center justify-between overflow-hidden rounded-3xl border border-white/10 px-8 py-10 text-center text-white shadow-[0_28px_70px_-45px_rgba(11,23,48,0.7)] transition-all duration-300 ${
                       disableCheckout ? "opacity-70 cursor-not-allowed" : "hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-blue-900/30"
                     }`}
                     style={{
                       backgroundImage: idx === 0
-                        ? "linear-gradient(135deg, #0f172a 0%, #1e3a8a 52%, #2563eb 100%)"
-                        : "linear-gradient(135deg, #111827 0%, #1d4ed8 50%, #2563eb 100%)",
+                        ? "linear-gradient(145deg, #16294d 0%, #1E3A8A 100%)"
+                        : "linear-gradient(145deg, #1E3A8A 0%, #2563eb 100%)",
                     }}
                   >
                     <div className="flex flex-col items-center space-y-2">
-                      <div className="text-xl font-semibold leading-tight tracking-tight" style={{ fontSize: "2.22rem" }}>
+                      <div className="text-xl font-semibold leading-tight tracking-tight" style={{ fontSize: "1.9rem" }}>
                         {option.id === "priority" ? (
                           <>
                             {tr("Produkttest ", "Product test ")}
-                            <span style={{ color: "#f97316" }}>Priority</span>
+                            <span className="text-sky-300">Priority</span>
                           </>
                         ) : (
                           tr(option.title.de, option.title.en)
                         )}
                       </div>
-                      <div className="text-base font-medium text-white/95" style={{ fontSize: "1.21rem" }}>
+                      <div className="text-base font-medium text-white/95" style={{ fontSize: "1.05rem" }}>
                         {priceLabel}
                       </div>
                       <span className={timelineClass} style={timelineStyle}>
@@ -1289,7 +1393,7 @@ export default function PrecheckPage() {
                       </span>
                       {showCheckoutDiscount && (
                         <div
-                          className="mt-4 inline-flex flex-col items-center gap-3 rounded-2xl bg-emerald-400/20 px-8 py-[1.1rem] text-[1.06rem] md:text-[1.21rem] font-semibold uppercase tracking-[0.18em] text-white/95"
+                          className="mt-4 inline-flex flex-col items-center gap-1 rounded-2xl bg-emerald-400/15 px-6 py-3 text-sm md:text-base font-semibold uppercase tracking-[0.16em] text-white/95"
                         >
                           <span>{discountLabel}</span>
                           <span className="text-emerald-300">{tr(`ERSPARNIS: ${savingsLabel}`, `SAVINGS: ${savingsLabel}`)}</span>
@@ -1298,13 +1402,13 @@ export default function PrecheckPage() {
                     </div>
 
                     <div
-                      className={`mt-7 inline-flex items-center gap-3 rounded-full px-[1.9rem] py-[0.95rem] text-[1.25rem] font-bold uppercase tracking-[0.22em] transition ${checkoutCtaClass}`}
+                      className={`mt-7 inline-flex items-center gap-3 rounded-full px-7 py-3.5 text-sm font-semibold uppercase tracking-[0.16em] transition duration-300 ${checkoutCtaClass}`}
                       style={checkoutCtaStyle}
                     >
                       <span className="flex items-center gap-3 text-left">
                         <svg
                           aria-hidden
-                          className="h-6 w-6"
+                          className="h-5 w-5"
                           viewBox="0 0 24 24"
                           fill="none"
                           stroke="currentColor"
@@ -1318,7 +1422,7 @@ export default function PrecheckPage() {
                         </svg>
                         <span className="flex flex-col items-start leading-tight">
                           <span>{checkoutLabel}</span>
-                          <span className="text-[0.98rem] font-semibold normal-case tracking-[0.16em] text-slate-900/80">
+                          <span className="text-xs font-medium normal-case tracking-normal text-slate-500">
                             {checkoutTotalLabel}
                           </span>
                         </span>
@@ -1338,7 +1442,7 @@ export default function PrecheckPage() {
             {!showPaidView && showLicensePlans && (
               <FadeIn delay={380}>
                 <div className="space-y-8">
-                  <div className="text-2xl font-semibold text-slate-900" id="license-plans">
+                  <div className="text-2xl font-semibold tracking-tight text-[#2B4066]" id="license-plans">
                     {tr("4. Lizenzplan auswählen und Siegel erhalten", "4. Choose a license plan and receive your seal")}
                   </div>
                   <div className="grid gap-10 md:grid-cols-3 pt-6">
@@ -1347,21 +1451,23 @@ export default function PrecheckPage() {
                       const usageLines = locale === "en" ? plan.usage.en : plan.usage.de;
                       const contentLines = locale === "en" ? plan.contents.en : plan.contents.de;
                       const footerLines = locale === "en" ? plan.footer.en : plan.footer.de;
-                      const priceSuffix = plan.billing === "daily" ? (locale === "en" ? " / day" : " / Tag") : "";
+                      const priceSuffix = plan.billing !== "one-time" ? (locale === "en" ? " / year" : " / Jahr") : "";
                       const priceRows =
-                        plan.billing === "daily"
+                        plan.billing !== "one-time"
                           ? [
                               {
                                 label: `${locale === "en" ? "1 prod." : "1 Prod."}`,
-                                price: `${formatEur(roundEur(plan.basePriceEur))}${priceSuffix}`,
+                                price: `${formatEur(roundEur(plan.billing === "daily" ? plan.basePriceEur * 365 : plan.basePriceEur))}${priceSuffix}`,
                               },
                               {
                                 label: `${locale === "en" ? "2 prod." : "2 Prod."} -20%`,
-                                price: `${formatEur(roundEur(plan.basePriceEur * 0.8))}${priceSuffix}`,
+                                price: `${formatEur(roundEur((plan.billing === "daily" ? plan.basePriceEur * 365 : plan.basePriceEur) * 0.8))}${priceSuffix}`,
+                                total: `${locale === "en" ? "Total" : "Gesamt"} ${formatEur(roundEur(roundEur((plan.billing === "daily" ? plan.basePriceEur * 365 : plan.basePriceEur) * 0.8) * 2))}`,
                               },
                               {
                                 label: `${locale === "en" ? "3 prod." : "3 Prod."} -30%`,
-                                price: `${formatEur(roundEur(plan.basePriceEur * 0.7))}${priceSuffix}`,
+                                price: `${formatEur(roundEur((plan.billing === "daily" ? plan.basePriceEur * 365 : plan.basePriceEur) * 0.7))}${priceSuffix}`,
+                                total: `${locale === "en" ? "Total" : "Gesamt"} ${formatEur(roundEur(roundEur((plan.billing === "daily" ? plan.basePriceEur * 365 : plan.basePriceEur) * 0.7) * 3))}`,
                               },
                             ]
                           : [
@@ -1371,11 +1477,13 @@ export default function PrecheckPage() {
                               },
                               {
                                 label: `${locale === "en" ? "2 prod." : "2 Prod."} -20%`,
-                                price: `${formatEur(roundEur(plan.basePriceEur * 2 * 0.8))}`,
+                                price: `${formatEur(roundEur(plan.basePriceEur * 0.8))}`,
+                                total: `${locale === "en" ? "Total" : "Gesamt"} ${formatEur(roundEur(roundEur(plan.basePriceEur * 0.8) * 2))}`,
                               },
                               {
                                 label: `${locale === "en" ? "3 prod." : "3 Prod."} -30%`,
-                                price: `${formatEur(roundEur(plan.basePriceEur * 3 * 0.7))}`,
+                                price: `${formatEur(roundEur(plan.basePriceEur * 0.7))}`,
+                                total: `${locale === "en" ? "Total" : "Gesamt"} ${formatEur(roundEur(roundEur(plan.basePriceEur * 0.7) * 3))}`,
                               },
                             ];
                       return (
@@ -1405,7 +1513,10 @@ export default function PrecheckPage() {
                                 {priceRows.map((row) => (
                                   <div key={`${row.label}-${row.price}`} className="flex items-center justify-between gap-4 tabular-nums">
                                     <span className="text-left">{row.label}</span>
-                                    <span className="text-right">{row.price}</span>
+                                    <span className="flex flex-col items-end text-right">
+                                      <span>{row.price}</span>
+                                      {"total" in row && row.total ? <span className="text-[11px] font-normal opacity-70">{row.total}</span> : null}
+                                    </span>
                                   </div>
                                 ))}
                               </div>
@@ -1433,7 +1544,7 @@ export default function PrecheckPage() {
           <FadeIn delay={450}>
             <div className="mx-auto max-w-6xl px-6 py-18 md:py-20 space-y-8">
               <div className="space-y-2">
-                <h2 className="text-2xl font-semibold text-slate-900">{tr("Machen Sie Ihr Listing sichtbar", "Make your listing stand out")}</h2>
+                <h2 className="text-2xl font-semibold tracking-tight text-[#2B4066]">{tr("Machen Sie Ihr Listing sichtbar", "Make your listing stand out")}</h2>
                 <p className="text-slate-600 max-w-2xl text-lg leading-relaxed">
                   {tr(
                     "Sparen Sie Werbebudget gezielt und steigern Sie Ihre Conversion Rate um bis zu 90 %.",

@@ -1,12 +1,14 @@
+import { pageMetadata } from "@/lib/seo";
 import { BlogAssetKind, BlogPostStatus } from '@prisma/client';
 import Link from 'next/link';
 
 import { prisma } from '@/lib/prisma';
 
-export const metadata = {
-  title: 'Blog Beiträge | Deutsches Prüfsiegel Institut',
-  description: 'Aktuelle Beiträge des Deutschen Prüfsiegel Instituts zu Qualität, Produkttests und Prüfsiegeln.',
-};
+export const metadata = pageMetadata({
+  title: "Blog: Produkttests, Prüfsiegel und Vertrauen im E-Commerce",
+  description: "Aktuelle Beiträge des Deutschen Prüfsiegel Instituts zu Qualität, Produkttests, Prüfsiegeln und Conversion auf Amazon.",
+  path: "/blog",
+});
 
 export const dynamic = 'force-dynamic';
 

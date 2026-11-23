@@ -9,31 +9,134 @@ import AnalyticsTracker from "@/components/AnalyticsTracker";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import { cookies } from "next/headers";
 import { normalizeLocale } from "@/lib/i18n";
-
-const SITE_DESCRIPTION =
-  "Deutsches Prüfsiegel Institut (DPI): Testsieger-Check – mit unserem Qualitätssiegel wird Qualität sichtbar. Praxisnahe Produkttests & Ausbildungs-Check";
+import JsonLd from "@/components/seo/JsonLd";
+import { OG_IMAGE, ORG, SITE_DESCRIPTION, SITE_NAME, SITE_URL, absoluteUrl } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "DPI - Deutsches Prüfsiegel Institut",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Produkttest & Prüfsiegel für Amazon-Seller | Deutsches Prüfsiegel Institut (DPI)",
+    template: "%s | DPI",
+  },
   applicationName: "DPI - Deutsches Prüfsiegel Institut",
   description: SITE_DESCRIPTION,
+  keywords: [
+    "Produkttest",
+    "Prüfsiegel",
+    "Testsiegel Amazon",
+    "Produkt testen lassen",
+    "Prüfsiegel für Amazon Seller",
+    "Produktprüfung",
+    "Prüfbericht QR-Code",
+    "Vertrauen Conversion Produktseite",
+    "Deutsches Prüfsiegel Institut",
+    "Produkttest Oberbayern",
+  ],
+  authors: [{ name: "Deutsches Prüfsiegel Institut" }],
+  creator: "Deutsches Prüfsiegel Institut",
+  publisher: "DPI - Deutsches Prüfsiegel Institut GmbH",
+  category: "Produktprüfung",
+  alternates: { canonical: SITE_URL },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-snippet": -1, "max-image-preview": "large", "max-video-preview": -1 },
+  },
+  formatDetection: { telephone: true, email: true, address: true },
   icons: {
     icon: "/icon.png",
     shortcut: "/favicon.ico",
   },
   openGraph: {
-    title: "DPI - Deutsches Prüfsiegel Institut",
+    type: "website",
+    locale: "de_DE",
+    title: "Produkttest & Prüfsiegel für Amazon-Seller | DPI",
     description: SITE_DESCRIPTION,
-    url: "https://dpi-siegel.de",
-    siteName: "Deutsches Prüfsiegel Institut",
-    images: [
-      {
-        url: "https://dpi-siegel.de/icon.png",
-        width: 512,
-        height: 512,
-      },
-    ],
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    images: [OG_IMAGE],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Produkttest & Prüfsiegel für Amazon-Seller | DPI",
+    description: SITE_DESCRIPTION,
+    images: [OG_IMAGE.url],
+  },
+  other: {
+    "geo.region": "DE-BY",
+    "geo.placename": "Waakirchen, Landkreis Miesbach, Oberbayern",
+    "content-language": "de",
+  },
+};
+
+const orgId = `${SITE_URL}/#organization`;
+const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+const siteJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": ["Organization", "ProfessionalService"],
+      "@id": orgId,
+      name: SITE_NAME,
+      alternateName: ["DPI", ORG.legalName],
+      legalName: ORG.legalName,
+      url: SITE_URL,
+      logo: { "@type": "ImageObject", url: ORG.logo },
+      image: absoluteUrl("/siegel19.png"),
+      description: SITE_DESCRIPTION,
+      email: ORG.email,
+      telephone: ORG.telephone,
+      vatID: ORG.vatId,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: ORG.street,
+        postalCode: ORG.postalCode,
+        addressLocality: ORG.city,
+        addressRegion: ORG.region,
+        addressCountry: ORG.country,
+      },
+      areaServed: [
+        { "@type": "Country", name: "Deutschland" },
+        { "@type": "AdministrativeArea", name: "Oberbayern" },
+        { "@type": "AdministrativeArea", name: "Landkreis Miesbach" },
+        { "@type": "Place", name: "Tegernsee-Region" },
+      ],
+      founder: [
+        { "@type": "Person", name: "Ferdinand Lang", jobTitle: "Geschäftsführer" },
+        { "@type": "Person", name: "Sebastian Lang", jobTitle: "Geschäftsführer" },
+      ],
+      knowsAbout: [
+        "Produkttest",
+        "Prüfsiegel",
+        "Prüfbericht",
+        "Amazon-Produktseiten",
+        "Vertrauen und Conversion im E-Commerce",
+      ],
+      contactPoint: [
+        {
+          "@type": "ContactPoint",
+          contactType: "customer service",
+          email: ORG.email,
+          telephone: ORG.telephone,
+          availableLanguage: ["de", "en"],
+          areaServed: "DE",
+          hoursAvailable: { "@type": "OpeningHoursSpecification", dayOfWeek: weekdays, opens: "09:00", closes: "17:00" },
+        },
+      ],
+      openingHoursSpecification: { "@type": "OpeningHoursSpecification", dayOfWeek: weekdays, opens: "09:00", closes: "17:00" },
+      geo: { "@type": "GeoCoordinates", latitude: ORG.geo.latitude, longitude: ORG.geo.longitude },
+      slogan: "Produkttest & Prüfsiegel nach transparenten Kriterien",
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: SITE_NAME,
+      alternateName: "DPI",
+      inLanguage: "de-DE",
+      publisher: { "@id": orgId },
+    },
+  ],
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -41,24 +144,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const locale = normalizeLocale(cookieStore.get("lang")?.value || "de");
 
   return (
-    <html lang={locale} className="no-js">
+    <html lang={locale} className="no-js" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var m=document.cookie.match(/(?:^|; )dpi_area=([^;]*)/);if(m)document.documentElement.setAttribute("data-area",decodeURIComponent(m[1]))}catch(e){}`,
+          }}
+        />
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `html[data-area="produkttest"] .as-only{display:none!important}@keyframes asShine{0%{background-position:200% 0}100%{background-position:-200% 0}}.as-shine{background-image:linear-gradient(100deg,#6ee7b7 0%,#6ee7b7 38%,#ffffff 50%,#6ee7b7 62%,#6ee7b7 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:asShine 3.6s linear infinite}@media (prefers-reduced-motion:reduce){.as-shine{animation:none;background-image:none;color:#6ee7b7;-webkit-text-fill-color:#6ee7b7}}html[data-area="arbeitssicherheit"] .pt-only{display:none!important}html[data-area="produkttest"] .as-solo{grid-template-columns:minmax(0,1fr)!important;max-width:46rem;margin-inline:auto}`,
+          }}
+        />
         <link rel="stylesheet" href="/styles/animations.css" />
-      
-  <link rel="stylesheet" href="/styles/animations.css" />
-  <script
-    type="application/ld+json"
-    dangerouslySetInnerHTML={{
-      __html: JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "Deutsches Prüfsiegel Institut",
-        "alternateName": "DPI",
-        "url": "https://dpi-siegel.de/"
-      })
-    }}
-  />
-
+        <JsonLd data={siteJsonLd} />
       </head>
       <body className="font-sans antialiased bg-brand-surface text-brand-text">
         <LocaleProvider initialLocale={locale}>

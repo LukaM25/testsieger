@@ -1,10 +1,13 @@
+import { pageMetadata } from "@/lib/seo";
 import Image from 'next/image';
 import Link from 'next/link';
 
-export const metadata = {
+export const metadata = pageMetadata({
+  title: 'Ablauf der Prüfung: vom Pre-Check bis zum Prüfsiegel',
   description:
-    'Überblick über den standardisierten Prüfprozess vom Erstgespräch über Laboranalysen bis zur Lizenzierung des Prüfsiegels.',
-};
+    'Der standardisierte Ablauf: Vorqualifizierung, Prüfung, Prüfbericht und Lizenzierung des Prüfsiegels beim Deutschen Prüfsiegel Institut.',
+  path: '/verfahren',
+});
 
 const phases = [
   {

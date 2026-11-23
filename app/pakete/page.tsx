@@ -1,84 +1,104 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import {
+  ArrowRight,
+  Award,
+  BadgeCheck,
+  CalendarClock,
+  Check,
+  ClipboardCheck,
+  FileCheck,
+  FileText,
+  FlaskConical,
+  Globe,
+  Infinity as InfinityIcon,
+  Languages,
+  PackageCheck,
+  ShieldCheck,
+  Store,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 
-const steps = [
-  { title: "Pre-Check ausfüllen", body: "Kostenloser Pre-Check. Wir prüfen Unterlagen und schätzen den Aufwand." },
-  { title: "Produkt einsenden", body: "Nach Zahlung der Grundgebühr erhältst du Versandadresse und Rechnung." },
-  { title: "Testsieger Check", body: "Labor- und Praxistests nach Standard. Transparenter Bericht." },
-  { title: "Lizenzpläne aktivieren", body: "Du zahlst erst, wenn dein Produkt bestanden hat." },
+const steps: { title: string; body: string; Icon: LucideIcon }[] = [
+  { title: "Pre-Check ausfüllen", body: "Kostenlos und in rund 3 Minuten. Wir prüfen vorab, ob Ihr Produkt in Frage kommt.", Icon: ClipboardCheck },
+  { title: "Produkt einsenden", body: "Nach Zahlung der Testgebühr erhalten Sie Versandadresse und Rechnung.", Icon: PackageCheck },
+  { title: "Testsieger Check", body: "Wir prüfen Ihr Produkt nach festem Standard und erstellen einen transparenten Bericht.", Icon: FlaskConical },
+  { title: "Plan wählen", body: "Erst nach bestandener Prüfung wählen Sie den Lizenzplan für Ihr Siegel.", Icon: BadgeCheck },
 ];
 
 type Plan = {
   key: "BASIC" | "PREMIUM" | "LIFETIME";
   name: string;
-  theme: "sky" | "indigo" | "midnight";
-  usage: string[];
+  tagline: string;
+  badge?: string;
+  Icon: LucideIcon;
+  usage: { text: string; Icon: LucideIcon }[];
   contents: string[];
   basePriceEur: number;
-  billing: "daily" | "one-time";
+  billing: "daily" | "yearly" | "one-time";
   footer: string[];
+  dark?: boolean;
 };
+
+const contentIcons = [Award, FileCheck, FileText];
 
 const plans: Plan[] = [
   {
     key: "BASIC",
     name: "Basic",
-    theme: "sky",
-    usage: ["1 Verkaufskanal (Amazon, Otto...)", "Sprache: Deutsch"],
+    tagline: "Für einen Verkaufskanal",
+    Icon: Store,
+    usage: [
+      { text: "1 Verkaufskanal (Amazon, Otto ...)", Icon: Store },
+      { text: "Sprache: Deutsch", Icon: Languages },
+    ],
     contents: ["Siegel", "Zertifikat", "Prüfbericht"],
-    basePriceEur: 0.79,
-    billing: "daily",
-    footer: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+    basePriceEur: 177,
+    billing: "yearly",
+    footer: ["Jahreslizenz, 12 Monate", "Lizenzverlängerung jährlich"],
   },
   {
     key: "PREMIUM",
     name: "Premium",
-    theme: "indigo",
-    usage: ["ALLE Verkaufskanäle", "ALLE Sprachen"],
+    tagline: "Für alle Kanäle und Sprachen",
+    badge: "Alle Kanäle",
+    Icon: Globe,
+    usage: [
+      { text: "ALLE Verkaufskanäle", Icon: Store },
+      { text: "ALLE Sprachen", Icon: Languages },
+    ],
     contents: ["Siegel", "Zertifikat", "Prüfbericht"],
-    basePriceEur: 0.875,
-    billing: "daily",
-    footer: ["Abrechnung 365 Tage / Jahr", "Lizenzverlängerung jährlich."],
+    basePriceEur: 225,
+    billing: "yearly",
+    footer: ["Jahreslizenz, 12 Monate", "Lizenzverlängerung jährlich"],
   },
   {
     key: "LIFETIME",
     name: "Lifetime",
-    theme: "midnight",
-    usage: ["ALLE Verkaufskanäle", "ALLE Sprachen"],
+    tagline: "Einmal zahlen, dauerhaft nutzen",
+    badge: "Einmalzahlung",
+    Icon: InfinityIcon,
+    usage: [
+      { text: "ALLE Verkaufskanäle", Icon: Store },
+      { text: "ALLE Sprachen", Icon: Languages },
+    ],
     contents: ["Siegel", "Zertifikat", "Prüfbericht"],
     basePriceEur: 689,
     billing: "one-time",
-    footer: ["Abrechnung Einmalig", "Lizenzverlängerung jährlich."],
+    footer: ["Abrechnung einmalig", "Lizenzverlängerung jährlich"],
+    dark: true,
   },
 ];
 
-const planThemes = {
-  sky: {
-    card: "bg-gradient-to-b from-sky-300 via-sky-200 to-sky-50",
-    border: "border-sky-200/70",
-    label: "text-slate-900",
-    body: "text-slate-800",
-    muted: "text-slate-700/80",
-  },
-  indigo: {
-    card: "bg-gradient-to-b from-indigo-500 via-indigo-700 to-slate-950",
-    border: "border-indigo-400/30",
-    label: "text-white",
-    body: "text-white/90",
-    muted: "text-white/70",
-  },
-  midnight: {
-    card: "bg-gradient-to-b from-blue-950 via-slate-950 to-black",
-    border: "border-blue-500/20",
-    label: "text-white",
-    body: "text-white/90",
-    muted: "text-white/70",
-  },
-} as const;
+const good: { title: string; body: string; Icon: LucideIcon }[] = [
+  { title: "Zahlung erst nach Bestehen", body: "Die Lizenz wird nur für bestandene Produkte aktiviert.", Icon: ShieldCheck },
+  { title: "Faire Staffel", body: "Mehrere Produkte: 20 % Rabatt ab 2, 30 % ab 3 Produkten.", Icon: Wallet },
+  { title: "Klare Laufzeit", body: "Jahreslizenz mit jährlicher Verlängerung.", Icon: CalendarClock },
+];
 
 function Reveal({
   children,
@@ -140,37 +160,176 @@ export default function Packages() {
   const roundEur = (n: number) => Math.round(n * 100) / 100;
 
   return (
-    <main className="text-slate-900" style={{ backgroundColor: '#EEF4ED' }}>
-      <section className="relative overflow-hidden border-b border-slate-200">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_15%_10%,#e0f2fe_0%,transparent_45%),radial-gradient(120%_80%_at_85%_0%,#e2e8f0_0%,transparent_50%)]" />
-        <div className="relative mx-auto max-w-6xl px-6 py-16 space-y-10">
-          <Reveal className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 ring-1 ring-slate-200/70">
-              Lizenzpläne Produktsiegel
-            </div>
-            <h1 className="text-4xl md:text-5xl font-semibold leading-tight text-slate-900">Wäglen Sie erst Ihren Plan, wenn das Produkt bestanden hat.</h1>
-            <p className="text-lg text-slate-700 max-w-3xl">
-              Wir prüfen dein Produkt im Testsieger Check. Erst nach bestandenem Ergebnis wählst du den passenden Lizenzplan für das Siegel.
+    <main className="overflow-x-clip bg-white text-slate-900">
+      {/* Einstieg */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-sky-50/70 via-white to-white">
+        <div className="seal-glow pointer-events-none absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-sky-200/40 blur-3xl" />
+        <div className="relative mx-auto max-w-4xl px-6 pb-14 pt-16 text-center sm:pt-24">
+          <Reveal>
+            <span className="eyebrow">Lizenzpläne Produktsiegel</span>
+            <h1 className="section-title !text-4xl sm:!text-5xl">Wählen Sie Ihren Plan erst, wenn Ihr Produkt bestanden hat.</h1>
+            <p className="lead mx-auto mt-5 max-w-2xl">
+              Wir prüfen Ihr Produkt im Testsieger Check. Erst nach bestandenem Ergebnis wählen Sie den passenden Lizenzplan für das Siegel.
             </p>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                href="/produkte/produkt-test"
-                className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-black"
-              >
-                Pre-Check starten
-              </Link>
-            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* Ablauf in 4 Schritten */}
+      <section className="px-6 pb-16 sm:pb-20">
+        <div className="mx-auto grid max-w-6xl gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {steps.map(({ title, body, Icon }, idx) => (
+            <Reveal key={title} delay={idx * 90} className="h-full">
+              <div className="group relative h-full overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_20px_60px_-40px_rgba(43,64,102,0.35)] transition duration-500 hover:-translate-y-1.5 hover:shadow-[0_28px_70px_-34px_rgba(43,64,102,0.45)]">
+                <span className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-sky-100/70 blur-2xl transition-transform duration-700 group-hover:scale-150" />
+                <div className="relative flex items-center justify-between">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-50 to-sky-100 text-sky-700 ring-1 ring-sky-100 transition duration-500 group-hover:rotate-3">
+                    <Icon className="h-6 w-6" aria-hidden="true" />
+                  </span>
+                  <span className="text-sm font-semibold text-slate-300">0{idx + 1}</span>
+                </div>
+                <h3 className="card-title relative mt-5 !mb-2">{title}</h3>
+                <p className="body-text relative text-sm">{body}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* Pläne */}
+      <section className="bg-gradient-to-b from-slate-50 to-white px-6 py-16 sm:py-24">
+        <div className="mx-auto max-w-6xl">
+          <Reveal className="text-center">
+            <span className="eyebrow">Lizenzpläne</span>
+            <h2 className="section-title">Wählen Sie Ihren Plan</h2>
+            <p className="lead mx-auto mt-4 max-w-2xl">
+              Alle Pläne aktivieren das Prüfsiegel nach bestandenem Test. Die Zahlung wird erst nach erfolgreichem Ergebnis fällig.
+            </p>
           </Reveal>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4 items-stretch">
-            {steps.map((step, idx) => (
-              <Reveal key={step.title} delay={idx * 80}>
-                <div className="h-full rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)] flex flex-col">
-                  <div className="mb-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-[11px] font-semibold text-white">
-                    {idx + 1}
+          <div className="mx-auto mt-14 grid max-w-md items-stretch gap-6 lg:max-w-none lg:grid-cols-3">
+            {plans.map((plan, idx) => {
+              const daily = plan.billing !== "one-time";
+              const yearlyBase = plan.billing === "daily" ? roundEur(plan.basePriceEur * 365) : plan.basePriceEur;
+              const suffix = daily ? " / Jahr" : "";
+              const rows = [
+                { label: "1 Produkt", factor: 1, count: 1, badge: "" },
+                { label: "2 Produkte", factor: 0.8, count: 2, badge: "-20 %" },
+                { label: "3 Produkte", factor: 0.7, count: 3, badge: "-30 %" },
+              ].map((r) => ({
+                ...r,
+                price: `${formatEur(roundEur(yearlyBase * r.factor))}${suffix}`,
+                total: r.count > 1 ? `Gesamt ${formatEur(roundEur(roundEur(yearlyBase * r.factor) * r.count))}` : "",
+              }));
+                            const highlighted = preselectedPlan === plan.key;
+              const dark = !!plan.dark;
+              const text = dark ? "text-white" : "text-[#2B4066]";
+              const muted = dark ? "text-white/70" : "text-slate-500";
+              const body = dark ? "text-white/90" : "text-slate-700";
+              return (
+                <Reveal key={plan.key} delay={idx * 100} className="h-full">
+                  <div
+                    className={`group relative flex h-full flex-col overflow-hidden rounded-3xl border p-6 transition duration-500 hover:-translate-y-2 xl:p-7 ${
+                      dark
+                        ? "border-blue-900/40 bg-gradient-to-b from-[#16294d] to-[#0b1730] shadow-[0_30px_70px_-35px_rgba(11,23,48,0.8)]"
+                        : "border-slate-200/80 bg-white shadow-[0_20px_60px_-40px_rgba(43,64,102,0.35)] hover:shadow-[0_30px_70px_-30px_rgba(43,64,102,0.45)]"
+                    } ${highlighted ? "ring-2 ring-sky-500" : ""}`}
+                  >
+                    {plan.badge && (
+                      <span className={`absolute right-5 top-5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${dark ? "bg-white/10 text-sky-100" : "bg-sky-50 text-sky-700"}`}>
+                        {plan.badge}
+                      </span>
+                    )}
+                    <span className={`flex h-12 w-12 items-center justify-center rounded-2xl ring-1 transition duration-500 group-hover:rotate-3 ${dark ? "bg-white/10 text-sky-200 ring-white/10" : "bg-gradient-to-br from-sky-50 to-sky-100 text-sky-700 ring-sky-100"}`}>
+                      <plan.Icon className="h-6 w-6" aria-hidden="true" />
+                    </span>
+                    <h3 className={`mt-5 text-2xl font-semibold ${text}`}>{plan.name}</h3>
+                    <p className={`text-sm ${muted}`}>{plan.tagline}</p>
+
+                    <div className="mt-6">
+                      <div className={`text-3xl font-semibold tracking-tight tabular-nums ${text}`}>
+                        {formatEur(yearlyBase)}
+                        <span className={`text-base font-medium ${muted}`}>{daily ? " / Jahr" : " einmalig"}</span>
+                      </div>
+                      <p className={`mt-1 text-xs ${muted}`}>{daily ? "pro Produkt, jährlich verlängerbar" : "pro Produkt, ohne Folgekosten"}</p>
+                    </div>
+
+                    <ul className="mt-6 space-y-3">
+                      {plan.usage.map(({ text: t, Icon }) => (
+                        <li key={t} className={`flex items-center gap-3 text-sm ${body}`}>
+                          <Icon className={`h-5 w-5 shrink-0 ${dark ? "text-sky-300" : "text-sky-600"}`} aria-hidden="true" />
+                          {t}
+                        </li>
+                      ))}
+                      {plan.contents.map((t, i) => {
+                        const CIcon = contentIcons[i] ?? Check;
+                        return (
+                          <li key={t} className={`flex items-center gap-3 text-sm ${body}`}>
+                            <CIcon className={`h-5 w-5 shrink-0 ${dark ? "text-emerald-300" : "text-emerald-600"}`} aria-hidden="true" />
+                            {t}
+                          </li>
+                        );
+                      })}
+                    </ul>
+
+                    <div className={`mt-6 space-y-2 rounded-2xl p-4 ${dark ? "bg-white/5" : "bg-slate-50"}`}>
+                      <p className={`text-[11px] font-semibold uppercase tracking-[0.16em] ${muted}`}>Staffelpreise (pro Produkt)</p>
+                      {rows.map((row) => (
+                        <div key={row.label} className={`flex items-center justify-between gap-3 text-sm tabular-nums ${body}`}>
+                          <span className="flex items-center gap-2 whitespace-nowrap">
+                            {row.label}
+                            {row.badge && (
+                              <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold ${dark ? "bg-emerald-400/15 text-emerald-200" : "bg-emerald-50 text-emerald-700"}`}>
+                                {row.badge}
+                              </span>
+                            )}
+                          </span>
+                          <span className="flex flex-col items-end whitespace-nowrap">
+                            <span className="font-semibold">{row.price}</span>
+                            {row.total && <span className={`text-[11px] font-normal ${muted}`}>{row.total}</span>}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className={`mt-5 space-y-1 text-xs ${muted}`}>
+                      {plan.footer.map((line) => (
+                        <div key={line} className="flex items-center gap-2">
+                          <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                          {line}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-auto pt-7">
+                    <Link
+                      href="/dashboard"
+                      className={`inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition duration-300 hover:-translate-y-0.5 ${
+                        dark ? "bg-white !text-[#16294d] hover:bg-sky-50" : "bg-[#2B4066] !text-white hover:bg-[#1e3050]"
+                      }`}
+                    >
+                      Zum Kundendashboard
+                      <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+                    </Link>
+                    </div>
                   </div>
-                  <div className="text-lg font-semibold text-slate-900">{step.title}</div>
-                  <p className="mt-2 text-sm text-slate-700 leading-relaxed">{step.body}</p>
+                </Reveal>
+              );
+            })}
+          </div>
+
+          {/* Gut zu wissen */}
+          <div className="mt-14 grid gap-6 sm:grid-cols-3">
+            {good.map(({ title, body, Icon }, idx) => (
+              <Reveal key={title} delay={idx * 90}>
+                <div className="flex items-start gap-4">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-50 to-sky-50 text-emerald-600 ring-1 ring-emerald-100">
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <div>
+                    <p className="font-semibold text-[#2B4066]">{title}</p>
+                    <p className="body-text text-sm">{body}</p>
+                  </div>
                 </div>
               </Reveal>
             ))}
@@ -178,165 +337,25 @@ export default function Packages() {
         </div>
       </section>
 
-      <section className="bg-white">
-        <div className="mx-auto max-w-6xl px-6 py-14">
-          <div className="grid items-center gap-10 md:grid-cols-2">
-            <div className="space-y-6 text-left">
-              <Reveal delay={0}>
-                <h2 className="text-4xl sm:text-6xl font-semibold leading-tight text-slate-900 flex flex-wrap items-center gap-3 sm:gap-4">
-                  <span>Spare mehrere Hundert Euro Werbebudget ein.</span>
-                  <Reveal delay={180} className="inline-flex">
-                    <Image
-                      src="/checkmark.png"
-                      alt="Checkmark"
-                      width={60}
-                      height={60}
-                      className="h-10 w-10 sm:h-[3rem] sm:w-[3rem] object-contain align-middle"
-                    />
-                  </Reveal>
-                </h2>
-              </Reveal>
-              <Reveal delay={300}>
-                <p className="text-3xl sm:text-[2.35rem] font-medium text-slate-900">
-                  Verbrenne nicht unnötig Werbebudget
-                </p>
-              </Reveal>
-            </div>
-            <Reveal delay={420} duration={520} className="flex items-center justify-center md:justify-end h-full">
-              <img
-                src="/cashdrop.jpeg"
-                alt="Cash drop"
-                className="w-full max-w-[421px] sm:max-w-[518px] h-full object-contain"
-              />
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-slate-50/80">
-        <div className="mx-auto max-w-6xl px-6 py-16 space-y-8">
-          <Reveal className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Lizenzpläne</p>
-            <h2 className="text-3xl font-semibold text-slate-900">Wähle deinen Plan</h2>
-            <p className="text-slate-700 max-w-2xl">
-              Alle Pläne aktivieren das Prüf­siegel nach bestandenem Test. Zahlungsfreigabe erst nach erfolgreichem Ergebnis.
+      {/* Abschluss */}
+      <section className="px-6 pb-20 sm:pb-28">
+        <Reveal>
+          <div className="mx-auto max-w-4xl overflow-hidden rounded-3xl bg-gradient-to-br from-[#16294d] via-[#1E3A8A] to-[#0b1730] p-10 text-center text-white shadow-[0_40px_80px_-40px_rgba(11,23,48,0.8)] sm:p-14">
+            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Noch keinen Pre-Check gestartet?</h2>
+            <p className="mx-auto mt-4 max-w-xl text-white/80">
+              Beginnen Sie mit dem Testsieger Check. Nach bestandenem Ergebnis schalten Sie Ihren Lizenzplan frei.
             </p>
-          </Reveal>
-
-          <div className="grid gap-6 md:grid-cols-3">
-            {plans.map((plan, idx) => {
-              const theme = planThemes[plan.theme];
-              const priceSuffix = plan.billing === "daily" ? " / Tag" : "";
-              const priceRows =
-                plan.billing === "daily"
-                  ? [
-                      {
-                        label: "1 Prod.",
-                        price: `${formatEur(roundEur(plan.basePriceEur))}${priceSuffix}`,
-                      },
-                      {
-                        label: "2 Prod. -20%",
-                        price: `${formatEur(roundEur(plan.basePriceEur * 0.8))}${priceSuffix}`,
-                      },
-                      {
-                        label: "3 Prod. -30%",
-                        price: `${formatEur(roundEur(plan.basePriceEur * 0.7))}${priceSuffix}`,
-                      },
-                    ]
-                  : [
-                      {
-                        label: "1 Prod.",
-                        price: `${formatEur(roundEur(plan.basePriceEur))}`,
-                      },
-                      {
-                        label: "2 Prod. -20%",
-                        price: `${formatEur(roundEur(plan.basePriceEur * 2 * 0.8))}`,
-                      },
-                      {
-                        label: "3 Prod. -30%",
-                        price: `${formatEur(roundEur(plan.basePriceEur * 3 * 0.7))}`,
-                      },
-                    ];
-              const highlighted = preselectedPlan === plan.key;
-              return (
-                <Reveal key={plan.key} delay={idx * 60 + 60}>
-                  <div
-                    className="flex h-full flex-col items-center gap-4"
-                  >
-                    <div className="text-lg font-semibold text-slate-900">{plan.name}</div>
-                    <div
-                      className={`flex h-full w-full flex-col justify-between rounded-[28px] border ${theme.border} ${theme.card} p-6 text-center font-semibold shadow-[0_28px_60px_-40px_rgba(15,23,42,0.65)] transition-transform duration-300 hover:-translate-y-1 ${
-                        highlighted ? "ring-2 ring-slate-900/10 border-slate-900/50" : ""
-                      }`}
-                    >
-                      <div className="space-y-6">
-                        <div className="space-y-2">
-                          <div className={`text-[15.4px] font-semibold ${theme.label}`}>Nutzung:</div>
-                          <div className={`space-y-1 text-[15.4px] ${theme.body}`}>
-                            {plan.usage.map((line) => (
-                              <div key={line}>{line}</div>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className={`text-[15.4px] font-semibold ${theme.label}`}>Inhalt:</div>
-                          <div className={`space-y-1 text-[15.4px] ${theme.body}`}>
-                            {plan.contents.map((line) => (
-                              <div key={line}>- {line}</div>
-                            ))}
-                          </div>
-                        </div>
-                        <div className={`space-y-1 text-[15.4px] ${theme.body} w-full max-w-[240px] mx-auto`}>
-                          {priceRows.map((row) => (
-                            <div key={`${row.label}-${row.price}`} className="flex items-center justify-between gap-4 tabular-nums">
-                              <span className="text-left">{row.label}</span>
-                              <span className="text-right">{row.price}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <div className={`mt-6 space-y-1 text-[12.1px] leading-relaxed ${theme.muted}`}>
-                        {plan.footer.map((line) => (
-                          <div key={line}>{line}</div>
-                        ))}
-                      </div>
-                    </div>
-                    <Link
-                      href="/dashboard"
-                      className={`mt-2 w-full rounded-full bg-slate-900 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-black ${
-                        highlighted ? "ring-2 ring-slate-900/15" : ""
-                      }`}
-                    >
-                      Zum Kundendashboard
-                    </Link>
-                  </div>
-                </Reveal>
-              );
-            })}
-          </div>
-
-          <Reveal>
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)] flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="text-lg font-semibold text-slate-900">Noch keinen Pre-Check gestartet?</div>
-                <p className="text-sm text-slate-700">
-                  Beginne mit dem Testsieger Check. Nach bestandenem Ergebnis kannst du deinen Lizenzplan freischalten.
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <Link href="/produkte/produkt-test" className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black">
-                  Zum Pre-Check
-                </Link>
-                <Link
-                  href="/precheck"
-                  className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
-                >
-                  Mehr zum Ablauf
-                </Link>
-              </div>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+              <Link
+                href="/produkte/produkt-test"
+                className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-semibold !text-[#16294d] transition duration-300 hover:-translate-y-0.5 hover:bg-sky-50"
+              >
+                Zum Pre-Check
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+              </Link>
             </div>
-          </Reveal>
-        </div>
+          </div>
+        </Reveal>
       </section>
     </main>
   );

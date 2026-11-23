@@ -4,7 +4,7 @@ import { getSession } from "@/lib/auth";
 import { stripe } from "@/lib/stripe";
 import { getPublicBaseUrl } from "@/lib/baseUrl";
 import { Plan } from "@prisma/client";
-import { LICENSE_PLAN_SET, computeDiscountedPlanPriceCents, getPlanPriceCentsMap } from "@/lib/licensePricing";
+import { LICENSE_PLAN_SET, getDiscountedPlanPriceCents, getPlanPriceCentsMap } from "@/lib/licensePricing";
 
 export const runtime = "nodejs";
 
@@ -60,10 +60,10 @@ export async function POST() {
     .filter((plan) => LICENSE_PLAN_SET.has(plan));
   const priceMap = await getPlanPriceCentsMap(planList as Plan[]);
 
-  const lineItems = cart.items.map((item) => {
+  const lineItems = await Promise.all(cart.items.map(async (item) => {
     const plan = item.plan as Plan;
     const basePriceCents = priceMap[plan] ?? 0;
-    const unitAmount = computeDiscountedPlanPriceCents(plan, basePriceCents, cartDiscountPercent);
+    const unitAmount = await getDiscountedPlanPriceCents(plan, basePriceCents, cartDiscountPercent);
     const planLabel =
       item.plan === "BASIC" ? "Lizenz Basic" : item.plan === "PREMIUM" ? "Lizenz Premium" : "Lizenz Lifetime";
     return {
@@ -78,7 +78,7 @@ export async function POST() {
       tax_rates: FIXED_TAX_RATE_ID ? [FIXED_TAX_RATE_ID] : undefined,
       quantity: 1,
     };
-  });
+  }));
 
   const baseUrl = getPublicBaseUrl();
   const checkout = await stripe.checkout.sessions.create({
@@ -99,11 +99,11 @@ export async function POST() {
     cancel_url: `${baseUrl}/dashboard?licenseCheckout=cancel`,
   });
 
-  await prisma.order.createMany({
-    data: cart.items.map((item) => {
+  const orderRows = await Promise.all(
+    cart.items.map(async (item) => {
       const plan = item.plan as Plan;
       const basePriceCents = priceMap[plan] ?? 0;
-      const priceCents = computeDiscountedPlanPriceCents(plan, basePriceCents, cartDiscountPercent);
+      const priceCents = await getDiscountedPlanPriceCents(plan, basePriceCents, cartDiscountPercent);
       return {
         userId: session.userId,
         productId: item.productId,
@@ -111,8 +111,9 @@ export async function POST() {
         priceCents,
         stripeSessionId: checkout.id,
       };
-    }),
-  });
+    })
+  );
+  await prisma.order.createMany({ data: orderRows });
 
   return NextResponse.json({ ok: true, url: checkout.url });
 }
